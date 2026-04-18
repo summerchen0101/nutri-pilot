@@ -70,6 +70,10 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  if (pathname === '/login' && user) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   if (pathname.startsWith('/admin')) {
     if (pathname.startsWith('/admin/login')) {
       return supabaseResponse;
@@ -106,6 +110,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/login',
     '/dashboard/:path*',
     '/plan/:path*',
     '/log/:path*',

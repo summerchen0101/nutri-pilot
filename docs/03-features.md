@@ -33,14 +33,14 @@
 - [x] Next.js 14 App Router + TypeScript + Tailwind CSS
 - [x] 設定 `lib/supabase/server.ts` 和 `lib/supabase/client.ts`
 - [x] 設定 middleware（保護 `/(main)` 與 `/admin` 路由）
-- [ ] 建立基礎 UI 元件：Button、Card、Badge、Input
+- [x] 建立基礎 UI 元件：Button、Card、Badge、Input
 
 ### P1-3 Auth 流程
 
-- [ ] `/login` 頁面（Email + Magic Link）
-- [ ] Auth callback 處理（`/auth/callback`）
-- [ ] 登出功能
-- [ ] 未登入自動導向 `/login`
+- [x] `/login` 頁面（Email + Magic Link）
+- [x] Auth callback 處理（`/auth/callback`）
+- [x] 登出功能
+- [x] 未登入自動導向 `/login`
 
 ### P1-4 Onboarding 建檔流程（5 步驟 Wizard）
 
