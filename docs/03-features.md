@@ -44,6 +44,10 @@
 
 ### P1-4 Onboarding 建檔流程（5 步驟 Wizard）
 
+- [x] `/onboarding` 五步 Wizard，每步寫入 Supabase
+- [x] 尚未完成建檔（無啟用中 `diet_plans`）時，無法使用 `/(main)` 內頁面，會導向 `/onboarding`
+- [ ] 完成 Step 5 後觸發 AI 菜單生成（Queue，Phase 2）
+
 依序完成以下步驟，每步都要儲存到對應的 Supabase table：
 
 **Step 1：基本資料**

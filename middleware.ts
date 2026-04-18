@@ -1,8 +1,6 @@
 import { createServerClient, type SetAllCookies } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-import type { Database } from '@/types/supabase';
-
 type CookieRow = Parameters<SetAllCookies>[0][number];
 
 /** Longest prefix first so `/admin/products` wins over `/admin` if we add broader keys later. */
@@ -41,7 +39,7 @@ export async function middleware(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient<Database>(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -117,6 +115,7 @@ export const config = {
     '/analytics/:path*',
     '/shop/:path*',
     '/settings/:path*',
+    '/onboarding',
     '/onboarding/:path*',
     '/admin/:path*',
   ],
