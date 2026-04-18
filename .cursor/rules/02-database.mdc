@@ -1,0 +1,45 @@
+---
+description: 資料庫 Schema、RLS 政策、查詢寫法
+globs: "**/*supabase*/**,**/lib/db*,**/migrations*,**/*.sql"
+alwaysApply: false
+---
+
+# 資料庫規則
+
+## 核心資料表
+
+user_profiles, user_goals, diet_plans, daily_menus, meals, meal_items,
+food_logs, food_log_items, vital_logs,
+brands, products, product_variants, orders, order_items,
+subscriptions, subscription_items, user_product_scores,
+product_events, weekly_insights
+
+## 查詢寫法
+
+\`\`\`typescript
+// ✅ 正確
+const { data, error } = await supabase
+.from('products')
+.select('_, variants:product_variants(_)')
+.eq('is_active', true)
+
+if (error) throw error
+\`\`\`
+
+## 重要欄位命名（snake_case，對應 DB）
+
+- user_id、diet_method、avoid_foods、allergen_free、diet_tags
+- daily_cal_target、carb_pct、protein_pct、fat_pct
+- stripe_subscription_id、stripe_price_id
+
+## RLS
+
+所有 INSERT/UPDATE/DELETE 操作完成後確認 RLS 政策存在。
+用戶只能存取自己的資料（`auth.uid() = user_id`）。
+
+## 推薦分數快取
+
+不要在請求時即時算分，讀 `user_product_scores` 表。
+用戶更新偏好時呼叫 `recalculate-scores` Edge Function 重算。
+
+完整 Schema 見 `/docs/02-schema.md`。

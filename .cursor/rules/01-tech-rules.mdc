@@ -1,0 +1,51 @@
+---
+description: 技術選型與架構原則，所有程式碼都適用
+alwaysApply: true
+---
+
+# 技術規則（不可違反）
+
+## Stack
+
+- Next.js 14 App Router + TypeScript strict + Tailwind CSS
+- Supabase（DB + Auth + Storage + Edge Functions）
+- Upstash QStash（AI 重型任務 Queue）
+- Stripe + Stripe Billing（金流 + 訂閱）
+- Zustand（client 狀態）、SWR（資料同步）、Recharts（圖表）
+
+## 絕對禁止
+
+- 不用 Prisma，DB 操作一律用 Supabase client
+- 不在 Next.js API Routes 寫後端邏輯（唯一例外：`/api/ai/menu-request`）
+- 不直接 await AI 重型任務（菜單生成、拍照辨識、週報），必須走 Queue
+- 不在前端暴露 `SUPABASE_SERVICE_ROLE_KEY`
+
+## Server vs Client Component
+
+- 預設用 Server Component，需要 useState/useEffect/事件處理才加 `'use client'`
+- Server Component 用 `lib/supabase/server.ts`
+- Client Component 用 `lib/supabase/client.ts`
+
+## 型別
+
+- DB 型別從 `src/types/supabase.ts` 引入（`supabase gen types` 產生）
+- 不手寫 DB 相關 interface
+
+## 命名
+
+- 檔案：kebab-case
+- 元件：PascalCase
+- 函數/變數：camelCase
+
+## 錯誤處理
+
+- 所有 Supabase 查詢解構 `{ data, error }`，error 要處理
+- Edge Function 回傳正確 HTTP status code（401/403/422/500）
+- AI Queue Worker 失敗時更新 status = 'error'，回傳 500 讓 QStash 重試
+
+## 每次回應格式
+
+1. 說明讀了哪些 `/docs/` 文件、確認了哪些規格
+2. 列出要建立或修改的檔案清單
+3. 輸出完整檔案內容（不省略、不用 `// ...` 代替）
+4. 最後列出需要手動完成的步驟（Supabase 設定、環境變數等）

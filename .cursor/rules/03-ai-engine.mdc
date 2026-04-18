@@ -1,0 +1,39 @@
+---
+description: AI 任務分類、Queue 架構、Prompt 設計
+globs: "**/ai/**,**/functions/ai*,**/*claude*,**/*queue*"
+alwaysApply: false
+---
+
+# AI 引擎規則
+
+## 任務分類（最重要）
+
+必須走 Queue（QStash）：
+
+- 菜單生成（3–6 秒）
+- 拍照辨識（圖片上傳 + Vision）
+- 週報洞察（cron 觸發）
+
+直接呼叫（可以等）：
+
+- 換食材建議
+- 今日 Dashboard 建議
+
+## Queue 流程
+
+前端 → `/api/ai/menu-request` → 寫 status:'pending' → 發 QStash
+→ Edge Function Worker → 呼叫 Claude → 寫結果 → status:'ready'
+→ Supabase Realtime 推給前端 → UI 更新
+
+## Claude wrapper
+
+用 `lib/ai/claude.ts` 的 `callClaudeJSON<T>()` 函數。
+模型固定用 `claude-sonnet-4-5`。
+JSON 任務在 prompt 最後加：「只回傳 JSON，不加 markdown 或說明文字。」
+
+## Prompt 函數位置
+
+`lib/ai/prompts/` 資料夾，每個任務一個檔案。
+不要把 prompt 字串直接寫在元件或 Edge Function 裡。
+
+完整 Prompt 設計見 `/docs/04-ai-engine.md`。
