@@ -130,20 +130,20 @@ export function calcRecommendScore(
 
 ### P2-1 AI 菜單生成（Queue 架構）
 
-- [ ] 建立 Upstash QStash 帳號，取得 token
-- [ ] Edge Function：`/functions/ai-menu-request`（接受前端請求，發到 Queue）
-- [ ] Edge Function：`/functions/ai-menu-generate`（QStash callback，呼叫 Claude，寫結果）
-- [ ] 菜單生成 prompt（見 `04-ai-engine.md`）
-- [ ] 前端 Realtime 監聽 `daily_menus.status`
+- [x] 建立 Upstash QStash 帳號，取得 token（本機可略：菜單會維持 `pending` 直至手動觸發 Worker）
+- [x] Next.js API：`/api/ai/menu-request`（寫入 `daily_menus`、條件允許時發佈 QStash）
+- [x] Edge Function：`supabase/functions/ai-menu-generate`（QStash callback，Claude → `meals` / `meal_items`）
+- [x] 菜單生成 prompt（`lib/ai/prompts/menu-generate.ts`，對齊 `04-ai-engine.md`）
+- [x] 前端 Realtime 監聽 `daily_menus`（`/plan` 頁 `postgres_changes`）
 
 ### P2-2 飲食計畫頁 `/plan`
 
-- [ ] 計畫進度卡（完成天數、剩餘天數、達成率）
-- [ ] 7 日橫向日期選擇器（完成=綠，今日=藍）
-- [ ] 當日菜單展示（按餐次）
-- [ ] 每餐打卡按鈕（更新 `meals.is_checked_in`）
-- [ ] 換食材按鈕（直接呼叫 Claude，不走 Queue，見 `04-ai-engine.md`）
-- [ ] 菜單生成中的 Skeleton UI
+- [x] 計畫進度卡（完成天數、剩餘天數、達成率）
+- [x] 7 日橫向日期選擇器（完成=綠，今日=藍）
+- [x] 當日菜單展示（按餐次）
+- [x] 每餐打卡按鈕（更新 `meals.is_checked_in`）
+- [x] 換食材按鈕（Server Action + Claude，見 `plan/actions.ts`）
+- [x] 菜單生成中的 Skeleton UI
 
 ### P2-3 飲食記錄頁 `/log`
 

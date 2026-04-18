@@ -1,0 +1,4 @@
+# https://supabase.com/docs/guides/functions/function-configuration
+# QStash 呼叫不帶使用者 JWT，需關閉 JWT 驗證並改以簽章／內網限制保護。
+[functions.ai-menu-generate]
+verify_jwt = false
