@@ -111,6 +111,7 @@ export const config = {
     '/login',
     '/dashboard/:path*',
     '/plan/:path*',
+    '/log',
     '/log/:path*',
     '/analytics/:path*',
     '/shop/:path*',

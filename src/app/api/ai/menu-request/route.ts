@@ -1,16 +1,20 @@
 import { NextResponse } from 'next/server';
 
+import { buildQstashPublishRequestUrl } from '@/lib/qstash/build-qstash-publish-url';
+import { normalizeEdgeFunctionsBaseUrl } from '@/lib/qstash/normalize-edge-functions-base-url';
+import { normalizeQstashApiBaseUrl } from '@/lib/qstash/normalize-qstash-api-base-url';
 import { createClient } from '@/lib/supabase/server';
 
 async function publishToQStash(menuId: string): Promise<void> {
   const token = process.env.QSTASH_TOKEN;
-  const qstashUrl = process.env.QSTASH_URL ?? 'https://qstash.upstash.io';
-  const functionsUrl = process.env.SUPABASE_FUNCTIONS_URL;
+  const qstashUrl = normalizeQstashApiBaseUrl(process.env.QSTASH_URL);
+  const functionsUrlRaw =
+    process.env.EDGE_FUNCTIONS_URL ?? process.env.SUPABASE_FUNCTIONS_URL;
 
-  if (!token || !functionsUrl) return;
+  if (!token || !functionsUrlRaw) return;
 
-  const destination = `${functionsUrl.replace(/\/$/, '')}/ai-menu-generate`;
-  const publishUrl = `${qstashUrl.replace(/\/$/, '')}/v2/publish/${encodeURIComponent(destination)}`;
+  const destination = `${normalizeEdgeFunctionsBaseUrl(functionsUrlRaw)}/ai-menu-generate`;
+  const publishUrl = buildQstashPublishRequestUrl(qstashUrl, destination);
 
   await fetch(publishUrl, {
     method: 'POST',
@@ -134,7 +138,10 @@ export async function POST(req: Request) {
 
   await publishToQStash(inserted.id);
 
-  const qstashConfigured = !!(process.env.QSTASH_TOKEN && process.env.SUPABASE_FUNCTIONS_URL);
+  const qstashConfigured = !!(
+    process.env.QSTASH_TOKEN &&
+    (process.env.EDGE_FUNCTIONS_URL ?? process.env.SUPABASE_FUNCTIONS_URL)
+  );
 
   return NextResponse.json({
     menuId: inserted.id,
@@ -142,6 +149,6 @@ export async function POST(req: Request) {
     queued: qstashConfigured,
     hint: qstashConfigured
       ? undefined
-      : '尚未設定 QSTASH_TOKEN / SUPABASE_FUNCTIONS_URL：菜單將維持 pending，請部署 ai-menu-generate 並發佈 Queue。',
+      : '尚未設定 QSTASH_TOKEN / EDGE_FUNCTIONS_URL：菜單將維持 pending，請部署 ai-menu-generate 並發佈 Queue。',
   });
 }

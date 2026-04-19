@@ -435,7 +435,7 @@ async function saveProduct(formData: ProductFormData) {
   )
 
   // 3. 觸發所有用戶的推薦分數重算（新商品上架）
-  await fetch(`${process.env.SUPABASE_FUNCTIONS_URL}/recalculate-scores`, {
+  await fetch(`${process.env.EDGE_FUNCTIONS_URL}/recalculate-scores`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` },
     body: JSON.stringify({ productId: product.id }) // 只算這個新商品

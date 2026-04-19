@@ -149,21 +149,21 @@ export function calcRecommendScore(
 
 **搜尋記錄**：
 
-- [ ] 整合 Open Food Facts API（`https://world.openfoodfacts.org/cgi/search.pl`）
-- [ ] 自建食品快取（常用食物存入自己的 Supabase table）
-- [ ] 搜尋結果卡片 → 確認份量 → 寫入 `food_logs` + `food_log_items`
+- [x] 整合 Open Food Facts API（`https://world.openfoodfacts.org/cgi/search.pl`）
+- [x] 自建食品快取（常用食物存入自己的 Supabase table）
+- [x] 搜尋結果卡片 → 確認份量 → 寫入 `food_logs` + `food_log_items`
 
 **拍照記錄**：
 
-- [ ] 上傳照片到 Supabase Storage（`food-photos` bucket）
-- [ ] 發到 AI Queue（`/functions/ai-photo-analyze`）
-- [ ] 分析完成後顯示食物列表讓用戶確認 → 寫入記錄
+- [x] 上傳照片到 Supabase Storage（`food-photos` bucket）
+- [x] 發到 AI Queue（Edge：`ai-photo-request` → QStash → `ai-photo-analyze`）
+- [x] 分析完成後顯示食物列表讓用戶確認 → 寫入記錄
 
 **每日記錄列表**：
 
-- [ ] 按餐次分組顯示今日記錄
-- [ ] 每筆可以刪除
-- [ ] 熱量加總顯示
+- [x] 按餐次分組顯示今日記錄
+- [x] 每筆可以刪除
+- [x] 熱量加總顯示
 
 ### P2-4 體重快速輸入
 

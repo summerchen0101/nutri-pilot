@@ -133,6 +133,42 @@ export type Database = {
         }
         Relationships: []
       }
+      food_cache: {
+        Row: {
+          brand: string | null
+          calories_per_100g: number
+          carb_g_per_100g: number
+          fat_g_per_100g: number
+          id: string
+          name: string
+          off_code: string | null
+          protein_g_per_100g: number
+          updated_at: string | null
+        }
+        Insert: {
+          brand?: string | null
+          calories_per_100g: number
+          carb_g_per_100g?: number
+          fat_g_per_100g?: number
+          id?: string
+          name: string
+          off_code?: string | null
+          protein_g_per_100g?: number
+          updated_at?: string | null
+        }
+        Update: {
+          brand?: string | null
+          calories_per_100g?: number
+          carb_g_per_100g?: number
+          fat_g_per_100g?: number
+          id?: string
+          name?: string
+          off_code?: string | null
+          protein_g_per_100g?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       food_log_items: {
         Row: {
           brand: string | null
@@ -206,6 +242,39 @@ export type Database = {
           logged_at?: string | null
           meal_type?: string
           method?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      photo_analysis_jobs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          result_json: Json | null
+          status: string
+          storage_path: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          result_json?: Json | null
+          status?: string
+          storage_path: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          result_json?: Json | null
+          status?: string
+          storage_path?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

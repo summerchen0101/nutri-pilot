@@ -113,7 +113,7 @@ export async function POST(req: Request) {
 
   // 2. 發到 QStash
   await fetch(process.env.QSTASH_URL + '/v2/publish/' +
-    process.env.SUPABASE_FUNCTIONS_URL + '/ai-menu-generate', {
+    process.env.EDGE_FUNCTIONS_URL + '/ai-menu-generate', {
     method: 'POST',
     headers: {
       Authorization: 'Bearer ' + process.env.QSTASH_TOKEN,
