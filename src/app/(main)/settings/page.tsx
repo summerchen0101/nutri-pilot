@@ -6,6 +6,67 @@ import {
 } from '@/app/(main)/settings/settings-view';
 import { createClient } from '@/lib/supabase/server';
 
+function normalizeSubscriptions(
+  raw: unknown,
+): SettingsInitialData['subscriptions'] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((s) => {
+    const row = s as {
+      id: string;
+      status: string;
+      frequency: string;
+      next_ship_at: string | null;
+      created_at: string | null;
+      subscription_items?: unknown;
+    };
+    const itemsIn = row.subscription_items;
+    const itemsOut: NonNullable<
+      SettingsInitialData['subscriptions'][0]['subscription_items']
+    > = [];
+    if (Array.isArray(itemsIn)) {
+      for (const it of itemsIn) {
+        const i = it as { qty: number; variant: unknown };
+        const v = i.variant;
+        const varRow = (Array.isArray(v) ? v[0] : v) as
+          | {
+              label: string;
+              price: number;
+              sub_price: number | null;
+              product: unknown;
+            }
+          | null
+          | undefined;
+        if (!varRow) {
+          itemsOut.push({ qty: i.qty, variant: null });
+          continue;
+        }
+        const p = varRow.product;
+        const prod = (Array.isArray(p) ? p[0] : p) as
+          | { name: string }
+          | null
+          | undefined;
+        itemsOut.push({
+          qty: i.qty,
+          variant: {
+            label: varRow.label,
+            price: Number(varRow.price),
+            sub_price: varRow.sub_price,
+            product: prod ? { name: prod.name } : null,
+          },
+        });
+      }
+    }
+    return {
+      id: row.id,
+      status: row.status,
+      frequency: row.frequency,
+      next_ship_at: row.next_ship_at,
+      created_at: row.created_at,
+      subscription_items: itemsOut,
+    };
+  });
+}
+
 export default async function SettingsPage() {
   const supabase = createClient();
   const {
@@ -35,7 +96,24 @@ export default async function SettingsPage() {
       .maybeSingle(),
     supabase
       .from('subscriptions')
-      .select('id, status, frequency, next_ship_at, created_at')
+      .select(
+        `
+        id,
+        status,
+        frequency,
+        next_ship_at,
+        created_at,
+        subscription_items (
+          qty,
+          variant:product_variants (
+            label,
+            price,
+            sub_price,
+            product:products ( name )
+          )
+        )
+      `,
+      )
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
   ]);
@@ -60,7 +138,7 @@ export default async function SettingsPage() {
       dailyCalTarget: Number(goal.daily_cal_target),
       targetDate: goal.target_date ?? null,
     },
-    subscriptions: subscriptions ?? [],
+    subscriptions: normalizeSubscriptions(subscriptions),
   };
 
   return <SettingsView initial={initial} />;

@@ -1,3 +1,137 @@
-export default function ShopPage() {
-  return null;
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+
+import type { ShopProductRow } from '@/app/(main)/shop/shop-home-client';
+import { ShopHomeClient } from '@/app/(main)/shop/shop-home-client';
+import { ensureShopScores } from '@/app/(main)/shop/actions';
+import {
+  DIET_METHOD_OPTIONS,
+  DIET_TYPE_OPTIONS,
+} from '@/lib/onboarding/constants';
+import { createClient } from '@/lib/supabase/server';
+
+export default async function ShopPage() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect('/login');
+
+  await ensureShopScores(user.id);
+
+  const [
+    { data: profile },
+    { data: goal },
+    { data: plan },
+    { data: scores },
+    { data: catalog },
+    { data: brandCounts },
+  ] = await Promise.all([
+    supabase
+      .from('user_profiles')
+      .select('diet_type, allergens')
+      .eq('user_id', user.id)
+      .single(),
+    supabase
+      .from('user_goals')
+      .select('type')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle(),
+    supabase
+      .from('diet_plans')
+      .select('diet_method')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle(),
+    supabase
+      .from('user_product_scores')
+      .select('product_id, score')
+      .eq('user_id', user.id),
+    supabase
+      .from('products')
+      .select(
+        `
+      id,
+      name,
+      slug,
+      image_url,
+      category,
+      calories,
+      protein_g,
+      sugar_g,
+      diet_tags,
+      cert_tags,
+      avg_rating,
+      brand:brands ( id, name, slug, logo_url ),
+      variants:product_variants ( id, label, price, sub_price, stock )
+    `,
+      )
+      .eq('is_active', true),
+    supabase.from('products').select('brand_id').eq('is_active', true),
+  ]);
+
+  if (!profile || !goal || !plan) redirect('/onboarding');
+
+  const scoreMap = new Map(
+    (scores ?? []).map((s) => [s.product_id as string, Number(s.score)]),
+  );
+
+  const brandCountMap = new Map<string, number>();
+  for (const row of brandCounts ?? []) {
+    const bid = row.brand_id as string;
+    brandCountMap.set(bid, (brandCountMap.get(bid) ?? 0) + 1);
+  }
+
+  const { data: brands } = await supabase
+    .from('brands')
+    .select('id, name, slug, logo_url')
+    .eq('is_active', true)
+    .order('name');
+
+  const dietTypeLabel =
+    DIET_TYPE_OPTIONS.find((o) => o.value === profile.diet_type)?.label ??
+    profile.diet_type;
+  const dietMethodLabel =
+    DIET_METHOD_OPTIONS.find((o) => o.value === plan.diet_method)?.label ??
+    plan.diet_method;
+
+  const allergenLabels = profile.allergens ?? [];
+
+  return (
+    <div>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[20px] font-medium text-foreground">健康商城</h1>
+          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+            為你的「{dietMethodLabel}」計畫篩選；已依過敏原（
+            {allergenLabels.length ? allergenLabels.join('、') : '無'}
+            ）排除不適合商品。
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            飲食習慣：{dietTypeLabel}
+          </p>
+        </div>
+        <Link
+          href="/shop/cart"
+          className="shrink-0 rounded-[10px] border-[1.5px] border-[#4C956C] px-3 py-2 text-[13px] font-medium text-[#4C956C] hover:bg-[#E8F5EE]"
+        >
+          購物車
+        </Link>
+      </div>
+
+      <ShopHomeClient
+        initialProducts={(catalog ?? []).map((p) => ({
+          ...(p as unknown as Omit<ShopProductRow, 'score'>),
+          score: scoreMap.get(p.id as string) ?? 0,
+        }))}
+        brands={(brands ?? []).map((b) => ({
+          ...b,
+          productCount: brandCountMap.get(b.id as string) ?? 0,
+        }))}
+        dietMethod={plan.diet_method}
+      />
+    </div>
+  );
 }

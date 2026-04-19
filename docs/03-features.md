@@ -207,44 +207,43 @@ export function calcRecommendScore(
 
 ### P4-1 商品資料初始化
 
-- [ ] 建立測試品牌（直接在 Supabase Studio 插入）
-- [ ] 建立測試商品（10–20 個，覆蓋不同 dietTags）
-- [ ] 建立 ProductVariant（每個商品至少 1 個規格）
-- [ ] 在 Stripe 建立對應的 Product + Price（一次性 + 訂閱）
+- [x] 建立測試品牌（migration `008_shop_seed_catalog.sql`，可改由 Studio 微調）
+- [x] 建立測試商品（15 個，覆蓋不同 diet_tags）
+- [x] 建立 ProductVariant（每個商品至少 1 個規格）
+- [ ] 在 Stripe 建立對應的 Product + Price（一次性 + 訂閱），並回填 `product_variants.stripe_price_id`／`stripe_sub_price_id`
 
 ### P4-2 商城首頁 `/shop`
 
-- [ ] 個人化說明文字（顯示「為 {飲食法} 用戶過濾」）
-- [ ] 分類橫向切換（全部 / 堅果 / 蛋白棒 / 保健品 / 飲品 / 點心 / 代餐）
-- [ ] 篩選 Chips（符合飲食法 / 高蛋白 / 低糖 / 有機）
-- [ ] 商品卡格（推薦分數排序，即時用 `user_product_scores` 查）
-- [ ] 精選品牌卡列
+- [x] 個人化說明文字（顯示「為 {飲食法} 用戶過濾」）
+- [x] 分類橫向切換（全部 / 堅果 / 蛋白棒 / 保健品 / 飲品 / 點心 / 代餐）
+- [x] 篩選 Chips（符合飲食法 / 高蛋白 / 低糖 / 有機）
+- [x] 商品卡格（推薦分數排序，即時用 `user_product_scores` 查）
+- [x] 精選品牌卡列
 
 ### P4-3 商品詳情頁 `/shop/[productId]`
 
-- [ ] 商品圖 + 基本資訊 + 品牌標籤
-- [ ] 「為什麼適合你」區塊（用 `generateFitReasons()` 函數）
-- [ ] 規格選擇 + 數量選擇
-- [ ] 購買方式切換（單次 / 訂閱）
-- [ ] 訂閱頻率選擇（每週 / 每兩週 / 每月）
-- [ ] 加入購物車 / 立即訂閱按鈕
-- [ ] 完整營養標示表格
-- [ ] 成分與產地 + 認證標籤
-- [ ] 品牌故事卡 + 查看全系列
+- [x] 商品圖 + 基本資訊 + 品牌標籤
+- [x] 「為什麼適合你」區塊（用 `generateFitReasons()` 函數）
+- [x] 規格選擇 + 數量選擇
+- [x] 購買方式切換（單次 / 訂閱）
+- [x] 訂閱頻率選擇（每週 / 每兩週 / 每月）
+- [x] 加入購物車 / 立即訂閱按鈕
+- [x] 完整營養標示表格
+- [x] 成分與產地 + 認證標籤
+- [x] 品牌故事卡 + 查看全系列
 
 ### P4-4 購物車 + 結帳（Stripe）
 
-- [ ] 購物車（Zustand 管理，不存 DB，結帳時才送出）
-- [ ] Stripe Checkout Session 建立（Edge Function）
-- [ ] 成功頁（Stripe redirect 後）
-- [ ] Stripe Webhook 接收（Edge Function `/functions/stripe-webhook`）
-  - `payment_intent.succeeded` → 寫入 `orders` + `order_items`
-  - `customer.subscription.created` → 寫入 `subscriptions`
-  - `customer.subscription.updated` → 更新 `subscriptions.status`
+- [x] 購物車（Zustand 管理，不存 DB，結帳時才送出）
+- [x] Stripe Checkout Session 建立（Edge Function）
+- [x] 成功頁（Stripe redirect 後）
+- [x] Stripe Webhook 接收（Edge Function `stripe-webhook`）
+  - 實作以 `checkout.session.completed`（單次）→ 寫入 `orders` + `order_items`（見 `/docs/changes/2026-04-20-phase4-shop-stripe.md`）
+  - `customer.subscription.created`／`updated` → 寫入／更新 `subscriptions` + `subscription_items`
 
 ### P4-5 訂閱管理
 
-- [ ] 個人設定內的「我的訂閱」區塊
-- [ ] 顯示訂閱商品、下次寄送日、金額
-- [ ] 暫停 / 取消訂閱（呼叫 Stripe API → Webhook 同步回 DB）
-- [ ] 修改頻率（同上）
+- [x] 個人設定內的「我的訂閱」區塊
+- [x] 顯示訂閱商品、下次寄送日、金額
+- [x] 暫停 / 取消訂閱（呼叫 Stripe API → Webhook 同步回 DB）
+- [x] 修改頻率（同上）

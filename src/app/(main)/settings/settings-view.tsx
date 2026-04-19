@@ -22,6 +22,7 @@ import {
   saveGoals,
   saveProfileName,
 } from '@/app/(main)/settings/actions';
+import { subscriptionAction } from '@/app/(main)/shop/actions';
 
 const selectClass =
   'flex h-10 w-full rounded-[10px] border-[0.5px] border-border bg-card px-3 text-[13px] text-foreground focus-visible:outline-none focus-visible:border-[#4C956C] focus-visible:ring-2 focus-visible:ring-[#4C956C]/12';
@@ -49,6 +50,15 @@ export type SettingsInitialData = {
     frequency: string;
     next_ship_at: string | null;
     created_at: string | null;
+    subscription_items?: {
+      qty: number;
+      variant: {
+        label: string;
+        price: number;
+        sub_price: number | null;
+        product: { name: string } | null;
+      } | null;
+    }[];
   }[];
 };
 
@@ -84,6 +94,8 @@ function freqLabel(f: string): string {
 function statusLabel(s: string): string {
   const m: Record<string, string> = {
     active: '進行中',
+    paused: '已暫停',
+    cancelled: '已取消',
     canceled: '已取消',
     past_due: '付款逾期',
     unpaid: '未付款',
@@ -507,26 +519,136 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
             </p>
           : (
             <ul className="mt-3 space-y-3">
-              {initial.subscriptions.map((s) => (
-                <li
-                  key={s.id}
-                  className="rounded-[10px] bg-secondary/60 px-3 py-2.5 text-[13px]"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-foreground">
-                      {statusLabel(s.status)}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {freqLabel(s.frequency)}
-                    </span>
-                  </div>
-                  {s.next_ship_at ?
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      下次寄送 · {s.next_ship_at}
-                    </p>
-                  : null}
-                </li>
-              ))}
+              {initial.subscriptions.map((s) => {
+                const firstItem = s.subscription_items?.[0];
+                const displayName =
+                  firstItem?.variant?.product?.name ?? '訂閱商品';
+                const lineLabel = firstItem?.variant?.label ?? '';
+                const amount =
+                  firstItem?.variant?.sub_price != null ?
+                    Number(firstItem.variant.sub_price)
+                  : firstItem?.variant?.price != null ?
+                    Number(firstItem.variant.price)
+                  : null;
+                return (
+                  <li
+                    key={s.id}
+                    className="rounded-[10px] bg-secondary/60 px-3 py-2.5 text-[13px]"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {displayName}
+                        </p>
+                        {lineLabel ?
+                          <p className="text-[11px] text-muted-foreground">
+                            {lineLabel}
+                          </p>
+                        : null}
+                      </div>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
+                        {statusLabel(s.status)}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                      <span>{freqLabel(s.frequency)}</span>
+                      {amount != null ?
+                        <span className="tabular-nums">
+                          NT$ {amount.toFixed(0)}／期
+                        </span>
+                      : null}
+                    </div>
+                    {s.next_ship_at ?
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        下次寄送 · {new Date(s.next_ship_at).toLocaleString(
+                          'zh-TW',
+                        )}
+                      </p>
+                    : null}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {s.status === 'active' ?
+                        <>
+                          <button
+                            type="button"
+                            className="rounded-[8px] border-[0.5px] border-border bg-card px-2 py-1 text-[11px] font-medium text-foreground"
+                            disabled={pending}
+                            onClick={() => {
+                              startTransition(async () => {
+                                const r = await subscriptionAction({
+                                  subscriptionRowId: s.id,
+                                  action: 'pause',
+                                });
+                                if (!r.error) refresh();
+                              });
+                            }}
+                          >
+                            暫停
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-[8px] border-[0.5px] border-border bg-card px-2 py-1 text-[11px] font-medium text-foreground"
+                            disabled={pending}
+                            onClick={() => {
+                              startTransition(async () => {
+                                const r = await subscriptionAction({
+                                  subscriptionRowId: s.id,
+                                  action: 'cancel',
+                                });
+                                if (!r.error) refresh();
+                              });
+                            }}
+                          >
+                            取消訂閱
+                          </button>
+                        </>
+                      : null}
+                      {s.status === 'paused' ?
+                        <button
+                          type="button"
+                          className="rounded-[8px] border-[0.5px] border-border bg-card px-2 py-1 text-[11px] font-medium text-foreground"
+                          disabled={pending}
+                          onClick={() => {
+                            startTransition(async () => {
+                              const r = await subscriptionAction({
+                                subscriptionRowId: s.id,
+                                action: 'resume',
+                              });
+                              if (!r.error) refresh();
+                            });
+                          }}
+                        >
+                          恢復
+                        </button>
+                      : null}
+                      {(s.status === 'active' || s.status === 'paused') ?
+                        <select
+                          className="rounded-[8px] border-[0.5px] border-border bg-card px-2 py-1 text-[11px]"
+                          defaultValue={s.frequency}
+                          disabled={pending}
+                          onChange={(e) => {
+                            const frequency = e.target.value as
+                              | 'weekly'
+                              | 'biweekly'
+                              | 'monthly';
+                            startTransition(async () => {
+                              const r = await subscriptionAction({
+                                subscriptionRowId: s.id,
+                                action: 'update_frequency',
+                                frequency,
+                              });
+                              if (!r.error) refresh();
+                            });
+                          }}
+                        >
+                          <option value="weekly">每週寄送</option>
+                          <option value="biweekly">每兩週寄送</option>
+                          <option value="monthly">每月寄送</option>
+                        </select>
+                      : null}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
