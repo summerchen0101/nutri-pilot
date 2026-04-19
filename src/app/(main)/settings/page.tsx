@@ -1,24 +1,67 @@
-import { SignOutButton } from '@/components/auth/sign-out-button';
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { redirect } from 'next/navigation';
 
-export default function SettingsPage() {
-  return (
-    <div className="mx-auto max-w-lg space-y-6 px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-900">設定</h1>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle className="text-base">帳號</CardTitle>
-            <CardDescription>結束目前工作階段並返回登入頁。</CardDescription>
-          </div>
-          <SignOutButton />
-        </CardHeader>
-      </Card>
-    </div>
-  );
+import {
+  SettingsView,
+  type SettingsInitialData,
+} from '@/app/(main)/settings/settings-view';
+import { createClient } from '@/lib/supabase/server';
+
+export default async function SettingsPage() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect('/login');
+
+  const [
+    { data: profile, error: profileErr },
+    { data: goal },
+    { data: plan },
+    { data: subscriptions },
+  ] = await Promise.all([
+    supabase.from('user_profiles').select('*').eq('user_id', user.id).single(),
+    supabase
+      .from('user_goals')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle(),
+    supabase
+      .from('diet_plans')
+      .select('diet_method')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle(),
+    supabase
+      .from('subscriptions')
+      .select('id, status, frequency, next_ship_at, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false }),
+  ]);
+
+  if (profileErr || !profile) redirect('/onboarding');
+  if (!goal || !plan) redirect('/onboarding');
+
+  const initial: SettingsInitialData = {
+    name: profile.name ?? '',
+    heightCm: Number(profile.height_cm),
+    weightKg: Number(profile.weight_kg),
+    bmi: profile.bmi != null ? Number(profile.bmi) : null,
+    dietType: profile.diet_type,
+    mealFrequency: profile.meal_frequency ?? 3,
+    avoidFoods: profile.avoid_foods ?? [],
+    allergens: profile.allergens ?? [],
+    dietMethod: plan.diet_method,
+    goal: {
+      type: goal.type,
+      targetWeightKg: Number(goal.target_weight_kg),
+      weeklyRateKg: Number(goal.weekly_rate_kg),
+      dailyCalTarget: Number(goal.daily_cal_target),
+      targetDate: goal.target_date ?? null,
+    },
+    subscriptions: subscriptions ?? [],
+  };
+
+  return <SettingsView initial={initial} />;
 }
