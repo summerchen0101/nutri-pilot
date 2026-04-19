@@ -112,11 +112,13 @@ export default async function PlanPage() {
       : 0;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-900">飲食計畫</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        {plan.diet_method} · {plan.duration_days} 天計畫
-      </p>
+    <div className="space-y-4">
+      <header>
+        <h1 className="text-xl font-medium text-foreground">飲食計畫</h1>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          {plan.diet_method} · {plan.duration_days} 天計畫
+        </p>
+      </header>
       <PlanView
         plan={plan}
         windowDates={windowDates}

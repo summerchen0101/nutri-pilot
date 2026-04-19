@@ -21,8 +21,17 @@
 
 - 熱量圓環、今日餐食、AI 建議、連續打卡 badge：需額外 server 資料查詢，依指示未改 API／查詢邏輯。
 
+### 飲食計畫（`/plan`）
+
+- `page.tsx`：移除 `max-w-3xl` 外層（由 `MainAppShell` 負責寬度），標題 `text-xl font-medium`、副標 `text-[13px]`。
+- `plan-view.tsx`：計畫進度卡／達成率大字＋`h-[5px]` track（`bg-secondary`）與綠色 fill（`#1D9E75`）。
+- 7 日 pill：今日 `#1B7A5A`、完成日 `#E0F5EE`／`#0F6E56`、未來 `bg-secondary`；選取加 `ring`。
+- 每餐一張 `rounded-xl border-[0.5px] border-border bg-card p-4`；右側打卡改為方形 checkbox 樣式（`rounded-[10px]`、已勾 `#E0F5EE`）。
+- 生成中 Skeleton：`animate-pulse`、`rounded-xl`、`bg-secondary`。
+- 錯誤區塊：`bg-[#FCEBEB]`；modal：`rounded-2xl`、`bg-foreground/35` 遮罩。
+
 ### 待辦（後續 MR／提交）
 
-- Plan、Log、Settings 等頁面視覺與殼層 padding 對齊。
+- Log、Settings 等頁面視覺與殼層 padding 對齊。
 - Analytics／Shop／Admin 目前頁面為空，依規格跳過或僅占位。
 - Recharts 統一樣式（待 Analytics 有圖表後）。
