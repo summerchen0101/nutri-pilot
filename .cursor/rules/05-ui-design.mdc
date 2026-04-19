@@ -1,0 +1,70 @@
+---
+description: UI 設計系統，所有元件的色彩、字體、間距、圓角規範
+globs: "**/*.tsx,**/*.css,**/*.module.css,**/components/**,**/app/**"
+alwaysApply: false
+---
+
+# UI 設計規範
+
+完整規格見 `/docs/09-ui-design.md`，以下是高頻使用的快速參考。
+
+## 色彩
+
+主色 Green：`#1B7A5A`（按鈕、主互動）、`#E0F5EE`（背景淡色）
+輔色 Amber：`#EF9F27`（脂肪進度、警示）
+第三色 Blue：`#378ADD`（碳水進度）、`#E6F1FB`（AI 建議背景）
+危險色：`#E55A3C`（刪除按鈕）、`#E24B4A`（錯誤文字）
+
+中性色全用 CSS 變數（`--color-text-primary` 等），自動 dark mode。
+**不硬寫 `#000`、`#fff`、`#333` 等純黑純白。**
+
+## 字體
+
+```
+頁面標題  20px / 500
+區塊標題  15px / 500
+內文      13px / 400
+輔助文字  11px / 400
+nav 標籤  10px / 400
+數字大值  20px / 500，單位縮為 13px / 400
+最粗只到 font-weight: 500，不用 600 / 700
+```
+
+## 邊框
+
+所有邊框 `0.5px`，不用 `1px`。
+```css
+卡片預設：  border: 0.5px solid var(--color-border-tertiary)
+hover：     border-color: var(--color-border-secondary)
+主色強調：  border: 1.5px solid #1B7A5A
+input focus：border-color: #1B7A5A; box-shadow: 0 0 0 2px rgba(27,122,90,.12)
+```
+
+## 圓角
+
+```
+badge / tag     border-radius: 9999px
+小按鈕          border-radius: 8px
+按鈕 / 輸入框   border-radius: 10px
+卡片            border-radius: 12px（最常用）
+modal / sheet   border-radius: 16px
+```
+
+## 常用元件 Tailwind class 對照
+
+```
+主按鈕：    bg-[#1B7A5A] text-white rounded-[10px] px-4 py-2 text-[13px] font-medium
+次要按鈕：  border border-[#1B7A5A] text-[#1B7A5A] rounded-[10px] px-4 py-2 text-[13px]
+卡片：      bg-background border border-[0.5px] border-border rounded-xl p-4
+成功 pill： bg-[#E0F5EE] text-[#0F6E56] rounded-full px-2.5 py-0.5 text-[11px] font-medium
+AI 卡：     bg-[#E6F1FB] border border-[#B5D4F4] rounded-xl p-3.5
+指標格：    bg-secondary rounded-[10px] p-3 cursor-pointer
+```
+
+## 禁止
+
+- 不用漸層背景
+- 不用 box-shadow 做層次
+- 不用 font-weight 超過 500
+- 不用低於 10px 的字
+- 商城頁不做即時熱量對比，只做長期飲食計畫符合度說明
