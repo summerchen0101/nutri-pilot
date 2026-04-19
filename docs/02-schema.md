@@ -174,6 +174,30 @@ CREATE TABLE vital_logs (
   logged_at   TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, date)
 );
+
+-- 食品營養快取（Open Food Facts / 衛福部 / USDA / AI 估算等；migration 002 建立、004 擴充）
+CREATE TABLE food_cache (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  off_code            TEXT,
+  source              TEXT NOT NULL DEFAULT 'off'
+                      CHECK (source IN ('off', 'mohw_tw', 'usda', 'ai_estimate', 'user')),
+  external_id         TEXT,
+  name                TEXT NOT NULL,
+  alias               TEXT[],
+  brand               TEXT,
+  calories_per_100g   NUMERIC(10,2) NOT NULL,
+  carb_g_per_100g     NUMERIC(10,2) NOT NULL DEFAULT 0,
+  protein_g_per_100g  NUMERIC(10,2) NOT NULL DEFAULT 0,
+  fat_g_per_100g      NUMERIC(10,2) NOT NULL DEFAULT 0,
+  fiber_g_per_100g    NUMERIC(10,2),
+  sodium_mg_per_100g  NUMERIC(10,2),
+  is_verified         BOOLEAN DEFAULT FALSE,
+  updated_at          TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE NULLS DISTINCT (off_code)
+);
+
+CREATE INDEX food_cache_name_lower ON food_cache (lower(name));
+CREATE INDEX food_cache_name_search ON food_cache USING gin(to_tsvector('simple', name));
 ```
 
 ---

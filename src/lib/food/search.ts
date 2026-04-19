@@ -76,8 +76,15 @@ export async function searchFoods(
     fat_g_per_100g: Number(row.fat_g_per_100g),
   }));
 
-  let offHits: FoodSearchHit[] = [];
-  try {
+  const offHeaders = {
+    Accept: 'application/json',
+    // OFF 要求可識別的 User-Agent，否則常回空陣列或 403
+    'User-Agent': 'NutriGuard/2 (https://github.com/; log search)',
+  };
+
+  async function fetchOffHits(
+    extraParams: Record<string, string>,
+  ): Promise<FoodSearchHit[]> {
     const url =
       `https://world.openfoodfacts.org/cgi/search.pl?` +
       new URLSearchParams({
@@ -85,37 +92,39 @@ export async function searchFoods(
         search_simple: '1',
         action: 'process',
         json: '1',
-        lc: 'zh',
-        cc: 'tw',
         page_size: '12',
+        ...extraParams,
       });
+    const res = await fetch(url.toString(), { headers: offHeaders });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { products?: Record<string, unknown>[] };
+    const products = data.products ?? [];
+    return products
+      .map((p) => mapOffProduct(p))
+      .filter((x): x is FoodSearchHit => x !== null);
+  }
 
-    const res = await fetch(url.toString(), {
-      headers: { Accept: 'application/json' },
-    });
+  let offHits: FoodSearchHit[] = [];
+  try {
+    offHits = await fetchOffHits({ lc: 'zh', cc: 'tw' });
+    if (offHits.length === 0) {
+      offHits = await fetchOffHits({});
+    }
 
-    if (res.ok) {
-      const data = (await res.json()) as { products?: Record<string, unknown>[] };
-      const products = data.products ?? [];
-      offHits = products
-        .map((p) => mapOffProduct(p))
-        .filter((x): x is FoodSearchHit => x !== null);
-
-      for (const hit of offHits.slice(0, 10)) {
-        if (!hit.offCode) continue;
-        await supabase.from('food_cache').upsert(
-          {
-            off_code: hit.offCode,
-            name: hit.name,
-            brand: hit.brand,
-            calories_per_100g: hit.calories_per_100g,
-            carb_g_per_100g: hit.carb_g_per_100g,
-            protein_g_per_100g: hit.protein_g_per_100g,
-            fat_g_per_100g: hit.fat_g_per_100g,
-          },
-          { onConflict: 'off_code' },
-        );
-      }
+    for (const hit of offHits.slice(0, 10)) {
+      if (!hit.offCode) continue;
+      await supabase.from('food_cache').upsert(
+        {
+          off_code: hit.offCode,
+          name: hit.name,
+          brand: hit.brand,
+          calories_per_100g: hit.calories_per_100g,
+          carb_g_per_100g: hit.carb_g_per_100g,
+          protein_g_per_100g: hit.protein_g_per_100g,
+          fat_g_per_100g: hit.fat_g_per_100g,
+        },
+        { onConflict: 'off_code' },
+      );
     }
   } catch {
     /* OFF 失敗時仍返回快取 */
