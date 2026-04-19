@@ -8,12 +8,13 @@ export type ButtonVariant = 'default' | 'outline' | 'ghost' | 'destructive';
 
 const variantClass: Record<ButtonVariant, string> = {
   default:
-    'bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-slate-400',
+    'bg-[#1B7A5A] text-white hover:bg-[#0F6E56] focus-visible:ring-[#1B7A5A]/25',
   outline:
-    'border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 focus-visible:ring-slate-400',
-  ghost: 'text-slate-900 hover:bg-slate-100 focus-visible:ring-slate-400',
+    'border-[1.5px] border-[#1B7A5A] bg-transparent text-[#1B7A5A] hover:bg-[#E0F5EE] focus-visible:ring-[#1B7A5A]/20',
+  ghost:
+    'border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-[#1B7A5A]/15',
   destructive:
-    'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-400',
+    'bg-[#E55A3C] text-white hover:opacity-95 focus-visible:ring-[#E55A3C]/25',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -31,8 +32,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type={type}
         disabled={disabled}
         className={cn(
-          'inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'inline-flex items-center justify-center rounded-[10px] px-4 py-2 text-[13px] font-medium transition-colors duration-150 ease-out',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           'disabled:pointer-events-none disabled:opacity-50',
           variantClass[variant],
           className,

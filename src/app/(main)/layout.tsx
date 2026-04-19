@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
+import { MainAppShell } from '@/components/layout/main-app-shell';
 import { hasCompletedOnboarding } from '@/lib/onboarding/status';
 import { createClient } from '@/lib/supabase/server';
 
@@ -20,5 +21,5 @@ export default async function MainLayout({
     redirect('/onboarding');
   }
 
-  return children;
+  return <MainAppShell>{children}</MainAppShell>;
 }
