@@ -41,38 +41,16 @@ function inferPortionCategory(
   return 'generic';
 }
 
-function quickPortions(
-  cat: ReturnType<typeof inferPortionCategory>,
-): { label: string; amount: number }[] {
-  switch (cat) {
-    case 'starch':
-      return [
-        { label: '半碗 100g', amount: 100 },
-        { label: '一碗 200g', amount: 200 },
-        { label: '一碗半 300g', amount: 300 },
-      ];
-    case 'meat':
-      return [
-        { label: '半份 75g', amount: 75 },
-        { label: '一份 150g', amount: 150 },
-        { label: '一份半 225g', amount: 225 },
-      ];
-    case 'drink':
-      return [
-        { label: '240ml', amount: 240 },
-        { label: '360ml', amount: 360 },
-        { label: '480ml', amount: 480 },
-        { label: '700ml', amount: 700 },
-      ];
-    default:
-      return [
-        { label: '30g', amount: 30 },
-        { label: '50g', amount: 50 },
-        { label: '100g', amount: 100 },
-        { label: '150g', amount: 150 },
-        { label: '200g', amount: 200 },
-      ];
-  }
+/** Default portion slider range (applies to g/ml). Future: user settings. */
+const PORTION_SLIDER_MIN = 100;
+const PORTION_SLIDER_MAX = 1000;
+
+function clampPortionAmount(n: number): number {
+  if (!Number.isFinite(n) || n <= 0) return PORTION_SLIDER_MIN;
+  return Math.min(
+    PORTION_SLIDER_MAX,
+    Math.max(PORTION_SLIDER_MIN, Math.round(n)),
+  );
 }
 
 function foodSourceDot(row: FoodCacheRow): { bg: string; title: string } {
@@ -90,6 +68,15 @@ function scaleNutrientInt(
   if (per100 == null || !Number.isFinite(Number(per100))) return null;
   if (!Number.isFinite(portionAmount) || portionAmount <= 0) return null;
   return Math.round((Number(per100) / 100) * portionAmount);
+}
+
+function macrosFromQuantity(hit: FoodCacheRow, q: number) {
+  return {
+    calories: Math.round((hit.calories_per_100g / 100) * q),
+    protein_g: Math.round((hit.protein_g_per_100g / 100) * q),
+    carb_g: Math.round((hit.carb_g_per_100g / 100) * q),
+    fat_g: Math.round((hit.fat_g_per_100g / 100) * q),
+  };
 }
 
 function parsePortionAmount(s: string): number {
@@ -142,12 +129,6 @@ export function AddFoodFromSearchPanel({
   const [aiConfirmed, setAiConfirmed] = useState(false);
   const [addBusy, setAddBusy] = useState(false);
 
-  const category = useMemo(
-    () => inferPortionCategory(selectedHit.name),
-    [selectedHit.name],
-  );
-  const presets = useMemo(() => quickPortions(category), [category]);
-
   useEffect(() => {
     const cat = inferPortionCategory(selectedHit.name);
     setPortionStr(cat === 'drink' ? '240' : '100');
@@ -158,6 +139,7 @@ export function AddFoodFromSearchPanel({
   }, [selectedHit.id, selectedHit.name]);
 
   const portionAmount = parsePortionAmount(portionStr);
+  const sliderValue = clampPortionAmount(portionAmount);
 
   const computed = useMemo(() => {
     const q =
@@ -235,8 +217,9 @@ export function AddFoodFromSearchPanel({
     resetMacrosForQuantity();
   };
 
-  const setPortionFromPreset = (amount: number) => {
-    setPortionStr(String(amount));
+  const onPortionBlur = () => {
+    const next = clampPortionAmount(parsePortionAmount(portionStr));
+    setPortionStr(String(next));
     resetMacrosForQuantity();
   };
 
@@ -258,7 +241,17 @@ export function AddFoodFromSearchPanel({
   async function onSubmit() {
     if (!canSubmit) return;
     setAddBusy(true);
-    const q = portionAmount;
+    const q = clampPortionAmount(portionAmount);
+    const macrosPayload = hasManual
+      ? {
+          calories: displayMac.calories,
+          carb_g: displayMac.carb_g,
+          protein_g: displayMac.protein_g,
+          fat_g: displayMac.fat_g,
+        }
+      : macrosFromQuantity(selectedHit, q);
+    const fiberSubmit = scaleNutrientInt(selectedHit.fiber_g_per_100g, q);
+    const sodiumSubmit = scaleNutrientInt(selectedHit.sodium_mg_per_100g, q);
     const result = await addFoodFromSearchAction({
       mealType,
       date,
@@ -266,14 +259,9 @@ export function AddFoodFromSearchPanel({
       confirmedAiEstimate:
         selectedHit.source === 'ai_estimate' ? aiConfirmed : undefined,
       isVerified: !hasManual,
-      macros: {
-        calories: displayMac.calories,
-        carb_g: displayMac.carb_g,
-        protein_g: displayMac.protein_g,
-        fat_g: displayMac.fat_g,
-      },
-      fiber_g: fiberMg,
-      sodium_mg: sodiumMg,
+      macros: macrosPayload,
+      fiber_g: fiberSubmit,
+      sodium_mg: sodiumSubmit,
       hit: {
         name: selectedHit.name,
         brand: selectedHit.brand,
@@ -297,18 +285,24 @@ export function AddFoodFromSearchPanel({
       {/* 份量 */}
       <div className="space-y-2">
         <p className="text-[13px] font-medium text-foreground">份量</p>
-        <div className="flex flex-wrap gap-2">
-          {presets.map((p) => (
-            <Button
-              key={p.label}
-              type="button"
-              variant="outline"
-              className="h-8 rounded-[10px] px-3 text-[11px] font-medium"
-              onClick={() => setPortionFromPreset(p.amount)}
-            >
-              {p.label}
-            </Button>
-          ))}
+        <input
+          type="range"
+          min={PORTION_SLIDER_MIN}
+          max={PORTION_SLIDER_MAX}
+          step={1}
+          value={sliderValue}
+          onChange={(e) =>
+            onPortionStrChange(String(Number(e.target.value)))
+          }
+          className="h-2 w-full cursor-pointer accent-[#4C956C]"
+          aria-label="份量拉桿"
+          aria-valuemin={PORTION_SLIDER_MIN}
+          aria-valuemax={PORTION_SLIDER_MAX}
+          aria-valuenow={sliderValue}
+        />
+        <div className="flex justify-between text-[11px] text-muted-foreground">
+          <span>{PORTION_SLIDER_MIN}</span>
+          <span>{PORTION_SLIDER_MAX}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Input
@@ -316,6 +310,7 @@ export function AddFoodFromSearchPanel({
             className="min-w-[100px] flex-1 rounded-[10px] text-[13px]"
             value={portionStr}
             onChange={(e) => onPortionStrChange(e.target.value)}
+            onBlur={onPortionBlur}
             placeholder="份量"
             aria-label="份量數字"
           />
