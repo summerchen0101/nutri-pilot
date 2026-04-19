@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 
 import { logWeightAction } from '@/app/(main)/dashboard/actions';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils/cn';
 
 interface DashboardHomeProps {
   displayName: string;
+  /** Formatted on the server so SSR and hydration match (Intl differs in Node vs browser). */
+  dateLabel: string;
   latestWeightKg: number | null;
   latestWeightDate: string | null;
   heightCm: number;
@@ -88,6 +90,7 @@ function IconChart(props: { className?: string }) {
 
 export function DashboardHome({
   displayName,
+  dateLabel,
   latestWeightKg,
   latestWeightDate,
   heightCm,
@@ -98,16 +101,6 @@ export function DashboardHome({
   const [weightInput, setWeightInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-
-  const dateLabel = useMemo(
-    () =>
-      new Intl.DateTimeFormat('zh-Hant', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-      }).format(new Date()),
-    [],
-  );
 
   function submit() {
     setError(null);

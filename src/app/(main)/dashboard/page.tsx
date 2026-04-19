@@ -34,9 +34,16 @@ export default async function DashboardPage() {
       : Number(profile.weight_kg);
   const latestWeightDate = latestVital?.date ?? null;
 
+  const dateLabel = new Intl.DateTimeFormat('zh-Hant', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date());
+
   return (
     <DashboardHome
       displayName={profile.name}
+      dateLabel={dateLabel}
       latestWeightKg={Number.isFinite(latestWeightKg) ? latestWeightKg : null}
       latestWeightDate={latestWeightDate}
       heightCm={Number(profile.height_cm)}
