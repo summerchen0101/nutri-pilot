@@ -30,8 +30,14 @@
 - 生成中 Skeleton：`animate-pulse`、`rounded-xl`、`bg-secondary`。
 - 錯誤區塊：`bg-[#FCEBEB]`；modal：`rounded-2xl`、`bg-foreground/35` 遮罩。
 
+### 飲食紀錄（`/log`）
+
+- `page.tsx`：對齊 `MainAppShell`，標題 `text-xl font-medium`；右上角連結改為「總覽」→ `/dashboard`。
+- `log-client.tsx`：餐次 Tab／搜尋·拍照切換為 **pill**（`rounded-full`），active 主色、inactive **ghost + 0.5px 邊框**；今日熱量 **大字 + 單位縮小**；搜尋結果僅品名 + 來源色點；紀錄列表 **碳水／蛋白／脂肪** 語意色一行；列表卡片用共用 `Card`；拍照分析中 **Skeleton**；錯誤 `text-destructive`。
+- `add-food-from-search.tsx`：確認區塊 `bg-secondary rounded-xl border-[0.5px]`；2×2 營養格 **rounded-[10px]**、數值 **text-xl font-medium**；AI 警示 **`bg-[#FDF0D5] border-[#FAC775] rounded-xl`**；移除未定義之 `var(--color-*)`，改為 **foreground / border / muted** 等語意 class。
+
 ### 待辦（後續 MR／提交）
 
-- Log、Settings 等頁面視覺與殼層 padding 對齊。
+- Settings 等頁面視覺與殼層 padding 對齊。
 - Analytics／Shop／Admin 目前頁面為空，依規格跳過或僅占位。
 - Recharts 統一樣式（待 Analytics 有圖表後）。

@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { invokeAiPhotoRequestFromBrowser } from '@/lib/food/invoke-photo-request';
+import { cn } from '@/lib/utils/cn';
 import { createClient } from '@/lib/supabase/client';
 import type { FoodCacheRow } from '@/lib/food/search';
 import type { Json } from '@/types/supabase';
@@ -115,33 +116,42 @@ function sumLogNutrients(items: LogItemSnapshot[] | null): {
   );
 }
 
-const MACRO_SECONDARY_STYLE = {
-  color: 'var(--color-text-secondary, #64748b)',
-} as const;
-
-const MACRO_CAL_STYLE = { color: '#1B7A5A' } as const;
-
-const MACRO_TERTIARY_STYLE = {
-  color: 'var(--color-text-tertiary, #94a3b8)',
-} as const;
-
 function roundMacroG(n: number): number {
   return Math.round(Number(n));
 }
 
-function formatPrimaryMacroLine(it: LogItemSnapshot): ReactNode {
-  const kcal = Math.round(Number(it.calories));
-  const p = roundMacroG(it.protein_g);
-  const c = roundMacroG(it.carb_g);
-  const f = roundMacroG(it.fat_g);
+function MacrosOneLine(props: {
+  calories: number;
+  carb_g: number;
+  protein_g: number;
+  fat_g: number;
+}) {
+  const kcal = Math.round(Number(props.calories));
+  const c = roundMacroG(props.carb_g);
+  const p = roundMacroG(props.protein_g);
+  const f = roundMacroG(props.fat_g);
   return (
-    <span className="text-[11px] font-normal leading-snug">
-      <span style={MACRO_CAL_STYLE}>{kcal}kcal</span>
-      <span style={MACRO_SECONDARY_STYLE}>
-        {' '}
-        · 蛋白質 {p}g · 碳水 {c}g · 脂肪 {f}g
-      </span>
+    <span className="inline-flex flex-wrap items-baseline gap-x-1 text-[11px] font-normal leading-snug">
+      <span className="tabular-nums font-medium text-foreground">{kcal}</span>
+      <span className="font-normal text-muted-foreground">kcal</span>
+      <span className="text-muted-foreground">·</span>
+      <span className="tabular-nums text-[#378ADD]">碳水{c}g</span>
+      <span className="text-muted-foreground">·</span>
+      <span className="tabular-nums text-[#1B7A5A]">蛋白{p}g</span>
+      <span className="text-muted-foreground">·</span>
+      <span className="tabular-nums text-[#EF9F27]">脂肪{f}g</span>
     </span>
+  );
+}
+
+function formatPrimaryMacroLine(it: LogItemSnapshot): ReactNode {
+  return (
+    <MacrosOneLine
+      calories={it.calories}
+      carb_g={it.carb_g}
+      protein_g={it.protein_g}
+      fat_g={it.fat_g}
+    />
   );
 }
 
@@ -175,8 +185,7 @@ function LogItemNutrition({ item }: { item: LogItemSnapshot }) {
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="mt-0.5 block text-left text-[11px] font-normal leading-snug transition-opacity hover:opacity-80"
-            style={MACRO_TERTIARY_STYLE}
+            className="mt-0.5 block text-left text-[11px] font-normal leading-snug text-muted-foreground transition-opacity hover:opacity-80"
           >
             {open ? '收合 ‹' : '更多 ›'}
           </button>
@@ -184,10 +193,7 @@ function LogItemNutrition({ item }: { item: LogItemSnapshot }) {
             className="overflow-hidden transition-[max-height] duration-[150ms] ease-[ease]"
             style={{ maxHeight: open ? 96 : 0 }}
           >
-            <p
-              className="pt-1 text-[11px] font-normal leading-snug"
-              style={MACRO_SECONDARY_STYLE}
-            >
+            <p className="pt-1 text-[11px] font-normal leading-snug text-muted-foreground">
               纖維 {formatFiber(item)} · 鈉 {formatSodium(item)}
             </p>
           </div>
@@ -198,18 +204,13 @@ function LogItemNutrition({ item }: { item: LogItemSnapshot }) {
 }
 
 function formatLogTotalsLine(totals: ReturnType<typeof sumLogNutrients>) {
-  const kcal = Math.round(totals.calories);
-  const p = roundMacroG(totals.protein_g);
-  const c = roundMacroG(totals.carb_g);
-  const f = roundMacroG(totals.fat_g);
   return (
-    <span className="text-[11px] font-normal leading-snug">
-      <span style={MACRO_CAL_STYLE}>{kcal}kcal</span>
-      <span style={MACRO_SECONDARY_STYLE}>
-        {' '}
-        · 蛋白質 {p}g · 碳水 {c}g · 脂肪 {f}g
-      </span>
-    </span>
+    <MacrosOneLine
+      calories={totals.calories}
+      carb_g={totals.carb_g}
+      protein_g={totals.protein_g}
+      fat_g={totals.fat_g}
+    />
   );
 }
 
@@ -331,7 +332,6 @@ export function LogClient({
     };
   }, [activeJobId, applyPhotoJobUpdate]);
 
-  /** Realtime 未含此表時不會收到 UPDATE；輪詢後備避免畫面卡在 pending */
   useEffect(() => {
     if (!activeJobId) return;
 
@@ -497,31 +497,39 @@ export function LogClient({
     refresh();
   }
 
+  const pillPrimary =
+    'h-9 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-transparent';
+  const pillInactive =
+    'h-9 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
+
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <Link
           href="/plan"
-          className="text-sm font-medium text-slate-600 underline-offset-4 hover:text-slate-900 hover:underline"
+          className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           ← 飲食計畫
         </Link>
-        <p className="text-sm text-slate-500">
-          {date} · 今日熱量{' '}
-          <span className="font-semibold text-slate-900">
-            {Math.round(todayTotal)}
+        <p className="max-w-[min(100%,220px)] text-right text-[13px] leading-snug text-muted-foreground">
+          <span className="block tabular-nums text-foreground">
+            <span className="text-xl font-medium">{Math.round(todayTotal)}</span>
+            <span className="font-normal text-muted-foreground"> kcal</span>
           </span>
           {dailyCalTarget != null ? (
-            <>
-              {' '}
-              / 目標 {Math.round(Number(dailyCalTarget))} kcal
-            </>
-          ) : null}
+            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+              目標 {Math.round(Number(dailyCalTarget))} kcal · {date}
+            </span>
+          ) : (
+            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+              {date}
+            </span>
+          )}
         </p>
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle>新增紀錄</CardTitle>
           <CardDescription>
             選擇餐次後，以搜尋或拍照加入今日飲食。
@@ -533,8 +541,8 @@ export function LogClient({
               <Button
                 key={m}
                 type="button"
-                variant={mealTab === m ? 'default' : 'outline'}
-                className="h-9 px-3 text-xs"
+                variant={mealTab === m ? 'default' : 'ghost'}
+                className={mealTab === m ? pillPrimary : pillInactive}
                 onClick={() => setMealTab(m)}
               >
                 {MEAL_LABEL[m]}
@@ -542,19 +550,23 @@ export function LogClient({
             ))}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              variant={inputMode === 'search' ? 'default' : 'outline'}
-              className="h-9 px-3 text-xs"
+              variant={inputMode === 'search' ? 'default' : 'ghost'}
+              className={
+                inputMode === 'search' ? pillPrimary : pillInactive
+              }
               onClick={() => setInputMode('search')}
             >
               搜尋食品
             </Button>
             <Button
               type="button"
-              variant={inputMode === 'photo' ? 'default' : 'outline'}
-              className="h-9 px-3 text-xs"
+              variant={inputMode === 'photo' ? 'default' : 'ghost'}
+              className={
+                inputMode === 'photo' ? pillPrimary : pillInactive
+              }
               onClick={() => setInputMode('photo')}
             >
               拍照辨識
@@ -569,22 +581,23 @@ export function LogClient({
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               {searchBusy ? (
-                <p className="text-xs text-slate-500">搜尋中…</p>
+                <p className="text-[11px] text-muted-foreground">搜尋中…</p>
               ) : null}
               {searchError ? (
-                <p className="text-sm text-red-600">{searchError}</p>
+                <p className="text-[13px] text-destructive">{searchError}</p>
               ) : null}
 
-              <ul className="max-h-56 space-y-1.5 overflow-y-auto rounded-[12px] border border-[color:var(--color-border-tertiary)] p-2">
+              <ul className="max-h-56 space-y-1 overflow-y-auto rounded-xl border-[0.5px] border-border bg-card p-2">
                 {searchHits.map((h, i) => (
                   <li key={`${h.id}-${i}`}>
                     <button
                       type="button"
-                      className={`w-full rounded-lg border-l-2 py-2.5 pl-3 pr-2 text-left transition-colors ${
+                      className={cn(
+                        'w-full rounded-[10px] border-[0.5px] py-2.5 pl-3 pr-2 text-left transition-colors duration-150',
                         selectedHit?.id === h.id
                           ? 'border-[#1B7A5A] bg-[#E0F5EE]'
-                          : 'border-transparent hover:bg-[color:var(--color-background-secondary)]'
-                      }`}
+                          : 'border-transparent hover:bg-secondary',
+                      )}
                       onClick={() => setSelectedHit(h)}
                     >
                       <div className="flex items-start gap-2">
@@ -592,11 +605,11 @@ export function LogClient({
                           <FoodSourceDotInline row={h} />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-medium leading-snug text-[color:var(--color-text-primary)]">
+                          <p className="text-[13px] font-normal leading-snug text-foreground">
                             {h.name}
                           </p>
                           {h.brand ? (
-                            <p className="mt-0.5 text-[11px] leading-snug text-[color:var(--color-text-secondary)]">
+                            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
                               {h.brand}
                             </p>
                           ) : null}
@@ -631,43 +644,58 @@ export function LogClient({
                 onChange={(e) => void onPhotoFile(e.target.files?.[0] ?? null)}
               />
               {photoBusy ? (
-                <p className="text-sm text-slate-600">上傳並排入分析…</p>
-              ) : null}
-              {photoHint ? (
-                <p className="text-xs text-amber-700">{photoHint}</p>
-              ) : null}
-              {activeJobId && jobStatus && jobStatus !== 'ready' ? (
-                <p className="text-sm text-slate-600">
-                  AI 分析中（{jobStatus}）…
+                <p className="text-[13px] text-muted-foreground">
+                  上傳並排入分析…
                 </p>
               ) : null}
+              {photoHint ? (
+                <p className="text-[11px] text-[#854F0B]">{photoHint}</p>
+              ) : null}
+              {activeJobId && jobStatus && jobStatus !== 'ready' ? (
+                <div className="animate-pulse space-y-2 rounded-xl border-[0.5px] border-border bg-secondary p-4">
+                  <div className="h-3 w-2/5 rounded-[10px] bg-muted" />
+                  <div className="h-16 rounded-xl bg-muted/80" />
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    AI 分析中（{jobStatus}）…
+                  </p>
+                </div>
+              ) : null}
               {photoError ? (
-                <p className="text-sm text-red-600">{photoError}</p>
+                <p className="text-[13px] text-destructive">{photoError}</p>
               ) : null}
 
               {photoPreview?.length ? (
-                <div className="space-y-2 rounded-lg border border-slate-200 p-3">
-                  <p className="text-sm font-medium text-slate-800">
+                <div className="space-y-3 rounded-xl border-[0.5px] border-border bg-card p-4">
+                  <p className="text-[15px] font-medium text-foreground">
                     辨識結果（確認後寫入 {MEAL_LABEL[mealTab]}）
                   </p>
-                  <ul className="space-y-1 text-sm">
+                  <ul className="space-y-2 text-[13px]">
                     {photoPreview.map((it, idx) => (
                       <li
                         key={`${it.name}-${idx}`}
-                        className="flex justify-between gap-2 text-slate-700"
+                        className="flex justify-between gap-2 border-b-[0.5px] border-border pb-2 text-foreground last:border-b-0 last:pb-0"
                       >
-                        <span>
+                        <span className="min-w-0">
                           {it.name}{' '}
-                          <span className="text-slate-500">
+                          <span className="text-muted-foreground">
                             {Math.round(it.quantity_g)}g
                           </span>
                         </span>
-                        <span>{Math.round(it.calories)} kcal</span>
+                        <span className="tabular-nums shrink-0 text-[13px]">
+                          <span className="font-medium text-foreground">
+                            {Math.round(it.calories)}
+                          </span>
+                          <span className="font-normal text-muted-foreground">
+                            {' '}
+                            kcal
+                          </span>
+                        </span>
                       </li>
                     ))}
                   </ul>
                   <Button
                     type="button"
+                    className="w-full"
                     disabled={addBusy}
                     onClick={() => void onConfirmPhoto()}
                   >
@@ -680,25 +708,27 @@ export function LogClient({
         </CardContent>
       </Card>
 
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900">今日紀錄</h2>
-        <div className="mt-4 space-y-6">
+      <div className="space-y-4">
+        <h2 className="text-[15px] font-medium text-foreground">今日紀錄</h2>
+        <div className="space-y-5">
           {MEAL_ORDER.map((m) => {
             const logs = grouped.get(m) ?? [];
             return (
               <section key={m}>
-                <h3 className="text-sm font-medium text-slate-700">
+                <h3 className="text-[13px] font-medium text-foreground">
                   {MEAL_LABEL[m]}
                 </h3>
                 {logs.length === 0 ? (
-                  <p className="mt-1 text-sm text-slate-500">尚無紀錄</p>
+                  <p className="mt-1 text-[13px] text-muted-foreground">
+                    尚無紀錄
+                  </p>
                 ) : (
-                  <ul className="mt-2 space-y-3">
+                  <ul className="mt-2 space-y-2.5">
                     {logs.map((log) => (
                       <li key={log.id}>
-                        <Card className="border-slate-200">
-                          <CardContent className="flex flex-col gap-2 pt-4 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="space-y-1">
+                        <Card>
+                          <CardContent className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="space-y-2">
                               <div className="flex flex-wrap items-center gap-2">
                                 <Badge variant="secondary">
                                   {log.method === 'photo'
@@ -713,12 +743,12 @@ export function LogClient({
                                   )}
                                 </span>
                               </div>
-                              <ul className="space-y-2 text-sm text-slate-800">
+                              <ul className="space-y-2 text-[13px] text-foreground">
                                 {(log.food_log_items ?? []).map((it) => (
                                   <li key={it.id}>
                                     <div>
                                       <span>{it.name}</span>{' '}
-                                      <span className="text-slate-500">
+                                      <span className="text-muted-foreground">
                                         {Math.round(Number(it.quantity_g))}g
                                       </span>
                                     </div>
@@ -730,7 +760,7 @@ export function LogClient({
                             <Button
                               type="button"
                               variant="outline"
-                              className="h-9 shrink-0 px-3 text-xs"
+                              className="h-9 shrink-0 px-3 text-[13px]"
                               onClick={() => void onDeleteLog(log.id)}
                             >
                               刪除

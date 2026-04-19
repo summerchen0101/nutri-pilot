@@ -10,6 +10,7 @@ import {
 import { addFoodFromSearchAction } from '@/app/(main)/log/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils/cn';
 import type { FoodCacheRow } from '@/lib/food/search';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -117,8 +118,10 @@ interface AddFoodFromSearchProps {
   onError?: (message: string) => void;
 }
 
-const MACRO_PRIMARY = 'var(--color-text-primary, #0f172a)';
 const MACRO_CAL = '#1B7A5A';
+const MACRO_CARB = '#378ADD';
+const MACRO_PROTEIN = '#1B7A5A';
+const MACRO_FAT = '#EF9F27';
 
 export function AddFoodFromSearchPanel({
   selectedHit,
@@ -290,19 +293,17 @@ export function AddFoodFromSearchPanel({
   }
 
   return (
-    <div className="mt-3 space-y-4 rounded-xl border border-[color:var(--color-border-tertiary)] bg-[color:var(--color-background-secondary)] p-3">
+    <div className="mt-3 space-y-4 rounded-xl border-[0.5px] border-border bg-secondary p-4">
       {/* 份量 */}
       <div className="space-y-2">
-        <p className="text-[13px] font-medium text-[color:var(--color-text-primary)]">
-          份量
-        </p>
+        <p className="text-[13px] font-medium text-foreground">份量</p>
         <div className="-mx-1 flex gap-2 overflow-x-auto pb-1">
           {presets.map((p) => (
             <Button
               key={p.label}
               type="button"
               variant="outline"
-              className="h-8 shrink-0 rounded-lg px-3 text-[11px] font-medium"
+              className="h-8 shrink-0 rounded-[10px] px-3 text-[11px] font-medium"
               onClick={() => setPortionFromPreset(p.amount)}
             >
               {p.label}
@@ -318,25 +319,27 @@ export function AddFoodFromSearchPanel({
             placeholder="份量"
             aria-label="份量數字"
           />
-          <div className="flex shrink-0 rounded-[10px] border border-[color:var(--color-border-secondary)] p-0.5">
+          <div className="flex shrink-0 rounded-[10px] border-[0.5px] border-border bg-card p-0.5">
             <button
               type="button"
-              className={`rounded-[8px] px-3 py-1 text-[11px] font-medium transition-colors ${
+              className={cn(
+                'rounded-[8px] px-3 py-1 text-[11px] font-medium transition-colors duration-150',
                 portionUnit === 'g'
                   ? 'bg-[#E0F5EE] text-[#1B7A5A]'
-                  : 'text-[color:var(--color-text-secondary)]'
-              }`}
+                  : 'text-muted-foreground',
+              )}
               onClick={() => setPortionUnit('g')}
             >
               g
             </button>
             <button
               type="button"
-              className={`rounded-[8px] px-3 py-1 text-[11px] font-medium transition-colors ${
+              className={cn(
+                'rounded-[8px] px-3 py-1 text-[11px] font-medium transition-colors duration-150',
                 portionUnit === 'ml'
                   ? 'bg-[#E0F5EE] text-[#1B7A5A]'
-                  : 'text-[color:var(--color-text-secondary)]'
-              }`}
+                  : 'text-muted-foreground',
+              )}
               onClick={() => setPortionUnit('ml')}
             >
               ml
@@ -346,7 +349,7 @@ export function AddFoodFromSearchPanel({
       </div>
 
       {/* 營養 2x2 */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2.5">
         <MacroCell
           labelZh="熱量"
           labelEn=""
@@ -360,7 +363,7 @@ export function AddFoodFromSearchPanel({
           labelZh="蛋白質"
           labelEn="protein"
           unit="g"
-          valueColor={MACRO_PRIMARY}
+          valueColor={MACRO_PROTEIN}
           adjusted={Boolean(manual.protein_g)}
           displayValue={String(displayMac.protein_g)}
           onCommit={(v) => commitMacro('protein_g', v)}
@@ -369,7 +372,7 @@ export function AddFoodFromSearchPanel({
           labelZh="碳水"
           labelEn="carb"
           unit="g"
-          valueColor={MACRO_PRIMARY}
+          valueColor={MACRO_CARB}
           adjusted={Boolean(manual.carb_g)}
           displayValue={String(displayMac.carb_g)}
           onCommit={(v) => commitMacro('carb_g', v)}
@@ -378,7 +381,7 @@ export function AddFoodFromSearchPanel({
           labelZh="脂肪"
           labelEn="fat"
           unit="g"
-          valueColor={MACRO_PRIMARY}
+          valueColor={MACRO_FAT}
           adjusted={Boolean(manual.fat_g)}
           displayValue={String(displayMac.fat_g)}
           onCommit={(v) => commitMacro('fat_g', v)}
@@ -386,7 +389,7 @@ export function AddFoodFromSearchPanel({
       </div>
 
       {showSecondary ? (
-        <p className="text-[11px] leading-snug text-[color:var(--color-text-secondary)]">
+        <p className="text-[11px] leading-snug text-muted-foreground">
           {fiberMg != null && fiberMg > 0 ? <>纖維 {fiberMg}g</> : null}
           {fiberMg != null &&
           fiberMg > 0 &&
@@ -399,23 +402,17 @@ export function AddFoodFromSearchPanel({
       ) : null}
 
       {selectedHit.source === 'ai_estimate' ? (
-        <div
-          className="rounded-[12px] border px-3 py-2.5"
-          style={{
-            backgroundColor: '#FDF0D5',
-            borderColor: '#FAC775',
-          }}
-        >
-          <p className="text-[13px] font-medium text-[#BA7517]">
+        <div className="rounded-xl border-[0.5px] border-[#FAC775] bg-[#FDF0D5] px-3 py-2.5">
+          <p className="text-[13px] font-medium text-[#854F0B]">
             AI 估算，請確認後再加入
           </p>
-          <p className="mt-1 text-[11px] leading-relaxed text-[color:var(--color-text-secondary)]">
+          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
             營養數值為模型推估，加入飲食紀錄前請自行核對。
           </p>
-          <label className="mt-2 flex cursor-pointer items-center gap-2 text-[13px] text-[color:var(--color-text-primary)]">
+          <label className="mt-2 flex cursor-pointer items-center gap-2 text-[13px] text-foreground">
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-[color:var(--color-border-secondary)]"
+              className="h-4 w-4 rounded-[6px] border-[0.5px] border-border accent-[#1B7A5A]"
               checked={aiConfirmed}
               onChange={(e) => setAiConfirmed(e.target.checked)}
             />
@@ -461,19 +458,16 @@ function MacroCell({
   }, [displayValue, editing]);
 
   return (
-    <div
-      className="relative rounded-lg border border-[color:var(--color-border-tertiary)] bg-[color:var(--color-background-primary)] p-2.5"
-      style={{ borderWidth: '0.5px' }}
-    >
+    <div className="relative rounded-[10px] border-[0.5px] border-border bg-card p-3">
       {adjusted ? (
-        <span className="absolute right-1.5 top-1 text-[11px] font-medium text-[#EF9F27]">
+        <span className="absolute right-2 top-1.5 text-[11px] font-medium text-[#BA7517]">
           已手動調整
         </span>
       ) : null}
       {editing ? (
         <Input
           autoFocus
-          className="h-9 text-[18px] font-medium"
+          className="h-10 border-[0.5px] text-xl font-medium tabular-nums"
           style={{ color: valueColor }}
           value={draft}
           inputMode="numeric"
@@ -496,15 +490,13 @@ function MacroCell({
           onClick={() => setEditing(true)}
         >
           <div
-            className="text-[18px] font-medium tabular-nums"
+            className="tabular-nums text-xl font-medium"
             style={{ color: valueColor }}
           >
             {displayValue}
           </div>
-          <div className="text-[11px] text-[color:var(--color-text-secondary)]">
-            {unit}
-          </div>
-          <div className="mt-0.5 text-[11px] text-[color:var(--color-text-secondary)]">
+          <div className="text-[11px] text-muted-foreground">{unit}</div>
+          <div className="mt-0.5 text-[11px] text-muted-foreground">
             {labelZh}
             {labelEn ? (
               <span className="opacity-70"> {labelEn}</span>
