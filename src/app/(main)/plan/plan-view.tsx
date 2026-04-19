@@ -226,7 +226,7 @@ export function PlanView({
           </div>
           <div className="h-[5px] overflow-hidden rounded-full bg-secondary">
             <div
-              className="h-[5px] rounded-full bg-[#1D9E75] transition-all duration-200 ease-out"
+              className="h-[5px] rounded-full bg-[#4C956C] transition-all duration-200 ease-out"
               style={{ width: `${rateWidth}%` }}
             />
           </div>
@@ -249,12 +249,12 @@ export function PlanView({
                 className={cn(
                   'shrink-0 rounded-full border-[1.5px] px-3.5 py-2 text-[13px] font-medium transition-colors duration-150',
                   active && isToday && 'border-white/70',
-                  active && !isToday && 'border-[#1B7A5A]',
+                  active && !isToday && 'border-[#4C956C]',
                   !active && 'border-transparent',
                   isToday
-                    ? 'bg-[#1B7A5A] text-white'
+                    ? 'bg-[#4C956C] text-white'
                     : done
-                      ? 'bg-[#E0F5EE] text-[#0F6E56]'
+                      ? 'bg-[#E8F5EE] text-[#2D6B4A]'
                       : 'bg-secondary text-muted-foreground',
                 )}
               >
@@ -346,7 +346,7 @@ export function PlanView({
                         className={cn(
                           'flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border-[0.5px] transition-colors duration-150 disabled:opacity-50',
                           meal.is_checked_in
-                            ? 'border-[#1B7A5A] bg-[#E0F5EE] text-[#1B7A5A]'
+                            ? 'border-[#4C956C] bg-[#E8F5EE] text-[#4C956C]'
                             : 'border-border bg-card text-foreground hover:bg-muted',
                         )}
                       >

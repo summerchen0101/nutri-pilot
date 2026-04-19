@@ -10,9 +10,10 @@ alwaysApply: false
 
 ## 色彩
 
-主色 Green：`#1B7A5A`（按鈕、主互動）、`#E0F5EE`（背景淡色）
-輔色 Amber：`#EF9F27`（脂肪進度、警示）
-第三色 Blue：`#378ADD`（碳水進度）、`#E6F1FB`（AI 建議背景）
+主色 Sea Green：`#4C956C`（互動、outline、進度／checkbox／nav active 文字）、`#3A7A56`（加深）、`#E8F5EE`（淡背景）、`#2D6B4A`（淡底上的文字）  
+Primary CTA（Shadow Grey）：`#1E212B`／hover `#2A2F3D` — **僅**主要操作按鈕（`Button` default）  
+輔色 Amber：`#EF9F27`（脂肪進度、警示）  
+第三色 Blue：`#378ADD`（碳水進度）、`#E6F1FB`（AI 建議背景）  
 危險色：`#E55A3C`（刪除按鈕）、`#E24B4A`（錯誤文字）
 
 中性色全用 CSS 變數（`--color-text-primary` 等），自動 dark mode。
@@ -36,8 +37,8 @@ nav 標籤  10px / 400
 ```css
 卡片預設：  border: 0.5px solid var(--color-border-tertiary)
 hover：     border-color: var(--color-border-secondary)
-主色強調：  border: 1.5px solid #1B7A5A
-input focus：border-color: #1B7A5A; box-shadow: 0 0 0 2px rgba(27,122,90,.12)
+主色強調：  border: 1.5px solid #4C956C
+input focus：border-color: #4C956C; box-shadow: 0 0 0 2px rgba(76,149,108,.12)
 ```
 
 ## 圓角
@@ -53,10 +54,11 @@ modal / sheet   border-radius: 16px
 ## 常用元件 Tailwind class 對照
 
 ```
-主按鈕：    bg-[#1B7A5A] text-white rounded-[10px] px-4 py-2 text-[13px] font-medium
-次要按鈕：  border border-[#1B7A5A] text-[#1B7A5A] rounded-[10px] px-4 py-2 text-[13px]
+主按鈕：    bg-[#1E212B] text-white hover:bg-[#2A2F3D] rounded-[10px] px-4 py-2 text-[13px] font-medium
+次要按鈕：  border border-[#4C956C] text-[#4C956C] hover:bg-[#E8F5EE] rounded-[10px] px-4 py-2 text-[13px]
 卡片：      bg-background border border-[0.5px] border-border rounded-xl p-4
-成功 pill： bg-[#E0F5EE] text-[#0F6E56] rounded-full px-2.5 py-0.5 text-[11px] font-medium
+成功 pill： bg-[#E8F5EE] text-[#2D6B4A] rounded-full px-2.5 py-0.5 text-[11px] font-medium
+bottom nav active： bg-[#E8F5EE] text-[#4C956C]
 AI 卡：     bg-[#E6F1FB] border border-[#B5D4F4] rounded-xl p-3.5
 指標格：    bg-secondary rounded-[10px] p-3 cursor-pointer
 ```

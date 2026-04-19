@@ -4,18 +4,30 @@
 
 @layer base {
   :root {
+    /* Sea Green — 互動主色與語意綠 */
+    --primary: #4c956c;
+    --primary-dark: #3a7a56;
+    --primary-light: #e8f5ee;
+    --primary-text: #2d6b4a;
+    /* Shadow Grey — Primary CTA 深色按鈕 */
+    --shadow-grey: #1e212b;
+    --shadow-grey-hover: #2a2f3d;
+    /* 頁面底色（極淡灰綠） */
+    --surface-secondary: #f7f8f6;
+
     --background: 0 0% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
+    --muted: 96 11% 97%;
     --muted-foreground: 215 16% 47%;
     --border: 214 32% 91%;
-    --secondary: 210 40% 96%;
+    --secondary: 96 11% 97%;
     --secondary-foreground: 222 47% 11%;
     --destructive: 6 78% 57%;
     --destructive-foreground: 0 0% 100%;
-    --ring: 160 63% 30%;
+    /* focus ring ≈ Sea Green #4C956C */
+    --ring: 146 32% 44%;
   }
 
   html {

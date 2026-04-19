@@ -137,7 +137,7 @@ function MacrosOneLine(props: {
       <span className="text-muted-foreground">·</span>
       <span className="tabular-nums text-[#378ADD]">碳水{c}g</span>
       <span className="text-muted-foreground">·</span>
-      <span className="tabular-nums text-[#1B7A5A]">蛋白{p}g</span>
+      <span className="tabular-nums text-[#4C956C]">蛋白{p}g</span>
       <span className="text-muted-foreground">·</span>
       <span className="tabular-nums text-[#EF9F27]">脂肪{f}g</span>
     </span>
@@ -595,7 +595,7 @@ export function LogClient({
                       className={cn(
                         'w-full rounded-[10px] border-[0.5px] py-2.5 pl-3 pr-2 text-left transition-colors duration-150',
                         selectedHit?.id === h.id
-                          ? 'border-[#1B7A5A] bg-[#E0F5EE]'
+                          ? 'border-[#4C956C] bg-[#E8F5EE]'
                           : 'border-transparent hover:bg-secondary',
                       )}
                       onClick={() => setSelectedHit(h)}

@@ -28,6 +28,19 @@ const config: Config = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        primary: {
+          DEFAULT: 'var(--primary)',
+          dark: 'var(--primary-dark)',
+          light: 'var(--primary-light)',
+          foreground: 'var(--primary-text)',
+        },
+        'shadow-grey': {
+          DEFAULT: 'var(--shadow-grey)',
+          hover: 'var(--shadow-grey-hover)',
+        },
+        surface: {
+          secondary: 'var(--surface-secondary)',
+        },
       },
     },
   },

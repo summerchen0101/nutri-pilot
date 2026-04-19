@@ -22,16 +22,28 @@
 
 ## 色彩系統
 
-### 主色 — Forest Green
+### 主色 — Sea Green（互動、次要用色）
 
-| Token | Hex | 用途 |
-|-------|-----|------|
-| `green-50` | `#E0F5EE` | 成功背景、打卡 pill 背景、active nav 背景 |
-| `green-200` | `#9FDFC6` | 圖表輔助色、hover 填色 |
-| `green-400` | `#1D9E75` | 熱量圓環、蛋白質進度條、成功 dot |
-| `green-500` | `#1B7A5A` | **主要按鈕、主要互動元素**（最常用）|
-| `green-600` | `#0F6E56` | 按鈕 hover/active 狀態 |
-| `green-800` | `#085041` | 深色文字、dark mode 填色 |
+| 角色 | Hex | 用途 |
+|------|-----|------|
+| 主色本體 | `#4C956C` | 按鈕描邊（outline）、圓環、active 狀態、主要互動（tab、checkbox、進度條主線）、**非** filled 主按鈕背景 |
+| 主色深 | `#3A7A56` | hover／需加深的綠色互動（與 Tailwind／CSS `--primary-dark` 對齊） |
+| 主色淡 | `#E8F5EE` | 淡背景、badge 背景、打卡／成功 pill、bottom nav active 背景 |
+| 主色文字 | `#2D6B4A` | 淡綠底上的標籤／完成日文字 |
+
+### 深色 — Shadow Grey（Primary CTA）
+
+| 角色 | Hex | 用途 |
+|------|-----|------|
+| 本體 | `#1E212B` | **主要 CTA**（加入購物車、加入紀錄、儲存）filled 按鈕背景、重要標題感 |
+| Hover | `#2A2F3D` | 上述按鈕 hover |
+
+### 背景
+
+| 用途 | Hex |
+|------|-----|
+| 主要背景 | `#FFFFFF` |
+| 次要區塊／頁面底感 | `#F7F8F6`（極淡灰綠，CSS `--surface-secondary`） |
 
 ### 輔色 — Amber
 
@@ -59,6 +71,24 @@
 | 錯誤文字 | `#E24B4A` | 超標警示 |
 | 錯誤背景 | `#FCEBEB` | 錯誤狀態 |
 | 購物車 badge | `#E24B4A` | 數量紅點 |
+
+（Amber／Blue／Danger 與上表維持不變；**主綠由 Forest Green 改為 Sea Green**，**filled 主按鈕改 Shadow Grey**。）
+
+### 全域 CSS 變數（`src/app/globals.css`）
+
+互動綠與 CTA 深色請優先對齊程式中的變數，避免散落舊色碼：
+
+```css
+--primary: #4c956c;
+--primary-dark: #3a7a56;
+--primary-light: #e8f5ee;
+--primary-text: #2d6b4a;
+--shadow-grey: #1e212b;
+--shadow-grey-hover: #2a2f3d;
+--surface-secondary: #f7f8f6;
+```
+
+Tailwind：`primary` / `primary-dark` / `primary-light` / `primary-foreground`、`shadow-grey` / `shadow-grey-hover`、`surface-secondary`。
 
 ### 中性色（使用 CSS 變數，自動 dark mode）
 
@@ -125,8 +155,8 @@
 - **所有邊框 0.5px**，不用 1px
 - 卡片預設：`0.5px solid var(--color-border-tertiary)`
 - hover 狀態：`0.5px solid var(--color-border-secondary)`
-- 主色強調：`1.5px solid #1B7A5A`（規格選擇 active 等）
-- 輸入框 focus：`0.5px solid #1B7A5A` + `box-shadow: 0 0 0 2px rgba(27,122,90,.12)`
+- 主色強調：`1.5px solid #4C956C`（規格選擇 active 等）
+- 輸入框 focus：`0.5px solid #4C956C` + `box-shadow: 0 0 0 2px rgba(76,149,108,.12)`
 
 ---
 
@@ -135,20 +165,20 @@
 ### 按鈕
 
 ```css
-/* Primary — 主要操作（加入購物車、確認、儲存）*/
-background: #1B7A5A;
+/* Primary — 主要操作（加入購物車、確認、儲存）— Shadow Grey */
+background: #1E212B;
 color: #fff;
 padding: 9px 18px;
 border-radius: 10px;
 font-size: 13px;
 font-weight: 500;
-/* hover: background: #0F6E56 */
+/* hover: background: #2A2F3D */
 
-/* Secondary — 次要操作（換食材、查看計畫）*/
-border: 1.5px solid #1B7A5A;
-color: #1B7A5A;
+/* Secondary — 次要操作（換食材、查看計畫）— Sea Green 描邊 */
+border: 1.5px solid #4C956C;
+color: #4C956C;
 background: transparent;
-/* hover: background: #E0F5EE */
+/* hover: background: #E8F5EE */
 
 /* Ghost — 最低優先（取消、關閉）*/
 border: 0.5px solid var(--color-border-secondary);
@@ -176,8 +206,8 @@ font-size: 13px;
 transition: border-color 150ms, box-shadow 150ms;
 
 /* focus */
-border-color: #1B7A5A;
-box-shadow: 0 0 0 2px rgba(27,122,90,.12);
+border-color: #4C956C;
+box-shadow: 0 0 0 2px rgba(76,149,108,.12);
 outline: none;
 ```
 
@@ -201,8 +231,8 @@ padding: 3px 10px;
 border-radius: 9999px;
 
 /* 已打卡 / 符合計畫 / 成功 */
-background: #E0F5EE;
-color: #0F6E56;
+background: #E8F5EE;
+color: #2D6B4A;
 
 /* AI / 資訊 / 飲食法 */
 background: #E6F1FB;
@@ -236,11 +266,11 @@ height: 5px;
 /* 碳水 */
 fill: #378ADD;
 /* 蛋白質 */
-fill: #1B7A5A;
+fill: #4C956C;
 /* 脂肪 */
 fill: #EF9F27;
 /* 一般進度（打卡率等）*/
-fill: #1D9E75;
+fill: #4C956C;
 ```
 
 ### 熱量圓環
@@ -250,7 +280,7 @@ fill: #1D9E75;
 stroke-width: 7px;  /* 或 8px，視尺寸 */
 stroke-linecap: round;
 /* track color: var(--color-border-tertiary) */
-/* fill color: #1B7A5A */
+/* fill color: #4C956C */
 
 /* 中心數字 */
 font-size: 16px; font-weight: 500;  /* 大值 */
@@ -273,8 +303,8 @@ border-radius: 8px;
 color: var(--color-text-secondary);
 
 /* active */
-color: #1B7A5A;
-background: #E0F5EE;
+color: #4C956C;
+background: #E8F5EE;
 font-weight: 500;
 ```
 
@@ -308,7 +338,7 @@ font-size: 11px; color: var(--color-text-secondary);
 font-size: 20px; font-weight: 500;
 
 /* 副說明 */
-font-size: 10px; color: #1B7A5A;  /* 正向 */
+font-size: 10px; color: #4C956C;  /* 正向 */
 font-size: 10px; color: var(--color-text-secondary);  /* 中性 */
 ```
 
@@ -349,13 +379,13 @@ transition: { delay: index * 0.04 }
 
 | 頁面 | 主視覺元素 | 色彩重點 |
 |------|-----------|---------|
-| Dashboard | 熱量圓環 | Green-500 主環 |
-| Plan | 日期 pill、打卡 | Green active、Amber 待完成 |
-| Log | 記錄卡片、拍照 | Green 已記錄 |
-| Analytics | 折線圖、長條圖 | Green 體重線、Blue 熱量柱 |
-| Shop | 商品卡、推薦 badge | Green 符合計畫、各色 badge |
-| Settings | 表單 | 輸入框 focus Green |
-| Admin | 儀表板、表格 | Green KPI 正向、Amber 警示、Red 危險 |
+| Dashboard | 熱量圓環 | Sea Green `#4C956C` 主環 |
+| Plan | 日期 pill、打卡 | Sea Green active、Amber 待完成 |
+| Log | 記錄卡片、拍照 | Sea Green 已記錄 |
+| Analytics | 折線圖、長條圖 | Sea Green 體重線、Blue 熱量柱 |
+| Shop | 商品卡、推薦 badge | Sea Green 符合計畫、各色 badge |
+| Settings | 表單 | 輸入框 focus Sea Green |
+| Admin | 儀表板、表格 | Sea Green KPI 正向、Amber 警示、Red 危險 |
 
 ---
 

@@ -78,7 +78,7 @@ function quickPortions(
 function foodSourceDot(row: FoodCacheRow): { bg: string; title: string } {
   if (row.source === 'ai_estimate')
     return { bg: '#EF9F27', title: 'AI 估算' };
-  if (row.source === 'mohw_tw') return { bg: '#1D9E75', title: '衛福部' };
+  if (row.source === 'mohw_tw') return { bg: '#4C956C', title: '衛福部' };
   if (row.source === 'usda') return { bg: '#378ADD', title: 'USDA' };
   return { bg: '#94a3b8', title: '資料庫' };
 }
@@ -118,9 +118,9 @@ interface AddFoodFromSearchProps {
   onError?: (message: string) => void;
 }
 
-const MACRO_CAL = '#1B7A5A';
+const MACRO_CAL = '#4C956C';
 const MACRO_CARB = '#378ADD';
-const MACRO_PROTEIN = '#1B7A5A';
+const MACRO_PROTEIN = '#4C956C';
 const MACRO_FAT = '#EF9F27';
 
 export function AddFoodFromSearchPanel({
@@ -325,7 +325,7 @@ export function AddFoodFromSearchPanel({
               className={cn(
                 'rounded-[8px] px-3 py-1 text-[11px] font-medium transition-colors duration-150',
                 portionUnit === 'g'
-                  ? 'bg-[#E0F5EE] text-[#1B7A5A]'
+                  ? 'bg-[#E8F5EE] text-[#4C956C]'
                   : 'text-muted-foreground',
               )}
               onClick={() => setPortionUnit('g')}
@@ -337,7 +337,7 @@ export function AddFoodFromSearchPanel({
               className={cn(
                 'rounded-[8px] px-3 py-1 text-[11px] font-medium transition-colors duration-150',
                 portionUnit === 'ml'
-                  ? 'bg-[#E0F5EE] text-[#1B7A5A]'
+                  ? 'bg-[#E8F5EE] text-[#4C956C]'
                   : 'text-muted-foreground',
               )}
               onClick={() => setPortionUnit('ml')}
@@ -412,7 +412,7 @@ export function AddFoodFromSearchPanel({
           <label className="mt-2 flex cursor-pointer items-center gap-2 text-[13px] text-foreground">
             <input
               type="checkbox"
-              className="h-4 w-4 rounded-[6px] border-[0.5px] border-border accent-[#1B7A5A]"
+              className="h-4 w-4 rounded-[6px] border-[0.5px] border-border accent-[#4C956C]"
               checked={aiConfirmed}
               onChange={(e) => setAiConfirmed(e.target.checked)}
             />
