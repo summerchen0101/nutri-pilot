@@ -167,9 +167,9 @@ export function calcRecommendScore(
 
 ### P2-4 體重快速輸入
 
-- [ ] Dashboard 的「記錄體重」快捷鍵
-- [ ] 寫入 `vital_logs.weight_kg`
-- [ ] 自動更新 `user_profiles.weight_kg`（觸發重算 BMI）
+- [x] Dashboard 的「記錄體重」快捷鍵
+- [x] 寫入 `vital_logs.weight_kg`
+- [x] 自動更新 `user_profiles.weight_kg`（觸發重算 BMI）
 
 ---
 
