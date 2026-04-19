@@ -8,7 +8,6 @@ import {
   swapMealItemAction,
   type SwapAlternative,
 } from '@/app/(main)/plan/actions';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -75,19 +74,12 @@ interface PlanViewProps {
   };
 }
 
-function CheckIcon(props: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      className={cn('h-4 w-4', props.className)}
-      aria-hidden
-    >
-      <path d="M6 12l4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+function weekdayZhShort(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return '';
+  const dt = new Date(y, m - 1, d);
+  if (Number.isNaN(dt.getTime())) return '';
+  return ['日', '一', '二', '三', '四', '五', '六'][dt.getDay()] ?? '';
 }
 
 export function PlanView({
@@ -202,6 +194,15 @@ export function PlanView({
 
   const rateWidth = Math.min(100, progress.ratePct);
 
+  useEffect(() => {
+    const el = document.getElementById(`plan-date-pill-${today}`);
+    el?.scrollIntoView({
+      inline: 'center',
+      block: 'nearest',
+      behavior: 'smooth',
+    });
+  }, [today, windowDates]);
+
   return (
     <div className="space-y-4">
       <Card>
@@ -235,30 +236,51 @@ export function PlanView({
 
       <div className="space-y-2">
         <p className="text-[15px] font-medium text-foreground">選擇日期</p>
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div
+          className="-mx-1 flex flex-nowrap gap-2 overflow-x-auto overflow-y-hidden px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ msOverflowStyle: 'none' }}
+        >
           {windowDates.map((d) => {
             const menu = menusByDate.get(d);
             const done = Boolean(menu?.is_completed);
             const isToday = d === today;
             const active = d === selectedDate;
+            const dayNum = Number(d.slice(8, 10));
+            const wch = weekdayZhShort(d);
             return (
               <button
+                id={isToday ? `plan-date-pill-${today}` : undefined}
                 key={d}
                 type="button"
                 onClick={() => setSelectedDate(d)}
                 className={cn(
-                  'shrink-0 rounded-full border-[1.5px] px-3.5 py-2 text-[13px] font-medium transition-colors duration-150',
-                  active && isToday && 'border-white/70',
-                  active && !isToday && 'border-[#4C956C]',
-                  !active && 'border-transparent',
-                  isToday
-                    ? 'bg-[#4C956C] text-white'
-                    : done
-                      ? 'bg-[#E8F5EE] text-[#2D6B4A]'
-                      : 'bg-secondary text-muted-foreground',
+                  'flex h-[56px] w-[52px] shrink-0 flex-col items-center justify-center rounded-xl border-[0.5px] px-1 py-1.5 transition-colors duration-150',
+                  /* 勿用 ring + ring-offset：在深色「今日」pill 上會疊成雙框；選取改為 0.5px 主色邊 */
+                  'outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                  isToday &&
+                    'border-transparent bg-[#1E212B] text-white shadow-none',
+                  !isToday &&
+                    done &&
+                    'border-transparent bg-[#E8F5EE] text-[#2D6B4A]',
+                  !isToday &&
+                    !done &&
+                    'border-border bg-[#F7F8F6] text-muted-foreground',
+                  active &&
+                    !isToday &&
+                    'border-[#4C956C] shadow-none',
                 )}
               >
-                {d.slice(5)}
+                <span className="text-[14px] font-medium tabular-nums leading-none">
+                  {Number.isFinite(dayNum) ? dayNum : d.slice(8)}
+                </span>
+                <span
+                  className={cn(
+                    'mt-1 text-[11px] leading-none',
+                    isToday ? 'text-white/85' : 'text-inherit opacity-90',
+                  )}
+                >
+                  {wch}
+                </span>
               </button>
             );
           })}
@@ -267,16 +289,16 @@ export function PlanView({
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle>{selectedDate} 的菜單</CardTitle>
+          <CardTitle>今日菜單</CardTitle>
           {dailyCalTarget != null ? (
-            <p className="text-[11px] text-muted-foreground">
-              每日熱量目標{' '}
-              <span className="tabular-nums text-foreground">
-                <span className="text-xl font-medium">{dailyCalTarget}</span>
-                <span className="text-[13px] font-normal text-muted-foreground">
-                  {' '}
-                  kcal
-                </span>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              熱量目標{' '}
+              <span className="text-xl font-medium tabular-nums text-[#1E212B]">
+                {dailyCalTarget}
+              </span>
+              <span className="text-[13px] font-normal text-muted-foreground">
+                {' '}
+                kcal
               </span>
             </p>
           ) : null}
@@ -326,33 +348,30 @@ export function PlanView({
                         {MEAL_LABEL[meal.type] ?? meal.type}
                       </span>
                       {meal.scheduled_at ? (
-                        <Badge variant="outline" className="font-normal">
+                        <span className="text-[13px] text-muted-foreground">
                           {meal.scheduled_at.slice(0, 5)}
-                        </Badge>
+                        </span>
                       ) : null}
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-[11px] text-muted-foreground">
-                        {meal.is_checked_in ? '已打卡' : '打卡'}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={pendingId === meal.id}
-                        aria-pressed={Boolean(meal.is_checked_in)}
-                        aria-label={
-                          meal.is_checked_in ? '已完成打卡' : '標記此餐為已打卡'
-                        }
-                        onClick={() => void onCheckIn(meal.id)}
-                        className={cn(
-                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border-[0.5px] transition-colors duration-150 disabled:opacity-50',
-                          meal.is_checked_in
-                            ? 'border-[#4C956C] bg-[#E8F5EE] text-[#4C956C]'
-                            : 'border-border bg-card text-foreground hover:bg-muted',
-                        )}
-                      >
-                        {meal.is_checked_in ? <CheckIcon /> : null}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      disabled={
+                        pendingId === meal.id || Boolean(meal.is_checked_in)
+                      }
+                      aria-pressed={Boolean(meal.is_checked_in)}
+                      aria-label={
+                        meal.is_checked_in ? '已完成打卡' : '標記此餐為已打卡'
+                      }
+                      onClick={() => void onCheckIn(meal.id)}
+                      className={cn(
+                        'shrink-0 rounded-lg px-3 py-1 text-[12px] transition-colors duration-150 disabled:opacity-90',
+                        meal.is_checked_in
+                          ? 'bg-[#E8F5EE] text-[#2D6B4A]'
+                          : 'border-[0.5px] border-border text-muted-foreground hover:bg-muted',
+                      )}
+                    >
+                      {meal.is_checked_in ? '已打卡' : '打卡'}
+                    </button>
                   </div>
                   <ul className="mt-3 space-y-2.5">
                     {(meal.meal_items ?? []).map((it) => (
@@ -361,18 +380,20 @@ export function PlanView({
                         className="flex flex-wrap items-center justify-between gap-2 border-b-[0.5px] border-border pb-2.5 text-[13px] text-foreground last:border-b-0 last:pb-0"
                       >
                         <span className="min-w-0">
-                          <span className="text-[13px]">{it.name}</span>{' '}
-                          <span className="text-[11px] text-muted-foreground">
+                          <span className="block text-[13px] text-foreground">
+                            {it.name}
+                          </span>
+                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
                             {it.quantity_g}g · {it.calories} kcal
                           </span>
                         </span>
                         <Button
                           type="button"
                           variant="ghost"
-                          className="h-8 shrink-0 px-2 text-[11px] font-normal"
+                          className="h-7 shrink-0 rounded-md border-[0.5px] border-border px-2.5 text-[12px] font-normal"
                           onClick={() => void runSwap(it, meal.type)}
                         >
-                          換食材
+                          換
                         </Button>
                       </li>
                     ))}

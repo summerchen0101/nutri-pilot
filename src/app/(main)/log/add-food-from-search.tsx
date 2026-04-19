@@ -293,17 +293,17 @@ export function AddFoodFromSearchPanel({
   }
 
   return (
-    <div className="mt-3 space-y-4 rounded-xl border-[0.5px] border-border bg-secondary p-4">
+    <div className="mt-3 min-w-0 max-w-full space-y-4 overflow-x-hidden rounded-xl border-[0.5px] border-border bg-secondary p-4">
       {/* 份量 */}
       <div className="space-y-2">
         <p className="text-[13px] font-medium text-foreground">份量</p>
-        <div className="-mx-1 flex gap-2 overflow-x-auto pb-1">
+        <div className="flex flex-wrap gap-2">
           {presets.map((p) => (
             <Button
               key={p.label}
               type="button"
               variant="outline"
-              className="h-8 shrink-0 rounded-[10px] px-3 text-[11px] font-medium"
+              className="h-8 rounded-[10px] px-3 text-[11px] font-medium"
               onClick={() => setPortionFromPreset(p.amount)}
             >
               {p.label}

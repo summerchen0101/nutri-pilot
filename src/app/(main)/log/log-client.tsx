@@ -7,7 +7,6 @@ import {
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from 'react';
 
 import {
@@ -19,7 +18,6 @@ import {
   deleteFoodLogAction,
   searchFoodsAction,
 } from '@/app/(main)/log/actions';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -46,6 +44,7 @@ export interface LogItemSnapshot {
   fiber_g: number | null;
   sodium_mg: number | null;
   brand: string | null;
+  is_verified: boolean | null;
 }
 
 export interface FoodLogSnapshot {
@@ -96,31 +95,23 @@ function parsePhotoItems(json: Json | null): PhotoPreviewItem[] | null {
   return out.length ? out : null;
 }
 
-function sumLogNutrients(items: LogItemSnapshot[] | null): {
-  calories: number;
-  protein_g: number;
-  carb_g: number;
-  fat_g: number;
-} {
-  if (!items?.length) {
-    return { calories: 0, protein_g: 0, carb_g: 0, fat_g: 0 };
-  }
-  return items.reduce(
-    (acc, it) => ({
-      calories: acc.calories + Number(it.calories),
-      protein_g: acc.protein_g + Number(it.protein_g),
-      carb_g: acc.carb_g + Number(it.carb_g),
-      fat_g: acc.fat_g + Number(it.fat_g),
-    }),
-    { calories: 0, protein_g: 0, carb_g: 0, fat_g: 0 },
-  );
-}
-
 function roundMacroG(n: number): number {
   return Math.round(Number(n));
 }
 
-function MacrosOneLine(props: {
+/** 來源色點：資料庫未持久化來源別，拍照／未驗證視為 AI，已驗證搜尋視為衛福部快取為主（USDA 與本地快取皆以已驗證綠點呈現）。 */
+function sourceDotColor(method: string, item: LogItemSnapshot): string {
+  if (method === 'photo') return '#EF9F27';
+  if (method === 'search') {
+    if (item.is_verified === false || item.is_verified === null) {
+      return '#EF9F27';
+    }
+    return '#4C956C';
+  }
+  return '#94a3b8';
+}
+
+function ItemMacrosMutedLine(props: {
   calories: number;
   carb_g: number;
   protein_g: number;
@@ -131,27 +122,35 @@ function MacrosOneLine(props: {
   const p = roundMacroG(props.protein_g);
   const f = roundMacroG(props.fat_g);
   return (
-    <span className="inline-flex flex-wrap items-baseline gap-x-1 text-[11px] font-normal leading-snug">
-      <span className="tabular-nums font-medium text-foreground">{kcal}</span>
-      <span className="font-normal text-muted-foreground">kcal</span>
-      <span className="text-muted-foreground">·</span>
-      <span className="tabular-nums text-[#378ADD]">碳水{c}g</span>
-      <span className="text-muted-foreground">·</span>
-      <span className="tabular-nums text-[#4C956C]">蛋白{p}g</span>
-      <span className="text-muted-foreground">·</span>
-      <span className="tabular-nums text-[#EF9F27]">脂肪{f}g</span>
+    <span className="inline-flex flex-wrap items-baseline gap-x-1 text-[11px] font-normal leading-snug text-muted-foreground">
+      <span className="tabular-nums">{kcal}</span>
+      <span>kcal</span>
+      <span>·</span>
+      <span className="tabular-nums">碳水{c}g</span>
+      <span>·</span>
+      <span className="tabular-nums">蛋白{p}g</span>
+      <span>·</span>
+      <span className="tabular-nums">脂肪{f}g</span>
     </span>
   );
 }
 
-function formatPrimaryMacroLine(it: LogItemSnapshot): ReactNode {
+function TrashIcon(props: { className?: string }) {
   return (
-    <MacrosOneLine
-      calories={it.calories}
-      carb_g={it.carb_g}
-      protein_g={it.protein_g}
-      fat_g={it.fat_g}
-    />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      className={props.className}
+      aria-hidden
+    >
+      <path
+        d="M4 7h16M10 11v6M14 11v6M9 7V5c0-.6.4-1 1-1h4c.6 0 1 .4 1 1v2"
+        strokeLinecap="round"
+      />
+      <path d="M10 21h4c1.1 0 2-.9 2-2V9H8v10c0 1.1.9 2 2 2z" />
+    </svg>
   );
 }
 
@@ -179,7 +178,14 @@ function LogItemNutrition({ item }: { item: LogItemSnapshot }) {
 
   return (
     <div className="mt-1 space-y-0">
-      <div>{formatPrimaryMacroLine(item)}</div>
+      <div>
+        <ItemMacrosMutedLine
+          calories={item.calories}
+          carb_g={item.carb_g}
+          protein_g={item.protein_g}
+          fat_g={item.fat_g}
+        />
+      </div>
       {showMore ? (
         <>
           <button
@@ -200,17 +206,6 @@ function LogItemNutrition({ item }: { item: LogItemSnapshot }) {
         </>
       ) : null}
     </div>
-  );
-}
-
-function formatLogTotalsLine(totals: ReturnType<typeof sumLogNutrients>) {
-  return (
-    <MacrosOneLine
-      calories={totals.calories}
-      carb_g={totals.carb_g}
-      protein_g={totals.protein_g}
-      fat_g={totals.fat_g}
-    />
   );
 }
 
@@ -528,14 +523,14 @@ export function LogClient({
         </p>
       </div>
 
-      <Card>
+      <Card className="min-w-0 max-w-full overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle>新增紀錄</CardTitle>
           <CardDescription>
             選擇餐次後，以搜尋或拍照加入今日飲食。
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="min-w-0 space-y-4 overflow-x-hidden">
           <div className="flex flex-wrap gap-2">
             {MEAL_ORDER.map((m) => (
               <Button
@@ -587,38 +582,54 @@ export function LogClient({
                 <p className="text-[13px] text-destructive">{searchError}</p>
               ) : null}
 
-              <ul className="max-h-56 space-y-1 overflow-y-auto rounded-xl border-[0.5px] border-border bg-card p-2">
-                {searchHits.map((h, i) => (
-                  <li key={`${h.id}-${i}`}>
-                    <button
-                      type="button"
-                      className={cn(
-                        'w-full rounded-[10px] border-[0.5px] py-2.5 pl-3 pr-2 text-left transition-colors duration-150',
-                        selectedHit?.id === h.id
-                          ? 'border-[#4C956C] bg-[#E8F5EE]'
-                          : 'border-transparent hover:bg-secondary',
-                      )}
-                      onClick={() => setSelectedHit(h)}
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className="mt-1.5">
+              {searchHits.length > 0 ? (
+                <ul
+                  role="list"
+                  className={cn(
+                    'flex w-full min-w-0 list-none flex-col gap-1 overflow-x-hidden rounded-xl border-[0.5px] border-border bg-card p-2',
+                    /* 項目少時高度貼齊內容；項目多時再限制高度並捲動，避免 ul 被撐成大片留白 */
+                    searchHits.length > 7 ?
+                      'max-h-56 overflow-y-auto'
+                    : 'overflow-y-visible',
+                  )}
+                >
+                  {searchHits.map((h, i) => (
+                    <li key={`${h.id}-${i}`} className="min-w-0 shrink-0">
+                      <button
+                        type="button"
+                        className={cn(
+                          'flex w-full max-w-full gap-2 rounded-[10px] border-[0.5px] px-3 py-2 text-left transition-colors duration-150',
+                          h.brand ? 'items-start' : 'items-center',
+                          selectedHit?.id === h.id
+                            ? 'border-[#4C956C] bg-[#E8F5EE]'
+                            : 'border-transparent hover:bg-secondary',
+                        )}
+                        onClick={() => setSelectedHit(h)}
+                      >
+                        <span
+                          className={cn(
+                            'shrink-0',
+                            h.brand ? 'mt-0.5' : '',
+                          )}
+                          aria-hidden
+                        >
                           <FoodSourceDotInline row={h} />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-normal leading-snug text-foreground">
+                          <p className="break-words text-[13px] font-normal leading-snug text-foreground">
                             {h.name}
                           </p>
                           {h.brand ? (
-                            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                            <p className="mt-0.5 break-words text-[11px] leading-snug text-muted-foreground">
                               {h.brand}
                             </p>
                           ) : null}
                         </div>
-                      </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
 
               {selectedHit ? (
                 <AddFoodFromSearchPanel
@@ -726,47 +737,45 @@ export function LogClient({
                   <ul className="mt-2 space-y-2.5">
                     {logs.map((log) => (
                       <li key={log.id}>
-                        <Card>
-                          <CardContent className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="space-y-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant="secondary">
-                                  {log.method === 'photo'
-                                    ? '拍照'
-                                    : log.method === 'search'
-                                      ? '搜尋'
-                                      : '手動'}
-                                </Badge>
-                                <span className="inline-flex flex-wrap items-center gap-x-1">
-                                  {formatLogTotalsLine(
-                                    sumLogNutrients(log.food_log_items),
-                                  )}
-                                </span>
+                        <div className="flex items-start gap-2 rounded-xl border-[0.5px] border-border bg-card p-3">
+                          <div className="min-w-0 flex-1 space-y-3">
+                            {(log.food_log_items ?? []).map((it) => (
+                              <div key={it.id} className="flex gap-2">
+                                <span
+                                  className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                                  style={{
+                                    backgroundColor: sourceDotColor(log.method, it),
+                                  }}
+                                  title={
+                                    log.method === 'photo'
+                                      ? 'AI 估算（拍照）'
+                                      : it.is_verified
+                                        ? '衛福部／資料庫'
+                                        : 'AI 估算'
+                                  }
+                                  aria-hidden
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-[13px] font-medium text-foreground">
+                                    {it.name}{' '}
+                                    <span className="text-[11px] font-normal text-muted-foreground">
+                                      {Math.round(Number(it.quantity_g))}g
+                                    </span>
+                                  </div>
+                                  <LogItemNutrition item={it} />
+                                </div>
                               </div>
-                              <ul className="space-y-2 text-[13px] text-foreground">
-                                {(log.food_log_items ?? []).map((it) => (
-                                  <li key={it.id}>
-                                    <div>
-                                      <span>{it.name}</span>{' '}
-                                      <span className="text-muted-foreground">
-                                        {Math.round(Number(it.quantity_g))}g
-                                      </span>
-                                    </div>
-                                    <LogItemNutrition item={it} />
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="h-9 shrink-0 px-3 text-[13px]"
-                              onClick={() => void onDeleteLog(log.id)}
-                            >
-                              刪除
-                            </Button>
-                          </CardContent>
-                        </Card>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            className="mt-0.5 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-[#E55A3C]"
+                            aria-label="刪除此筆紀錄"
+                            onClick={() => void onDeleteLog(log.id)}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>

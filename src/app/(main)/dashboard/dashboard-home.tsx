@@ -5,25 +5,161 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import { logWeightAction } from '@/app/(main)/dashboard/actions';
+import { DashboardAiCard } from '@/app/(main)/dashboard/dashboard-ai-card';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils/cn';
 
-interface DashboardHomeProps {
+export type DashboardMealRow = {
+  key: string;
+  label: string;
+  checked: boolean;
+  summary: string;
+};
+
+export type DashboardHomeProps = {
   displayName: string;
-  /** Formatted on the server so SSR and hydration match (Intl differs in Node vs browser). */
   dateLabel: string;
   latestWeightKg: number | null;
   latestWeightDate: string | null;
   heightCm: number;
   profileBmi: number | null;
+  todayKcal: number;
+  targetKcal: number | null;
+  carbG: number;
+  proteinG: number;
+  fatG: number;
+  streakDays: number;
+  meals: DashboardMealRow[];
+  aiSnapshot: {
+    todayKcal: number;
+    targetKcal: number | null;
+    weightKg: number | null;
+    streakDays: number;
+    carbG: number;
+    proteinG: number;
+    fatG: number;
+  };
+};
+
+function macroTargetsFromKcal(
+  kcal: number,
+): { carb: number; protein: number; fat: number } {
+  if (!Number.isFinite(kcal) || kcal <= 0) {
+    return { carb: 0, protein: 0, fat: 0 };
+  }
+  return {
+    carb: (kcal * 0.5) / 4,
+    protein: (kcal * 0.25) / 4,
+    fat: (kcal * 0.25) / 9,
+  };
+}
+
+function CalorieRingBlock({
+  todayKcal,
+  targetKcal,
+  carbG,
+  proteinG,
+  fatG,
+}: {
+  todayKcal: number;
+  targetKcal: number | null;
+  carbG: number;
+  proteinG: number;
+  fatG: number;
+}) {
+  const ringR = 36;
+  const circumference = 2 * Math.PI * ringR;
+  const target = targetKcal != null && targetKcal > 0 ? targetKcal : 0;
+  const ratio =
+    target > 0 && todayKcal > 0 ? Math.min(1, todayKcal / target) : 0;
+
+  const t = targetKcal != null && targetKcal > 0 ? targetKcal : 0;
+  const m = t > 0 ? macroTargetsFromKcal(t) : { carb: 0, protein: 0, fat: 0 };
+  const bar = (v: number, cap: number) =>
+    cap > 0 ? Math.min(100, (v / cap) * 100) : 0;
+
+  return (
+    <div className="rounded-xl border-[0.5px] border-border bg-card p-4">
+      <div className="flex items-center gap-4">
+        <div className="relative h-[120px] w-[120px] shrink-0">
+          <svg
+            className="h-full w-full -rotate-90"
+            viewBox="0 0 100 100"
+            aria-hidden
+          >
+            <circle
+              cx="50"
+              cy="50"
+              r={ringR}
+              fill="none"
+              className="stroke-border"
+              strokeWidth="6"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r={ringR}
+              fill="none"
+              stroke="#4C956C"
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - ratio)}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            {todayKcal <= 0 ? (
+              <p className="px-2 text-center text-[11px] text-muted-foreground">
+                尚未記錄
+              </p>
+            ) : (
+              <>
+                <p className="text-[20px] font-medium leading-tight text-[#1E212B]">
+                  {Math.round(todayKcal)}
+                </p>
+                <p className="text-[9px] text-muted-foreground">kcal</p>
+                {t > 0 ? (
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">
+                    目標 {Math.round(t)}
+                  </p>
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
+        <div className="min-w-0 flex-1 space-y-2.5">
+          {(
+            [
+              { label: '碳水', v: carbG, cap: m.carb, color: '#378ADD' },
+              { label: '蛋白質', v: proteinG, cap: m.protein, color: '#4C956C' },
+              { label: '脂肪', v: fatG, cap: m.fat, color: '#EF9F27' },
+            ] as const
+          ).map((row) => (
+            <div key={row.label}>
+              <div className="mb-0.5 flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground">
+                  {row.label}
+                </span>
+                <span className="text-[11px] tabular-nums text-muted-foreground">
+                  {Math.round(row.v)}g
+                </span>
+              </div>
+              <div className="h-[5px] w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full transition-all duration-200"
+                  style={{
+                    width: `${bar(row.v, row.cap)}%`,
+                    backgroundColor: row.color,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function IconMeal(props: { className?: string }) {
@@ -88,6 +224,21 @@ function IconChart(props: { className?: string }) {
   );
 }
 
+function CheckIcon(props: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      className={cn('h-4 w-4', props.className)}
+      aria-hidden
+    >
+      <path d="M6 12l4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function DashboardHome({
   displayName,
   dateLabel,
@@ -95,6 +246,14 @@ export function DashboardHome({
   latestWeightDate,
   heightCm,
   profileBmi,
+  todayKcal,
+  targetKcal,
+  carbG,
+  proteinG,
+  fatG,
+  streakDays,
+  meals,
+  aiSnapshot,
 }: DashboardHomeProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -126,80 +285,164 @@ export function DashboardHome({
   }
 
   const ghostQuick =
-    'flex min-h-[72px] flex-1 flex-col items-center justify-center gap-1 rounded-[10px] border-[0.5px] border-border bg-transparent px-2 py-2 text-[13px] font-normal text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground';
+    'flex min-h-[72px] flex-1 flex-col items-center justify-center gap-1 rounded-xl border-[0.5px] border-border bg-transparent px-2 py-2 text-[13px] font-normal text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground';
+
+  const goal = targetKcal != null && targetKcal > 0 ? targetKcal : null;
+  let calorieSub = '';
+  if (goal != null && todayKcal > 0) {
+    const diff = goal - todayKcal;
+    if (diff >= 0) {
+      calorieSub = `尚可攝取約 ${Math.round(diff)} kcal`;
+    }
+  }
 
   return (
     <div className="space-y-4">
-      <header className="space-y-2">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h1 className="text-xl font-medium text-foreground">
-              嗨，{displayName}
-            </h1>
-            <p className="mt-1 text-[13px] text-muted-foreground">{dateLabel}</p>
-          </div>
+      <header className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h1 className="text-xl font-medium text-[#1E212B]">
+            嗨，{displayName}
+          </h1>
+          <p className="mt-1 text-[13px] text-muted-foreground">{dateLabel}</p>
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          今日概覽 · 快速紀錄與捷徑
-        </p>
+        <span className="shrink-0 rounded-full bg-[#E8F5EE] px-2.5 py-0.5 text-[11px] font-medium text-[#2D6B4A]">
+          連續 {streakDays} 天
+        </span>
       </header>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle>體重</CardTitle>
-          <CardDescription>
-            {latestWeightDate
-              ? `最近紀錄 · ${latestWeightDate}`
-              : '尚無體重紀錄'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] text-muted-foreground">目前體重</p>
-            <p className="mt-0.5 tabular-nums text-foreground">
-              {latestWeightKg != null ? (
-                <>
-                  <span className="text-xl font-medium">{latestWeightKg}</span>
-                  <span className="text-[13px] font-normal text-muted-foreground">
-                    {' '}
-                    kg
-                  </span>
-                </>
-              ) : (
+      <CalorieRingBlock
+        todayKcal={todayKcal}
+        targetKcal={targetKcal}
+        carbG={carbG}
+        proteinG={proteinG}
+        fatG={fatG}
+      />
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={openWeightDialog}
+          className="rounded-[10px] bg-[#F7F8F6] p-3 text-left transition-colors hover:bg-[#F0F2EE]"
+        >
+          <p className="text-[11px] text-muted-foreground">體重</p>
+          <p className="mt-0.5 tabular-nums text-xl font-medium text-[#1E212B]">
+            {latestWeightKg != null ? (
+              <>
+                {latestWeightKg}
                 <span className="text-[13px] font-normal text-muted-foreground">
-                  —
+                  {' '}
+                  kg
                 </span>
-              )}
-            </p>
-            {profileBmi != null && (
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                BMI {profileBmi}（身高 {heightCm} cm）
-              </p>
+              </>
+            ) : (
+              <span className="text-[13px] font-normal text-muted-foreground">
+                —
+              </span>
             )}
-          </div>
-          <Button type="button" onClick={openWeightDialog}>
-            記錄體重
-          </Button>
-        </CardContent>
-      </Card>
+          </p>
+          {latestWeightDate ? (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              最近 · {latestWeightDate}
+            </p>
+          ) : (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              尚無體重紀錄
+            </p>
+          )}
+          {profileBmi != null ? (
+            <p className="mt-1 text-[11px] text-[#4C956C]">
+              BMI {profileBmi}（身高 {heightCm} cm）
+            </p>
+          ) : null}
+        </button>
+
+        <div className="rounded-[10px] bg-[#F7F8F6] p-3">
+          <p className="text-[11px] text-muted-foreground">今日熱量</p>
+          <p className="mt-0.5 tabular-nums text-xl font-medium text-[#1E212B]">
+            {Math.round(todayKcal)}
+            <span className="text-[13px] font-normal text-muted-foreground">
+              {' '}
+              kcal
+            </span>
+          </p>
+          {goal != null ? (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              目標 {Math.round(goal)} kcal
+            </p>
+          ) : (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              尚未設定目標
+            </p>
+          )}
+          {calorieSub ? (
+            <p className="mt-1 text-[11px] text-[#4C956C]">{calorieSub}</p>
+          ) : null}
+        </div>
+      </div>
+
+      <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+        <p className="text-[15px] font-medium text-foreground">今日餐食</p>
+        <ul className="mt-3 space-y-3">
+          {meals.map((m) => (
+            <li key={m.key}>
+              <div className="flex items-start gap-2">
+                <span
+                  className={cn(
+                    'mt-1.5 h-2 w-2 shrink-0 rounded-full',
+                    m.checked ?
+                      'bg-[#4C956C]'
+                    : 'border-[0.5px] border-border bg-transparent',
+                  )}
+                  aria-hidden
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium text-foreground">
+                    {m.label}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {m.summary}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {m.checked ?
+                    <CheckIcon className="text-[#4C956C]" />
+                  : <span
+                      className="h-4 w-4 rounded-full border-[0.5px] border-muted-foreground/40"
+                      aria-hidden
+                    />
+                  }
+                  <Link
+                    href="/log"
+                    className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    + 新增
+                  </Link>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <DashboardAiCard snapshot={aiSnapshot} />
 
       <div className="space-y-2">
         <p className="text-[15px] font-medium text-foreground">快速操作</p>
         <div className="grid grid-cols-4 gap-2">
           <Link href="/log" className={cn(ghostQuick)} title="記錄飲食">
-            <IconMeal />
+            <IconMeal className="text-[#4C956C]" />
             <span className="text-center leading-tight">飲食</span>
           </Link>
           <Link href="/plan" className={cn(ghostQuick)} title="今日計畫">
-            <IconPlan />
+            <IconPlan className="text-[#4C956C]" />
             <span className="text-center leading-tight">計畫</span>
           </Link>
           <button type="button" className={cn(ghostQuick)} onClick={openWeightDialog}>
-            <IconScale />
+            <IconScale className="text-[#4C956C]" />
             <span className="text-center leading-tight">體重</span>
           </button>
           <Link href="/analytics" className={cn(ghostQuick)} title="數據分析">
-            <IconChart />
+            <IconChart className="text-[#4C956C]" />
             <span className="text-center leading-tight">數據</span>
           </Link>
         </div>

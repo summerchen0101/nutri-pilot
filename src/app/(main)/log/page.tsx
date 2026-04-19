@@ -44,7 +44,8 @@ export default async function LogPage() {
         fat_g,
         fiber_g,
         sodium_mg,
-        brand
+        brand,
+        is_verified
       )
     `,
     )
@@ -99,6 +100,7 @@ function normalizeItems(
         fiber_g: number | null;
         sodium_mg: number | null;
         brand: string | null;
+        is_verified: boolean | null;
       }[]
     | null,
 ): LogItemSnapshot[] | null {
@@ -114,5 +116,6 @@ function normalizeItems(
     fiber_g: it.fiber_g == null ? null : Number(it.fiber_g),
     sodium_mg: it.sodium_mg == null ? null : Number(it.sodium_mg),
     brand: it.brand,
+    is_verified: it.is_verified,
   }));
 }
