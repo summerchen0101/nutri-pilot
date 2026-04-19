@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import { logWeightAction } from '@/app/(main)/dashboard/actions';
-import { DashboardAiCard } from '@/app/(main)/dashboard/dashboard-ai-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils/cn';
@@ -31,15 +30,6 @@ export type DashboardHomeProps = {
   fatG: number;
   streakDays: number;
   meals: DashboardMealRow[];
-  aiSnapshot: {
-    todayKcal: number;
-    targetKcal: number | null;
-    weightKg: number | null;
-    streakDays: number;
-    carbG: number;
-    proteinG: number;
-    fatG: number;
-  };
 };
 
 function macroTargetsFromKcal(
@@ -253,7 +243,6 @@ export function DashboardHome({
   fatG,
   streakDays,
   meals,
-  aiSnapshot,
 }: DashboardHomeProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -423,8 +412,6 @@ export function DashboardHome({
           ))}
         </ul>
       </section>
-
-      <DashboardAiCard snapshot={aiSnapshot} />
 
       <div className="space-y-2">
         <p className="text-[15px] font-medium text-foreground">快速操作</p>

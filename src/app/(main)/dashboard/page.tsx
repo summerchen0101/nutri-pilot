@@ -164,15 +164,6 @@ export default async function DashboardPage() {
     fatG: nutrientTotals.fat,
     streakDays,
     meals: buildMealRows(menuRow, foodRows ?? []),
-    aiSnapshot: {
-      todayKcal: nutrientTotals.kcal,
-      targetKcal,
-      weightKg: Number.isFinite(latestWeightKg) ? latestWeightKg : null,
-      streakDays,
-      carbG: nutrientTotals.carb,
-      proteinG: nutrientTotals.protein,
-      fatG: nutrientTotals.fat,
-    },
   };
 
   return <DashboardHome {...homeProps} />;
