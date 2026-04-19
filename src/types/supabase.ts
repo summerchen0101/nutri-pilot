@@ -195,6 +195,7 @@ export type Database = {
           fat_g: number
           fiber_g: number | null
           id: string
+          is_verified: boolean | null
           log_id: string
           name: string
           protein_g: number
@@ -208,6 +209,7 @@ export type Database = {
           fat_g: number
           fiber_g?: number | null
           id?: string
+          is_verified?: boolean | null
           log_id: string
           name: string
           protein_g: number
@@ -221,6 +223,7 @@ export type Database = {
           fat_g?: number
           fiber_g?: number | null
           id?: string
+          is_verified?: boolean | null
           log_id?: string
           name?: string
           protein_g?: number

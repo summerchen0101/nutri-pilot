@@ -42,6 +42,8 @@ export default async function LogPage() {
         carb_g,
         protein_g,
         fat_g,
+        fiber_g,
+        sodium_mg,
         brand
       )
     `,
@@ -94,6 +96,8 @@ function normalizeItems(
         carb_g: number;
         protein_g: number;
         fat_g: number;
+        fiber_g: number | null;
+        sodium_mg: number | null;
         brand: string | null;
       }[]
     | null,
@@ -107,6 +111,8 @@ function normalizeItems(
     carb_g: Number(it.carb_g),
     protein_g: Number(it.protein_g),
     fat_g: Number(it.fat_g),
+    fiber_g: it.fiber_g == null ? null : Number(it.fiber_g),
+    sodium_mg: it.sodium_mg == null ? null : Number(it.sodium_mg),
     brand: it.brand,
   }));
 }

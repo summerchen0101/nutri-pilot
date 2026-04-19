@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache';
 
 import { searchFoods } from '@/lib/food/search';
-import { scaleFromPer100g } from '@/lib/food/nutrition';
 import { createClient } from '@/lib/supabase/server';
 
 export async function searchFoodsAction(query: string) {
@@ -24,6 +23,15 @@ export async function addFoodFromSearchAction(input: {
   date: string;
   quantityG: number;
   confirmedAiEstimate?: boolean;
+  isVerified: boolean;
+  macros: {
+    calories: number;
+    carb_g: number;
+    protein_g: number;
+    fat_g: number;
+  };
+  fiber_g: number | null;
+  sodium_mg: number | null;
   hit: {
     name: string;
     brand: string | null;
@@ -47,15 +55,12 @@ export async function addFoodFromSearchAction(input: {
     return { error: '請先確認 AI 估算結果後再加入紀錄' };
   }
 
-  const scaled = scaleFromPer100g(
-    {
-      calories: input.hit.calories_per_100g,
-      carb: input.hit.carb_g_per_100g,
-      protein: input.hit.protein_g_per_100g,
-      fat: input.hit.fat_g_per_100g,
-    },
-    input.quantityG,
-  );
+  if (
+    !Number.isFinite(input.quantityG) ||
+    input.quantityG <= 0
+  ) {
+    return { error: '請輸入有效份量' };
+  }
 
   const { data: log, error: logErr } = await supabase
     .from('food_logs')
@@ -74,11 +79,14 @@ export async function addFoodFromSearchAction(input: {
     log_id: log.id,
     name: input.hit.name,
     quantity_g: input.quantityG,
-    calories: scaled.calories,
-    carb_g: scaled.carb_g,
-    protein_g: scaled.protein_g,
-    fat_g: scaled.fat_g,
+    calories: input.macros.calories,
+    carb_g: input.macros.carb_g,
+    protein_g: input.macros.protein_g,
+    fat_g: input.macros.fat_g,
+    fiber_g: input.fiber_g,
+    sodium_mg: input.sodium_mg,
     brand: input.hit.brand,
+    is_verified: input.isVerified,
   });
 
   if (itemErr) return { error: itemErr.message };

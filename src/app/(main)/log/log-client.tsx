@@ -2,10 +2,19 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import {
-  addFoodFromSearchAction,
+  AddFoodFromSearchPanel,
+  FoodSourceDotInline,
+} from '@/app/(main)/log/add-food-from-search';
+import {
   confirmPhotoItemsAction,
   deleteFoodLogAction,
   searchFoodsAction,
@@ -33,6 +42,8 @@ export interface LogItemSnapshot {
   carb_g: number;
   protein_g: number;
   fat_g: number;
+  fiber_g: number | null;
+  sodium_mg: number | null;
   brand: string | null;
 }
 
@@ -54,34 +65,6 @@ const MEAL_LABEL: Record<string, string> = {
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
 type MealType = (typeof MEAL_ORDER)[number];
-
-function FoodSourceBadge({ row }: { row: FoodCacheRow }) {
-  if (row.source === 'ai_estimate') {
-    return (
-      <span className="mt-1 flex items-center gap-1 text-xs text-amber-800">
-        <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-amber-500" />
-        AI 估算，請確認
-      </span>
-    );
-  }
-  if (row.is_verified && row.source === 'mohw_tw') {
-    return (
-      <span className="mt-1 flex items-center gap-1 text-xs text-emerald-800">
-        <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
-        衛福部
-      </span>
-    );
-  }
-  if (row.is_verified && row.source === 'usda') {
-    return (
-      <span className="mt-1 flex items-center gap-1 text-xs text-blue-800">
-        <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-blue-500" />
-        USDA
-      </span>
-    );
-  }
-  return null;
-}
 
 interface PhotoPreviewItem {
   name: string;
@@ -112,9 +95,122 @@ function parsePhotoItems(json: Json | null): PhotoPreviewItem[] | null {
   return out.length ? out : null;
 }
 
-function sumLogCalories(items: LogItemSnapshot[] | null): number {
-  if (!items?.length) return 0;
-  return items.reduce((s, it) => s + Number(it.calories), 0);
+function sumLogNutrients(items: LogItemSnapshot[] | null): {
+  calories: number;
+  protein_g: number;
+  carb_g: number;
+  fat_g: number;
+} {
+  if (!items?.length) {
+    return { calories: 0, protein_g: 0, carb_g: 0, fat_g: 0 };
+  }
+  return items.reduce(
+    (acc, it) => ({
+      calories: acc.calories + Number(it.calories),
+      protein_g: acc.protein_g + Number(it.protein_g),
+      carb_g: acc.carb_g + Number(it.carb_g),
+      fat_g: acc.fat_g + Number(it.fat_g),
+    }),
+    { calories: 0, protein_g: 0, carb_g: 0, fat_g: 0 },
+  );
+}
+
+const MACRO_SECONDARY_STYLE = {
+  color: 'var(--color-text-secondary, #64748b)',
+} as const;
+
+const MACRO_CAL_STYLE = { color: '#1B7A5A' } as const;
+
+const MACRO_TERTIARY_STYLE = {
+  color: 'var(--color-text-tertiary, #94a3b8)',
+} as const;
+
+function roundMacroG(n: number): number {
+  return Math.round(Number(n));
+}
+
+function formatPrimaryMacroLine(it: LogItemSnapshot): ReactNode {
+  const kcal = Math.round(Number(it.calories));
+  const p = roundMacroG(it.protein_g);
+  const c = roundMacroG(it.carb_g);
+  const f = roundMacroG(it.fat_g);
+  return (
+    <span className="text-[11px] font-normal leading-snug">
+      <span style={MACRO_CAL_STYLE}>{kcal}kcal</span>
+      <span style={MACRO_SECONDARY_STYLE}>
+        {' '}
+        · 蛋白質 {p}g · 碳水 {c}g · 脂肪 {f}g
+      </span>
+    </span>
+  );
+}
+
+function secondaryExpandable(it: LogItemSnapshot): boolean {
+  const fiberEmpty =
+    it.fiber_g === null || roundMacroG(Number(it.fiber_g)) === 0;
+  const sodiumEmpty =
+    it.sodium_mg === null || roundMacroG(Number(it.sodium_mg)) === 0;
+  return !fiberEmpty || !sodiumEmpty;
+}
+
+function formatFiber(it: LogItemSnapshot): string {
+  if (it.fiber_g === null) return '—';
+  return `${roundMacroG(Number(it.fiber_g))}g`;
+}
+
+function formatSodium(it: LogItemSnapshot): string {
+  if (it.sodium_mg === null) return '—';
+  return `${roundMacroG(Number(it.sodium_mg))}mg`;
+}
+
+function LogItemNutrition({ item }: { item: LogItemSnapshot }) {
+  const [open, setOpen] = useState(false);
+  const showMore = secondaryExpandable(item);
+
+  return (
+    <div className="mt-1 space-y-0">
+      <div>{formatPrimaryMacroLine(item)}</div>
+      {showMore ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="mt-0.5 block text-left text-[11px] font-normal leading-snug transition-opacity hover:opacity-80"
+            style={MACRO_TERTIARY_STYLE}
+          >
+            {open ? '收合 ‹' : '更多 ›'}
+          </button>
+          <div
+            className="overflow-hidden transition-[max-height] duration-[150ms] ease-[ease]"
+            style={{ maxHeight: open ? 96 : 0 }}
+          >
+            <p
+              className="pt-1 text-[11px] font-normal leading-snug"
+              style={MACRO_SECONDARY_STYLE}
+            >
+              纖維 {formatFiber(item)} · 鈉 {formatSodium(item)}
+            </p>
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function formatLogTotalsLine(totals: ReturnType<typeof sumLogNutrients>) {
+  const kcal = Math.round(totals.calories);
+  const p = roundMacroG(totals.protein_g);
+  const c = roundMacroG(totals.carb_g);
+  const f = roundMacroG(totals.fat_g);
+  return (
+    <span className="text-[11px] font-normal leading-snug">
+      <span style={MACRO_CAL_STYLE}>{kcal}kcal</span>
+      <span style={MACRO_SECONDARY_STYLE}>
+        {' '}
+        · 蛋白質 {p}g · 碳水 {c}g · 脂肪 {f}g
+      </span>
+    </span>
+  );
 }
 
 function totalDayKcal(logs: FoodLogSnapshot[]): number {
@@ -147,8 +243,6 @@ export function LogClient({
   const [searchBusy, setSearchBusy] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [selectedHit, setSelectedHit] = useState<FoodCacheRow | null>(null);
-  const [aiEstimateConfirmed, setAiEstimateConfirmed] = useState(false);
-  const [quantityG, setQuantityG] = useState(100);
   const [addBusy, setAddBusy] = useState(false);
 
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -297,41 +391,6 @@ export function LogClient({
   const refresh = useCallback(() => {
     router.refresh();
   }, [router]);
-
-  useEffect(() => {
-    setAiEstimateConfirmed(false);
-  }, [selectedHit?.id]);
-
-  async function onAddSearch() {
-    if (!selectedHit) return;
-    if (selectedHit.source === 'ai_estimate' && !aiEstimateConfirmed) return;
-    setAddBusy(true);
-    const err = await addFoodFromSearchAction({
-      mealType: mealTab,
-      date,
-      quantityG,
-      confirmedAiEstimate:
-        selectedHit.source === 'ai_estimate' ? aiEstimateConfirmed : undefined,
-      hit: {
-        name: selectedHit.name,
-        brand: selectedHit.brand,
-        calories_per_100g: selectedHit.calories_per_100g,
-        carb_g_per_100g: selectedHit.carb_g_per_100g,
-        protein_g_per_100g: selectedHit.protein_g_per_100g,
-        fat_g_per_100g: selectedHit.fat_g_per_100g,
-        source: selectedHit.source,
-      },
-    });
-    setAddBusy(false);
-    if (err.error) {
-      setSearchError(err.error);
-      return;
-    }
-    setSelectedHit(null);
-    setSearchQuery('');
-    setSearchHits([]);
-    refresh();
-  }
 
   async function onDeleteLog(logId: string) {
     const err = await deleteFoodLogAction(logId);
@@ -516,82 +575,52 @@ export function LogClient({
                 <p className="text-sm text-red-600">{searchError}</p>
               ) : null}
 
-              <ul className="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-slate-200 p-2">
+              <ul className="max-h-56 space-y-1.5 overflow-y-auto rounded-[12px] border border-[color:var(--color-border-tertiary)] p-2">
                 {searchHits.map((h, i) => (
                   <li key={`${h.id}-${i}`}>
                     <button
                       type="button"
-                      className={`w-full rounded-md px-2 py-2 text-left text-sm transition hover:bg-slate-100 ${
+                      className={`w-full rounded-lg border-l-2 py-2.5 pl-3 pr-2 text-left transition-colors ${
                         selectedHit?.id === h.id
-                          ? 'bg-slate-100 ring-2 ring-slate-400'
-                          : ''
+                          ? 'border-[#1B7A5A] bg-[#E0F5EE]'
+                          : 'border-transparent hover:bg-[color:var(--color-background-secondary)]'
                       }`}
                       onClick={() => setSelectedHit(h)}
                     >
-                      <span className="font-medium text-slate-900">
-                        {h.name}
-                      </span>
-                      {h.brand ? (
-                        <span className="text-slate-500"> · {h.brand}</span>
-                      ) : null}
-                      <span className="block text-xs text-slate-500">
-                        {Math.round(h.calories_per_100g)} kcal／100g
-                      </span>
-                      <FoodSourceBadge row={h} />
+                      <div className="flex items-start gap-2">
+                        <span className="mt-1.5">
+                          <FoodSourceDotInline row={h} />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-medium leading-snug text-[color:var(--color-text-primary)]">
+                            {h.name}
+                          </p>
+                          {h.brand ? (
+                            <p className="mt-0.5 text-[11px] leading-snug text-[color:var(--color-text-secondary)]">
+                              {h.brand}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
                     </button>
                   </li>
                 ))}
               </ul>
 
               {selectedHit ? (
-                <div className="space-y-3">
-                  {selectedHit.source === 'ai_estimate' ? (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                      <p className="font-medium">AI 估算，請確認後再加入</p>
-                      <p className="mt-1 text-xs text-amber-900/90">
-                        營養數值為模型推估，加入飲食紀錄前請自行核對。
-                      </p>
-                      <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-slate-300"
-                          checked={aiEstimateConfirmed}
-                          onChange={(e) =>
-                            setAiEstimateConfirmed(e.target.checked)
-                          }
-                        />
-                        <span>我已確認營養資料可接受</span>
-                      </label>
-                    </div>
-                  ) : null}
-                  <div className="flex flex-wrap items-end gap-3">
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="text-slate-600">份量（克）</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        step={1}
-                        className="w-32"
-                        value={quantityG}
-                        onChange={(e) =>
-                          setQuantityG(Number(e.target.value) || 0)
-                        }
-                      />
-                    </label>
-                    <Button
-                      type="button"
-                      disabled={
-                        addBusy ||
-                        quantityG <= 0 ||
-                        (selectedHit.source === 'ai_estimate' &&
-                          !aiEstimateConfirmed)
-                      }
-                      onClick={() => void onAddSearch()}
-                    >
-                      {addBusy ? '加入中…' : '加入紀錄'}
-                    </Button>
-                  </div>
-                </div>
+                <AddFoodFromSearchPanel
+                  selectedHit={selectedHit}
+                  mealType={mealTab}
+                  mealLabelZh={MEAL_LABEL[mealTab]}
+                  date={date}
+                  onError={(msg) => setSearchError(msg)}
+                  onCommitted={() => {
+                    setSelectedHit(null);
+                    setSearchQuery('');
+                    setSearchHits([]);
+                    refresh();
+                  }}
+                />
               ) : null}
             </div>
           ) : (
@@ -678,18 +707,22 @@ export function LogClient({
                                       ? '搜尋'
                                       : '手動'}
                                 </Badge>
-                                <span className="text-sm text-slate-500">
-                                  {sumLogCalories(log.food_log_items)} kcal
+                                <span className="inline-flex flex-wrap items-center gap-x-1">
+                                  {formatLogTotalsLine(
+                                    sumLogNutrients(log.food_log_items),
+                                  )}
                                 </span>
                               </div>
-                              <ul className="text-sm text-slate-800">
+                              <ul className="space-y-2 text-sm text-slate-800">
                                 {(log.food_log_items ?? []).map((it) => (
                                   <li key={it.id}>
-                                    {it.name}{' '}
-                                    <span className="text-slate-500">
-                                      {Number(it.quantity_g)}g ·{' '}
-                                      {Math.round(Number(it.calories))} kcal
-                                    </span>
+                                    <div>
+                                      <span>{it.name}</span>{' '}
+                                      <span className="text-slate-500">
+                                        {Math.round(Number(it.quantity_g))}g
+                                      </span>
+                                    </div>
+                                    <LogItemNutrition item={it} />
                                   </li>
                                 ))}
                               </ul>
