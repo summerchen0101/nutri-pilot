@@ -805,6 +805,30 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_insights: {
+        Row: {
+          created_at: string | null
+          id: string
+          insights: Json
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insights: Json
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insights?: Json
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

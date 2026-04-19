@@ -17,3 +17,16 @@ export function addCalendarDaysISO(isoDate: string, deltaDays: number): string {
   const dd = String(dt.getDate()).padStart(2, '0');
   return `${yy}-${mm}-${dd}`;
 }
+
+/** Inclusive range of ISO calendar dates from `start` through `end`. */
+export function iterateISODatesInclusive(start: string, end: string): string[] {
+  if (start > end) return [];
+  const out: string[] = [];
+  let cur = start;
+  for (;;) {
+    out.push(cur);
+    if (cur >= end) break;
+    cur = addCalendarDaysISO(cur, 1);
+  }
+  return out;
+}

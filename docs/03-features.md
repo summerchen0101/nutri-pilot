@@ -177,20 +177,20 @@ export function calcRecommendScore(
 
 ### P3-1 Dashboard `/dashboard`
 
-- [ ] 問候語 + 今日日期 + 連續打卡 badge
-- [ ] 熱量圓環（今日攝取 / 目標，三大營養素進度條）
-- [ ] 體重卡（今日體重 + BMI）
-- [ ] 今日飲食摘要（四餐打卡狀態）
-- [ ] AI 今日建議卡（直接呼叫，lazy load）
-- [ ] 快速操作列（記錄飲食、今日計畫、量體重）
+- [x] 問候語 + 今日日期 + 連續打卡 badge
+- [x] 熱量圓環（今日攝取 / 目標，三大營養素進度條）
+- [x] 體重卡（今日體重 + BMI）
+- [x] 今日飲食摘要（四餐打卡狀態）
+- [x] AI 今日建議卡（直接呼叫，lazy load）
+- [x] 快速操作列（記錄飲食、今日計畫、量體重）
 
 ### P3-2 數據分析頁 `/analytics`
 
-- [ ] 體重趨勢折線圖（Recharts LineChart）
-- [ ] 每日熱量長條圖（BarChart）
-- [ ] 營養素達成率雷達圖（RadarChart）
-- [ ] 週期切換（本週 / 本月 / 全程）
-- [ ] AI 週報洞察（每週日 cron 生成，頁面顯示最新一份）
+- [x] 體重趨勢折線圖（Recharts LineChart）
+- [x] 每日熱量長條圖（BarChart）
+- [x] 營養素達成率雷達圖（RadarChart）
+- [x] 週期切換（本週 / 本月 / 全程）
+- [x] AI 週報洞察（每週日 cron 生成，頁面顯示最新一份）
 
 ### P3-3 個人設定頁 `/settings`
 
