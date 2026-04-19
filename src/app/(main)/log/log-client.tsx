@@ -22,7 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { invokeAiPhotoRequestFromBrowser } from '@/lib/food/invoke-photo-request';
 import { createClient } from '@/lib/supabase/client';
-import type { FoodSearchHit } from '@/lib/food/search';
+import type { FoodCacheRow } from '@/lib/food/search';
 import type { Json } from '@/types/supabase';
 
 export interface LogItemSnapshot {
@@ -54,6 +54,34 @@ const MEAL_LABEL: Record<string, string> = {
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
 type MealType = (typeof MEAL_ORDER)[number];
+
+function FoodSourceBadge({ row }: { row: FoodCacheRow }) {
+  if (row.source === 'ai_estimate') {
+    return (
+      <span className="mt-1 flex items-center gap-1 text-xs text-amber-800">
+        <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+        AI 估算，請確認
+      </span>
+    );
+  }
+  if (row.is_verified && row.source === 'mohw_tw') {
+    return (
+      <span className="mt-1 flex items-center gap-1 text-xs text-emerald-800">
+        <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+        衛福部
+      </span>
+    );
+  }
+  if (row.is_verified && row.source === 'usda') {
+    return (
+      <span className="mt-1 flex items-center gap-1 text-xs text-blue-800">
+        <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+        USDA
+      </span>
+    );
+  }
+  return null;
+}
 
 interface PhotoPreviewItem {
   name: string;
@@ -115,10 +143,11 @@ export function LogClient({
   const [inputMode, setInputMode] = useState<'search' | 'photo'>('search');
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchHits, setSearchHits] = useState<FoodSearchHit[]>([]);
+  const [searchHits, setSearchHits] = useState<FoodCacheRow[]>([]);
   const [searchBusy, setSearchBusy] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [selectedHit, setSelectedHit] = useState<FoodSearchHit | null>(null);
+  const [selectedHit, setSelectedHit] = useState<FoodCacheRow | null>(null);
+  const [aiEstimateConfirmed, setAiEstimateConfirmed] = useState(false);
   const [quantityG, setQuantityG] = useState(100);
   const [addBusy, setAddBusy] = useState(false);
 
@@ -169,8 +198,8 @@ export function LogClient({
         setSearchError(null);
         const res = await searchFoodsAction(q);
         setSearchBusy(false);
-        if (res.error) setSearchError(res.error);
-        setSearchHits(res.hits ?? []);
+        if ('error' in res && res.error) setSearchError(res.error);
+        setSearchHits(res.results ?? []);
       })();
     }, 380);
 
@@ -232,7 +261,7 @@ export function LogClient({
       return st === 'ready' || st === 'error';
     }
 
-    let iv: ReturnType<typeof setInterval> | undefined;
+    let iv: number | undefined;
 
     iv = window.setInterval(() => {
       void (async () => {
@@ -269,13 +298,20 @@ export function LogClient({
     router.refresh();
   }, [router]);
 
+  useEffect(() => {
+    setAiEstimateConfirmed(false);
+  }, [selectedHit?.id]);
+
   async function onAddSearch() {
     if (!selectedHit) return;
+    if (selectedHit.source === 'ai_estimate' && !aiEstimateConfirmed) return;
     setAddBusy(true);
     const err = await addFoodFromSearchAction({
       mealType: mealTab,
       date,
       quantityG,
+      confirmedAiEstimate:
+        selectedHit.source === 'ai_estimate' ? aiEstimateConfirmed : undefined,
       hit: {
         name: selectedHit.name,
         brand: selectedHit.brand,
@@ -283,6 +319,7 @@ export function LogClient({
         carb_g_per_100g: selectedHit.carb_g_per_100g,
         protein_g_per_100g: selectedHit.protein_g_per_100g,
         fat_g_per_100g: selectedHit.fat_g_per_100g,
+        source: selectedHit.source,
       },
     });
     setAddBusy(false);
@@ -481,12 +518,11 @@ export function LogClient({
 
               <ul className="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-slate-200 p-2">
                 {searchHits.map((h, i) => (
-                  <li key={`${h.offCode ?? 'x'}-${h.name}-${i}`}>
+                  <li key={`${h.id}-${i}`}>
                     <button
                       type="button"
                       className={`w-full rounded-md px-2 py-2 text-left text-sm transition hover:bg-slate-100 ${
-                        selectedHit?.name === h.name &&
-                        selectedHit?.offCode === h.offCode
+                        selectedHit?.id === h.id
                           ? 'bg-slate-100 ring-2 ring-slate-400'
                           : ''
                       }`}
@@ -501,33 +537,60 @@ export function LogClient({
                       <span className="block text-xs text-slate-500">
                         {Math.round(h.calories_per_100g)} kcal／100g
                       </span>
+                      <FoodSourceBadge row={h} />
                     </button>
                   </li>
                 ))}
               </ul>
 
               {selectedHit ? (
-                <div className="flex flex-wrap items-end gap-3">
-                  <label className="flex flex-col gap-1 text-sm">
-                    <span className="text-slate-600">份量（克）</span>
-                    <Input
-                      type="number"
-                      min={1}
-                      step={1}
-                      className="w-32"
-                      value={quantityG}
-                      onChange={(e) =>
-                        setQuantityG(Number(e.target.value) || 0)
+                <div className="space-y-3">
+                  {selectedHit.source === 'ai_estimate' ? (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+                      <p className="font-medium">AI 估算，請確認後再加入</p>
+                      <p className="mt-1 text-xs text-amber-900/90">
+                        營養數值為模型推估，加入飲食紀錄前請自行核對。
+                      </p>
+                      <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300"
+                          checked={aiEstimateConfirmed}
+                          onChange={(e) =>
+                            setAiEstimateConfirmed(e.target.checked)
+                          }
+                        />
+                        <span>我已確認營養資料可接受</span>
+                      </label>
+                    </div>
+                  ) : null}
+                  <div className="flex flex-wrap items-end gap-3">
+                    <label className="flex flex-col gap-1 text-sm">
+                      <span className="text-slate-600">份量（克）</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        step={1}
+                        className="w-32"
+                        value={quantityG}
+                        onChange={(e) =>
+                          setQuantityG(Number(e.target.value) || 0)
+                        }
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      disabled={
+                        addBusy ||
+                        quantityG <= 0 ||
+                        (selectedHit.source === 'ai_estimate' &&
+                          !aiEstimateConfirmed)
                       }
-                    />
-                  </label>
-                  <Button
-                    type="button"
-                    disabled={addBusy || quantityG <= 0}
-                    onClick={() => void onAddSearch()}
-                  >
-                    {addBusy ? '加入中…' : '加入紀錄'}
-                  </Button>
+                      onClick={() => void onAddSearch()}
+                    >
+                      {addBusy ? '加入中…' : '加入紀錄'}
+                    </Button>
+                  </div>
                 </div>
               ) : null}
             </div>

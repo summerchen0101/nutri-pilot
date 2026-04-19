@@ -9,10 +9,11 @@ import { createClient } from '@/lib/supabase/server';
 export async function searchFoodsAction(query: string) {
   const supabase = createClient();
   try {
-    return { hits: await searchFoods(supabase, query) };
+    return await searchFoods(supabase, query);
   } catch (e) {
     return {
-      hits: [],
+      results: [],
+      source: 'cache' as const,
       error: e instanceof Error ? e.message : '搜尋失敗',
     };
   }
@@ -22,6 +23,7 @@ export async function addFoodFromSearchAction(input: {
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   date: string;
   quantityG: number;
+  confirmedAiEstimate?: boolean;
   hit: {
     name: string;
     brand: string | null;
@@ -29,6 +31,7 @@ export async function addFoodFromSearchAction(input: {
     carb_g_per_100g: number;
     protein_g_per_100g: number;
     fat_g_per_100g: number;
+    source?: string;
   };
 }): Promise<{ error?: string }> {
   const supabase = createClient();
@@ -36,6 +39,13 @@ export async function addFoodFromSearchAction(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: '未登入' };
+
+  if (
+    input.hit.source === 'ai_estimate' &&
+    input.confirmedAiEstimate !== true
+  ) {
+    return { error: '請先確認 AI 估算結果後再加入紀錄' };
+  }
 
   const scaled = scaleFromPer100g(
     {

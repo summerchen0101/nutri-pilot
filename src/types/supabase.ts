@@ -135,36 +135,54 @@ export type Database = {
       }
       food_cache: {
         Row: {
+          alias: string[] | null
           brand: string | null
           calories_per_100g: number
           carb_g_per_100g: number
+          external_id: string | null
           fat_g_per_100g: number
+          fiber_g_per_100g: number | null
           id: string
+          is_verified: boolean | null
           name: string
           off_code: string | null
           protein_g_per_100g: number
+          sodium_mg_per_100g: number | null
+          source: 'off' | 'mohw_tw' | 'usda' | 'ai_estimate' | 'user'
           updated_at: string | null
         }
         Insert: {
+          alias?: string[] | null
           brand?: string | null
           calories_per_100g: number
           carb_g_per_100g?: number
+          external_id?: string | null
           fat_g_per_100g?: number
+          fiber_g_per_100g?: number | null
           id?: string
+          is_verified?: boolean | null
           name: string
           off_code?: string | null
           protein_g_per_100g?: number
+          sodium_mg_per_100g?: number | null
+          source?: 'off' | 'mohw_tw' | 'usda' | 'ai_estimate' | 'user'
           updated_at?: string | null
         }
         Update: {
+          alias?: string[] | null
           brand?: string | null
           calories_per_100g?: number
           carb_g_per_100g?: number
+          external_id?: string | null
           fat_g_per_100g?: number
+          fiber_g_per_100g?: number | null
           id?: string
+          is_verified?: boolean | null
           name?: string
           off_code?: string | null
           protein_g_per_100g?: number
+          sodium_mg_per_100g?: number | null
+          source?: 'off' | 'mohw_tw' | 'usda' | 'ai_estimate' | 'user'
           updated_at?: string | null
         }
         Relationships: []
@@ -789,7 +807,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_food_cache: {
+        Args: {
+          p_query: string
+        }
+        Returns: Database['public']['Tables']['food_cache']['Row'][]
+      }
     }
     Enums: {
       [_ in never]: never
