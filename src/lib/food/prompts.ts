@@ -1,20 +1,52 @@
-/**
- * Claude 食物營養估算（每 100g）
- * @see lib/food/search.ts estimateWithClaude
- */
-export function FOOD_ESTIMATE_PROMPT(foodName: string): string {
-  const q = foodName.trim();
-  return `你是營養資料助理。請依常見市售或居家料理，估算下列食物「每 100 公克可食部」的營養成分（數字需合理；若有多種可能，取台灣常見版本）。
+function escapeManualInputFragment(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/`/g, "'").slice(0, 2000);
+}
 
-食物名稱：${q}
+export function buildManualInputPrompt(
+  input: string,
+  referenceLines?: string[],
+): string {
+  const safe = escapeManualInputFragment(input.trim());
+  const lines = referenceLines?.filter((l) => l.trim().length > 0) ?? [];
+  const refBlock =
+    lines.length > 0 ?
+      `
 
-請回傳單一 JSON 物件（不要陣列），欄位如下（皆為數字；缺資料可用 0）：
-- name：字串，標準化後的食物名稱（可用繁體中文）
-- brand：字串或 null（無品牌則 null）
-- calories_per_100g：大卡（kcal）
-- carb_g_per_100g：碳水化合物公克
-- protein_g_per_100g：蛋白質公克
-- fat_g_per_100g：脂肪公克
-- fiber_g_per_100g：膳食纖維公克（可選，未知則 null）
-- sodium_mg_per_100g：鈉毫克（可選，未知則 null）`;
+資料庫參考（若下列與用戶描述相關，可輔助校準每 100g 營養；仍以用戶描述的實際份量為準）：
+${lines.join('\n')}`
+    : '';
+
+  return `
+用戶輸入：「${safe}」
+${refBlock}
+
+你是台灣的專業營養師，請分析以上食物的營養成分。
+
+規則：
+1. 從用戶描述中解析食物名稱與份量
+2. 份量不明確時，用台灣常見的標準份量估算
+3. 優先參考台灣在地食物的營養數值
+4. 如果是複合食物（如珍珠奶茶），整體估算不要拆分
+5. 數值四捨五入到整數
+
+confidence 判斷標準：
+- high：常見標準食物（雞塊、白飯、水煮蛋）
+- medium：有地區差異的食物（便當、珍珠奶茶）
+- low：描述模糊或罕見食物
+
+回傳 JSON（只回傳 JSON，不加任何說明），範例結構：
+{
+  "name": "雞塊 x4",
+  "quantity_g": 120,
+  "quantity_description": "4個",
+  "calories": 380,
+  "protein_g": 18,
+  "carb_g": 42,
+  "fat_g": 12,
+  "fiber_g": null,
+  "sodium_mg": null,
+  "confidence": "medium",
+  "note": null
+}
+`;
 }

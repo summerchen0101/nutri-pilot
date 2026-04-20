@@ -11,15 +11,13 @@ import {
 } from 'react';
 
 import {
-  AddFoodFromSearchPanel,
-  FoodSourceDotInline,
+  AddFoodManualAiPanel,
   type StagedFoodItemForPlan,
-} from '@/app/(main)/log/add-food-from-search';
+} from '@/app/(main)/log/add-food-manual-ai';
 import {
   commitPrefillFromPlanAction,
   confirmPhotoItemsAction,
   deleteFoodLogAction,
-  searchFoodsAction,
 } from '@/app/(main)/log/actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,9 +30,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
 import { invokeAiPhotoRequestFromBrowser } from '@/lib/food/invoke-photo-request';
-import { cn } from '@/lib/utils/cn';
 import { createClient } from '@/lib/supabase/client';
-import type { FoodCacheRow } from '@/lib/food/search';
 import type { Json } from '@/types/supabase';
 
 export interface LogItemSnapshot {
@@ -122,6 +118,7 @@ function roundMacroG(n: number): number {
 function sourceDotColor(method: string, item: LogItemSnapshot): string {
   if (method === 'from_plan') return '#4C956C';
   if (method === 'photo') return '#EF9F27';
+  if (method === 'ai_analysis') return '#EF9F27';
   if (method === 'search') {
     if (item.is_verified === false || item.is_verified === null) {
       return '#EF9F27';
@@ -301,13 +298,9 @@ export function LogClient({
       (prefillFromMeal?.mealType as MealType | undefined) ??
       'breakfast',
   );
-  const [inputMode, setInputMode] = useState<'search' | 'photo'>('search');
+  const [inputMode, setInputMode] = useState<'manual' | 'photo'>('manual');
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchHits, setSearchHits] = useState<FoodCacheRow[]>([]);
-  const [searchBusy, setSearchBusy] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const [selectedHit, setSelectedHit] = useState<FoodCacheRow | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [addBusy, setAddBusy] = useState(false);
 
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -356,28 +349,6 @@ export function LogClient({
     },
     [],
   );
-
-  useEffect(() => {
-    const q = searchQuery.trim();
-    if (q.length < 2) {
-      setSearchHits([]);
-      setSearchError(null);
-      return;
-    }
-
-    const t = window.setTimeout(() => {
-      void (async () => {
-        setSearchBusy(true);
-        setSearchError(null);
-        const res = await searchFoodsAction(q);
-        setSearchBusy(false);
-        if ('error' in res && res.error) setSearchError(res.error);
-        setSearchHits(res.results ?? []);
-      })();
-    }, 380);
-
-    return () => window.clearTimeout(t);
-  }, [searchQuery]);
 
   useEffect(() => {
     if (!activeJobId) return;
@@ -541,7 +512,7 @@ export function LogClient({
   async function onDeleteLog(logId: string) {
     const err = await deleteFoodLogAction(logId);
     if (err.error) {
-      setSearchError(err.error);
+      setActionError(err.error);
       return;
     }
     refresh();
@@ -856,7 +827,7 @@ export function LogClient({
               className="w-full border-[0.5px]"
               onClick={() => setShowExtraSearch((v) => !v)}
             >
-              {showExtraSearch ? '收合搜尋' : '新增其他食物'}
+              {showExtraSearch ? '收合' : '新增其他食物'}
             </Button>
 
             {showExtraSearch ? (
@@ -864,88 +835,22 @@ export function LogClient({
                 <p className="text-[13px] text-muted-foreground">
                   餐次：{MEAL_LABEL[prefillFromMeal.mealType]}
                 </p>
-                <Input
-                  placeholder="輸入食品名稱（至少 2 字）"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                <AddFoodManualAiPanel
+                  mealType={prefillFromMeal.mealType}
+                  mealLabelZh={MEAL_LABEL[prefillFromMeal.mealType]}
+                  date={date}
+                  stagingOnly
+                  onStagedItem={(item) => {
+                    const shape = stagedFoodToPlanShape(item);
+                    setExtraDraftLines((prev) => [
+                      ...prev,
+                      { base: { ...shape }, row: { ...shape } },
+                    ]);
+                    setPrefillErr(null);
+                  }}
+                  onCommitted={() => {}}
+                  onError={(msg) => setPrefillErr(msg)}
                 />
-                {searchBusy ? (
-                  <p className="text-[11px] text-muted-foreground">
-                    搜尋中…
-                  </p>
-                ) : null}
-
-                {searchHits.length > 0 ? (
-                  <ul
-                    role="list"
-                    className={cn(
-                      'flex w-full min-w-0 list-none flex-col gap-1 overflow-x-hidden rounded-xl border-[0.5px] border-border bg-secondary p-2',
-                      searchHits.length > 7 ?
-                        'max-h-56 overflow-y-auto'
-                      : 'overflow-y-visible',
-                    )}
-                  >
-                    {searchHits.map((h, i) => (
-                      <li key={`prefill-hit-${h.id}-${i}`} className="min-w-0 shrink-0">
-                        <button
-                          type="button"
-                          className={cn(
-                            'flex w-full max-w-full gap-2 rounded-[10px] border-[0.5px] px-3 py-2 text-left transition-colors duration-150',
-                            h.brand ? 'items-start' : 'items-center',
-                            selectedHit?.id === h.id
-                              ? 'border-[#4C956C] bg-[#E8F5EE]'
-                              : 'border-transparent hover:bg-muted',
-                          )}
-                          onClick={() => setSelectedHit(h)}
-                        >
-                          <span
-                            className={cn(
-                              'shrink-0',
-                              h.brand ? 'mt-0.5' : '',
-                            )}
-                            aria-hidden
-                          >
-                            <FoodSourceDotInline row={h} />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="break-words text-[13px] font-normal leading-snug text-foreground">
-                              {h.name}
-                            </p>
-                            {h.brand ? (
-                              <p className="mt-0.5 break-words text-[11px] leading-snug text-muted-foreground">
-                                {h.brand}
-                              </p>
-                            ) : null}
-                          </div>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-
-                {selectedHit ? (
-                  <AddFoodFromSearchPanel
-                    selectedHit={selectedHit}
-                    mealType={prefillFromMeal.mealType}
-                    mealLabelZh={MEAL_LABEL[prefillFromMeal.mealType]}
-                    date={date}
-                    stagingOnly
-                    onStagedItem={(item) => {
-                      const shape = stagedFoodToPlanShape(item);
-                      setExtraDraftLines((prev) => [
-                        ...prev,
-                        { base: { ...shape }, row: { ...shape } },
-                      ]);
-                      setPrefillErr(null);
-                    }}
-                    onCommitted={() => {
-                      setSelectedHit(null);
-                      setSearchQuery('');
-                      setSearchHits([]);
-                    }}
-                    onError={(msg) => setPrefillErr(msg)}
-                  />
-                ) : null}
               </div>
             ) : null}
 
@@ -969,7 +874,7 @@ export function LogClient({
         <CardHeader className="pb-2">
           <CardTitle>新增紀錄</CardTitle>
           <CardDescription>
-            選擇餐次後，以搜尋或拍照加入今日飲食。
+            選擇餐次後，以文字描述或拍照加入今日飲食。
           </CardDescription>
         </CardHeader>
         <CardContent className="min-w-0 space-y-4 overflow-x-hidden">
@@ -990,13 +895,13 @@ export function LogClient({
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              variant={inputMode === 'search' ? 'default' : 'ghost'}
+              variant={inputMode === 'manual' ? 'default' : 'ghost'}
               className={
-                inputMode === 'search' ? pillPrimary : pillInactive
+                inputMode === 'manual' ? pillPrimary : pillInactive
               }
-              onClick={() => setInputMode('search')}
+              onClick={() => setInputMode('manual')}
             >
-              搜尋食品
+              手動輸入
             </Button>
             <Button
               type="button"
@@ -1010,84 +915,21 @@ export function LogClient({
             </Button>
           </div>
 
-          {inputMode === 'search' ? (
-            <div key="input-mode-search" className="space-y-3">
-              <Input
-                placeholder="輸入食品名稱（至少 2 字）"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+          {inputMode === 'manual' ? (
+            <div key="input-mode-manual" className="space-y-3">
+              {actionError ? (
+                <p className="text-[13px] text-destructive">{actionError}</p>
+              ) : null}
+              <AddFoodManualAiPanel
+                mealType={mealTab}
+                mealLabelZh={MEAL_LABEL[mealTab]}
+                date={date}
+                onError={(msg) => setActionError(msg)}
+                onCommitted={() => {
+                  setActionError(null);
+                  refresh();
+                }}
               />
-              {searchBusy ? (
-                <p className="text-[11px] text-muted-foreground">搜尋中…</p>
-              ) : null}
-              {searchError ? (
-                <p className="text-[13px] text-destructive">{searchError}</p>
-              ) : null}
-
-              {searchHits.length > 0 ? (
-                <ul
-                  role="list"
-                  className={cn(
-                    'flex w-full min-w-0 list-none flex-col gap-1 overflow-x-hidden rounded-xl border-[0.5px] border-border bg-card p-2',
-                    /* 項目少時高度貼齊內容；項目多時再限制高度並捲動，避免 ul 被撐成大片留白 */
-                    searchHits.length > 7 ?
-                      'max-h-56 overflow-y-auto'
-                    : 'overflow-y-visible',
-                  )}
-                >
-                  {searchHits.map((h, i) => (
-                    <li key={`${h.id}-${i}`} className="min-w-0 shrink-0">
-                      <button
-                        type="button"
-                        className={cn(
-                          'flex w-full max-w-full gap-2 rounded-[10px] border-[0.5px] px-3 py-2 text-left transition-colors duration-150',
-                          h.brand ? 'items-start' : 'items-center',
-                          selectedHit?.id === h.id
-                            ? 'border-[#4C956C] bg-[#E8F5EE]'
-                            : 'border-transparent hover:bg-secondary',
-                        )}
-                        onClick={() => setSelectedHit(h)}
-                      >
-                        <span
-                          className={cn(
-                            'shrink-0',
-                            h.brand ? 'mt-0.5' : '',
-                          )}
-                          aria-hidden
-                        >
-                          <FoodSourceDotInline row={h} />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="break-words text-[13px] font-normal leading-snug text-foreground">
-                            {h.name}
-                          </p>
-                          {h.brand ? (
-                            <p className="mt-0.5 break-words text-[11px] leading-snug text-muted-foreground">
-                              {h.brand}
-                            </p>
-                          ) : null}
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-
-              {selectedHit ? (
-                <AddFoodFromSearchPanel
-                  selectedHit={selectedHit}
-                  mealType={mealTab}
-                  mealLabelZh={MEAL_LABEL[mealTab]}
-                  date={date}
-                  onError={(msg) => setSearchError(msg)}
-                  onCommitted={() => {
-                    setSelectedHit(null);
-                    setSearchQuery('');
-                    setSearchHits([]);
-                    refresh();
-                  }}
-                />
-              ) : null}
             </div>
           ) : (
             <div key="input-mode-photo" className="space-y-3">
@@ -1192,9 +1034,11 @@ export function LogClient({
                                   title={
                                     log.method === 'photo'
                                       ? 'AI 估算（拍照）'
-                                      : it.is_verified
-                                        ? '衛福部／資料庫'
-                                        : 'AI 估算'
+                                      : log.method === 'ai_analysis'
+                                        ? 'AI 分析（手動描述）'
+                                        : it.is_verified
+                                          ? '衛福部／資料庫'
+                                          : 'AI 估算'
                                   }
                                   aria-hidden
                                 />

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
+  applySwapAlternativeAction,
   swapMealItemAction,
   type SwapAlternative,
 } from '@/app/(main)/plan/actions';
@@ -133,6 +134,7 @@ export function PlanView({
   );
   const [swapErr, setSwapErr] = useState<string | null>(null);
   const [swapLoading, setSwapLoading] = useState(false);
+  const [swapApplying, setSwapApplying] = useState(false);
 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [popoverMealId, setPopoverMealId] = useState<string | null>(null);
@@ -303,6 +305,25 @@ export function PlanView({
     setSwapFor(null);
     setAlternatives(null);
     setSwapErr(null);
+    setSwapApplying(false);
+  }
+
+  async function onPickAlternative(alt: SwapAlternative) {
+    if (!swapFor || swapApplying) return;
+    setSwapApplying(true);
+    const fromName = swapFor.name;
+    const r = await applySwapAlternativeAction({
+      mealItemId: swapFor.id,
+      alternative: alt,
+    });
+    setSwapApplying(false);
+    if (r.error) {
+      setToastMsg(r.error);
+      return;
+    }
+    closeSwap();
+    setToastMsg(`已將「${fromName}」改為「${alt.name}」`);
+    router.refresh();
   }
 
   const rateWidth = Math.min(100, progress.ratePct);
@@ -605,7 +626,7 @@ export function PlanView({
                               className="h-7 shrink-0 rounded-md border-[0.5px] border-border px-2.5 text-[12px] font-normal"
                               onClick={() => void runSwap(it, meal.type)}
                             >
-                              換
+                              更換
                             </Button>
                           ) : null}
                         </li>
@@ -634,7 +655,7 @@ export function PlanView({
             <CardHeader>
               <CardTitle>替代食材建議</CardTitle>
               <CardDescription>
-                原：{swapFor.name}（{swapMealType}）
+                原：{swapFor.name}（{MEAL_LABEL[swapMealType] ?? swapMealType}）
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -645,25 +666,42 @@ export function PlanView({
               ) : alternatives?.length ? (
                 <ul className="space-y-2.5">
                   {alternatives.map((a, i) => (
-                    <li
-                      key={i}
-                      className="rounded-xl border-[0.5px] border-border bg-secondary p-3 text-[13px]"
-                    >
-                      <p className="font-medium text-foreground">{a.name}</p>
-                      <p className="mt-1 text-muted-foreground">
-                        {a.quantity_g}g · {a.calories} kcal · C{a.carb_g} /
-                        P{a.protein_g} / F{a.fat_g}
-                      </p>
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        {a.reason}
-                      </p>
+                    <li key={i} className="list-none">
+                      <button
+                        type="button"
+                        disabled={swapApplying}
+                        onClick={() => void onPickAlternative(a)}
+                        className={cn(
+                          'w-full rounded-xl border-[0.5px] border-border bg-secondary p-3 text-left text-[13px] transition-colors',
+                          'hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          'disabled:pointer-events-none disabled:opacity-60',
+                        )}
+                        aria-label={`以「${a.name}」取代`}
+                      >
+                        <p className="font-medium text-foreground">{a.name}</p>
+                        <p className="mt-1 text-muted-foreground">
+                          {a.quantity_g}g · {a.calories} kcal · C{a.carb_g} /
+                          P{a.protein_g} / F{a.fat_g}
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          {a.reason}
+                        </p>
+                      </button>
                     </li>
                   ))}
                 </ul>
               ) : (
                 <p className="text-[13px] text-muted-foreground">無結果</p>
               )}
-              <Button type="button" variant="ghost" onClick={closeSwap}>
+              {swapApplying ? (
+                <p className="text-[13px] text-muted-foreground">套用中…</p>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={closeSwap}
+                disabled={swapApplying}
+              >
                 關閉
               </Button>
             </CardContent>

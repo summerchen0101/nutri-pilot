@@ -2,46 +2,63 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { searchFoods } from '@/lib/food/search';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import { refreshDailyMenuCompletion } from '@/lib/plan/menu-completion';
 import { createClient } from '@/lib/supabase/server';
 
-export async function searchFoodsAction(query: string) {
-  const supabase = createClient();
-  try {
-    return await searchFoods(supabase, query);
-  } catch (e) {
-    return {
-      results: [],
-      source: 'cache' as const,
-      error: e instanceof Error ? e.message : '搜尋失敗',
-    };
-  }
-}
-
-export async function addFoodFromSearchAction(input: {
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  date: string;
-  quantityG: number;
-  confirmedAiEstimate?: boolean;
-  isVerified: boolean;
-  macros: {
+function enqueueAiEstimateFoodCacheInsert(
+  supabase: SupabaseClient,
+  item: {
+    name: string;
+    quantity_g: number;
     calories: number;
     carb_g: number;
     protein_g: number;
     fat_g: number;
-  };
+    fiber_g: number | null;
+    sodium_mg: number | null;
+  },
+): void {
+  const q = Number(item.quantity_g);
+  if (!Number.isFinite(q) || q <= 0) return;
+
+  const scale = 100 / q;
+
+  void supabase.from('food_cache').insert({
+    source: 'ai_estimate',
+    name: item.name.trim().slice(0, 500) || '未命名',
+    alias: null,
+    brand: null,
+    off_code: null,
+    external_id: null,
+    calories_per_100g: Math.round(Number(item.calories) * scale),
+    carb_g_per_100g: Math.round(Number(item.carb_g) * scale),
+    protein_g_per_100g: Math.round(Number(item.protein_g) * scale),
+    fat_g_per_100g: Math.round(Number(item.fat_g) * scale),
+    fiber_g_per_100g:
+      item.fiber_g == null
+        ? null
+        : Math.round(Number(item.fiber_g) * scale * 10) / 10,
+    sodium_mg_per_100g:
+      item.sodium_mg == null
+        ? null
+        : Math.round(Number(item.sodium_mg) * scale),
+    is_verified: false,
+  });
+}
+
+export async function addFoodFromAiAnalysisAction(input: {
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  date: string;
+  name: string;
+  quantity_g: number;
+  calories: number;
+  carb_g: number;
+  protein_g: number;
+  fat_g: number;
   fiber_g: number | null;
   sodium_mg: number | null;
-  hit: {
-    name: string;
-    brand: string | null;
-    calories_per_100g: number;
-    carb_g_per_100g: number;
-    protein_g_per_100g: number;
-    fat_g_per_100g: number;
-    source?: string;
-  };
 }): Promise<{ error?: string }> {
   const supabase = createClient();
   const {
@@ -49,18 +66,9 @@ export async function addFoodFromSearchAction(input: {
   } = await supabase.auth.getUser();
   if (!user) return { error: '未登入' };
 
-  if (
-    input.hit.source === 'ai_estimate' &&
-    input.confirmedAiEstimate !== true
-  ) {
-    return { error: '請先確認 AI 估算結果後再加入紀錄' };
-  }
-
-  if (
-    !Number.isFinite(input.quantityG) ||
-    input.quantityG <= 0
-  ) {
-    return { error: '請輸入有效份量' };
+  const q = Number(input.quantity_g);
+  if (!Number.isFinite(q) || q <= 0) {
+    return { error: '份量無效' };
   }
 
   const { data: log, error: logErr } = await supabase
@@ -69,7 +77,8 @@ export async function addFoodFromSearchAction(input: {
       user_id: user.id,
       date: input.date,
       meal_type: input.mealType,
-      method: 'search',
+      method: 'ai_analysis',
+      log_type: 'manual',
     })
     .select('id')
     .single();
@@ -78,19 +87,32 @@ export async function addFoodFromSearchAction(input: {
 
   const { error: itemErr } = await supabase.from('food_log_items').insert({
     log_id: log.id,
-    name: input.hit.name,
-    quantity_g: input.quantityG,
-    calories: input.macros.calories,
-    carb_g: input.macros.carb_g,
-    protein_g: input.macros.protein_g,
-    fat_g: input.macros.fat_g,
-    fiber_g: input.fiber_g,
-    sodium_mg: input.sodium_mg,
-    brand: input.hit.brand,
-    is_verified: input.isVerified,
+    name: input.name.trim() || '未命名',
+    quantity_g: q,
+    calories: Math.round(Number(input.calories)),
+    carb_g: Math.round(Number(input.carb_g)),
+    protein_g: Math.round(Number(input.protein_g)),
+    fat_g: Math.round(Number(input.fat_g)),
+    fiber_g:
+      input.fiber_g == null ? null : Math.round(Number(input.fiber_g)),
+    sodium_mg:
+      input.sodium_mg == null ? null : Math.round(Number(input.sodium_mg)),
+    brand: null,
+    is_verified: false,
   });
 
   if (itemErr) return { error: itemErr.message };
+
+  enqueueAiEstimateFoodCacheInsert(supabase, {
+    name: input.name,
+    quantity_g: q,
+    calories: input.calories,
+    carb_g: input.carb_g,
+    protein_g: input.protein_g,
+    fat_g: input.fat_g,
+    fiber_g: input.fiber_g,
+    sodium_mg: input.sodium_mg,
+  });
 
   revalidatePath('/log');
   return {};
