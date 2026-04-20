@@ -281,6 +281,7 @@ export async function commitPrefillFromPlanAction(input: {
 
   revalidatePath('/log');
   revalidatePath('/plan');
+  revalidatePath('/dashboard');
   return {};
 }
 

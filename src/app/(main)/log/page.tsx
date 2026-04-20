@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import {
   LogClient,
@@ -14,10 +15,28 @@ function isoDateOk(s: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
+function parseMealType(
+  raw: string | undefined,
+): 'breakfast' | 'lunch' | 'dinner' | 'snack' | undefined {
+  if (
+    raw === 'breakfast' ||
+    raw === 'lunch' ||
+    raw === 'dinner' ||
+    raw === 'snack'
+  ) {
+    return raw;
+  }
+  return undefined;
+}
+
 export default async function LogPage({
   searchParams,
 }: {
-  searchParams?: { from_meal_id?: string; date?: string };
+  searchParams?: {
+    from_meal_id?: string;
+    date?: string;
+    meal_type?: string;
+  };
 }) {
   const supabase = createClient();
   const {
@@ -33,6 +52,8 @@ export default async function LogPage({
   const rawDate = searchParams?.date;
   const dateParam =
     typeof rawDate === 'string' && isoDateOk(rawDate) ? rawDate : undefined;
+
+  const initialMealTab = parseMealType(searchParams?.meal_type);
 
   let activeDate = dateParam ?? todayLocalISODate();
   let prefillFromMeal: PlanPrefillPayload | null = null;
@@ -163,12 +184,21 @@ export default async function LogPage({
         </Link>
       </header>
 
-      <LogClient
-        date={activeDate}
-        dailyCalTarget={goal?.daily_cal_target ?? null}
-        initialLogs={initialLogs}
-        prefillFromMeal={prefillFromMeal}
-      />
+      <Suspense
+        fallback={
+          <div className="rounded-xl border-[0.5px] border-border bg-card p-6 text-[13px] text-muted-foreground">
+            載入中…
+          </div>
+        }
+      >
+        <LogClient
+          date={activeDate}
+          dailyCalTarget={goal?.daily_cal_target ?? null}
+          initialLogs={initialLogs}
+          initialMealTab={initialMealTab}
+          prefillFromMeal={prefillFromMeal}
+        />
+      </Suspense>
     </div>
   );
 }

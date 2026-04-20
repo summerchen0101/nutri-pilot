@@ -96,6 +96,19 @@ export function FoodSourceDotInline({ row }: { row: FoodCacheRow }) {
   );
 }
 
+/** 與計畫預填合併存檔時，先加入暫存清單（不立刻寫入 DB）。 */
+export type StagedFoodItemForPlan = {
+  name: string;
+  quantity_g: number;
+  calories: number;
+  carb_g: number;
+  protein_g: number;
+  fat_g: number;
+  fiber_g: number | null;
+  sodium_mg: number | null;
+  brand: string | null;
+};
+
 interface AddFoodFromSearchProps {
   selectedHit: FoodCacheRow;
   mealType: MealType;
@@ -103,6 +116,9 @@ interface AddFoodFromSearchProps {
   date: string;
   onCommitted: () => void;
   onError?: (message: string) => void;
+  /** 為 true 時改呼叫 onStagedItem，不呼叫伺服器 */
+  stagingOnly?: boolean;
+  onStagedItem?: (item: StagedFoodItemForPlan) => void;
 }
 
 const MACRO_CAL = '#4C956C';
@@ -117,6 +133,8 @@ export function AddFoodFromSearchPanel({
   date,
   onCommitted,
   onError,
+  stagingOnly,
+  onStagedItem,
 }: AddFoodFromSearchProps) {
   const [portionStr, setPortionStr] = useState('100');
   const [portionUnit, setPortionUnit] = useState<'g' | 'ml'>('g');
@@ -252,6 +270,24 @@ export function AddFoodFromSearchPanel({
       : macrosFromQuantity(selectedHit, q);
     const fiberSubmit = scaleNutrientInt(selectedHit.fiber_g_per_100g, q);
     const sodiumSubmit = scaleNutrientInt(selectedHit.sodium_mg_per_100g, q);
+
+    if (stagingOnly) {
+      onStagedItem?.({
+        name: selectedHit.name,
+        quantity_g: q,
+        calories: macrosPayload.calories,
+        carb_g: macrosPayload.carb_g,
+        protein_g: macrosPayload.protein_g,
+        fat_g: macrosPayload.fat_g,
+        fiber_g: fiberSubmit,
+        sodium_mg: sodiumSubmit,
+        brand: selectedHit.brand,
+      });
+      setAddBusy(false);
+      onCommitted();
+      return;
+    }
+
     const result = await addFoodFromSearchAction({
       mealType,
       date,
@@ -422,7 +458,7 @@ export function AddFoodFromSearchPanel({
         disabled={addBusy || !canSubmit}
         onClick={() => void onSubmit()}
       >
-        {addBusy ? '加入中…' : `加入${mealLabelZh}`}
+        {addBusy ? '加入中…' : stagingOnly ? '加入清單' : `加入${mealLabelZh}`}
       </Button>
     </div>
   );

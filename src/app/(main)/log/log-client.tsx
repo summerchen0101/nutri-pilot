@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   useCallback,
   useEffect,
@@ -13,6 +13,7 @@ import {
 import {
   AddFoodFromSearchPanel,
   FoodSourceDotInline,
+  type StagedFoodItemForPlan,
 } from '@/app/(main)/log/add-food-from-search';
 import {
   commitPrefillFromPlanAction,
@@ -242,8 +243,17 @@ interface LogClientProps {
   date: string;
   dailyCalTarget: number | null;
   initialLogs: FoodLogSnapshot[];
+  /** URL `meal_type`，無預填時用來選預設餐次 Tab */
+  initialMealTab?: MealType | null;
   prefillFromMeal?: PlanPrefillPayload | null;
 }
+
+type PlanItemShape = PlanPrefillPayload['items'][number];
+
+type ExtraDraftLine = {
+  base: PlanItemShape;
+  row: PlanItemShape;
+};
 
 function clonePrefillItems(
   p: PlanPrefillPayload,
@@ -280,10 +290,17 @@ export function LogClient({
   date,
   dailyCalTarget,
   initialLogs,
+  initialMealTab = null,
   prefillFromMeal = null,
 }: LogClientProps) {
   const router = useRouter();
-  const [mealTab, setMealTab] = useState<MealType>('breakfast');
+  const searchParams = useSearchParams();
+
+  const [mealTab, setMealTab] = useState<MealType>(() =>
+    initialMealTab ??
+      (prefillFromMeal?.mealType as MealType | undefined) ??
+      'breakfast',
+  );
   const [inputMode, setInputMode] = useState<'search' | 'photo'>('search');
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -312,6 +329,9 @@ export function LogClient({
   );
   const [prefillBusy, setPrefillBusy] = useState(false);
   const [prefillErr, setPrefillErr] = useState<string | null>(null);
+
+  const [extraDraftLines, setExtraDraftLines] = useState<ExtraDraftLine[]>([]);
+  const [showExtraSearch, setShowExtraSearch] = useState(false);
 
   const todayTotal = useMemo(() => totalDayKcal(initialLogs), [initialLogs]);
 
@@ -457,25 +477,65 @@ export function LogClient({
     originalsRef.current = next;
     setPrefillDraft(next);
     setPrefillErr(null);
+    setExtraDraftLines([]);
+    setShowExtraSearch(false);
   }, [prefillFromMeal]);
+
+  useEffect(() => {
+    if (prefillFromMeal) return;
+    const m = searchParams.get('meal_type');
+    if (
+      m === 'breakfast' ||
+      m === 'lunch' ||
+      m === 'dinner' ||
+      m === 'snack'
+    ) {
+      setMealTab(m);
+    }
+  }, [searchParams, prefillFromMeal]);
+
+  useEffect(() => {
+    if (prefillFromMeal) return;
+    if (initialMealTab) setMealTab(initialMealTab);
+  }, [initialMealTab, prefillFromMeal]);
+
+  function stagedFoodToPlanShape(item: StagedFoodItemForPlan): PlanItemShape {
+    return {
+      name: item.name,
+      quantity_g: item.quantity_g,
+      calories: item.calories,
+      carb_g: item.carb_g,
+      protein_g: item.protein_g,
+      fat_g: item.fat_g,
+      fiber_g: item.fiber_g,
+      sodium_mg: item.sodium_mg,
+    };
+  }
 
   async function onCommitPrefill() {
     if (!prefillFromMeal) return;
+    const merged: PlanItemShape[] = [
+      ...prefillDraft,
+      ...extraDraftLines.map((l) => l.row),
+    ];
+    if (!merged.length) {
+      setPrefillErr('請至少保留或加入一項食材');
+      return;
+    }
     setPrefillBusy(true);
     setPrefillErr(null);
     const err = await commitPrefillFromPlanAction({
       mealId: prefillFromMeal.mealId,
       date,
       mealType: prefillFromMeal.mealType,
-      items: prefillDraft,
+      items: merged,
     });
     setPrefillBusy(false);
     if (err.error) {
       setPrefillErr(err.error);
       return;
     }
-    router.replace(`/log?date=${encodeURIComponent(date)}`);
-    refresh();
+    router.back();
   }
 
   async function onDeleteLog(logId: string) {
@@ -624,87 +684,287 @@ export function LogClient({
       </div>
 
       {prefillFromMeal ? (
-        <Card className="min-w-0 max-w-full overflow-hidden border-[#4C956C]/35 bg-[#EBF5EF]/40">
-          <CardHeader className="pb-2">
-            <CardTitle>調整計畫餐</CardTitle>
-            <CardDescription>
-              已帶入「{MEAL_LABEL[prefillFromMeal.mealType]}」食材，可修改份量或名稱後一次存檔。
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="space-y-4">
+          <div className="rounded-xl border-[0.5px] border-[#C8E6D4] bg-[#EBF5EF] p-3.5">
+            <p className="text-[13px] leading-snug text-foreground">
+              從計畫帶入：
+              {MEAL_LABEL[prefillFromMeal.mealType]}
+              的食材，可以直接編輯調整
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-[15px] font-medium text-foreground">
+              計畫食材（可調整）
+            </h2>
             {prefillErr ? (
               <p className="text-[13px] text-destructive">{prefillErr}</p>
             ) : null}
-            <ul className="space-y-3">
+
+            <ul className="space-y-2.5">
               {prefillDraft.map((it, idx) => (
                 <li
                   key={`prefill-${idx}`}
-                  className="rounded-xl border-[0.5px] border-border bg-card p-3"
+                  className="flex items-start gap-2 rounded-xl border-[0.5px] border-border bg-card p-3"
                 >
-                  <label className="block text-[11px] text-muted-foreground">
-                    名稱
-                  </label>
-                  <Input
-                    className="mt-1"
-                    value={it.name}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setPrefillDraft((prev) =>
-                        prev.map((row, i) =>
-                          i === idx ? { ...row, name: v } : row,
-                        ),
-                      );
-                    }}
-                  />
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-[11px] text-muted-foreground">
-                        份量（g）
-                      </label>
-                      <Input
-                        type="number"
-                        min={1}
-                        step={1}
-                        className="mt-1 tabular-nums"
-                        value={Math.round(it.quantity_g)}
-                        onChange={(e) => {
-                          const raw = Number(e.target.value);
-                          const base = originalsRef.current[idx];
-                          if (!base) return;
-                          const scaled = scaleMacrosFromBaseline(base, raw);
-                          setPrefillDraft((prev) =>
-                            prev.map((row, i) => (i === idx ? scaled : row)),
-                          );
-                        }}
-                      />
-                    </div>
-                    <div className="flex flex-col justify-end">
-                      <p className="text-[11px] text-muted-foreground">
-                        熱量（估算）
-                      </p>
-                      <p className="text-[15px] font-medium tabular-nums text-foreground">
-                        {Math.round(it.calories)}{' '}
-                        <span className="text-[13px] font-normal text-muted-foreground">
-                          kcal
-                        </span>
-                      </p>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <label className="block text-[11px] text-muted-foreground">
+                      名稱
+                    </label>
+                    <Input
+                      className="mt-1"
+                      value={it.name}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setPrefillDraft((prev) =>
+                          prev.map((row, i) =>
+                            i === idx ? { ...row, name: v } : row,
+                          ),
+                        );
+                      }}
+                    />
+                    <div className="flex flex-wrap items-end gap-3 pt-1">
+                      <div className="w-[min(100%,132px)]">
+                        <label className="block text-[11px] text-muted-foreground">
+                          份量（g）
+                        </label>
+                        <Input
+                          type="number"
+                          min={1}
+                          step={1}
+                          className="mt-1 tabular-nums"
+                          value={Math.round(it.quantity_g)}
+                          onChange={(e) => {
+                            const raw = Number(e.target.value);
+                            const base = originalsRef.current[idx];
+                            if (!base) return;
+                            const scaled = scaleMacrosFromBaseline(base, raw);
+                            setPrefillDraft((prev) =>
+                              prev.map((row, i) =>
+                                i === idx ? scaled : row,
+                              ),
+                            );
+                          }}
+                        />
+                      </div>
+                      <div className="pb-0.5">
+                        <p className="text-[11px] text-muted-foreground">
+                          熱量
+                        </p>
+                        <p className="tabular-nums text-[15px] font-medium text-foreground">
+                          {Math.round(it.calories)}{' '}
+                          <span className="text-[13px] font-normal text-muted-foreground">
+                            kcal
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    className="mt-6 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-[#E55A3C]"
+                    aria-label="移除此項"
+                    onClick={() => {
+                      setPrefillDraft((prev) =>
+                        prev.filter((_, i) => i !== idx),
+                      );
+                      originalsRef.current = originalsRef.current.filter(
+                        (_, i) => i !== idx,
+                      );
+                    }}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
                 </li>
               ))}
             </ul>
+
+            {extraDraftLines.length > 0 ? (
+              <div className="space-y-2 pt-2">
+                <p className="text-[13px] font-medium text-foreground">
+                  額外加入
+                </p>
+                <ul className="space-y-2.5">
+                  {extraDraftLines.map((line, idx) => (
+                    <li
+                      key={`extra-${idx}`}
+                      className="flex items-start gap-2 rounded-xl border-[0.5px] border-border bg-card p-3"
+                    >
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <p className="text-[13px] font-medium text-foreground">
+                          {line.row.name}
+                        </p>
+                        <div className="flex flex-wrap items-end gap-3">
+                          <div className="w-[min(100%,132px)]">
+                            <label className="block text-[11px] text-muted-foreground">
+                              份量（g）
+                            </label>
+                            <Input
+                              type="number"
+                              min={1}
+                              step={1}
+                              className="mt-1 tabular-nums"
+                              value={Math.round(line.row.quantity_g)}
+                              onChange={(e) => {
+                                const raw = Number(e.target.value);
+                                const scaled = scaleMacrosFromBaseline(
+                                  line.base,
+                                  raw,
+                                );
+                                setExtraDraftLines((prev) =>
+                                  prev.map((l, i) =>
+                                    i === idx ? { ...l, row: scaled } : l,
+                                  ),
+                                );
+                              }}
+                            />
+                          </div>
+                          <div className="pb-0.5">
+                            <p className="text-[11px] text-muted-foreground">
+                              熱量
+                            </p>
+                            <p className="tabular-nums text-[15px] font-medium text-foreground">
+                              {Math.round(line.row.calories)}{' '}
+                              <span className="text-[13px] font-normal text-muted-foreground">
+                                kcal
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="mt-1 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-[#E55A3C]"
+                        aria-label="移除此項"
+                        onClick={() =>
+                          setExtraDraftLines((prev) =>
+                            prev.filter((_, i) => i !== idx),
+                          )
+                        }
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full border-[0.5px]"
+              onClick={() => setShowExtraSearch((v) => !v)}
+            >
+              {showExtraSearch ? '收合搜尋' : '新增其他食物'}
+            </Button>
+
+            {showExtraSearch ? (
+              <div className="space-y-3 rounded-xl border-[0.5px] border-border bg-card p-4">
+                <p className="text-[13px] text-muted-foreground">
+                  餐次：{MEAL_LABEL[prefillFromMeal.mealType]}
+                </p>
+                <Input
+                  placeholder="輸入食品名稱（至少 2 字）"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchBusy ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    搜尋中…
+                  </p>
+                ) : null}
+
+                {searchHits.length > 0 ? (
+                  <ul
+                    role="list"
+                    className={cn(
+                      'flex w-full min-w-0 list-none flex-col gap-1 overflow-x-hidden rounded-xl border-[0.5px] border-border bg-secondary p-2',
+                      searchHits.length > 7 ?
+                        'max-h-56 overflow-y-auto'
+                      : 'overflow-y-visible',
+                    )}
+                  >
+                    {searchHits.map((h, i) => (
+                      <li key={`prefill-hit-${h.id}-${i}`} className="min-w-0 shrink-0">
+                        <button
+                          type="button"
+                          className={cn(
+                            'flex w-full max-w-full gap-2 rounded-[10px] border-[0.5px] px-3 py-2 text-left transition-colors duration-150',
+                            h.brand ? 'items-start' : 'items-center',
+                            selectedHit?.id === h.id
+                              ? 'border-[#4C956C] bg-[#E8F5EE]'
+                              : 'border-transparent hover:bg-muted',
+                          )}
+                          onClick={() => setSelectedHit(h)}
+                        >
+                          <span
+                            className={cn(
+                              'shrink-0',
+                              h.brand ? 'mt-0.5' : '',
+                            )}
+                            aria-hidden
+                          >
+                            <FoodSourceDotInline row={h} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="break-words text-[13px] font-normal leading-snug text-foreground">
+                              {h.name}
+                            </p>
+                            {h.brand ? (
+                              <p className="mt-0.5 break-words text-[11px] leading-snug text-muted-foreground">
+                                {h.brand}
+                              </p>
+                            ) : null}
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+
+                {selectedHit ? (
+                  <AddFoodFromSearchPanel
+                    selectedHit={selectedHit}
+                    mealType={prefillFromMeal.mealType}
+                    mealLabelZh={MEAL_LABEL[prefillFromMeal.mealType]}
+                    date={date}
+                    stagingOnly
+                    onStagedItem={(item) => {
+                      const shape = stagedFoodToPlanShape(item);
+                      setExtraDraftLines((prev) => [
+                        ...prev,
+                        { base: { ...shape }, row: { ...shape } },
+                      ]);
+                      setPrefillErr(null);
+                    }}
+                    onCommitted={() => {
+                      setSelectedHit(null);
+                      setSearchQuery('');
+                      setSearchHits([]);
+                    }}
+                    onError={(msg) => setPrefillErr(msg)}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+
             <Button
               type="button"
               className="w-full"
-              disabled={prefillBusy || prefillDraft.length === 0}
+              disabled={
+                prefillBusy ||
+                (prefillDraft.length === 0 && extraDraftLines.length === 0)
+              }
               onClick={() => void onCommitPrefill()}
             >
-              {prefillBusy ? '存檔中…' : '確認寫入紀錄'}
+              {prefillBusy ? '存檔中…' : '確認存檔'}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : null}
 
+      {!prefillFromMeal ? (
       <Card className="min-w-0 max-w-full overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle>新增紀錄</CardTitle>
@@ -900,6 +1160,7 @@ export function LogClient({
           )}
         </CardContent>
       </Card>
+      ) : null}
 
       <div className="space-y-4">
         <h2 className="text-[15px] font-medium text-foreground">今日紀錄</h2>

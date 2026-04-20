@@ -64,6 +64,8 @@ export default async function DashboardPage() {
       .select(
         `
       meal_type,
+      log_type,
+      from_plan_meal_id,
       food_log_items (
         name,
         calories,
@@ -98,9 +100,11 @@ export default async function DashboardPage() {
 
   let menuRow: {
     meals: {
+      id: string;
       type: string;
       is_checked_in: boolean | null;
       checkin_type: string | null;
+      total_calories: number | null;
       meal_items: { name: string }[] | null;
     }[];
   } | null = null;
@@ -111,9 +115,11 @@ export default async function DashboardPage() {
       .select(
         `
       meals (
+        id,
         type,
         is_checked_in,
         checkin_type,
+        total_calories,
         meal_items ( name )
       )
     `,
@@ -174,6 +180,7 @@ export default async function DashboardPage() {
 function sumNutrientsFromLogs(
   rows: {
     meal_type: string;
+    log_type?: string;
     food_log_items:
       | {
           name: string;
@@ -215,30 +222,39 @@ function computeStreak(
   return streak;
 }
 
-function logSummaryForMeal(
-  foodRows: { meal_type: string; food_log_items: { name: string }[] | null }[],
-  key: string,
-): string {
-  const names = foodRows
-    .filter((r) => r.meal_type === key)
-    .flatMap((r) => (r.food_log_items ?? []).map((i) => i.name));
-  if (!names.length) return '尚未紀錄';
-  const u = Array.from(new Set(names));
-  return u.slice(0, 4).join('、') + (u.length > 4 ? '…' : '');
+function formatPlanPreview(names: string[]): string {
+  const u = Array.from(new Set(names.filter(Boolean)));
+  if (!u.length) return '—';
+  return u.slice(0, 3).join(' · ') + (u.length > 3 ? '…' : '');
 }
 
-function logCheckedForMeal(
-  foodRows: { meal_type: string; food_log_items: unknown[] | null }[],
-  key: string,
+function sumMealKcal(
+  logs: {
+    food_log_items: { calories: number | string }[] | null;
+  }[],
+): number {
+  let t = 0;
+  for (const log of logs) {
+    for (const it of log.food_log_items ?? []) {
+      t += Number(it.calories) || 0;
+    }
+  }
+  return Math.round(t);
+}
+
+/** 有熱量紀錄即視為「已記錄」（含項目為空之異常列） */
+function logsHaveEnergy(
+  logs: {
+    food_log_items: { calories: number | string }[] | null;
+  }[],
 ): boolean {
-  return foodRows.some(
-    (r) => r.meal_type === key && (r.food_log_items?.length ?? 0) > 0,
-  );
+  return sumMealKcal(logs) > 0;
 }
 
 function buildMealRows(
   menuRow: {
     meals: {
+      id: string;
       type: string;
       is_checked_in: boolean | null;
       checkin_type: string | null;
@@ -247,43 +263,75 @@ function buildMealRows(
   } | null,
   foodRows: {
     meal_type: string;
-    food_log_items: { name: string }[] | null;
+    log_type: string;
+    food_log_items: { name: string; calories: number }[] | null;
   }[],
 ): DashboardHomeProps['meals'] {
-  const byType = new Map<
+  const plannedByType = new Map<
     string,
-    { checked: boolean; names: string[] }
+    { meal_items: { name: string }[] | null }
   >();
 
   if (menuRow?.meals?.length) {
     for (const m of menuRow.meals) {
-      const names = (m.meal_items ?? []).map((i) => i.name);
-      const mealDone =
-        Boolean(m.is_checked_in) || m.checkin_type === 'skipped';
-      byType.set(m.type, {
-        checked: mealDone,
-        names,
-      });
+      plannedByType.set(m.type, { meal_items: m.meal_items ?? [] });
     }
   }
 
-  return MEAL_ORDER.map((key) => {
-    const fromPlan = byType.get(key);
-    const checked =
-      Boolean(fromPlan?.checked) || logCheckedForMeal(foodRows, key);
+  const rows: DashboardHomeProps['meals'] = [];
 
-    let summary = '';
-    if (fromPlan?.names?.length) {
-      const u = Array.from(new Set(fromPlan.names));
-      summary = u.slice(0, 4).join('、') + (u.length > 4 ? '…' : '');
+  for (const key of MEAL_ORDER) {
+    const planned = plannedByType.get(key);
+    const hasPlan = Boolean(planned);
+    const logsForType = foodRows.filter((r) => r.meal_type === key);
+    const totalKcal = sumMealKcal(logsForType);
+    const hasLog = logsHaveEnergy(logsForType);
+
+    if (!hasPlan && !hasLog) continue;
+
+    const recordHref = `/log?meal_type=${encodeURIComponent(key)}`;
+
+    if (!hasPlan && hasLog) {
+      rows.push({
+        key,
+        label: MEAL_LABEL[key],
+        variant: 'self_logged',
+        detailLine: '自行記錄',
+        kcal: totalKcal,
+        recordHref,
+      });
+      continue;
     }
-    if (!summary) summary = logSummaryForMeal(foodRows, key);
 
-    return {
+    if (hasPlan && !hasLog) {
+      const names = (planned?.meal_items ?? []).map((i) => i.name);
+      rows.push({
+        key,
+        label: MEAL_LABEL[key],
+        variant: 'planned_pending',
+        detailLine: `計畫：${formatPlanPreview(names)}`,
+        kcal: null,
+        recordHref,
+      });
+      continue;
+    }
+
+    // hasPlan && hasLog
+    const onlyFromPlan =
+      logsForType.length === 1 && logsForType[0].log_type === 'from_plan';
+    const variant: 'as_planned' | 'adjusted' =
+      onlyFromPlan ? 'as_planned' : 'adjusted';
+
+    rows.push({
       key,
       label: MEAL_LABEL[key],
-      checked,
-      summary,
-    };
-  });
+      variant,
+      detailLine:
+        variant === 'as_planned' ? '已記錄（照計畫）' : '已記錄（有調整）',
+      kcal: totalKcal,
+      recordHref,
+    });
+  }
+
+  return rows;
 }

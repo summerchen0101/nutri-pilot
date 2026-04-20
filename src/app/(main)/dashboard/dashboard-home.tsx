@@ -9,11 +9,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils/cn';
 
+export type DashboardMealVariant =
+  | 'as_planned'
+  | 'adjusted'
+  | 'planned_pending'
+  | 'self_logged';
+
 export type DashboardMealRow = {
   key: string;
   label: string;
-  checked: boolean;
-  summary: string;
+  variant: DashboardMealVariant;
+  /** 第二行：狀態說明或計畫摘要 */
+  detailLine: string;
+  kcal: number | null;
+  recordHref: string;
 };
 
 export type DashboardHomeProps = {
@@ -214,18 +223,26 @@ function IconChart(props: { className?: string }) {
   );
 }
 
-function CheckIcon(props: { className?: string }) {
+function MealStatusDot({ variant }: { variant: DashboardMealVariant }) {
+  if (variant === 'planned_pending') {
+    return (
+      <span
+        className="mt-1.5 h-2 w-2 shrink-0 rounded-full border-[0.5px] bg-background"
+        style={{ borderColor: '#E8E9ED' }}
+        aria-hidden
+      />
+    );
+  }
+  const bg =
+    variant === 'as_planned' ? '#4C956C'
+    : variant === 'adjusted' ? '#EF9F27'
+    : '#378ADD';
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      className={cn('h-4 w-4', props.className)}
+    <span
+      className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+      style={{ backgroundColor: bg }}
       aria-hidden
-    >
-      <path d="M6 12l4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    />
   );
 }
 
@@ -375,37 +392,32 @@ export function DashboardHome({
           {meals.map((m) => (
             <li key={m.key}>
               <div className="flex items-start gap-2">
-                <span
-                  className={cn(
-                    'mt-1.5 h-2 w-2 shrink-0 rounded-full',
-                    m.checked ?
-                      'bg-[#4C956C]'
-                    : 'border-[0.5px] border-border bg-transparent',
-                  )}
-                  aria-hidden
-                />
+                <MealStatusDot variant={m.variant} />
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-foreground">
                     {m.label}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {m.summary}
+                  <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                    {m.detailLine}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  {m.checked ?
-                    <CheckIcon className="text-[#4C956C]" />
-                  : <span
-                      className="h-4 w-4 rounded-full border-[0.5px] border-muted-foreground/40"
-                      aria-hidden
-                    />
-                  }
-                  <Link
-                    href="/log"
-                    className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                  >
-                    + 新增
-                  </Link>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {m.kcal != null ? (
+                    <span className="tabular-nums text-[13px] font-medium text-foreground">
+                      {m.kcal}{' '}
+                      <span className="font-normal text-muted-foreground">
+                        kcal
+                      </span>
+                    </span>
+                  ) : null}
+                  {m.variant === 'planned_pending' ? (
+                    <Link
+                      href={m.recordHref}
+                      className="rounded-full border-[0.5px] border-border bg-secondary px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-muted"
+                    >
+                      記錄
+                    </Link>
+                  ) : null}
                 </div>
               </div>
             </li>
