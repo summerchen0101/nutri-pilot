@@ -11,10 +11,21 @@ interface MetricTileProps {
 
 export function MetricTile({ label, value, hint, className }: MetricTileProps) {
   return (
-    <div className={cn('rounded-[10px] border-[0.5px] border-border bg-secondary/40 p-3', className)}>
+    <div
+      className={cn(
+        'flex h-full min-w-0 flex-col rounded-[10px] border-[0.5px] border-border bg-card p-3',
+        className,
+      )}
+    >
       <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className="mt-1 text-[20px] font-medium leading-tight text-foreground">{value}</p>
-      {hint ? <div className="mt-1 text-[11px] text-muted-foreground">{hint}</div> : null}
+      <p className="mt-1 break-words text-[20px] font-medium leading-tight text-foreground">
+        {value}
+      </p>
+      {hint ? (
+        <div className="mt-1 min-w-0 break-words text-[11px] leading-relaxed text-muted-foreground">
+          {hint}
+        </div>
+      ) : null}
     </div>
   );
 }
