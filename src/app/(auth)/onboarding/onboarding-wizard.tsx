@@ -53,7 +53,7 @@ function dateToISODateOnly(d: Date): string {
 }
 
 const selectClass =
-  'flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:opacity-50';
+  'flex h-10 w-full rounded-[10px] border-[0.5px] border-[#E8E9ED] bg-white px-3 py-2 text-[13px] text-foreground focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none disabled:opacity-50';
 
 interface OnboardingWizardProps {
   userId: string;
@@ -539,7 +539,7 @@ export function OnboardingWizard({
                     key={o.value}
                     type="button"
                     onClick={() => setDietMethod(o.value)}
-                    className={`rounded-[10px] border-[0.5px] p-3 text-left transition-colors ${
+                    className={`rounded-[10px] border-[0.5px] p-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 ${
                       dietMethod === o.value
                         ? 'border-[#4C956C] bg-[#E8F5EE]'
                         : 'border-border bg-background hover:border-[#4C956C]'
@@ -558,8 +558,9 @@ export function OnboardingWizard({
               <label className="text-sm font-medium text-slate-700">
                 忌食食材（標籤）
               </label>
-              <div className="flex gap-2">
-                <Input
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
                   value={avoidInput}
                   onChange={(e) => setAvoidInput(e.target.value)}
                   placeholder="輸入後按新增"
@@ -569,10 +570,16 @@ export function OnboardingWizard({
                       addAvoidTag();
                     }
                   }}
+                  className="flex-1 rounded-[10px] border-[0.5px] border-[#E8E9ED] bg-white px-3 py-2.5 text-[13px] focus:border-[#4C956C] focus:outline-none focus:ring-1 focus:ring-[#4C956C]/20"
                 />
-                <Button type="button" variant="outline" onClick={addAvoidTag}>
+                <button
+                  type="button"
+                  onClick={addAvoidTag}
+                  disabled={!avoidInput.trim()}
+                  className="shrink-0 whitespace-nowrap rounded-[10px] bg-[#4C956C] px-4 py-2.5 text-[13px] font-medium text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
+                >
                   新增
-                </Button>
+                </button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {avoidFoods.map((tag) => (
@@ -580,7 +587,7 @@ export function OnboardingWizard({
                     {tag}
                     <button
                       type="button"
-                      className="ml-1 rounded-full hover:bg-slate-300"
+                      className="ml-1 rounded-full hover:bg-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
                       onClick={() => removeAvoidTag(tag)}
                       aria-label={`移除 ${tag}`}
                     >
@@ -598,15 +605,29 @@ export function OnboardingWizard({
                 {ALLERGEN_OPTIONS.map((o) => (
                   <label
                     key={o.value}
-                    className="flex cursor-pointer items-center gap-2 text-sm text-slate-700"
+                    className="flex cursor-pointer items-center gap-3 border-0 py-2"
+                    onClick={() => toggleAllergen(o.value)}
                   >
-                    <input
-                      type="checkbox"
-                      checked={allergens.includes(o.value)}
-                      onChange={() => toggleAllergen(o.value)}
-                      className="h-4 w-4 rounded border-slate-300"
-                    />
-                    {o.label}
+                    <div
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] border-[0.5px] outline-none ring-0 transition-colors ${
+                        allergens.includes(o.value)
+                          ? 'border-[#4C956C] bg-[#4C956C]'
+                          : 'border-[#E8E9ED] bg-white'
+                      }`}
+                    >
+                      {allergens.includes(o.value) ? (
+                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                          <path
+                            d="M2 5.5L4.5 8L9 3"
+                            stroke="white"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      ) : null}
+                    </div>
+                    <span className="text-[13px] text-[#1E212B]">{o.label}</span>
                   </label>
                 ))}
               </div>

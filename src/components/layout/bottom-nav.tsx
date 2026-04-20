@@ -63,7 +63,7 @@ function IconShop({ className }: { className?: string }) {
   );
 }
 
-function IconSettings({ className }: { className?: string }) {
+function IconAnalytics({ className }: { className?: string }) {
   return (
     <svg
       width={20}
@@ -73,9 +73,40 @@ function IconSettings({ className }: { className?: string }) {
       className={className}
       aria-hidden
     >
-      <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth={1.4} fill="none" />
+      <polyline
+        points="3,14 7,9 11,12 17,5"
+        stroke="currentColor"
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <line
+        x1="3"
+        y1="17"
+        x2="17"
+        y2="17"
+        stroke="currentColor"
+        strokeWidth={1.4}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function IconProfile({ className }: { className?: string }) {
+  return (
+    <svg
+      width={20}
+      height={20}
+      viewBox="0 0 20 20"
+      fill="none"
+      className={className}
+      aria-hidden
+    >
+      <circle cx="10" cy="7" r="3" stroke="currentColor" strokeWidth={1.4} fill="none" />
       <path
-        d="M10 3v1.5M10 15.5V17M3 10h1.5M15.5 10H17M4.93 4.93l1.06 1.06M14.01 14.01l1.06 1.06M4.93 15.07l1.06-1.06M14.01 5.99l1.06-1.06"
+        d="M4 17c0-3.31 2.69-5 6-5s6 1.69 6 5"
         stroke="currentColor"
         strokeWidth={1.4}
         strokeLinecap="round"
@@ -89,7 +120,8 @@ const NAV = [
   { href: '/dashboard', label: '總覽', Icon: IconDashboard },
   { href: '/log', label: '紀錄', Icon: IconLog },
   { href: '/shop', label: '商城', Icon: IconShop },
-  { href: '/settings', label: '設定', Icon: IconSettings },
+  { href: '/analytics', label: '分析', Icon: IconAnalytics },
+  { href: '/settings', label: '我的', Icon: IconProfile },
 ] as const;
 
 function isActive(pathname: string, href: string) {
@@ -103,7 +135,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="主選單"
-      className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-4 border-t border-[0.5px] border-[#E8E9ED] bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+      className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-[0.5px] border-[#E8E9ED] bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
     >
       {NAV.map(({ href, label, Icon }) => {
         const active = isActive(pathname, href);

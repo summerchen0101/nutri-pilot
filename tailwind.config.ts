@@ -8,6 +8,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      ringColor: {
+        DEFAULT: '#4C956C',
+      },
       colors: {
         border: 'hsl(var(--border))',
         background: 'hsl(var(--background))',

@@ -81,7 +81,7 @@ function MacroCell({
       : (
         <button
           type="button"
-          className="w-full text-left"
+          className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
           onClick={() => setEditing(true)}
         >
           <div
@@ -348,7 +348,7 @@ export function NutritionResultCard({
             <button
               type="button"
               onClick={() => setIsEditingName(true)}
-              className="flex max-w-full items-start gap-1.5 text-left"
+              className="flex max-w-full items-start gap-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
             >
               <span className="min-w-0 break-words text-[15px] font-medium leading-snug text-[#1E212B]">
                 {displayName}
@@ -401,7 +401,7 @@ export function NutritionResultCard({
           type="button"
           onClick={() => void handleReanalyze()}
           disabled={isReanalyzing}
-          className="ml-2 flex items-center gap-1 whitespace-nowrap text-[11px] font-medium text-[#4C956C] disabled:cursor-not-allowed disabled:opacity-40"
+          className="ml-2 flex items-center gap-1 whitespace-nowrap text-[11px] font-medium text-[#4C956C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isReanalyzing ?
             <>

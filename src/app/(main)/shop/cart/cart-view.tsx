@@ -101,7 +101,7 @@ export function CartView() {
               </div>
               <button
                 type="button"
-                className="shrink-0 text-[11px] font-medium text-[#E55A3C]"
+                className="shrink-0 text-[11px] font-medium text-[#E55A3C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
                 onClick={() => removeLine(line.variantId)}
               >
                 移除
@@ -111,7 +111,7 @@ export function CartView() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px]"
+                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
                   onClick={() => setQty(line.variantId, line.qty - 1)}
                 >
                   −
@@ -121,7 +121,7 @@ export function CartView() {
                 </span>
                 <button
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px]"
+                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
                   onClick={() => setQty(line.variantId, line.qty + 1)}
                 >
                   +
@@ -140,7 +140,7 @@ export function CartView() {
           type="button"
           onClick={() => setMode('payment')}
           className={cn(
-            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors',
+            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1',
             mode === 'payment' ?
               'bg-[#1E212B] text-white'
             : 'border-[0.5px] border-border bg-secondary text-muted-foreground',
@@ -153,7 +153,7 @@ export function CartView() {
           onClick={() => setMode('subscription')}
           disabled={!subscribable}
           className={cn(
-            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors',
+            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1',
             mode === 'subscription' ?
               'bg-[#1E212B] text-white'
             : 'border-[0.5px] border-border bg-secondary text-muted-foreground',
@@ -168,7 +168,7 @@ export function CartView() {
         <div>
           <span className="text-[11px] text-muted-foreground">寄送頻率</span>
           <select
-            className="mt-1 flex h-10 w-full rounded-[10px] border-[0.5px] border-border bg-card px-3 text-[13px]"
+            className="mt-1 flex h-10 w-full rounded-[10px] border-[0.5px] border-border bg-card px-3 text-[13px] focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none"
             value={frequency}
             onChange={(e) =>
               setFrequency(e.target.value as typeof frequency)

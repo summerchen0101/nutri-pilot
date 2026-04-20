@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 
 import { logWeightAction } from '@/app/(main)/dashboard/actions';
 import { Button } from '@/components/ui/button';
@@ -415,62 +416,65 @@ export function DashboardHome({
         </div>
       </div>
 
-      {open ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/35 p-4 sm:items-center"
-          role="presentation"
-          onClick={() => !pending && setOpen(false)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="weight-dialog-title"
-            className="w-full max-w-sm rounded-2xl border-[0.5px] border-border bg-card p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2
-              id="weight-dialog-title"
-              className="text-[15px] font-medium text-foreground"
+      {open
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/35 p-4 sm:items-center"
+              role="presentation"
+              onClick={() => !pending && setOpen(false)}
             >
-              記錄今日體重
-            </h2>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              將寫入今日紀錄並更新個人資料與熱量目標（如有）。
-            </p>
-            <div className="mt-4">
-              <label htmlFor="weight-kg" className="sr-only">
-                體重（公斤）
-              </label>
-              <Input
-                id="weight-kg"
-                type="text"
-                inputMode="decimal"
-                placeholder="例如 65.5"
-                value={weightInput}
-                onChange={(e) => setWeightInput(e.target.value)}
-                autoFocus
-                disabled={pending}
-              />
-            </div>
-            {error ? (
-              <p className="mt-2 text-[11px] text-destructive">{error}</p>
-            ) : null}
-            <div className="mt-5 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={pending}
-                onClick={() => setOpen(false)}
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="weight-dialog-title"
+                className="w-full max-w-sm rounded-2xl border-[0.5px] border-border bg-card p-5"
+                onClick={(e) => e.stopPropagation()}
               >
-                取消
-              </Button>
-              <Button type="button" disabled={pending} onClick={submit}>
-                {pending ? '儲存中…' : '儲存'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+                <h2
+                  id="weight-dialog-title"
+                  className="text-[15px] font-medium text-foreground"
+                >
+                  記錄今日體重
+                </h2>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  將寫入今日紀錄並更新個人資料與熱量目標（如有）。
+                </p>
+                <div className="mt-4">
+                  <label htmlFor="weight-kg" className="sr-only">
+                    體重（公斤）
+                  </label>
+                  <Input
+                    id="weight-kg"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="例如 65.5"
+                    value={weightInput}
+                    onChange={(e) => setWeightInput(e.target.value)}
+                    autoFocus
+                    disabled={pending}
+                  />
+                </div>
+                {error ? (
+                  <p className="mt-2 text-[11px] text-destructive">{error}</p>
+                ) : null}
+                <div className="mt-5 flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={pending}
+                    onClick={() => setOpen(false)}
+                  >
+                    取消
+                  </Button>
+                  <Button type="button" disabled={pending} onClick={submit}>
+                    {pending ? '儲存中…' : '儲存'}
+                  </Button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

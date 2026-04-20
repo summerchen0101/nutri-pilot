@@ -6,65 +6,14 @@ import {
 } from '@/app/(main)/settings/settings-view';
 import { createClient } from '@/lib/supabase/server';
 
-function normalizeSubscriptions(
-  raw: unknown,
-): SettingsInitialData['subscriptions'] {
-  if (!Array.isArray(raw)) return [];
-  return raw.map((s) => {
-    const row = s as {
-      id: string;
-      status: string;
-      frequency: string;
-      next_ship_at: string | null;
-      created_at: string | null;
-      subscription_items?: unknown;
-    };
-    const itemsIn = row.subscription_items;
-    const itemsOut: NonNullable<
-      SettingsInitialData['subscriptions'][0]['subscription_items']
-    > = [];
-    if (Array.isArray(itemsIn)) {
-      for (const it of itemsIn) {
-        const i = it as { qty: number; variant: unknown };
-        const v = i.variant;
-        const varRow = (Array.isArray(v) ? v[0] : v) as
-          | {
-              label: string;
-              price: number;
-              sub_price: number | null;
-              product: unknown;
-            }
-          | null
-          | undefined;
-        if (!varRow) {
-          itemsOut.push({ qty: i.qty, variant: null });
-          continue;
-        }
-        const p = varRow.product;
-        const prod = (Array.isArray(p) ? p[0] : p) as
-          | { name: string }
-          | null
-          | undefined;
-        itemsOut.push({
-          qty: i.qty,
-          variant: {
-            label: varRow.label,
-            price: Number(varRow.price),
-            sub_price: varRow.sub_price,
-            product: prod ? { name: prod.name } : null,
-          },
-        });
-      }
-    }
-    return {
-      id: row.id,
-      status: row.status,
-      frequency: row.frequency,
-      next_ship_at: row.next_ship_at,
-      created_at: row.created_at,
-      subscription_items: itemsOut,
-    };
-  });
+function toDayCount(createdAt: string | null | undefined): number {
+  if (!createdAt) return 1;
+  const start = new Date(createdAt);
+  if (Number.isNaN(start.getTime())) return 1;
+  const now = new Date();
+  const diffMs = now.getTime() - start.getTime();
+  const days = Math.floor(diffMs / 86400000) + 1;
+  return Math.max(days, 1);
 }
 
 export default async function SettingsPage() {
@@ -78,7 +27,6 @@ export default async function SettingsPage() {
   const [
     { data: profile, error: profileErr },
     { data: goal },
-    { data: subscriptions },
   ] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('user_id', user.id).single(),
     supabase
@@ -87,38 +35,24 @@ export default async function SettingsPage() {
       .eq('user_id', user.id)
       .eq('is_active', true)
       .maybeSingle(),
-    supabase
-      .from('subscriptions')
-      .select(
-        `
-        id,
-        status,
-        frequency,
-        next_ship_at,
-        created_at,
-        subscription_items (
-          qty,
-          variant:product_variants (
-            label,
-            price,
-            sub_price,
-            product:products ( name )
-          )
-        )
-      `,
-      )
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false }),
   ]);
 
   if (profileErr || !profile) redirect('/onboarding');
   if (!goal) redirect('/onboarding');
 
   const initial: SettingsInitialData = {
+    // Some environments may not have user_profiles.created_at in generated types yet.
+    // Read it defensively from row payload to keep day-count from profile signup time.
+    dayCount: toDayCount(
+      (profile as { created_at?: string | null }).created_at ?? user.created_at ?? null,
+    ),
     name: profile.name ?? '',
+    email: user.email ?? '',
     heightCm: Number(profile.height_cm),
     weightKg: Number(profile.weight_kg),
     bmi: profile.bmi != null ? Number(profile.bmi) : null,
+    bmr: profile.bmr != null ? Number(profile.bmr) : null,
+    tdee: profile.tdee != null ? Number(profile.tdee) : null,
     dietType: profile.diet_type,
     mealFrequency: profile.meal_frequency ?? 3,
     avoidFoods: profile.avoid_foods ?? [],
@@ -131,7 +65,6 @@ export default async function SettingsPage() {
       dailyCalTarget: Number(goal.daily_cal_target),
       targetDate: goal.target_date ?? null,
     },
-    subscriptions: normalizeSubscriptions(subscriptions),
   };
 
   return <SettingsView initial={initial} />;

@@ -3,6 +3,41 @@
 @tailwind utilities;
 
 @layer base {
+  /* Remove default outline globally; add accessible focus-visible style below. */
+  * {
+    outline: none;
+  }
+
+  *:focus-visible {
+    outline: 2px solid #4c956c;
+    outline-offset: 2px;
+  }
+
+  label {
+    border: 0;
+  }
+
+  button {
+    outline: none;
+  }
+
+  button:focus-visible {
+    outline: 2px solid #4c956c;
+    outline-offset: 2px;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: #4c956c !important;
+    box-shadow: 0 0 0 2px rgba(76, 149, 108, 0.15) !important;
+  }
+
+  select {
+    appearance: none;
+  }
+
   :root {
     /* Sea Green — 互動主色與語意綠 */
     --primary: #4c956c;
