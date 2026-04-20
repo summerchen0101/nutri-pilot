@@ -4,10 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type {
-  ManualFoodAnalysisConfidence,
-  ManualFoodAnalysisResult,
-} from '@/lib/food/manual-food-analysis-result';
+import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
 
 type MacroKey = 'calories' | 'protein_g' | 'carb_g' | 'fat_g';
 
@@ -19,11 +16,6 @@ const MACRO_FAT = '#EF9F27';
 function normalizeAnalysisPayload(
   raw: ManualFoodAnalysisResult,
 ): ManualFoodAnalysisResult {
-  const conf: ManualFoodAnalysisConfidence =
-    raw.confidence === 'high' || raw.confidence === 'medium' ? raw.confidence
-    : raw.confidence === 'low' ? 'low'
-    : 'medium';
-
   return {
     name: String(raw.name ?? '').trim() || '未命名',
     quantity_g: Math.round(Number(raw.quantity_g) || 0),
@@ -40,45 +32,7 @@ function normalizeAnalysisPayload(
       raw.sodium_mg === null || raw.sodium_mg === undefined
         ? null
         : Math.round(Number(raw.sodium_mg)),
-    confidence: conf,
-    note:
-      raw.note === null || raw.note === undefined
-        ? null
-        : String(raw.note).trim() || null,
   };
-}
-
-function ConfidenceBadge({ level }: { level: ManualFoodAnalysisConfidence }) {
-  if (level === 'high') {
-    return (
-      <span className="inline-flex items-center gap-1">
-        <span
-          className="h-2 w-2 shrink-0 rounded-full bg-[#4C956C]"
-          aria-hidden
-        />
-      </span>
-    );
-  }
-  if (level === 'medium') {
-    return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#854F0B]">
-        <span
-          className="h-2 w-2 shrink-0 rounded-full bg-[#FAC775]"
-          aria-hidden
-        />
-        估算
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#BA7517]">
-      <span
-        className="h-2 w-2 shrink-0 rounded-full bg-[#EF9F27]"
-        aria-hidden
-      />
-      請確認
-    </span>
-  );
 }
 
 function MacroCell({
@@ -151,12 +105,18 @@ function MacroCell({
 
 export interface NutritionResultCardProps {
   result: ManualFoodAnalysisResult;
-  /** 例如：早餐、午餐 */
-  mealLabelZh: string;
+  /** 加入紀錄按鈕文案（editMode 時省略） */
+  mealLabelZh?: string;
   previewImageUrl?: string;
   stagingOnly?: boolean;
   confirmBusy?: boolean;
   onConfirm: (edited: ManualFoodAnalysisResult) => void;
+  /** 已紀錄項目編輯：顯示取消／儲存 */
+  editMode?: boolean;
+  onCancel?: () => void;
+  editBusy?: boolean;
+  /** 內嵌於紀錄列展開區，移除外層卡片框線 */
+  embedded?: boolean;
 }
 
 export function NutritionResultCard({
@@ -166,6 +126,10 @@ export function NutritionResultCard({
   stagingOnly,
   confirmBusy,
   onConfirm,
+  editMode = false,
+  onCancel,
+  editBusy,
+  embedded = false,
 }: NutritionResultCardProps) {
   const [originalResult, setOriginalResult] = useState<ManualFoodAnalysisResult>(
     () => normalizeAnalysisPayload(resultProp),
@@ -303,8 +267,14 @@ export function NutritionResultCard({
     (displayResult.fiber_g != null && displayResult.fiber_g > 0) ||
     (displayResult.sodium_mg != null && displayResult.sodium_mg > 0);
 
+  const outerClass = embedded ?
+      'mt-0 space-y-3'
+    : 'mt-3 space-y-3 rounded-xl border-[0.5px] border-[var(--color-border-tertiary)] bg-[var(--color-background-primary)] p-4';
+
+  const busy = editMode ? editBusy : confirmBusy;
+
   return (
-    <div className="mt-3 space-y-3 rounded-xl border-[0.5px] border-[var(--color-border-tertiary)] bg-[var(--color-background-primary)] p-4">
+    <div className={outerClass}>
       {previewImageUrl ?
         <div className="h-48 w-full overflow-hidden rounded-lg bg-[#F4F4F6]">
           {/* eslint-disable-next-line @next/next/no-img-element -- blob / external meal photos */}
@@ -367,9 +337,6 @@ export function NutritionResultCard({
             </p>
           : null}
         </div>
-        <div className="shrink-0 pt-0.5">
-          <ConfidenceBadge level={displayResult.confidence} />
-        </div>
       </div>
 
       <div className="mb-3 flex items-center gap-2 border-b-[0.5px] border-[#E8E9ED] py-2">
@@ -426,12 +393,6 @@ export function NutritionResultCard({
         />
       </div>
 
-      {displayResult.note ?
-        <p className="text-[11px] font-normal leading-relaxed text-[#9298A8]">
-          💡 {displayResult.note}
-        </p>
-      : null}
-
       {showSecondary ?
         <p className="text-[11px] font-normal leading-snug text-[#9298A8]">
           {displayResult.fiber_g != null && displayResult.fiber_g > 0 ?
@@ -449,24 +410,42 @@ export function NutritionResultCard({
         </p>
       : null}
 
-      {displayResult.confidence === 'low' ?
-        <div className="rounded-xl border-[0.5px] border-[#FAC775] bg-[#FDF0D5] p-3 text-[12px] font-normal leading-snug text-foreground">
-          ⚠ 此食物資料較少，數值為估算，建議確認後再加入
+      {editMode ?
+        <div className="flex gap-2 pt-1">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-10 min-h-10 flex-1 border-[0.5px]"
+            disabled={busy}
+            onClick={() => onCancel?.()}
+          >
+            取消
+          </Button>
+          <Button
+            type="button"
+            variant="default"
+            className="h-10 min-h-10 flex-1"
+            disabled={busy}
+            onClick={() => handleConfirm()}
+          >
+            {busy ? '儲存中…' : '儲存修改'}
+          </Button>
         </div>
-      : null}
-
-      <Button
-        type="button"
-        className="h-10 w-full rounded-[10px] bg-[#4C956C] text-[13px] font-medium text-white hover:bg-[#4C956C] hover:opacity-90"
-        disabled={confirmBusy}
-        onClick={() => handleConfirm()}
-      >
-        {confirmBusy ?
-          '加入中…'
-        : stagingOnly ?
-          '加入清單'
-        : `加入${mealLabelZh}`}
-      </Button>
+      : (
+        <Button
+          type="button"
+          variant="default"
+          className="h-10 w-full rounded-[10px] text-[13px] font-medium"
+          disabled={busy}
+          onClick={() => handleConfirm()}
+        >
+          {busy ?
+            '加入中…'
+          : stagingOnly ?
+            '加入清單'
+          : `加入${mealLabelZh ?? ''}`}
+        </Button>
+      )}
     </div>
   );
 }

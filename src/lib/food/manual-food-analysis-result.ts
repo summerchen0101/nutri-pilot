@@ -1,5 +1,3 @@
-export type ManualFoodAnalysisConfidence = 'high' | 'medium' | 'low';
-
 export type ManualFoodAnalysisResult = {
   name: string;
   quantity_g: number;
@@ -10,6 +8,4 @@ export type ManualFoodAnalysisResult = {
   fat_g: number;
   fiber_g: number | null;
   sodium_mg: number | null;
-  confidence: ManualFoodAnalysisConfidence;
-  note: string | null;
 };

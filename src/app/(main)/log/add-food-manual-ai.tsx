@@ -24,11 +24,6 @@ type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 function normalizeAnalysisPayload(
   raw: ManualFoodAnalysisResult,
 ): ManualFoodAnalysisResult {
-  const conf =
-    raw.confidence === 'high' || raw.confidence === 'medium' ? raw.confidence
-    : raw.confidence === 'low' ? 'low'
-    : 'medium';
-
   return {
     name: String(raw.name ?? '').trim() || '未命名',
     quantity_g: Math.round(Number(raw.quantity_g) || 0),
@@ -45,11 +40,6 @@ function normalizeAnalysisPayload(
       raw.sodium_mg === null || raw.sodium_mg === undefined
         ? null
         : Math.round(Number(raw.sodium_mg)),
-    confidence: conf,
-    note:
-      raw.note === null || raw.note === undefined
-        ? null
-        : String(raw.note).trim() || null,
   };
 }
 

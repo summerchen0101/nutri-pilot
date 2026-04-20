@@ -84,13 +84,6 @@ export interface PlanPrefillPayload {
   }>;
 }
 
-function normalizeConfidenceFromJson(
-  v: unknown,
-): ManualFoodAnalysisResult['confidence'] {
-  if (v === 'high' || v === 'medium' || v === 'low') return v;
-  return 'medium';
-}
-
 /** 拍照 job 回傳（物件或陣列）→ 與手動 AI 相同結構；UI 只使用第一筆。 */
 function parsePhotoJobResult(json: Json | null): ManualFoodAnalysisResult | null {
   if (json == null) return null;
@@ -120,11 +113,6 @@ function parsePhotoJobResult(json: Json | null): ManualFoodAnalysisResult | null
         sodiumRaw === null || sodiumRaw === undefined || sodiumRaw === ''
           ? null
           : Math.round(Number(sodiumRaw)),
-      confidence: normalizeConfidenceFromJson(o.confidence),
-      note:
-        o.note === null || o.note === undefined || o.note === ''
-          ? null
-          : String(o.note).trim().slice(0, 500) || null,
     };
   }
   return null;
@@ -134,18 +122,19 @@ function roundMacroG(n: number): number {
   return Math.round(Number(n));
 }
 
-/** 來源色點：資料庫未持久化來源別，拍照／未驗證視為 AI，已驗證搜尋視為衛福部快取為主（USDA 與本地快取皆以已驗證綠點呈現）。 */
-function sourceDotColor(method: string, item: LogItemSnapshot): string {
-  if (method === 'from_plan') return '#4C956C';
-  if (method === 'photo') return '#EF9F27';
-  if (method === 'ai_analysis') return '#EF9F27';
-  if (method === 'search') {
-    if (item.is_verified === false || item.is_verified === null) {
-      return '#EF9F27';
-    }
-    return '#4C956C';
-  }
-  return '#94a3b8';
+function logItemToManualResult(it: LogItemSnapshot): ManualFoodAnalysisResult {
+  const q = Math.round(Number(it.quantity_g));
+  return {
+    name: it.name,
+    quantity_g: q > 0 ? q : 1,
+    quantity_description: '',
+    calories: Math.round(Number(it.calories)),
+    protein_g: Math.round(Number(it.protein_g)),
+    carb_g: Math.round(Number(it.carb_g)),
+    fat_g: Math.round(Number(it.fat_g)),
+    fiber_g: it.fiber_g,
+    sodium_mg: it.sodium_mg,
+  };
 }
 
 function ItemMacrosMutedLine(props: {
@@ -227,7 +216,10 @@ function LogItemNutrition({ item }: { item: LogItemSnapshot }) {
         <>
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen((v) => !v);
+            }}
             className="mt-0.5 block text-left text-[11px] font-normal leading-snug text-muted-foreground transition-opacity hover:opacity-80"
           >
             {open ? '收合 ‹' : '更多 ›'}
@@ -246,7 +238,7 @@ function LogItemNutrition({ item }: { item: LogItemSnapshot }) {
   );
 }
 
-function totalDayKcal(logs: FoodLogSnapshot[]): number {
+function totalDayKcalFromLogs(logs: FoodLogSnapshot[]): number {
   let t = 0;
   for (const log of logs) {
     for (const it of log.food_log_items ?? []) {
@@ -254,6 +246,20 @@ function totalDayKcal(logs: FoodLogSnapshot[]): number {
     }
   }
   return t;
+}
+
+function patchLogItemInLogs(
+  logs: FoodLogSnapshot[],
+  itemId: string,
+  patch: Partial<LogItemSnapshot>,
+): FoodLogSnapshot[] {
+  return logs.map((log) => ({
+    ...log,
+    food_log_items:
+      log.food_log_items?.map((row) =>
+        row.id === itemId ? { ...row, ...patch } : row,
+      ) ?? null,
+  }));
 }
 
 interface LogClientProps {
@@ -348,7 +354,15 @@ export function LogClient({
   const [extraDraftLines, setExtraDraftLines] = useState<ExtraDraftLine[]>([]);
   const [showExtraSearch, setShowExtraSearch] = useState(false);
 
-  const todayTotal = useMemo(() => totalDayKcal(initialLogs), [initialLogs]);
+  const [dayLogs, setDayLogs] = useState(initialLogs);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+
+  useEffect(() => {
+    setDayLogs(initialLogs);
+  }, [initialLogs]);
+
+  const todayTotal = useMemo(() => totalDayKcalFromLogs(dayLogs), [dayLogs]);
 
   const applyPhotoJobUpdate = useCallback(
     (row: {
@@ -460,17 +474,59 @@ export function LogClient({
   const grouped = useMemo(() => {
     const map = new Map<string, FoodLogSnapshot[]>();
     for (const k of MEAL_ORDER) map.set(k, []);
-    for (const log of initialLogs) {
+    for (const log of dayLogs) {
       const key = log.meal_type in MEAL_LABEL ? log.meal_type : 'snack';
       const arr = map.get(key);
       if (arr) arr.push(log);
     }
     return map;
-  }, [initialLogs]);
+  }, [dayLogs]);
 
   const refresh = useCallback(() => {
     router.refresh();
   }, [router]);
+
+  const handleSaveEditedItem = useCallback(
+    async (itemId: string, edited: ManualFoodAnalysisResult) => {
+      setEditSaving(true);
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('food_log_items')
+        .update({
+          name: edited.name.trim() || '未命名',
+          quantity_g: edited.quantity_g,
+          calories: edited.calories,
+          protein_g: edited.protein_g,
+          carb_g: edited.carb_g,
+          fat_g: edited.fat_g,
+          fiber_g: edited.fiber_g,
+          sodium_mg: edited.sodium_mg,
+        })
+        .eq('id', itemId);
+
+      setEditSaving(false);
+      if (error) {
+        setActionError(error.message);
+        return;
+      }
+
+      setDayLogs((prev) =>
+        patchLogItemInLogs(prev, itemId, {
+          name: edited.name.trim() || '未命名',
+          quantity_g: edited.quantity_g,
+          calories: edited.calories,
+          protein_g: edited.protein_g,
+          carb_g: edited.carb_g,
+          fat_g: edited.fat_g,
+          fiber_g: edited.fiber_g,
+          sodium_mg: edited.sodium_mg,
+        }),
+      );
+      setExpandedItemId(null);
+      setActionError(null);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!prefillFromMeal) return;
@@ -1114,59 +1170,97 @@ export function LogClient({
         <h2 className="text-[15px] font-medium text-foreground">今日紀錄</h2>
         <div className="space-y-5">
           {MEAL_ORDER.map((m) => {
-            const logs = grouped.get(m) ?? [];
+            const mealLogs = grouped.get(m) ?? [];
             return (
               <section key={m}>
                 <h3 className="text-[13px] font-medium text-foreground">
                   {MEAL_LABEL[m]}
                 </h3>
-                {logs.length === 0 ? (
+                {mealLogs.length === 0 ? (
                   <p className="mt-1 text-[13px] text-muted-foreground">
                     尚無紀錄
                   </p>
                 ) : (
                   <ul className="mt-2 space-y-2.5">
-                    {logs.map((log) => (
+                    {mealLogs.map((log) => (
                       <li key={log.id}>
-                        <div className="flex items-start gap-2 rounded-xl border-[0.5px] border-border bg-card p-3">
-                          <div className="min-w-0 flex-1 space-y-3">
+                        <div className="flex overflow-hidden rounded-xl border-[0.5px] border-border bg-card">
+                          <div className="min-w-0 flex-1 divide-y-[0.5px] divide-border">
                             {(log.food_log_items ?? []).map((it) => (
-                              <div key={it.id} className="flex gap-2">
-                                <span
-                                  className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
-                                  style={{
-                                    backgroundColor: sourceDotColor(log.method, it),
-                                  }}
-                                  title={
-                                    log.method === 'photo'
-                                      ? 'AI 估算（拍照）'
-                                      : log.method === 'ai_analysis'
-                                        ? 'AI 分析（手動描述）'
-                                        : it.is_verified
-                                          ? '衛福部／資料庫'
-                                          : 'AI 估算'
+                              <div key={it.id} className="flex flex-col">
+                                <div
+                                  role="button"
+                                  tabIndex={0}
+                                  className="flex w-full cursor-pointer gap-2 p-3 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-[#4C956C]/20"
+                                  onClick={() =>
+                                    setExpandedItemId((prev) =>
+                                      prev === it.id ? null : it.id,
+                                    )
                                   }
-                                  aria-hidden
-                                />
-                                <div className="min-w-0 flex-1">
-                                  <div className="text-[13px] font-medium text-foreground">
-                                    {it.name}{' '}
-                                    <span className="text-[11px] font-normal text-muted-foreground">
-                                      {Math.round(Number(it.quantity_g))}g
-                                    </span>
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      setExpandedItemId((prev) =>
+                                        prev === it.id ? null : it.id,
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <span
+                                    className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#4C956C]"
+                                    aria-hidden
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-[13px] font-medium text-foreground">
+                                      {it.name}{' '}
+                                      <span className="text-[11px] font-normal text-muted-foreground">
+                                        {Math.round(Number(it.quantity_g))}g
+                                      </span>
+                                    </div>
+                                    <LogItemNutrition item={it} />
                                   </div>
-                                  <LogItemNutrition item={it} />
+                                </div>
+                                <div
+                                  className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+                                  style={{
+                                    maxHeight:
+                                      expandedItemId === it.id ? 1400 : 0,
+                                  }}
+                                >
+                                  {expandedItemId === it.id ?
+                                    <div className="bg-[#F4F4F6] rounded-b-xl border-t-[0.5px] border-[#E8E9ED] p-4">
+                                      <NutritionResultCard
+                                        key={`${it.id}-${it.calories}-${it.quantity_g}`}
+                                        embedded
+                                        editMode
+                                        editBusy={editSaving}
+                                        result={logItemToManualResult(it)}
+                                        onCancel={() =>
+                                          setExpandedItemId(null)
+                                        }
+                                        onConfirm={(edited) =>
+                                          void handleSaveEditedItem(
+                                            it.id,
+                                            edited,
+                                          )
+                                        }
+                                      />
+                                    </div>
+                                  : null}
                                 </div>
                               </div>
                             ))}
                           </div>
                           <button
                             type="button"
-                            className="mt-0.5 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-[#E55A3C]"
+                            className="shrink-0 self-stretch border-l-[0.5px] border-border px-3 py-3 text-muted-foreground transition-colors hover:text-[#E55A3C]"
                             aria-label="刪除此筆紀錄"
-                            onClick={() => void onDeleteLog(log.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void onDeleteLog(log.id);
+                            }}
                           >
-                            <TrashIcon className="h-4 w-4" />
+                            <TrashIcon className="mx-auto h-4 w-4" />
                           </button>
                         </div>
                       </li>
