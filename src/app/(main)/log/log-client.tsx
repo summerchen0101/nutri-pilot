@@ -747,9 +747,9 @@ export function LogClient({
         jobStatus !== 'ready' &&
         jobStatus !== 'error'));
 
-  const pillPrimary =
+  const mealPillPrimary =
     'h-9 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-transparent';
-  const pillInactive =
+  const mealPillInactive =
     'h-9 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
 
   return (
@@ -999,42 +999,54 @@ export function LogClient({
             選擇餐次後，以文字描述或拍照加入今日飲食。
           </CardDescription>
         </CardHeader>
-        <CardContent className="min-w-0 space-y-4 overflow-x-hidden">
-          <div className="flex flex-wrap gap-2">
-            {MEAL_ORDER.map((m) => (
-              <Button
-                key={m}
-                type="button"
-                variant={mealTab === m ? 'default' : 'ghost'}
-                className={mealTab === m ? pillPrimary : pillInactive}
-                onClick={() => setMealTab(m)}
-              >
-                {MEAL_LABEL[m]}
-              </Button>
-            ))}
+        <CardContent className="min-w-0 space-y-3 overflow-x-hidden">
+          <div className="space-y-2">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              選擇餐次
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {MEAL_ORDER.map((m) => (
+                <Button
+                  key={m}
+                  type="button"
+                  variant={mealTab === m ? 'default' : 'ghost'}
+                  className={
+                    mealTab === m ? mealPillPrimary : mealPillInactive
+                  }
+                  onClick={() => setMealTab(m)}
+                >
+                  {MEAL_LABEL[m]}
+                </Button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant={inputMode === 'manual' ? 'default' : 'ghost'}
-              className={
-                inputMode === 'manual' ? pillPrimary : pillInactive
-              }
-              onClick={() => setInputMode('manual')}
-            >
-              手動輸入
-            </Button>
-            <Button
-              type="button"
-              variant={inputMode === 'photo' ? 'default' : 'ghost'}
-              className={
-                inputMode === 'photo' ? pillPrimary : pillInactive
-              }
-              onClick={() => setInputMode('photo')}
-            >
-              拍照辨識
-            </Button>
+          <div className="space-y-2">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              選擇輸入方式
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant={inputMode === 'manual' ? 'default' : 'ghost'}
+                className={
+                  inputMode === 'manual' ? mealPillPrimary : mealPillInactive
+                }
+                onClick={() => setInputMode('manual')}
+              >
+                手動輸入
+              </Button>
+              <Button
+                type="button"
+                variant={inputMode === 'photo' ? 'default' : 'ghost'}
+                className={
+                  inputMode === 'photo' ? mealPillPrimary : mealPillInactive
+                }
+                onClick={() => setInputMode('photo')}
+              >
+                拍照辨識
+              </Button>
+            </div>
           </div>
 
           {inputMode === 'manual' ? (

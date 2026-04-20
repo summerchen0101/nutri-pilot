@@ -24,8 +24,8 @@ export function SettingsRow({
       type="button"
       onClick={onClick}
       className={[
-        'flex w-full appearance-none items-center justify-between border-0 bg-transparent py-3 text-left',
-        withBorder ? 'mb-0.5' : '',
+        'flex w-full appearance-none items-center justify-between border-0 border-b-[0.5px] bg-transparent py-3 text-left',
+        withBorder ? 'border-border' : 'border-transparent',
       ].join(' ')}
     >
       <span className={danger ? 'text-[13px] text-destructive' : 'text-[13px] text-neutral-text-tertiary'}>
