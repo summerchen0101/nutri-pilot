@@ -27,6 +27,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
 import { invokeAiPhotoRequestFromBrowser } from '@/lib/food/invoke-photo-request';
 import { cn } from '@/lib/utils/cn';
 import { createClient } from '@/lib/supabase/client';
@@ -413,11 +414,21 @@ export function LogClient({
       return;
     }
 
+    setPhotoBusy(true);
+    let uploadFile: File;
+    try {
+      uploadFile = await compressImageForUpload(file);
+    } catch (e) {
+      setPhotoBusy(false);
+      setPhotoError(e instanceof Error ? e.message : '圖片處理失敗');
+      return;
+    }
+
     const ext =
-      file.name.split('.').pop()?.toLowerCase() ??
-      (file.type === 'image/png'
+      uploadFile.name.split('.').pop()?.toLowerCase() ??
+      (uploadFile.type === 'image/png'
         ? 'png'
-        : file.type === 'image/webp'
+        : uploadFile.type === 'image/webp'
           ? 'webp'
           : 'jpg');
     const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext)
@@ -428,17 +439,16 @@ export function LogClient({
 
     const path = `${user.id}/${Date.now()}.${safeExt}`;
     const mime =
-      file.type ||
+      uploadFile.type ||
       (safeExt === 'png'
         ? 'image/png'
         : safeExt === 'webp'
           ? 'image/webp'
           : 'image/jpeg');
 
-    setPhotoBusy(true);
     const { error: upErr } = await supabase.storage
       .from('food-photos')
-      .upload(path, file, {
+      .upload(path, uploadFile, {
         contentType: mime,
         upsert: false,
       });
@@ -569,7 +579,7 @@ export function LogClient({
           </div>
 
           {inputMode === 'search' ? (
-            <div className="space-y-3">
+            <div key="input-mode-search" className="space-y-3">
               <Input
                 placeholder="輸入食品名稱（至少 2 字）"
                 value={searchQuery}
@@ -648,7 +658,7 @@ export function LogClient({
               ) : null}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div key="input-mode-photo" className="space-y-3">
               <Input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
