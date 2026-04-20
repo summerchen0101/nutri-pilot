@@ -116,7 +116,10 @@ CREATE TABLE meals (
   scheduled_at  TIME,
   is_checked_in BOOLEAN DEFAULT FALSE,
   checked_in_at TIMESTAMPTZ,
-  total_calories NUMERIC(7,1)
+  total_calories NUMERIC(7,1),
+  -- 打卡方式（與飲食記錄關聯；migration 009）
+  -- NULL：尚未打卡；'exact'：照吃；'modified'：照吃但調整；'skipped'：沒吃這餐
+  checkin_type  TEXT
 );
 
 -- 餐點食材
@@ -146,7 +149,11 @@ CREATE TABLE food_logs (
   date      DATE NOT NULL,
   meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
   method    TEXT NOT NULL CHECK (method IN ('manual', 'photo', 'search')),
-  logged_at TIMESTAMPTZ DEFAULT NOW()
+  logged_at TIMESTAMPTZ DEFAULT NOW(),
+  -- 與計畫餐別關聯（migration 009）；計畫餐刪除時 ON DELETE SET NULL
+  from_plan_meal_id UUID REFERENCES meals(id) ON DELETE SET NULL,
+  -- 'manual'：用戶自己搜尋記錄；'from_plan'：照計畫打卡自動複製；'from_plan_modified'：照計畫但有調整（預設 manual）
+  log_type  TEXT NOT NULL DEFAULT 'manual'
 );
 
 -- 記錄的食物項目

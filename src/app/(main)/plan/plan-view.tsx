@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
-  checkInMeal,
   swapMealItemAction,
   type SwapAlternative,
 } from '@/app/(main)/plan/actions';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,6 +16,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  copyMealToLog,
+  markMealModifiedPending,
+  markMealSkipped,
+} from '@/lib/plan/checkin';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils/cn';
 import { todayLocalISODate } from '@/lib/onboarding/date';
@@ -31,6 +36,8 @@ export interface PlanMealItem {
   carb_g: number;
   protein_g: number;
   fat_g: number;
+  fiber_g?: number | null;
+  sodium_mg?: number | null;
 }
 
 export interface PlanMeal {
@@ -39,6 +46,7 @@ export interface PlanMeal {
   scheduled_at: string | null;
   is_checked_in: boolean | null;
   checked_in_at: string | null;
+  checkin_type: string | null;
   total_calories: number | null;
   meal_items: PlanMealItem[] | null;
 }
@@ -82,6 +90,26 @@ function weekdayZhShort(isoDate: string): string {
   return ['日', '一', '二', '三', '四', '五', '六'][dt.getDay()] ?? '';
 }
 
+/** 打卡後 UI：略過／照吃／調整完成／尚須至紀錄頁／未打卡 */
+function checkInVisualState(meal: PlanMeal): {
+  kind: 'skipped' | 'exact' | 'modified_done' | 'modified_pending' | 'open';
+} {
+  if (meal.checkin_type === 'skipped') return { kind: 'skipped' };
+  if (meal.is_checked_in && meal.checkin_type === 'modified') {
+    return { kind: 'modified_done' };
+  }
+  if (
+    meal.is_checked_in &&
+    (meal.checkin_type === 'exact' || meal.checkin_type == null)
+  ) {
+    return { kind: 'exact' };
+  }
+  if (!meal.is_checked_in && meal.checkin_type === 'modified') {
+    return { kind: 'modified_pending' };
+  }
+  return { kind: 'open' };
+}
+
 export function PlanView({
   plan,
   windowDates,
@@ -105,6 +133,9 @@ export function PlanView({
   );
   const [swapErr, setSwapErr] = useState<string | null>(null);
   const [swapLoading, setSwapLoading] = useState(false);
+
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [popoverMealId, setPopoverMealId] = useState<string | null>(null);
 
   const menusByDate = useMemo(() => {
     const m = new Map<string, PlanMenuSnapshot>();
@@ -137,6 +168,32 @@ export function PlanView({
     };
   }, [plan.id, router]);
 
+  useEffect(() => {
+    if (!toastMsg) return;
+    const t = window.setTimeout(() => setToastMsg(null), 3200);
+    return () => window.clearTimeout(t);
+  }, [toastMsg]);
+
+  useEffect(() => {
+    if (!popoverMealId) return;
+
+    function onDocMouseDown(e: MouseEvent) {
+      const el = e.target as HTMLElement | null;
+      if (!el) return;
+      const root = el.closest('[data-plan-checkin-root]');
+      if (
+        root &&
+        root.getAttribute('data-meal-id') === popoverMealId
+      ) {
+        return;
+      }
+      setPopoverMealId(null);
+    }
+
+    document.addEventListener('mousedown', onDocMouseDown);
+    return () => document.removeEventListener('mousedown', onDocMouseDown);
+  }, [popoverMealId]);
+
   async function requestMenu() {
     setPendingId('req');
     try {
@@ -155,11 +212,67 @@ export function PlanView({
     }
   }
 
-  async function onCheckIn(mealId: string) {
-    setPendingId(mealId);
-    const r = await checkInMeal(mealId);
+  async function onExactCheckIn(meal: PlanMeal) {
+    setPopoverMealId(null);
+    setPendingId(meal.id);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setPendingId(null);
+      setToastMsg('請先登入');
+      return;
+    }
+    const r = await copyMealToLog(meal.id, user.id, selectedDate);
     setPendingId(null);
-    if (r.error) console.error(r.error);
+    if (r.error) {
+      setToastMsg(r.error);
+      return;
+    }
+    setToastMsg('已記錄，熱量已加入今日統計');
+    router.refresh();
+  }
+
+  async function onChooseModified(meal: PlanMeal) {
+    setPopoverMealId(null);
+    setPendingId(meal.id);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setPendingId(null);
+      setToastMsg('請先登入');
+      return;
+    }
+    const r = await markMealModifiedPending(meal.id, user.id);
+    setPendingId(null);
+    if (r.error) {
+      setToastMsg(r.error);
+      return;
+    }
+    router.push(`/log?from_meal_id=${meal.id}`);
+  }
+
+  async function onSkipMeal(meal: PlanMeal) {
+    setPopoverMealId(null);
+    setPendingId(meal.id);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setPendingId(null);
+      setToastMsg('請先登入');
+      return;
+    }
+    const r = await markMealSkipped(meal.id, user.id);
+    setPendingId(null);
+    if (r.error) {
+      setToastMsg(r.error);
+      return;
+    }
     router.refresh();
   }
 
@@ -337,73 +450,183 @@ export function PlanView({
             </div>
           ) : (
             <div className="space-y-4">
-              {(selectedMenu.meals ?? []).map((meal) => (
-                <div
-                  key={meal.id}
-                  className="rounded-xl border-[0.5px] border-border bg-card p-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2.5">
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                      <span className="text-[15px] font-medium text-foreground">
-                        {MEAL_LABEL[meal.type] ?? meal.type}
-                      </span>
-                      {meal.scheduled_at ? (
-                        <span className="text-[13px] text-muted-foreground">
-                          {meal.scheduled_at.slice(0, 5)}
+              {(selectedMenu.meals ?? []).map((meal) => {
+                const vis = checkInVisualState(meal);
+                const skipped = vis.kind === 'skipped';
+                const showSwap = !skipped;
+
+                return (
+                  <div
+                    key={meal.id}
+                    className={cn(
+                      'rounded-xl border-[0.5px] border-border bg-card p-4',
+                      skipped && 'bg-muted/25',
+                    )}
+                  >
+                    <div
+                      className="flex flex-wrap items-center justify-between gap-2.5"
+                      data-plan-checkin-root
+                      data-meal-id={meal.id}
+                    >
+                      <div
+                        className={cn(
+                          'flex min-w-0 flex-wrap items-center gap-2',
+                          skipped &&
+                            'text-[#9298A8] line-through decoration-[#9298A8]',
+                        )}
+                      >
+                        <span className="text-[15px] font-medium">
+                          {MEAL_LABEL[meal.type] ?? meal.type}
                         </span>
-                      ) : null}
+                        {meal.scheduled_at ? (
+                          <span className="text-[13px] text-muted-foreground">
+                            {meal.scheduled_at.slice(0, 5)}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="relative flex shrink-0 items-center gap-2">
+                        {vis.kind === 'exact' ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[#4C956C]" aria-hidden>
+                              ✓
+                            </span>
+                            <Badge variant="success">已記錄</Badge>
+                          </div>
+                        ) : null}
+                        {vis.kind === 'modified_done' ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[#4C956C]" aria-hidden>
+                              ✎
+                            </span>
+                            <Badge variant="success">已調整記錄</Badge>
+                          </div>
+                        ) : null}
+                        {vis.kind === 'skipped' ? (
+                          <div className="flex items-center gap-1.5 text-[#9298A8]">
+                            <span aria-hidden>✗</span>
+                            <span className="text-[12px]">已跳過</span>
+                          </div>
+                        ) : null}
+                        {vis.kind === 'modified_pending' ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 rounded-lg px-3 text-[12px]"
+                            disabled={pendingId !== null}
+                            onClick={() =>
+                              router.push(`/log?from_meal_id=${meal.id}`)
+                            }
+                          >
+                            繼續調整
+                          </Button>
+                        ) : null}
+                        {vis.kind === 'open' ? (
+                          <div className="relative">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className={cn(
+                                'h-8 rounded-lg border-[0.5px] border-border bg-white px-3 text-[12px] font-medium text-muted-foreground shadow-none hover:bg-muted',
+                              )}
+                              disabled={pendingId !== null}
+                              aria-expanded={popoverMealId === meal.id}
+                              onClick={() =>
+                                setPopoverMealId((id) =>
+                                  id === meal.id ? null : meal.id,
+                                )
+                              }
+                            >
+                              打卡
+                            </Button>
+                            {popoverMealId === meal.id ? (
+                              <div
+                                className="absolute right-0 top-[calc(100%+6px)] z-20 w-[min(100vw-2rem,240px)] overflow-hidden rounded-xl border-[0.5px] border-border bg-[#F7F8F6] p-1.5 shadow-md"
+                                role="menu"
+                              >
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  disabled={pendingId === meal.id}
+                                  onClick={() => void onExactCheckIn(meal)}
+                                  className="flex w-full items-center gap-2 rounded-lg bg-[#EBF5EF] px-3 py-2.5 text-left text-[13px] font-medium text-[#234433] transition-opacity hover:opacity-95 disabled:opacity-60"
+                                >
+                                  <span aria-hidden>✓</span>
+                                  照計畫吃了
+                                </button>
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  disabled={pendingId === meal.id}
+                                  onClick={() => void onChooseModified(meal)}
+                                  className="mt-1 flex w-full items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-left text-[13px] font-medium text-[#1E212B] transition-colors hover:bg-muted/60 disabled:opacity-60"
+                                >
+                                  <span aria-hidden>✎</span>
+                                  有點不一樣
+                                </button>
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  disabled={pendingId === meal.id}
+                                  onClick={() => void onSkipMeal(meal)}
+                                  className="mt-1 flex w-full items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-left text-[13px] font-medium text-[#9298A8] transition-colors hover:bg-muted/60 disabled:opacity-60"
+                                >
+                                  <span aria-hidden>✗</span>
+                                  沒吃這餐
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      disabled={
-                        pendingId === meal.id || Boolean(meal.is_checked_in)
-                      }
-                      aria-pressed={Boolean(meal.is_checked_in)}
-                      aria-label={
-                        meal.is_checked_in ? '已完成打卡' : '標記此餐為已打卡'
-                      }
-                      onClick={() => void onCheckIn(meal.id)}
+                    <ul
                       className={cn(
-                        'shrink-0 rounded-lg px-3 py-1 text-[12px] transition-colors duration-150 disabled:opacity-90',
-                        meal.is_checked_in
-                          ? 'bg-[#E8F5EE] text-[#2D6B4A]'
-                          : 'border-[0.5px] border-border text-muted-foreground hover:bg-muted',
+                        'mt-3 space-y-2.5',
+                        skipped &&
+                          'text-[#9298A8] line-through decoration-[#9298A8]',
                       )}
                     >
-                      {meal.is_checked_in ? '已打卡' : '打卡'}
-                    </button>
-                  </div>
-                  <ul className="mt-3 space-y-2.5">
-                    {(meal.meal_items ?? []).map((it) => (
-                      <li
-                        key={it.id}
-                        className="flex flex-wrap items-center justify-between gap-2 border-b-[0.5px] border-border pb-2.5 text-[13px] text-foreground last:border-b-0 last:pb-0"
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-[13px] text-foreground">
-                            {it.name}
-                          </span>
-                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                            {it.quantity_g}g · {it.calories} kcal
-                          </span>
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="h-7 shrink-0 rounded-md border-[0.5px] border-border px-2.5 text-[12px] font-normal"
-                          onClick={() => void runSwap(it, meal.type)}
+                      {(meal.meal_items ?? []).map((it) => (
+                        <li
+                          key={it.id}
+                          className="flex flex-wrap items-center justify-between gap-2 border-b-[0.5px] border-border pb-2.5 text-[13px] last:border-b-0 last:pb-0"
                         >
-                          換
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                          <span className="min-w-0">
+                            <span className="block text-[13px]">{it.name}</span>
+                            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                              {it.quantity_g}g · {it.calories} kcal
+                            </span>
+                          </span>
+                          {showSwap ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="h-7 shrink-0 rounded-md border-[0.5px] border-border px-2.5 text-[12px] font-normal"
+                              onClick={() => void runSwap(it, meal.type)}
+                            >
+                              換
+                            </Button>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {toastMsg ? (
+        <div
+          className="fixed bottom-6 left-1/2 z-[60] max-w-[min(90vw,320px)] -translate-x-1/2 rounded-xl border-[0.5px] border-border bg-[#1E212B] px-4 py-2.5 text-center text-[13px] text-white shadow-lg"
+          role="status"
+        >
+          {toastMsg}
+        </div>
+      ) : null}
 
       {swapFor ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/35 p-4">

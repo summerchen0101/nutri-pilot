@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -14,6 +15,7 @@ import {
   FoodSourceDotInline,
 } from '@/app/(main)/log/add-food-from-search';
 import {
+  commitPrefillFromPlanAction,
   confirmPhotoItemsAction,
   deleteFoodLogAction,
   searchFoodsAction,
@@ -67,6 +69,21 @@ const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
 type MealType = (typeof MEAL_ORDER)[number];
 
+export interface PlanPrefillPayload {
+  mealId: string;
+  mealType: MealType;
+  items: Array<{
+    name: string;
+    quantity_g: number;
+    calories: number;
+    carb_g: number;
+    protein_g: number;
+    fat_g: number;
+    fiber_g: number | null;
+    sodium_mg: number | null;
+  }>;
+}
+
 interface PhotoPreviewItem {
   name: string;
   quantity_g: number;
@@ -102,6 +119,7 @@ function roundMacroG(n: number): number {
 
 /** 來源色點：資料庫未持久化來源別，拍照／未驗證視為 AI，已驗證搜尋視為衛福部快取為主（USDA 與本地快取皆以已驗證綠點呈現）。 */
 function sourceDotColor(method: string, item: LogItemSnapshot): string {
+  if (method === 'from_plan') return '#4C956C';
   if (method === 'photo') return '#EF9F27';
   if (method === 'search') {
     if (item.is_verified === false || item.is_verified === null) {
@@ -224,12 +242,45 @@ interface LogClientProps {
   date: string;
   dailyCalTarget: number | null;
   initialLogs: FoodLogSnapshot[];
+  prefillFromMeal?: PlanPrefillPayload | null;
+}
+
+function clonePrefillItems(
+  p: PlanPrefillPayload,
+): PlanPrefillPayload['items'] {
+  return p.items.map((i) => ({ ...i }));
+}
+
+function scaleMacrosFromBaseline(
+  base: PlanPrefillPayload['items'][number],
+  newQty: number,
+): PlanPrefillPayload['items'][number] {
+  const q0 = Number(base.quantity_g);
+  const safeQ = Number.isFinite(newQty) && newQty > 0 ? newQty : q0;
+  const factor = q0 > 0 ? safeQ / q0 : 1;
+  return {
+    ...base,
+    quantity_g: safeQ,
+    calories: Math.round(Number(base.calories) * factor),
+    carb_g: Math.round(Number(base.carb_g) * factor * 10) / 10,
+    protein_g: Math.round(Number(base.protein_g) * factor * 10) / 10,
+    fat_g: Math.round(Number(base.fat_g) * factor * 10) / 10,
+    fiber_g:
+      base.fiber_g == null
+        ? null
+        : Math.round(Number(base.fiber_g) * factor * 10) / 10,
+    sodium_mg:
+      base.sodium_mg == null
+        ? null
+        : Math.round(Number(base.sodium_mg) * factor),
+  };
 }
 
 export function LogClient({
   date,
   dailyCalTarget,
   initialLogs,
+  prefillFromMeal = null,
 }: LogClientProps) {
   const router = useRouter();
   const [mealTab, setMealTab] = useState<MealType>('breakfast');
@@ -250,6 +301,17 @@ export function LogClient({
     null,
   );
   const [photoHint, setPhotoHint] = useState<string | null>(null);
+
+  const originalsRef = useRef(
+    prefillFromMeal ? clonePrefillItems(prefillFromMeal) : [],
+  );
+  const [prefillDraft, setPrefillDraft] = useState<
+    PlanPrefillPayload['items']
+  >(() =>
+    prefillFromMeal ? clonePrefillItems(prefillFromMeal) : [],
+  );
+  const [prefillBusy, setPrefillBusy] = useState(false);
+  const [prefillErr, setPrefillErr] = useState<string | null>(null);
 
   const todayTotal = useMemo(() => totalDayKcal(initialLogs), [initialLogs]);
 
@@ -387,6 +449,34 @@ export function LogClient({
   const refresh = useCallback(() => {
     router.refresh();
   }, [router]);
+
+  useEffect(() => {
+    if (!prefillFromMeal) return;
+    setMealTab(prefillFromMeal.mealType);
+    const next = clonePrefillItems(prefillFromMeal);
+    originalsRef.current = next;
+    setPrefillDraft(next);
+    setPrefillErr(null);
+  }, [prefillFromMeal]);
+
+  async function onCommitPrefill() {
+    if (!prefillFromMeal) return;
+    setPrefillBusy(true);
+    setPrefillErr(null);
+    const err = await commitPrefillFromPlanAction({
+      mealId: prefillFromMeal.mealId,
+      date,
+      mealType: prefillFromMeal.mealType,
+      items: prefillDraft,
+    });
+    setPrefillBusy(false);
+    if (err.error) {
+      setPrefillErr(err.error);
+      return;
+    }
+    router.replace(`/log?date=${encodeURIComponent(date)}`);
+    refresh();
+  }
 
   async function onDeleteLog(logId: string) {
     const err = await deleteFoodLogAction(logId);
@@ -532,6 +622,88 @@ export function LogClient({
           )}
         </p>
       </div>
+
+      {prefillFromMeal ? (
+        <Card className="min-w-0 max-w-full overflow-hidden border-[#4C956C]/35 bg-[#EBF5EF]/40">
+          <CardHeader className="pb-2">
+            <CardTitle>調整計畫餐</CardTitle>
+            <CardDescription>
+              已帶入「{MEAL_LABEL[prefillFromMeal.mealType]}」食材，可修改份量或名稱後一次存檔。
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {prefillErr ? (
+              <p className="text-[13px] text-destructive">{prefillErr}</p>
+            ) : null}
+            <ul className="space-y-3">
+              {prefillDraft.map((it, idx) => (
+                <li
+                  key={`prefill-${idx}`}
+                  className="rounded-xl border-[0.5px] border-border bg-card p-3"
+                >
+                  <label className="block text-[11px] text-muted-foreground">
+                    名稱
+                  </label>
+                  <Input
+                    className="mt-1"
+                    value={it.name}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setPrefillDraft((prev) =>
+                        prev.map((row, i) =>
+                          i === idx ? { ...row, name: v } : row,
+                        ),
+                      );
+                    }}
+                  />
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] text-muted-foreground">
+                        份量（g）
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        step={1}
+                        className="mt-1 tabular-nums"
+                        value={Math.round(it.quantity_g)}
+                        onChange={(e) => {
+                          const raw = Number(e.target.value);
+                          const base = originalsRef.current[idx];
+                          if (!base) return;
+                          const scaled = scaleMacrosFromBaseline(base, raw);
+                          setPrefillDraft((prev) =>
+                            prev.map((row, i) => (i === idx ? scaled : row)),
+                          );
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-col justify-end">
+                      <p className="text-[11px] text-muted-foreground">
+                        熱量（估算）
+                      </p>
+                      <p className="text-[15px] font-medium tabular-nums text-foreground">
+                        {Math.round(it.calories)}{' '}
+                        <span className="text-[13px] font-normal text-muted-foreground">
+                          kcal
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <Button
+              type="button"
+              className="w-full"
+              disabled={prefillBusy || prefillDraft.length === 0}
+              onClick={() => void onCommitPrefill()}
+            >
+              {prefillBusy ? '存檔中…' : '確認寫入紀錄'}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="min-w-0 max-w-full overflow-hidden">
         <CardHeader className="pb-2">

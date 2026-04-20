@@ -5,11 +5,20 @@ import {
   LogClient,
   type FoodLogSnapshot,
   type LogItemSnapshot,
+  type PlanPrefillPayload,
 } from '@/app/(main)/log/log-client';
 import { todayLocalISODate } from '@/lib/onboarding/date';
 import { createClient } from '@/lib/supabase/server';
 
-export default async function LogPage() {
+function isoDateOk(s: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+export default async function LogPage({
+  searchParams,
+}: {
+  searchParams?: { from_meal_id?: string; date?: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
@@ -17,7 +26,83 @@ export default async function LogPage() {
 
   if (!user) redirect('/login');
 
-  const date = todayLocalISODate();
+  const rawFrom = searchParams?.from_meal_id;
+  const fromMealId =
+    typeof rawFrom === 'string' && rawFrom.length > 0 ? rawFrom : undefined;
+
+  const rawDate = searchParams?.date;
+  const dateParam =
+    typeof rawDate === 'string' && isoDateOk(rawDate) ? rawDate : undefined;
+
+  let activeDate = dateParam ?? todayLocalISODate();
+  let prefillFromMeal: PlanPrefillPayload | null = null;
+
+  if (fromMealId) {
+    const { data: mealRow } = await supabase
+      .from('meals')
+      .select(
+        `
+        id,
+        type,
+        meal_items (
+          name,
+          quantity_g,
+          calories,
+          carb_g,
+          protein_g,
+          fat_g,
+          fiber_g,
+          sodium_mg
+        ),
+        daily_menus!inner (
+          date,
+          diet_plans!inner ( user_id )
+        )
+      `,
+      )
+      .eq('id', fromMealId)
+      .maybeSingle();
+
+    if (mealRow) {
+      const dm = mealRow.daily_menus as unknown as {
+        date: string;
+        diet_plans: { user_id: string };
+      };
+      if (dm.diet_plans.user_id === user.id) {
+        activeDate = dm.date;
+        const items = (mealRow.meal_items ?? []).map((it) => ({
+          name: it.name,
+          quantity_g: Number(it.quantity_g),
+          calories: Number(it.calories),
+          carb_g: Number(it.carb_g),
+          protein_g: Number(it.protein_g),
+          fat_g: Number(it.fat_g),
+          fiber_g:
+            it.fiber_g === null || it.fiber_g === undefined
+              ? null
+              : Number(it.fiber_g),
+          sodium_mg:
+            it.sodium_mg === null || it.sodium_mg === undefined
+              ? null
+              : Number(it.sodium_mg),
+        }));
+
+        const mt = mealRow.type;
+        if (
+          mt === 'breakfast' ||
+          mt === 'lunch' ||
+          mt === 'dinner' ||
+          mt === 'snack'
+        ) {
+          prefillFromMeal = {
+            mealId: mealRow.id,
+            mealType: mt,
+            items,
+          };
+        }
+      }
+    }
+  }
 
   const { data: goal } = await supabase
     .from('user_goals')
@@ -50,7 +135,7 @@ export default async function LogPage() {
     `,
     )
     .eq('user_id', user.id)
-    .eq('date', date)
+    .eq('date', activeDate)
     .order('logged_at', { ascending: false });
 
   const initialLogs: FoodLogSnapshot[] = (rows ?? []).map((row) => ({
@@ -79,9 +164,10 @@ export default async function LogPage() {
       </header>
 
       <LogClient
-        date={date}
+        date={activeDate}
         dailyCalTarget={goal?.daily_cal_target ?? null}
         initialLogs={initialLogs}
+        prefillFromMeal={prefillFromMeal}
       />
     </div>
   );

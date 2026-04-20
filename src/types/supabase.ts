@@ -243,7 +243,9 @@ export type Database = {
       food_logs: {
         Row: {
           date: string
+          from_plan_meal_id: string | null
           id: string
+          log_type: string
           logged_at: string | null
           meal_type: string
           method: string
@@ -251,7 +253,9 @@ export type Database = {
         }
         Insert: {
           date: string
+          from_plan_meal_id?: string | null
           id?: string
+          log_type?: string
           logged_at?: string | null
           meal_type: string
           method: string
@@ -259,7 +263,9 @@ export type Database = {
         }
         Update: {
           date?: string
+          from_plan_meal_id?: string | null
           id?: string
+          log_type?: string
           logged_at?: string | null
           meal_type?: string
           method?: string
@@ -349,6 +355,7 @@ export type Database = {
       }
       meals: {
         Row: {
+          checkin_type: string | null
           checked_in_at: string | null
           id: string
           is_checked_in: boolean | null
@@ -358,6 +365,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          checkin_type?: string | null
           checked_in_at?: string | null
           id?: string
           is_checked_in?: boolean | null
@@ -367,6 +375,7 @@ export type Database = {
           type: string
         }
         Update: {
+          checkin_type?: string | null
           checked_in_at?: string | null
           id?: string
           is_checked_in?: boolean | null

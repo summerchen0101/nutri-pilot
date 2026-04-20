@@ -70,6 +70,7 @@ export default async function PlanPage() {
         scheduled_at,
         is_checked_in,
         checked_in_at,
+        checkin_type,
         total_calories,
         meal_items (
           id,
@@ -78,7 +79,9 @@ export default async function PlanPage() {
           calories,
           carb_g,
           protein_g,
-          fat_g
+          fat_g,
+          fiber_g,
+          sodium_mg
         )
       )
     `,
@@ -144,6 +147,7 @@ function normalizeMeals(
         scheduled_at: string | null;
         is_checked_in: boolean | null;
         checked_in_at: string | null;
+        checkin_type: string | null;
         total_calories: number | null;
         meal_items:
           | {
@@ -154,6 +158,8 @@ function normalizeMeals(
               carb_g: number;
               protein_g: number;
               fat_g: number;
+              fiber_g?: number | null;
+              sodium_mg?: number | null;
             }[]
           | null;
       }[]
@@ -174,6 +180,7 @@ function normalizeMeals(
       scheduled_at: m.scheduled_at,
       is_checked_in: m.is_checked_in,
       checked_in_at: m.checked_in_at,
+      checkin_type: m.checkin_type ?? null,
       total_calories: m.total_calories,
       meal_items: m.meal_items ?? [],
     }));

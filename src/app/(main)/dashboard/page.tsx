@@ -100,6 +100,7 @@ export default async function DashboardPage() {
     meals: {
       type: string;
       is_checked_in: boolean | null;
+      checkin_type: string | null;
       meal_items: { name: string }[] | null;
     }[];
   } | null = null;
@@ -112,6 +113,7 @@ export default async function DashboardPage() {
       meals (
         type,
         is_checked_in,
+        checkin_type,
         meal_items ( name )
       )
     `,
@@ -239,6 +241,7 @@ function buildMealRows(
     meals: {
       type: string;
       is_checked_in: boolean | null;
+      checkin_type: string | null;
       meal_items: { name: string }[] | null;
     }[];
   } | null,
@@ -255,8 +258,10 @@ function buildMealRows(
   if (menuRow?.meals?.length) {
     for (const m of menuRow.meals) {
       const names = (m.meal_items ?? []).map((i) => i.name);
+      const mealDone =
+        Boolean(m.is_checked_in) || m.checkin_type === 'skipped';
       byType.set(m.type, {
-        checked: Boolean(m.is_checked_in),
+        checked: mealDone,
         names,
       });
     }
