@@ -6,7 +6,6 @@ import { useState, useTransition } from 'react';
 import { createPortal } from 'react-dom';
 
 import { logWeightAction } from '@/app/(main)/dashboard/actions';
-import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MetricTile } from '@/components/ui/metric-tile';
@@ -282,15 +281,15 @@ export function DashboardHome({
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title={`嗨，${displayName}`}
-        description={dateLabel}
-        meta={
-          <span className="shrink-0 rounded-full bg-primary-light px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
-            連續 {streakDays} 天
-          </span>
-        }
-      />
+      <section className="space-y-2">
+        <div className="flex items-end justify-between gap-2">
+          <h1 className="text-[20px] font-medium text-foreground">嗨，{displayName}</h1>
+          <p className="text-[13px] text-muted-foreground">{dateLabel}</p>
+        </div>
+        <span className="inline-flex rounded-full bg-primary-light px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+          連續 {streakDays} 天
+        </span>
+      </section>
 
       <CalorieRingBlock
         todayKcal={todayKcal}

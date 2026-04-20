@@ -97,13 +97,15 @@ export default async function ShopPage() {
     <div className="space-y-4">
       <PageHeader
         title="健康商城"
-        description={`依你的「${dietMethodLabel}」偏好篩選；已依過敏原（${
-          allergenLabels.length ? allergenLabels.join("、") : "無"
-        }）排除不適合商品。飲食習慣：${dietTypeLabel}`}
+        description={`偏好：${dietMethodLabel} · 飲食習慣：${dietTypeLabel} · 過敏原：${
+          allergenLabels.length ? allergenLabels.join('、') : '無'
+        }`}
+        spacing="compact"
         action={
           <Link
             href="/shop/cart"
-            className="rounded-[10px] border-[1.5px] border-primary px-3 py-2 text-[13px] font-medium text-primary hover:bg-primary-light">
+            className="rounded-[10px] border-[1.5px] border-primary px-3 py-1.5 text-[13px] font-medium text-primary hover:bg-primary-light"
+          >
             購物車
           </Link>
         }

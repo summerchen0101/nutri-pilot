@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -100,14 +99,7 @@ export default async function LogPage({
       <PageHeader
         title="飲食紀錄"
         description="記錄今日用餐，對照熱量目標。"
-        action={
-          <Link
-            href="/dashboard"
-            className="text-[13px] font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-          >
-            總覽
-          </Link>
-        }
+        spacing="compact"
       />
 
       <Suspense

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   useCallback,
@@ -755,28 +754,26 @@ export function LogClient({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <Link
-          href="/dashboard"
-          className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          ← 返回總覽
-        </Link>
-        <p className="max-w-[min(100%,220px)] text-right text-[13px] leading-snug text-muted-foreground">
-          <span className="block tabular-nums text-foreground">
-            <span className="text-xl font-medium">{Math.round(todayTotal)}</span>
-            <span className="font-normal text-muted-foreground"> kcal</span>
-          </span>
-          {dailyCalTarget != null ? (
-            <span className="mt-0.5 block text-[11px] text-muted-foreground">
-              目標 {Math.round(Number(dailyCalTarget))} kcal · {date}
-            </span>
-          ) : (
-            <span className="mt-0.5 block text-[11px] text-muted-foreground">
-              {date}
-            </span>
-          )}
-        </p>
+      <div className="rounded-xl border-[0.5px] border-border bg-card px-4 py-3">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] text-muted-foreground">今日已攝取</p>
+            <p className="tabular-nums text-[20px] font-medium leading-tight text-foreground">
+              {Math.round(todayTotal)}
+              <span className="text-[13px] font-normal text-muted-foreground"> kcal</span>
+            </p>
+          </div>
+          <div className="text-right">
+            {dailyCalTarget != null ? (
+              <p className="text-[11px] text-muted-foreground">
+                目標 {Math.round(Number(dailyCalTarget))} kcal
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">尚未設定熱量目標</p>
+            )}
+            <p className="mt-0.5 text-[11px] text-muted-foreground">{date}</p>
+          </div>
+        </div>
       </div>
 
       {prefillFromMeal ? (

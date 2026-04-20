@@ -53,6 +53,61 @@ interface Props {
   dietMethod: string;
 }
 
+function CategoryIcon({ category }: { category: ShopCategoryKey }) {
+  if (category === 'all') {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+        <circle cx="10" cy="10" r="6" />
+      </svg>
+    );
+  }
+  if (category === 'nuts') {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+        <path d="M10 3c2.6 0 4.5 2 4.5 4.7v2.8c0 3-2 5.5-4.5 5.5s-4.5-2.5-4.5-5.5V7.7C5.5 5 7.4 3 10 3z" />
+      </svg>
+    );
+  }
+  if (category === 'protein_bar') {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+        <rect x="3.5" y="6.5" width="13" height="7" rx="2" />
+        <path d="M7 8.5h6M7 11.5h4" />
+      </svg>
+    );
+  }
+  if (category === 'supplement') {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+        <rect x="6" y="4" width="8" height="12" rx="2" />
+        <path d="M8 4h4M8 9h4" />
+      </svg>
+    );
+  }
+  if (category === 'drink') {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+        <path d="M6 4h8l-1 12H7L6 4z" />
+        <path d="M8 4V2h4v2" />
+      </svg>
+    );
+  }
+  if (category === 'snack') {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+        <path d="M6 6h8l1 8H5l1-8z" />
+        <path d="M8 6V4h4v2" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+      <path d="M5 6h10v8H5z" />
+      <path d="M8 6V4h4v2M8 10h4" />
+    </svg>
+  );
+}
+
 export function ShopHomeClient({
   initialProducts,
   brands,
@@ -98,20 +153,25 @@ export function ShopHomeClient({
     <div className="space-y-5">
       <section>
         <p className="text-[13px] font-medium text-foreground">分類</p>
-        <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+        <div className="mt-2 grid grid-cols-3 gap-2">
           {SHOP_CATEGORY_KEYS.map((key) => (
             <button
               key={key}
               type="button"
               onClick={() => setCategory(key)}
               className={cn(
-                'whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] transition-colors',
+                'flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-colors',
                 category === key ?
-                  'bg-[#E8F5EE] font-medium text-[#2D6B4A]'
+                  'bg-[#E8F5EE] text-[#2D6B4A]'
                 : 'border-[0.5px] border-border bg-card text-muted-foreground hover:border-[#4C956C]/40',
               )}
             >
-              {key === 'all' ? '全部' : SHOP_CATEGORY_LABEL[key]}
+              <span className="h-4 w-4">
+                <CategoryIcon category={key} />
+              </span>
+              <span className="leading-none">
+                {key === 'all' ? '全部' : SHOP_CATEGORY_LABEL[key]}
+              </span>
             </button>
           ))}
         </div>
