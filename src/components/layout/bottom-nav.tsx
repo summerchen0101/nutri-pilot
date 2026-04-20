@@ -3,21 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  FiBarChart2,
-  FiPlusCircle,
-  FiShoppingCart,
-  FiTrendingUp,
-  FiUser,
-} from 'react-icons/fi';
+  BarChart3,
+  LayoutDashboard,
+  PlusCircle,
+  ShoppingCart,
+  UserRound,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils/cn';
 
 const NAV = [
-  { href: '/dashboard', label: '總覽', Icon: FiBarChart2 },
-  { href: '/log', label: '紀錄', Icon: FiPlusCircle },
-  { href: '/shop', label: '商城', Icon: FiShoppingCart },
-  { href: '/analytics', label: '分析', Icon: FiTrendingUp },
-  { href: '/settings', label: '我的', Icon: FiUser },
+  { href: '/dashboard', label: '總覽', Icon: LayoutDashboard },
+  { href: '/log', label: '紀錄', Icon: PlusCircle },
+  { href: '/shop', label: '商城', Icon: ShoppingCart },
+  { href: '/analytics', label: '分析', Icon: BarChart3 },
+  { href: '/settings', label: '我的', Icon: UserRound },
 ] as const;
 
 function isActive(pathname: string, href: string) {
@@ -40,13 +40,13 @@ export function BottomNav() {
             key={href}
             href={href}
             className={cn(
-              'flex cursor-pointer flex-col items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium transition-colors duration-150',
+              'flex cursor-pointer flex-col items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors duration-150',
               active
                 ? 'bg-primary-light text-primary'
                 : 'text-muted-foreground',
             )}
           >
-            <Icon className="shrink-0" />
+            <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} aria-hidden />
             {label}
           </Link>
         );

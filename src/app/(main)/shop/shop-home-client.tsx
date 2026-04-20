@@ -4,14 +4,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import {
-  FiBox,
-  FiCoffee,
-  FiDisc,
-  FiGrid,
-  FiPackage,
-  FiShoppingBag,
-  FiTag,
-} from 'react-icons/fi';
+  Cookie,
+  CupSoda,
+  LayoutGrid,
+  Nut,
+  Package,
+  PillBottle,
+  UtensilsCrossed,
+} from 'lucide-react';
 
 import {
   SHOP_CATEGORY_KEYS,
@@ -64,24 +64,24 @@ interface Props {
 
 function CategoryIcon({ category }: { category: ShopCategoryKey }) {
   if (category === 'all') {
-    return <FiGrid className="h-4 w-4" aria-hidden />;
+    return <LayoutGrid className="h-5 w-5" strokeWidth={1.8} aria-hidden />;
   }
   if (category === 'nuts') {
-    return <FiDisc className="h-4 w-4" aria-hidden />;
+    return <Nut className="h-5 w-5" strokeWidth={1.8} aria-hidden />;
   }
   if (category === 'protein_bar') {
-    return <FiPackage className="h-4 w-4" aria-hidden />;
+    return <Package className="h-5 w-5" strokeWidth={1.8} aria-hidden />;
   }
   if (category === 'supplement') {
-    return <FiBox className="h-4 w-4" aria-hidden />;
+    return <PillBottle className="h-5 w-5" strokeWidth={1.8} aria-hidden />;
   }
   if (category === 'drink') {
-    return <FiCoffee className="h-4 w-4" aria-hidden />;
+    return <CupSoda className="h-5 w-5" strokeWidth={1.8} aria-hidden />;
   }
   if (category === 'snack') {
-    return <FiShoppingBag className="h-4 w-4" aria-hidden />;
+    return <Cookie className="h-5 w-5" strokeWidth={1.8} aria-hidden />;
   }
-  return <FiTag className="h-4 w-4" aria-hidden />;
+  return <UtensilsCrossed className="h-5 w-5" strokeWidth={1.8} aria-hidden />;
 }
 
 export function ShopHomeClient({
@@ -142,7 +142,7 @@ export function ShopHomeClient({
                 : 'border-[0.5px] border-border bg-card text-muted-foreground hover:border-[#4C956C]/40',
               )}
             >
-              <span className="h-4 w-4">
+              <span className="flex h-5 w-5 items-center justify-center">
                 <CategoryIcon category={key} />
               </span>
               <span className="leading-none">
