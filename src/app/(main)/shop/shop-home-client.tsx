@@ -129,14 +129,14 @@ export function ShopHomeClient({
     <div className="space-y-5">
       <section>
         <p className="text-[13px] font-medium text-foreground">分類</p>
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="hide-scrollbar mt-2 flex gap-2 overflow-x-auto pb-1 pr-1 [-webkit-overflow-scrolling:touch]">
           {SHOP_CATEGORY_KEYS.map((key) => (
             <button
               key={key}
               type="button"
               onClick={() => setCategory(key)}
               className={cn(
-                'flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-colors',
+                'flex h-[60px] min-w-[60px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-1 text-[11px] font-medium transition-colors',
                 category === key ?
                   'bg-[#E8F5EE] text-[#2D6B4A]'
                 : 'border-[0.5px] border-border bg-card text-muted-foreground hover:border-[#4C956C]/40',

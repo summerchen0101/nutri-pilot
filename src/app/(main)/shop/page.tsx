@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { FiShoppingCart } from "react-icons/fi";
 
 import type { ShopProductRow } from './shop-home-client';
 import { ShopHomeClient } from './shop-home-client';
@@ -104,9 +105,10 @@ export default async function ShopPage() {
         action={
           <Link
             href="/shop/cart"
-            className="rounded-[10px] border-[1.5px] border-primary px-3 py-1.5 text-[13px] font-medium text-primary hover:bg-primary-light"
+            aria-label="購物車"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border-[1.5px] border-primary text-primary transition-colors hover:bg-primary-light"
           >
-            購物車
+            <FiShoppingCart className="h-[18px] w-[18px]" aria-hidden />
           </Link>
         }
       />
