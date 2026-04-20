@@ -151,6 +151,8 @@ export async function confirmPhotoItemsAction(input: {
     carb_g: number;
     protein_g: number;
     fat_g: number;
+    fiber_g: number | null;
+    sodium_mg: number | null;
   }>;
 }): Promise<{ error?: string }> {
   const supabase = createClient();
@@ -176,12 +178,18 @@ export async function confirmPhotoItemsAction(input: {
 
   const rows = input.items.map((it) => ({
     log_id: log.id,
-    name: it.name,
+    name: it.name.trim() || '未命名',
     quantity_g: it.quantity_g,
-    calories: it.calories,
-    carb_g: it.carb_g,
-    protein_g: it.protein_g,
-    fat_g: it.fat_g,
+    calories: Math.round(Number(it.calories)),
+    carb_g: Math.round(Number(it.carb_g)),
+    protein_g: Math.round(Number(it.protein_g)),
+    fat_g: Math.round(Number(it.fat_g)),
+    fiber_g:
+      it.fiber_g == null ? null : Math.round(Number(it.fiber_g)),
+    sodium_mg:
+      it.sodium_mg == null ? null : Math.round(Number(it.sodium_mg)),
+    brand: null as string | null,
+    is_verified: false as boolean | null,
   }));
 
   const { error: itemErr } = await supabase.from('food_log_items').insert(rows);

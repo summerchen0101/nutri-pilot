@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ChangeEvent,
 } from 'react';
 
 import {
@@ -19,6 +20,7 @@ import {
   confirmPhotoItemsAction,
   deleteFoodLogAction,
 } from '@/app/(main)/log/actions';
+import { NutritionResultCard } from '@/components/food/NutritionResultCard';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -30,6 +32,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
 import { invokeAiPhotoRequestFromBrowser } from '@/lib/food/invoke-photo-request';
+import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
 import { createClient } from '@/lib/supabase/client';
 import type { Json } from '@/types/supabase';
 
@@ -81,33 +84,50 @@ export interface PlanPrefillPayload {
   }>;
 }
 
-interface PhotoPreviewItem {
-  name: string;
-  quantity_g: number;
-  calories: number;
-  carb_g: number;
-  protein_g: number;
-  fat_g: number;
+function normalizeConfidenceFromJson(
+  v: unknown,
+): ManualFoodAnalysisResult['confidence'] {
+  if (v === 'high' || v === 'medium' || v === 'low') return v;
+  return 'medium';
 }
 
-function parsePhotoItems(json: Json | null): PhotoPreviewItem[] | null {
-  if (!json || !Array.isArray(json)) return null;
-  const out: PhotoPreviewItem[] = [];
-  for (const row of json) {
+/** 拍照 job 回傳（物件或陣列）→ 與手動 AI 相同結構；UI 只使用第一筆。 */
+function parsePhotoJobResult(json: Json | null): ManualFoodAnalysisResult | null {
+  if (json == null) return null;
+  const rows: unknown[] = Array.isArray(json) ? json : [json];
+  for (const row of rows) {
     if (!row || typeof row !== 'object') continue;
     const o = row as Record<string, unknown>;
     const name = String(o.name ?? '').trim();
     if (!name) continue;
-    out.push({
+    const quantity_g = Math.round(Number(o.quantity_g ?? 0));
+    const qd = String(o.quantity_description ?? '').trim();
+    const fiberRaw = o.fiber_g;
+    const sodiumRaw = o.sodium_mg;
+    return {
       name,
-      quantity_g: Number(o.quantity_g ?? 0),
-      calories: Number(o.calories ?? 0),
-      carb_g: Number(o.carb_g ?? 0),
-      protein_g: Number(o.protein_g ?? 0),
-      fat_g: Number(o.fat_g ?? 0),
-    });
+      quantity_g: quantity_g > 0 ? quantity_g : 100,
+      quantity_description: qd || (quantity_g > 0 ? `${quantity_g}g` : '1份'),
+      calories: Math.round(Number(o.calories ?? 0)),
+      protein_g: Math.round(Number(o.protein_g ?? 0)),
+      carb_g: Math.round(Number(o.carb_g ?? 0)),
+      fat_g: Math.round(Number(o.fat_g ?? 0)),
+      fiber_g:
+        fiberRaw === null || fiberRaw === undefined || fiberRaw === ''
+          ? null
+          : Math.round(Number(fiberRaw)),
+      sodium_mg:
+        sodiumRaw === null || sodiumRaw === undefined || sodiumRaw === ''
+          ? null
+          : Math.round(Number(sodiumRaw)),
+      confidence: normalizeConfidenceFromJson(o.confidence),
+      note:
+        o.note === null || o.note === undefined || o.note === ''
+          ? null
+          : String(o.note).trim().slice(0, 500) || null,
+    };
   }
-  return out.length ? out : null;
+  return null;
 }
 
 function roundMacroG(n: number): number {
@@ -307,10 +327,12 @@ export function LogClient({
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<PhotoPreviewItem[] | null>(
-    null,
-  );
+  const [photoResult, setPhotoResult] =
+    useState<ManualFoodAnalysisResult | null>(null);
   const [photoHint, setPhotoHint] = useState<string | null>(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const photoPreviewUrlRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const originalsRef = useRef(
     prefillFromMeal ? clonePrefillItems(prefillFromMeal) : [],
@@ -337,18 +359,27 @@ export function LogClient({
       const st = row.status ?? '';
       setJobStatus(st);
       if (st === 'ready') {
-        const items = parsePhotoItems(row.result_json ?? null);
-        setPhotoPreview(items);
+        const one = parsePhotoJobResult(row.result_json ?? null);
+        setPhotoResult(one);
         setPhotoError(null);
         return;
       }
       if (st === 'error') {
         setPhotoError(row.error_message ?? '辨識失敗');
-        setPhotoPreview(null);
+        setPhotoResult(null);
       }
     },
     [],
   );
+
+  useEffect(() => {
+    return () => {
+      if (photoPreviewUrlRef.current) {
+        URL.revokeObjectURL(photoPreviewUrlRef.current);
+        photoPreviewUrlRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!activeJobId) return;
@@ -518,13 +549,25 @@ export function LogClient({
     refresh();
   }
 
+  function clearLocalPhotoPreview() {
+    if (photoPreviewUrlRef.current) {
+      URL.revokeObjectURL(photoPreviewUrlRef.current);
+      photoPreviewUrlRef.current = null;
+    }
+    setPhotoPreviewUrl(null);
+  }
+
   async function onPhotoFile(file: File | null) {
     if (!file) return;
     setPhotoError(null);
-    setPhotoPreview(null);
+    setPhotoResult(null);
     setPhotoHint(null);
     setJobStatus(null);
     setActiveJobId(null);
+    clearLocalPhotoPreview();
+    const objectUrl = URL.createObjectURL(file);
+    photoPreviewUrlRef.current = objectUrl;
+    setPhotoPreviewUrl(objectUrl);
 
     const supabase = createClient();
     const {
@@ -604,24 +647,50 @@ export function LogClient({
     }
   }
 
-  async function onConfirmPhoto() {
-    if (!photoPreview?.length) return;
+  async function onConfirmPhoto(edited: ManualFoodAnalysisResult) {
     setAddBusy(true);
     const err = await confirmPhotoItemsAction({
       mealType: mealTab,
       date,
-      items: photoPreview,
+      items: [
+        {
+          name: edited.name,
+          quantity_g: edited.quantity_g,
+          calories: edited.calories,
+          carb_g: edited.carb_g,
+          protein_g: edited.protein_g,
+          fat_g: edited.fat_g,
+          fiber_g: edited.fiber_g,
+          sodium_mg: edited.sodium_mg,
+        },
+      ],
     });
     setAddBusy(false);
     if (err.error) {
       setPhotoError(err.error);
       return;
     }
-    setPhotoPreview(null);
+    setPhotoResult(null);
+    clearLocalPhotoPreview();
     setActiveJobId(null);
     setJobStatus(null);
     refresh();
   }
+
+  function handlePhotoFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    e.target.value = '';
+    void onPhotoFile(file);
+  }
+
+  const photoWaitingAnalysis =
+    !!photoPreviewUrl &&
+    !photoResult &&
+    (photoBusy ||
+      (!!activeJobId &&
+        jobStatus !== null &&
+        jobStatus !== 'ready' &&
+        jobStatus !== 'error'));
 
   const pillPrimary =
     'h-9 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-transparent';
@@ -933,70 +1002,107 @@ export function LogClient({
             </div>
           ) : (
             <div key="input-mode-photo" className="space-y-3">
-              <Input
+              <input
+                ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => void onPhotoFile(e.target.files?.[0] ?? null)}
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handlePhotoFileChange}
               />
-              {photoBusy ? (
+
+              {!photoPreviewUrl ?
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-[#C8E6D4] bg-[#EBF5EF] py-8 transition-colors active:bg-[#C8E6D4]"
+                >
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 32 32"
+                    fill="none"
+                    aria-hidden
+                  >
+                    <path
+                      d="M6 10h2.5L10 7h12l1.5 3H26a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V12a2 2 0 012-2z"
+                      stroke="#4C956C"
+                      strokeWidth={1.5}
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
+                    <circle
+                      cx="16"
+                      cy="17"
+                      r="4"
+                      stroke="#4C956C"
+                      strokeWidth={1.5}
+                      fill="none"
+                    />
+                  </svg>
+                  <span className="text-[13px] font-medium text-[#4C956C]">
+                    拍照或選擇相片
+                  </span>
+                  <span className="text-[11px] text-[#9298A8]">支援 JPG、PNG</span>
+                </button>
+              : !photoResult ?
+                <div className="relative w-full overflow-hidden rounded-xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photoPreviewUrl}
+                    alt="預覽"
+                    className="h-48 w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute right-2 top-2 rounded-full bg-[#1E212B]/70 px-3 py-1 text-[11px] text-white transition-opacity hover:opacity-90"
+                  >
+                    重新選擇
+                  </button>
+                </div>
+              : null}
+
+              {photoBusy ?
                 <p className="text-[13px] text-muted-foreground">
                   上傳並排入分析…
                 </p>
-              ) : null}
-              {photoHint ? (
+              : null}
+              {photoHint ?
                 <p className="text-[11px] text-[#854F0B]">{photoHint}</p>
-              ) : null}
-              {activeJobId && jobStatus && jobStatus !== 'ready' ? (
-                <div className="animate-pulse space-y-2 rounded-xl border-[0.5px] border-border bg-secondary p-4">
-                  <div className="h-3 w-2/5 rounded-[10px] bg-muted" />
-                  <div className="h-16 rounded-xl bg-muted/80" />
-                  <p className="text-center text-[11px] text-muted-foreground">
-                    AI 分析中（{jobStatus}）…
+              : null}
+
+              {photoWaitingAnalysis ?
+                <div className="space-y-3 rounded-xl border-[0.5px] border-[#E8E9ED] bg-white p-4">
+                  <div className="animate-pulse space-y-2">
+                    <div className="h-4 w-1/3 rounded-full bg-[#E8E9ED]" />
+                    <div className="h-3 w-1/2 rounded-full bg-[#E8E9ED]" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 animate-pulse">
+                    <div className="h-20 rounded-xl bg-[#E8E9ED]" />
+                    <div className="h-20 rounded-xl bg-[#E8E9ED]" />
+                    <div className="h-20 rounded-xl bg-[#E8E9ED]" />
+                    <div className="h-20 rounded-xl bg-[#E8E9ED]" />
+                  </div>
+                  <div className="h-10 animate-pulse rounded-[10px] bg-[#E8E9ED]" />
+                  <p className="text-center text-[11px] text-[#9298A8]">
+                    AI 辨識中，請稍候...
                   </p>
                 </div>
-              ) : null}
+              : null}
+
               {photoError ? (
                 <p className="text-[13px] text-destructive">{photoError}</p>
               ) : null}
 
-              {photoPreview?.length ? (
-                <div className="space-y-3 rounded-xl border-[0.5px] border-border bg-card p-4">
-                  <p className="text-[15px] font-medium text-foreground">
-                    辨識結果（確認後寫入 {MEAL_LABEL[mealTab]}）
-                  </p>
-                  <ul className="space-y-2 text-[13px]">
-                    {photoPreview.map((it, idx) => (
-                      <li
-                        key={`${it.name}-${idx}`}
-                        className="flex justify-between gap-2 border-b-[0.5px] border-border pb-2 text-foreground last:border-b-0 last:pb-0"
-                      >
-                        <span className="min-w-0">
-                          {it.name}{' '}
-                          <span className="text-muted-foreground">
-                            {Math.round(it.quantity_g)}g
-                          </span>
-                        </span>
-                        <span className="tabular-nums shrink-0 text-[13px]">
-                          <span className="font-medium text-foreground">
-                            {Math.round(it.calories)}
-                          </span>
-                          <span className="font-normal text-muted-foreground">
-                            {' '}
-                            kcal
-                          </span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    type="button"
-                    className="w-full"
-                    disabled={addBusy}
-                    onClick={() => void onConfirmPhoto()}
-                  >
-                    {addBusy ? '寫入中…' : '確認加入紀錄'}
-                  </Button>
-                </div>
+              {photoResult ? (
+                <NutritionResultCard
+                  result={photoResult}
+                  mealLabelZh={MEAL_LABEL[mealTab]}
+                  previewImageUrl={photoPreviewUrl ?? undefined}
+                  confirmBusy={addBusy}
+                  onConfirm={(edited) => void onConfirmPhoto(edited)}
+                />
               ) : null}
             </div>
           )}

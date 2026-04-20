@@ -10,10 +10,15 @@ import { PHOTO_ANALYZE_PROMPT } from "../_shared/photo-analyze-prompt.ts";
 interface PhotoItem {
   name: string;
   quantity_g: number;
+  quantity_description: string;
   calories: number;
   carb_g: number;
   protein_g: number;
   fat_g: number;
+  fiber_g: number | null;
+  sodium_mg: number | null;
+  confidence: "high" | "medium" | "low";
+  note: string | null;
 }
 
 function mediaTypeFromPath(path: string): "image/jpeg" | "image/png" | "image/webp" {
@@ -35,21 +40,68 @@ function toBase64(u8: Uint8Array): string {
   return btoa(binary);
 }
 
+function normalizeConfidence(
+  v: unknown,
+): "high" | "medium" | "low" {
+  if (v === "high" || v === "medium" || v === "low") return v;
+  return "medium";
+}
+
+function normalizePhotoRow(o: Record<string, unknown>): PhotoItem | null {
+  const name = String(o.name ?? "").trim();
+  if (!name.length) return null;
+
+  const quantity_g = Math.round(Number(o.quantity_g ?? 0));
+  const qDesc = String(o.quantity_description ?? "").trim();
+  const quantity_description =
+    qDesc || (quantity_g > 0 ? `${quantity_g}g` : "1份");
+
+  let fiberRaw = o.fiber_g;
+  if (fiberRaw === undefined) fiberRaw = null;
+  let sodiumRaw = o.sodium_mg;
+  if (sodiumRaw === undefined) sodiumRaw = null;
+
+  return {
+    name,
+    quantity_g: quantity_g > 0 ? quantity_g : 100,
+    quantity_description,
+    calories: Math.round(Number(o.calories ?? 0)),
+    carb_g: Math.round(Number(o.carb_g ?? 0)),
+    protein_g: Math.round(Number(o.protein_g ?? 0)),
+    fat_g: Math.round(Number(o.fat_g ?? 0)),
+    fiber_g:
+      fiberRaw === null || fiberRaw === undefined || fiberRaw === ""
+        ? null
+        : Math.round(Number(fiberRaw)),
+    sodium_mg:
+      sodiumRaw === null || sodiumRaw === undefined || sodiumRaw === ""
+        ? null
+        : Math.round(Number(sodiumRaw)),
+    confidence: normalizeConfidence(o.confidence),
+    note:
+      o.note === null || o.note === undefined || o.note === ""
+        ? null
+        : String(o.note).trim().slice(0, 500) || null,
+  };
+}
+
 function parseItems(raw: string): PhotoItem[] {
   const cleaned = raw.replace(/```json|```/g, "").trim();
   const parsed = JSON.parse(cleaned) as unknown;
-  if (!Array.isArray(parsed)) throw new Error("預期 JSON 陣列");
-  return parsed.map((row) => {
-    const o = row as Record<string, unknown>;
-    return {
-      name: String(o.name ?? ""),
-      quantity_g: Number(o.quantity_g ?? 0),
-      calories: Number(o.calories ?? 0),
-      carb_g: Number(o.carb_g ?? 0),
-      protein_g: Number(o.protein_g ?? 0),
-      fat_g: Number(o.fat_g ?? 0),
-    };
-  }).filter((it) => it.name.length > 0);
+  const rows: Record<string, unknown>[] = [];
+  if (Array.isArray(parsed)) {
+    for (const row of parsed) {
+      if (row && typeof row === "object") rows.push(row as Record<string, unknown>);
+    }
+  } else if (parsed && typeof parsed === "object") {
+    rows.push(parsed as Record<string, unknown>);
+  }
+
+  const items = rows
+    .map((row) => normalizePhotoRow(row))
+    .filter((it): it is PhotoItem => it !== null);
+
+  return items;
 }
 
 async function anthropicVision(params: {
@@ -89,7 +141,7 @@ async function anthropicVision(params: {
               type: "text",
               text:
                 params.prompt +
-                "\n\n只回傳 JSON 陣列，不加 markdown code block 或任何說明文字。",
+                "\n\n只回傳 JSON，不加 markdown code block 或任何說明文字。",
             },
           ],
         },
@@ -135,7 +187,6 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Supabase Dashboard → Edge Functions → Logs 會顯示；QStash DELIVERED 時此列應出現
   console.info(`[ai-photo-analyze] start jobId=${jobId}`);
 
   try {
