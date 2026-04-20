@@ -269,7 +269,7 @@ export function DashboardHome({
   }
 
   const ghostQuick =
-    'flex min-h-[72px] flex-1 flex-col items-center justify-center gap-1 rounded-xl border-[0.5px] border-border bg-transparent px-2 py-2 text-[13px] font-normal text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground';
+    'flex min-h-[72px] flex-1 flex-col items-center justify-center gap-1 rounded-xl border-[0.5px] border-border bg-card px-2 py-2 text-[13px] font-normal text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground';
 
   const goal = targetKcal != null && targetKcal > 0 ? targetKcal : null;
   let calorieSub = '';
@@ -281,7 +281,7 @@ export function DashboardHome({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <PageHeader
         title={`嗨，${displayName}`}
         description={dateLabel}
@@ -300,11 +300,11 @@ export function DashboardHome({
         fatG={fatG}
       />
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={openWeightDialog}
-          className="rounded-[10px] bg-surface-secondary p-3 text-left transition-colors hover:bg-secondary"
+          className="rounded-[10px] border-[0.5px] border-border bg-card p-3 text-left transition-colors hover:bg-muted"
         >
           <p className="text-[11px] text-muted-foreground">體重</p>
           <p className="mt-0.5 tabular-nums text-[20px] font-medium text-foreground">
@@ -340,6 +340,7 @@ export function DashboardHome({
 
         <MetricTile
           label="今日熱量"
+          className="bg-card"
           value={
             <>
               {Math.round(todayKcal)}
@@ -396,9 +397,9 @@ export function DashboardHome({
         </ul>
       </SectionCard>
 
-      <div className="space-y-2">
+      <SectionCard>
         <p className="text-[15px] font-medium text-foreground">快速操作</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-3 gap-2">
           <Link href="/log" className={cn(ghostQuick)} title="記錄飲食">
             <IconMeal className="text-primary" />
             <span className="text-center leading-tight">飲食</span>
@@ -412,7 +413,7 @@ export function DashboardHome({
             <span className="text-center leading-tight">數據</span>
           </Link>
         </div>
-      </div>
+      </SectionCard>
 
       {open
         ? createPortal(

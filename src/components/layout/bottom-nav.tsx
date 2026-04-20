@@ -135,7 +135,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="主選單"
-      className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-[0.5px] border-[#E8E9ED] bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+      className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-[0.5px] border-border bg-card px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
     >
       {NAV.map(({ href, label, Icon }) => {
         const active = isActive(pathname, href);
@@ -145,7 +145,9 @@ export function BottomNav() {
             href={href}
             className={cn(
               'flex cursor-pointer flex-col items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium transition-colors duration-150',
-              active ? 'bg-[#EBF5EF] text-[#4C956C]' : 'text-[#9298A8]',
+              active
+                ? 'bg-primary-light text-primary'
+                : 'text-muted-foreground',
             )}
           >
             <Icon className="shrink-0" />
