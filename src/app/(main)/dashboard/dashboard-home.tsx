@@ -6,8 +6,11 @@ import { useState, useTransition } from 'react';
 import { createPortal } from 'react-dom';
 
 import { logWeightAction } from '@/app/(main)/dashboard/actions';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MetricTile } from '@/components/ui/metric-tile';
+import { SectionCard } from '@/components/ui/section-card';
 import { cn } from '@/lib/utils/cn';
 
 export type DashboardMealVariant =
@@ -279,17 +282,15 @@ export function DashboardHome({
 
   return (
     <div className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-medium text-[#1E212B]">
-            嗨，{displayName}
-          </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">{dateLabel}</p>
-        </div>
-        <span className="shrink-0 rounded-full bg-[#E8F5EE] px-2.5 py-0.5 text-[11px] font-medium text-[#2D6B4A]">
-          連續 {streakDays} 天
-        </span>
-      </header>
+      <PageHeader
+        title={`嗨，${displayName}`}
+        description={dateLabel}
+        action={
+          <span className="shrink-0 rounded-full bg-[#E8F5EE] px-2.5 py-0.5 text-[11px] font-medium text-[#2D6B4A]">
+            連續 {streakDays} 天
+          </span>
+        }
+      />
 
       <CalorieRingBlock
         todayKcal={todayKcal}
@@ -337,31 +338,28 @@ export function DashboardHome({
           ) : null}
         </button>
 
-        <div className="rounded-[10px] bg-[#F7F8F6] p-3">
-          <p className="text-[11px] text-muted-foreground">今日熱量</p>
-          <p className="mt-0.5 tabular-nums text-xl font-medium text-[#1E212B]">
-            {Math.round(todayKcal)}
-            <span className="text-[13px] font-normal text-muted-foreground">
-              {' '}
-              kcal
-            </span>
-          </p>
-          {goal != null ? (
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              目標 {Math.round(goal)} kcal
-            </p>
-          ) : (
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              尚未設定目標
-            </p>
-          )}
-          {calorieSub ? (
-            <p className="mt-1 text-[11px] text-[#4C956C]">{calorieSub}</p>
-          ) : null}
-        </div>
+        <MetricTile
+          label="今日熱量"
+          value={
+            <>
+              {Math.round(todayKcal)}
+              <span className="text-[13px] font-normal text-muted-foreground"> kcal</span>
+            </>
+          }
+          hint={
+            goal != null ? (
+              <>
+                目標 {Math.round(goal)} kcal
+                {calorieSub ? ` · ${calorieSub}` : ''}
+              </>
+            ) : (
+              '尚未設定目標'
+            )
+          }
+        />
       </div>
 
-      <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+      <SectionCard>
         <p className="text-[15px] font-medium text-foreground">今日餐食</p>
         <ul className="mt-3 space-y-3">
           {meals.map((m) => (
@@ -396,7 +394,7 @@ export function DashboardHome({
             </li>
           ))}
         </ul>
-      </section>
+      </SectionCard>
 
       <div className="space-y-2">
         <p className="text-[15px] font-medium text-foreground">快速操作</p>

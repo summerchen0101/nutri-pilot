@@ -50,6 +50,16 @@
     /* 頁面底色（極淡灰綠） */
     --surface-secondary: #f7f8f6;
 
+    /* Semantic neutral tokens (light mode) */
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f7f8f6;
+    --color-background-tertiary: #f3f4f6;
+    --color-text-primary: #1e212b;
+    --color-text-secondary: #4a4f63;
+    --color-text-tertiary: #9298a8;
+    --color-border-tertiary: #e8e9ed;
+    --color-border-secondary: #d5d7de;
+
     --background: 0 0% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;

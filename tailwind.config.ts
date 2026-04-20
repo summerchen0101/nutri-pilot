@@ -12,6 +12,22 @@ const config: Config = {
         DEFAULT: '#4C956C',
       },
       colors: {
+        neutral: {
+          bg: {
+            primary: 'var(--color-background-primary)',
+            secondary: 'var(--color-background-secondary)',
+            tertiary: 'var(--color-background-tertiary)',
+          },
+          text: {
+            primary: 'var(--color-text-primary)',
+            secondary: 'var(--color-text-secondary)',
+            tertiary: 'var(--color-text-tertiary)',
+          },
+          border: {
+            secondary: 'var(--color-border-secondary)',
+            tertiary: 'var(--color-border-tertiary)',
+          },
+        },
         border: 'hsl(var(--border))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',

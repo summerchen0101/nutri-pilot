@@ -2,9 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
-import { createPortal } from 'react-dom';
 
+import { PageHeader } from '@/components/layout/page-header';
+import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import { Input } from '@/components/ui/input';
+import { MetricTile } from '@/components/ui/metric-tile';
+import { SectionCard } from '@/components/ui/section-card';
 import { createClient } from '@/lib/supabase/client';
 import { ALLERGEN_OPTIONS, DIET_METHOD_OPTIONS, GOAL_TYPE_OPTIONS } from '@/lib/onboarding/constants';
 
@@ -35,6 +38,8 @@ export type SettingsInitialData = {
 
 type SheetType =
   | null
+  | 'profileName'
+  | 'bodyMetrics'
   | 'dietMethod'
   | 'allergens'
   | 'goalType'
@@ -113,43 +118,17 @@ function Row({
   );
 }
 
-function BottomSheet({
-  open,
-  title,
-  onClose,
-  children,
-}: {
-  open: boolean;
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  if (!open) return null;
-  const sheet = (
-    <div className="fixed inset-0 z-50">
-      <button type="button" className="absolute inset-0 bg-black/35" aria-label="關閉" onClick={onClose} />
-      <div className="absolute bottom-0 left-0 right-0 rounded-t-[16px] border-[0.5px] border-[#E8E9ED] bg-white p-4">
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#D5D7DE]" />
-        <div className="mb-3 text-[15px] font-medium text-[#1E212B]">{title}</div>
-        {children}
-      </div>
-    </div>
-  );
-
-  if (typeof document === 'undefined') return sheet;
-  return createPortal(sheet, document.body);
-}
-
 export function SettingsView({ initial }: { initial: SettingsInitialData }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   const [name, setName] = useState(initial.name);
-  const [nameEditing, setNameEditing] = useState(false);
+  const [nameDraft, setNameDraft] = useState(initial.name);
 
   const [heightCm, setHeightCm] = useState(initial.heightCm > 0 ? String(initial.heightCm) : '');
   const [weightKg, setWeightKg] = useState(initial.weightKg > 0 ? String(initial.weightKg) : '');
-  const [metricsEditing, setMetricsEditing] = useState(false);
+  const [heightDraft, setHeightDraft] = useState(initial.heightCm > 0 ? String(initial.heightCm) : '');
+  const [weightDraft, setWeightDraft] = useState(initial.weightKg > 0 ? String(initial.weightKg) : '');
 
   const [goalType, setGoalType] = useState(initial.goal.type);
   const [targetW, setTargetW] = useState(String(initial.goal.targetWeightKg));
@@ -207,6 +186,50 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
     });
   }
 
+  function openNameSheet() {
+    setNameDraft(name);
+    setErrProfile(null);
+    setActiveSheet('profileName');
+  }
+
+  function openBodySheet() {
+    setHeightDraft(heightCm);
+    setWeightDraft(weightKg);
+    setErrBody(null);
+    setActiveSheet('bodyMetrics');
+  }
+
+  function applyNameDraft() {
+    setErrProfile(null);
+    startTransition(async () => {
+      const result = await saveProfileName(nameDraft);
+      if (result.error) {
+        setErrProfile(result.error);
+        return;
+      }
+      setName(nameDraft.trim());
+      setActiveSheet(null);
+      refresh();
+    });
+  }
+
+  function applyBodyDraft() {
+    setErrBody(null);
+    startTransition(async () => {
+      const nextHeight = Number.parseFloat(heightDraft.replace(',', '.'));
+      const nextWeight = Number.parseFloat(weightDraft.replace(',', '.'));
+      const result = await saveBodyMetrics(nextHeight, nextWeight);
+      if (result.error) {
+        setErrBody(result.error);
+        return;
+      }
+      setHeightCm(heightDraft);
+      setWeightKg(weightDraft);
+      setActiveSheet(null);
+      refresh();
+    });
+  }
+
   function openGoalSheet(sheet: Exclude<SheetType, null | 'dietMethod' | 'allergens'>) {
     setGoalTypeDraft(goalType);
     setTargetWDraft(targetW);
@@ -258,9 +281,9 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
 
   return (
     <div className="space-y-3 pb-4">
-      <div className="text-[22px] font-medium text-[#1E212B]">我的</div>
+      <PageHeader title="設定" description="管理個人資料、目標與飲食偏好。" />
 
-      <section className="rounded-xl bg-white p-4">
+      <SectionCard className="bg-[var(--color-background-primary)]">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#EBF5EF] text-[20px] font-medium text-[#4C956C]">
             {avatarChar}
@@ -276,57 +299,20 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
           <button
             type="button"
             className="rounded-[8px] border border-[#4C956C] px-3 py-1.5 text-[12px] text-[#4C956C]"
-            onClick={() => setNameEditing((prev) => !prev)}
+            onClick={openNameSheet}
           >
             編輯
           </button>
         </div>
-        {nameEditing ? (
-          <div className="mt-3 pt-3">
-            <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="輸入名稱" />
-            {errProfile ? <p className="mt-1.5 text-[11px] text-[#E55A3C]">{errProfile}</p> : null}
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                className="rounded-[8px] border border-[#C8CCD8] px-3 py-1.5 text-[12px] text-[#4A4F63]"
-                onClick={() => {
-                  setName(initial.name);
-                  setNameEditing(false);
-                }}
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                className="rounded-[8px] bg-[#1E212B] px-3 py-1.5 text-[12px] text-white disabled:opacity-60"
-                onClick={() => {
-                  setErrProfile(null);
-                  startTransition(async () => {
-                    const result = await saveProfileName(name);
-                    if (result.error) {
-                      setErrProfile(result.error);
-                      return;
-                    }
-                    setNameEditing(false);
-                    refresh();
-                  });
-                }}
-              >
-                儲存
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </section>
+      </SectionCard>
 
-      <section className="rounded-xl bg-white p-4">
+      <SectionCard className="bg-[var(--color-background-primary)]">
         <div className="mb-3 flex items-center justify-between">
           <div className="text-[15px] font-medium text-[#1E212B]">身體數據</div>
           <button
             type="button"
             className="rounded-[8px] border border-[#4C956C] px-3 py-1 text-[12px] text-[#4C956C]"
-            onClick={() => setMetricsEditing((prev) => !prev)}
+            onClick={openBodySheet}
           >
             更新
           </button>
@@ -340,71 +326,21 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
             { label: 'BMR kcal', value: initial.bmr != null ? Math.round(initial.bmr).toLocaleString() : '-' },
             { label: 'TDEE kcal', value: tdeePreview > 0 ? tdeePreview.toLocaleString() : '-' },
           ].map((metric) => (
-            <div key={metric.label} className="rounded-xl bg-[#F4F4F6] px-2 py-3 text-center">
-              <div className={['text-[18px] font-medium', metric.valueClassName ?? 'text-[#1E212B]'].join(' ')}>{metric.value}</div>
-              <div className="mt-1 text-[11px] text-[#9298A8]">{metric.label}</div>
-            </div>
+            <MetricTile
+              key={metric.label}
+              label={metric.label}
+              value={metric.value}
+              className="px-2 py-3 text-center"
+            />
           ))}
         </div>
         <div className="mt-2 flex items-center justify-between rounded-lg bg-[#EBF5EF] px-3 py-2">
           <span className="text-[11px] text-[#4C956C]">BMI 正常範圍（18.5-24.9）</span>
           <span className={['text-[11px] font-medium', bmiTone(bmiValue)].join(' ')}>{bmiStatusText(bmiValue)}</span>
         </div>
-        {metricsEditing ? (
-          <div className="mt-3 pt-3">
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                value={heightCm}
-                inputMode="decimal"
-                onChange={(event) => setHeightCm(event.target.value)}
-                placeholder="身高 cm"
-                className="border-[0.5px] border-[#E8E9ED] bg-white"
-              />
-              <Input
-                value={weightKg}
-                inputMode="decimal"
-                onChange={(event) => setWeightKg(event.target.value)}
-                placeholder="體重 kg"
-                className="border-[0.5px] border-[#E8E9ED] bg-white"
-              />
-            </div>
-            {errBody ? <p className="mt-1.5 text-[11px] text-[#E55A3C]">{errBody}</p> : null}
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                className="rounded-[8px] border border-[#C8CCD8] px-3 py-1.5 text-[12px] text-[#4A4F63]"
-                onClick={() => setMetricsEditing(false)}
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                className="rounded-[8px] bg-[#1E212B] px-3 py-1.5 text-[12px] text-white disabled:opacity-60"
-                onClick={() => {
-                  setErrBody(null);
-                  startTransition(async () => {
-                    const result = await saveBodyMetrics(
-                      Number.parseFloat(heightCm.replace(',', '.')),
-                      Number.parseFloat(weightKg.replace(',', '.')),
-                    );
-                    if (result.error) {
-                      setErrBody(result.error);
-                      return;
-                    }
-                    setMetricsEditing(false);
-                    refresh();
-                  });
-                }}
-              >
-                儲存
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </section>
+      </SectionCard>
 
-      <section className="rounded-xl bg-white p-4">
+      <SectionCard className="bg-[var(--color-background-primary)]">
         <div className="mb-1 text-[15px] font-medium text-[#1E212B]">飲控目標</div>
         <Row
           label="目標類型"
@@ -435,16 +371,16 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
           onClick={() => openGoalDependencySheet('goalTargetDate')}
         />
         {errGoal ? <p className="mt-1 text-[11px] text-[#E55A3C]">{errGoal}</p> : null}
-      </section>
+      </SectionCard>
 
-      <section className="rounded-xl bg-white p-4">
+      <SectionCard className="bg-[var(--color-background-primary)]">
         <div className="mb-1 text-[15px] font-medium text-[#1E212B]">飲食偏好</div>
         <Row label="飲食方式" value={dietMethodLabel(dietMethod)} onClick={() => setActiveSheet('dietMethod')} />
         <Row label="忌食 / 過敏" value={allergenText} onClick={() => setActiveSheet('allergens')} withBorder={false} />
         {errDiet ? <p className="mt-1 text-[11px] text-[#E55A3C]">{errDiet}</p> : null}
-      </section>
+      </SectionCard>
 
-      <section className="rounded-xl bg-white p-4">
+      <SectionCard className="bg-[var(--color-background-primary)]">
         <div className="mb-1 text-[15px] font-medium text-[#1E212B]">帳號管理</div>
         <Row
           label="重置數據"
@@ -452,9 +388,9 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         />
         <Row label="登出" onClick={signOut} />
         <Row label="刪除帳號" onClick={() => window.alert('刪除帳號功能尚未開放。')} danger withBorder={false} />
-      </section>
+      </SectionCard>
 
-      <BottomSheet open={activeSheet === 'dietMethod'} title="編輯飲食方式" onClose={() => setActiveSheet(null)}>
+      <BottomSheetShell open={activeSheet === 'dietMethod'} title="編輯飲食方式" onClose={() => setActiveSheet(null)}>
         <div className="grid gap-2 pb-3">
           {DIET_METHOD_OPTIONS.map((option) => {
             const active = dietMethod === option.value;
@@ -498,9 +434,59 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         >
           儲存
         </button>
-      </BottomSheet>
+      </BottomSheetShell>
 
-      <BottomSheet open={activeSheet === 'allergens'} title="編輯忌食 / 過敏" onClose={() => setActiveSheet(null)}>
+      <BottomSheetShell open={activeSheet === 'profileName'} title="編輯姓名" onClose={() => setActiveSheet(null)}>
+        <div className="space-y-2 pb-3">
+          <Input
+            value={nameDraft}
+            onChange={(event) => setNameDraft(event.target.value)}
+            placeholder="輸入名稱"
+            className="border-[0.5px] border-[#E8E9ED] bg-white text-[13px]"
+          />
+          {errProfile ? <p className="text-[11px] text-[#E55A3C]">{errProfile}</p> : null}
+        </div>
+        <button
+          type="button"
+          disabled={pending}
+          className="w-full rounded-[10px] bg-[#1E212B] py-2 text-[13px] font-medium text-white disabled:opacity-60"
+          onClick={applyNameDraft}
+        >
+          儲存
+        </button>
+      </BottomSheetShell>
+
+      <BottomSheetShell open={activeSheet === 'bodyMetrics'} title="編輯身體數據" onClose={() => setActiveSheet(null)}>
+        <div className="space-y-2 pb-3">
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              value={heightDraft}
+              inputMode="decimal"
+              onChange={(event) => setHeightDraft(event.target.value)}
+              placeholder="身高 cm"
+              className="border-[0.5px] border-[#E8E9ED] bg-white text-[13px]"
+            />
+            <Input
+              value={weightDraft}
+              inputMode="decimal"
+              onChange={(event) => setWeightDraft(event.target.value)}
+              placeholder="體重 kg"
+              className="border-[0.5px] border-[#E8E9ED] bg-white text-[13px]"
+            />
+          </div>
+          {errBody ? <p className="text-[11px] text-[#E55A3C]">{errBody}</p> : null}
+        </div>
+        <button
+          type="button"
+          disabled={pending}
+          className="w-full rounded-[10px] bg-[#1E212B] py-2 text-[13px] font-medium text-white disabled:opacity-60"
+          onClick={applyBodyDraft}
+        >
+          儲存
+        </button>
+      </BottomSheetShell>
+
+      <BottomSheetShell open={activeSheet === 'allergens'} title="編輯忌食 / 過敏" onClose={() => setActiveSheet(null)}>
         <div className="grid gap-2 pb-3">
           {ALLERGEN_OPTIONS.map((option) => {
             const checked = allergens.includes(option.value);
@@ -579,9 +565,9 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         >
           儲存
         </button>
-      </BottomSheet>
+      </BottomSheetShell>
 
-      <BottomSheet open={activeSheet === 'goalType'} title="編輯目標類型" onClose={() => setActiveSheet(null)}>
+      <BottomSheetShell open={activeSheet === 'goalType'} title="編輯目標類型" onClose={() => setActiveSheet(null)}>
         <div className="grid gap-2 pb-3">
           {GOAL_TYPE_OPTIONS.map((option) => {
             const active = goalTypeDraft === option.value;
@@ -609,9 +595,9 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         >
           儲存
         </button>
-      </BottomSheet>
+      </BottomSheetShell>
 
-      <BottomSheet open={activeSheet === 'goalWeight'} title="編輯目標體重" onClose={() => setActiveSheet(null)}>
+      <BottomSheetShell open={activeSheet === 'goalWeight'} title="編輯目標體重" onClose={() => setActiveSheet(null)}>
         <div className="space-y-2 pb-3">
           <Input
             value={targetWDraft}
@@ -630,9 +616,9 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         >
           儲存
         </button>
-      </BottomSheet>
+      </BottomSheetShell>
 
-      <BottomSheet open={activeSheet === 'goalWeeklyRate'} title="編輯每週速率" onClose={() => setActiveSheet(null)}>
+      <BottomSheetShell open={activeSheet === 'goalWeeklyRate'} title="編輯每週速率" onClose={() => setActiveSheet(null)}>
         <div className="space-y-2 pb-3">
           <Input
             value={weeklyRateDraft}
@@ -653,9 +639,9 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         >
           儲存
         </button>
-      </BottomSheet>
+      </BottomSheetShell>
 
-      <BottomSheet open={activeSheet === 'goalDailyCal'} title="編輯每日熱量目標" onClose={() => setActiveSheet(null)}>
+      <BottomSheetShell open={activeSheet === 'goalDailyCal'} title="編輯每日熱量目標" onClose={() => setActiveSheet(null)}>
         <div className="space-y-2 pb-3">
           <p className="text-[11px] text-[#9298A8]">每日熱量目標會依目標類型、目標體重與每週速率自動計算。</p>
           <div className="rounded-[10px] border border-[#E8E9ED] px-3 py-2 text-[13px] text-[#1E212B]">
@@ -678,9 +664,9 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         >
           關閉
         </button>
-      </BottomSheet>
+      </BottomSheetShell>
 
-      <BottomSheet open={activeSheet === 'goalTargetDate'} title="編輯預計達標日" onClose={() => setActiveSheet(null)}>
+      <BottomSheetShell open={activeSheet === 'goalTargetDate'} title="編輯預計達標日" onClose={() => setActiveSheet(null)}>
         <div className="space-y-2 pb-3">
           <p className="text-[11px] text-[#9298A8]">預計達標日會依目前體重、目標體重與每週速率自動計算。</p>
           <div className="rounded-[10px] border border-[#E8E9ED] px-3 py-2 text-[13px] text-[#1E212B]">
@@ -703,7 +689,7 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         >
           關閉
         </button>
-      </BottomSheet>
+      </BottomSheetShell>
     </div>
   );
 }

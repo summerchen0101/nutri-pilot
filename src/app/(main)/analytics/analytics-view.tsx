@@ -18,6 +18,11 @@ import {
   YAxis,
 } from 'recharts';
 
+import { PageHeader } from '@/components/layout/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SectionCard } from '@/components/ui/section-card';
+import { SegmentedTabs } from '@/components/ui/segmented-tabs';
+
 import {
   addCalendarDaysISO,
   iterateISODatesInclusive,
@@ -50,9 +55,11 @@ function periodBounds(
   today: string,
 ): { start: string; end: string } {
   let start =
-    period === 'week' ? addCalendarDaysISO(today, -6)
-    : period === 'month' ? addCalendarDaysISO(today, -29)
-    : planStart;
+    period === "week"
+      ? addCalendarDaysISO(today, -6)
+      : period === "month"
+        ? addCalendarDaysISO(today, -29)
+        : planStart;
 
   if (start < planStart) start = planStart;
   let end = today;
@@ -108,7 +115,10 @@ export function AnalyticsView({
     [period, planStartIso, todayIso],
   );
 
-  const dateList = useMemo(() => iterateISODatesInclusive(start, end), [start, end]);
+  const dateList = useMemo(
+    () => iterateISODatesInclusive(start, end),
+    [start, end],
+  );
 
   const calorieRows = useMemo(() => {
     return dateList.map((d) => ({
@@ -155,15 +165,15 @@ export function AnalyticsView({
 
     return [
       {
-        nutrient: '碳水',
+        nutrient: "碳水",
         pct: Math.round(cap(sumCarb, tgt.carb)),
       },
       {
-        nutrient: '蛋白質',
+        nutrient: "蛋白質",
         pct: Math.round(cap(sumProtein, tgt.protein)),
       },
       {
-        nutrient: '脂肪',
+        nutrient: "脂肪",
         pct: Math.round(cap(sumFat, tgt.fat)),
       },
     ];
@@ -180,53 +190,27 @@ export function AnalyticsView({
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-xl font-medium text-[#1E212B]">數據分析</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">
-          追蹤體重與飲食趨勢
-        </p>
-      </header>
+      <PageHeader title="數據分析" />
 
-      <div
-        className="flex rounded-[10px] border-[0.5px] border-border bg-secondary/40 p-1"
-        role="tablist"
-        aria-label="資料區間"
-      >
-        {(
-          [
-            { id: 'week' as const, label: '本週' },
-            { id: 'month' as const, label: '本月' },
-            { id: 'all' as const, label: '全程' },
-          ] as const
-        ).map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={period === t.id}
-            onClick={() => setPeriod(t.id)}
-            className={cn(
-              'flex-1 rounded-lg py-2 text-[13px] font-medium transition-colors',
-              period === t.id ?
-                'bg-card text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs
+        value={period}
+        ariaLabel="資料區間"
+        onChange={setPeriod}
+        options={[
+          { id: 'week', label: '本週' },
+          { id: 'month', label: '本月' },
+          { id: 'all', label: '全程' },
+        ]}
+      />
 
-      <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+      <SectionCard>
         <p className="text-[15px] font-medium text-foreground">體重趨勢</p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
-          單位 · kg
-        </p>
-        <div className="mt-3 h-[220px] w-full">
+        <p className="mt-0.5 text-[11px] text-muted-foreground">單位 · kg</p>
+        <div className="mt-3 h-[200px] w-full">
           {weightRows.length === 0 ? (
-            <p className="flex h-full items-center justify-center text-[13px] text-muted-foreground">
-              此區間尚無體重紀錄
-            </p>
+            <div className="h-full">
+              <EmptyState message="此區間尚無體重紀錄" />
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weightRows} margin={chartMargin}>
@@ -260,21 +244,21 @@ export function AnalyticsView({
                   dataKey="kg"
                   stroke="#4C956C"
                   strokeWidth={2}
-                  dot={{ r: 3, fill: '#4C956C' }}
+                  dot={{ r: 3, fill: "#4C956C" }}
                   activeDot={{ r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           )}
         </div>
-      </section>
+      </SectionCard>
 
-      <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+      <SectionCard>
         <p className="text-[15px] font-medium text-foreground">每日熱量</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
           依紀錄加總 · kcal
         </p>
-        <div className="mt-3 h-[220px] w-full">
+        <div className="mt-3 h-[200px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={calorieRows} margin={chartMargin}>
               <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
@@ -300,22 +284,27 @@ export function AnalyticsView({
                 }}
                 formatter={(v) => [`${v ?? '—'} kcal`, '熱量']}
               />
-              <Bar dataKey="kcal" fill="#4C956C" radius={[6, 6, 0, 0]} maxBarSize={28} />
+              <Bar
+                dataKey="kcal"
+                fill="#4C956C"
+                radius={[6, 6, 0, 0]}
+                maxBarSize={28}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </section>
+      </SectionCard>
 
-      <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+      <SectionCard>
         <p className="text-[15px] font-medium text-foreground">營養素達成率</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
           區間內總量 ÷（每日目標 × 天數），100% 為剛好達標
         </p>
-        <div className="mt-3 h-[240px] w-full">
+        <div className="mt-3 h-[220px] w-full">
           {!radarRow ? (
-            <p className="flex h-full items-center justify-center px-4 text-center text-[13px] text-muted-foreground">
-              尚未設定每日熱量目標，完成飲控目標後會顯示達成率
-            </p>
+            <div className="h-full">
+              <EmptyState message="尚未設定每日熱量目標，完成飲控目標後會顯示達成率" />
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="52%" outerRadius="72%" data={radarRow}>
@@ -349,7 +338,7 @@ export function AnalyticsView({
             </ResponsiveContainer>
           )}
         </div>
-      </section>
+      </SectionCard>
 
       <section className="rounded-xl border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] p-3.5">
         <p className="text-[11px] font-medium text-[#378ADD]">AI 週報洞察</p>
@@ -366,14 +355,13 @@ export function AnalyticsView({
               {weeklyInsight.items.map((row, idx) => (
                 <li
                   key={`${idx}-${row.text.slice(0, 12)}`}
-                  className="flex gap-2 text-[13px] leading-relaxed text-foreground"
-                >
+                  className="flex gap-2 text-[13px] leading-relaxed text-foreground">
                   <span
                     className={cn(
-                      'mt-1 h-1.5 w-1.5 shrink-0 rounded-full',
-                      row.type === 'positive' && 'bg-[#4C956C]',
-                      row.type === 'warning' && 'bg-[#EF9F27]',
-                      row.type === 'info' && 'bg-[#378ADD]',
+                      "mt-1 h-1.5 w-1.5 shrink-0 rounded-full",
+                      row.type === "positive" && "bg-[#4C956C]",
+                      row.type === "warning" && "bg-[#EF9F27]",
+                      row.type === "info" && "bg-[#378ADD]",
                     )}
                     aria-hidden
                   />

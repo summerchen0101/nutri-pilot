@@ -7,6 +7,8 @@ import {
   type FoodLogSnapshot,
   type LogItemSnapshot,
 } from '@/app/(main)/log/log-client';
+import { PageHeader } from '@/components/layout/page-header';
+import { SectionCard } from '@/components/ui/section-card';
 import { todayLocalISODate } from '@/lib/onboarding/date';
 import { createClient } from '@/lib/supabase/server';
 
@@ -95,26 +97,24 @@ export default async function LogPage({
 
   return (
     <div className="space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-medium text-foreground">飲食紀錄</h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            記錄今日用餐，對照熱量目標。
-          </p>
-        </div>
-        <Link
-          href="/dashboard"
-          className="text-[13px] font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-        >
-          總覽
-        </Link>
-      </header>
+      <PageHeader
+        title="飲食紀錄"
+        description="記錄今日用餐，對照熱量目標。"
+        action={
+          <Link
+            href="/dashboard"
+            className="text-[13px] font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          >
+            總覽
+          </Link>
+        }
+      />
 
       <Suspense
         fallback={
-          <div className="rounded-xl border-[0.5px] border-border bg-card p-6 text-[13px] text-muted-foreground">
+          <SectionCard className="p-6 text-[13px] text-muted-foreground">
             載入中…
-          </div>
+          </SectionCard>
         }
       >
         <LogClient

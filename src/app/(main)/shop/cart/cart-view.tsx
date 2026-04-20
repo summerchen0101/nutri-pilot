@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import { startCheckout } from '@/app/(main)/shop/actions';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SectionCard } from '@/components/ui/section-card';
+import { SegmentedTabs } from '@/components/ui/segmented-tabs';
 import { Button } from '@/components/ui/button';
 import {
   cartTotalPayment,
   cartTotalSubscription,
   useCartStore,
 } from '@/lib/shop/cart-store';
-import { cn } from '@/lib/utils/cn';
 
 export function CartView() {
   const router = useRouter();
@@ -66,17 +68,7 @@ export function CartView() {
   }
 
   if (lines.length === 0) {
-    return (
-      <div className="rounded-xl border-[0.5px] border-border bg-card p-6 text-center">
-        <p className="text-[13px] text-muted-foreground">購物車是空的</p>
-        <Link
-          href="/shop"
-          className="mt-4 inline-block text-[13px] font-medium text-[#4C956C]"
-        >
-          前往商城
-        </Link>
-      </div>
-    );
+    return <EmptyState message="購物車是空的" actionHref="/shop" actionLabel="前往商城" />;
   }
 
   const totalPay = cartTotalPayment(lines);
@@ -135,34 +127,15 @@ export function CartView() {
         ))}
       </ul>
 
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setMode('payment')}
-          className={cn(
-            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1',
-            mode === 'payment' ?
-              'bg-[#1E212B] text-white'
-            : 'border-[0.5px] border-border bg-secondary text-muted-foreground',
-          )}
-        >
-          單次結帳
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('subscription')}
-          disabled={!subscribable}
-          className={cn(
-            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1',
-            mode === 'subscription' ?
-              'bg-[#1E212B] text-white'
-            : 'border-[0.5px] border-border bg-secondary text-muted-foreground',
-            !subscribable ? 'opacity-40' : '',
-          )}
-        >
-          訂閱結帳
-        </button>
-      </div>
+      <SegmentedTabs
+        value={mode}
+        ariaLabel="結帳模式"
+        onChange={setMode}
+        options={[
+          { id: 'payment', label: '單次結帳' },
+          { id: 'subscription', label: '訂閱結帳', disabled: !subscribable },
+        ]}
+      />
 
       {mode === 'subscription' && subscribable ?
         <div>
@@ -181,7 +154,7 @@ export function CartView() {
         </div>
       : null}
 
-      <div className="rounded-xl border-[0.5px] border-border bg-secondary/40 px-4 py-3">
+      <SectionCard className="bg-secondary/40 px-4 py-3">
         <p className="text-[11px] text-muted-foreground">
           {mode === 'payment' ? '預估總計（單次）' : '預估每期（訂閱）'}
         </p>
@@ -191,7 +164,7 @@ export function CartView() {
             totalPay.toFixed(0)
           : totalSub.toFixed(0)}
         </p>
-      </div>
+      </SectionCard>
 
       {err ?
         <p className="text-[13px] text-[#E24B4A]">{err}</p>
