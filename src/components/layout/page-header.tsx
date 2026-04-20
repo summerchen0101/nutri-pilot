@@ -5,18 +5,36 @@ import { cn } from '@/lib/utils/cn';
 interface PageHeaderProps {
   title: string;
   description?: string;
+  meta?: ReactNode;
   action?: ReactNode;
+  spacing?: 'compact' | 'default';
   className?: string;
 }
 
-export function PageHeader({ title, description, action, className }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  meta,
+  action,
+  spacing = 'default',
+  className,
+}: PageHeaderProps) {
   return (
-    <header className={cn('flex items-start justify-between gap-3', className)}>
-      <div className="min-w-0">
+    <header
+      className={cn(
+        'flex items-start justify-between gap-3',
+        spacing === 'default' ? 'pb-1' : '',
+        className,
+      )}
+    >
+      <div className="min-w-0 space-y-1">
         <h1 className="text-[20px] font-medium text-foreground">{title}</h1>
         {description ? (
-          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{description}</p>
+          <p className="line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
+            {description}
+          </p>
         ) : null}
+        {meta ? <div className="pt-0.5">{meta}</div> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </header>

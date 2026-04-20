@@ -190,7 +190,10 @@ export function AnalyticsView({
 
   return (
     <div className="space-y-5">
-      <PageHeader title="數據分析" />
+      <PageHeader
+        title="數據分析"
+        description="查看體重、熱量與營養素達成率的變化。"
+      />
 
       <SegmentedTabs
         value={period}

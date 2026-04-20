@@ -94,9 +94,8 @@ export default async function ShopPage() {
   const allergenLabels = profile.allergens ?? [];
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
-        className="mb-4"
         title="健康商城"
         description={`依你的「${dietMethodLabel}」偏好篩選；已依過敏原（${
           allergenLabels.length ? allergenLabels.join("、") : "無"
@@ -104,7 +103,7 @@ export default async function ShopPage() {
         action={
           <Link
             href="/shop/cart"
-            className="rounded-[10px] border-[1.5px] border-[#4C956C] px-3 py-2 text-[13px] font-medium text-[#4C956C] hover:bg-[#E8F5EE]">
+            className="rounded-[10px] border-[1.5px] border-primary px-3 py-2 text-[13px] font-medium text-primary hover:bg-primary-light">
             購物車
           </Link>
         }

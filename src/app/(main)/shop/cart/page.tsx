@@ -14,12 +14,11 @@ export default async function ShopCartPage() {
   if (!user) redirect('/login');
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
-        className="mb-4"
         title="購物車"
         action={
-          <Link href="/shop" className="text-[13px] font-medium text-[#4C956C]">
+          <Link href="/shop" className="text-[13px] font-medium text-primary">
             繼續逛
           </Link>
         }

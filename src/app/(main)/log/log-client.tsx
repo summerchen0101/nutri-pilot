@@ -781,7 +781,7 @@ export function LogClient({
 
       {prefillFromMeal ? (
         <div className="space-y-4">
-          <div className="rounded-xl border-[0.5px] border-[#C8E6D4] bg-[#EBF5EF] p-3.5">
+          <div className="rounded-xl border-[0.5px] border-primary-light bg-primary-light p-3.5">
             <p className="text-[13px] leading-snug text-foreground">
               從計畫帶入：
               {MEAL_LABEL[prefillFromMeal.mealType]}
@@ -858,7 +858,7 @@ export function LogClient({
                   </div>
                   <button
                     type="button"
-                    className="mt-6 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-[#E55A3C]"
+                    className="mt-6 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-destructive"
                     aria-label="移除此項"
                     onClick={() => {
                       setPrefillDraft((prev) =>
@@ -930,7 +930,7 @@ export function LogClient({
                       </div>
                       <button
                         type="button"
-                        className="mt-1 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-[#E55A3C]"
+                        className="mt-1 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-destructive"
                         aria-label="移除此項"
                         onClick={() =>
                           setExtraDraftLines((prev) =>
@@ -1071,7 +1071,7 @@ export function LogClient({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-[#C8E6D4] bg-[#EBF5EF] py-8 transition-colors active:bg-[#C8E6D4]"
+                  className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-primary-light bg-primary-light py-8 transition-colors active:bg-secondary"
                 >
                   <svg
                     width="32"
@@ -1096,10 +1096,10 @@ export function LogClient({
                       fill="none"
                     />
                   </svg>
-                  <span className="text-[13px] font-medium text-[#4C956C]">
+                  <span className="text-[13px] font-medium text-primary">
                     拍照或選擇相片
                   </span>
-                  <span className="text-[11px] text-[#9298A8]">支援 JPG、PNG</span>
+                  <span className="text-[11px] text-neutral-text-tertiary">支援 JPG、PNG</span>
                 </button>
               : !photoResult ?
                 <div className="relative w-full overflow-hidden rounded-xl">
@@ -1125,23 +1125,23 @@ export function LogClient({
                 </p>
               : null}
               {photoHint ?
-                <p className="text-[11px] text-[#854F0B]">{photoHint}</p>
+                <p className="text-[11px] text-amber-600">{photoHint}</p>
               : null}
 
               {photoWaitingAnalysis ?
-                <div className="space-y-3 rounded-xl border-[0.5px] border-[#E8E9ED] bg-white p-4">
+                <div className="space-y-3 rounded-xl border-[0.5px] border-neutral-border-tertiary bg-card p-4">
                   <div className="animate-pulse space-y-2">
-                    <div className="h-4 w-1/3 rounded-full bg-[#E8E9ED]" />
-                    <div className="h-3 w-1/2 rounded-full bg-[#E8E9ED]" />
+                    <div className="h-4 w-1/3 rounded-full bg-neutral-border-tertiary" />
+                    <div className="h-3 w-1/2 rounded-full bg-neutral-border-tertiary" />
                   </div>
                   <div className="grid grid-cols-2 gap-2 animate-pulse">
-                    <div className="h-20 rounded-xl bg-[#E8E9ED]" />
-                    <div className="h-20 rounded-xl bg-[#E8E9ED]" />
-                    <div className="h-20 rounded-xl bg-[#E8E9ED]" />
-                    <div className="h-20 rounded-xl bg-[#E8E9ED]" />
+                    <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
+                    <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
+                    <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
+                    <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
                   </div>
-                  <div className="h-10 animate-pulse rounded-[10px] bg-[#E8E9ED]" />
-                  <p className="text-center text-[11px] text-[#9298A8]">
+                  <div className="h-10 animate-pulse rounded-[10px] bg-neutral-border-tertiary" />
+                  <p className="text-center text-[11px] text-neutral-text-tertiary">
                     AI 辨識中，請稍候...
                   </p>
                 </div>
@@ -1228,7 +1228,7 @@ export function LogClient({
                                   }}
                                 >
                                   {expandedItemId === it.id ?
-                                    <div className="bg-[#F4F4F6] rounded-b-xl border-t-[0.5px] border-[#E8E9ED] p-4">
+                                    <div className="rounded-b-xl border-t-[0.5px] border-neutral-border-tertiary bg-secondary p-4">
                                       <NutritionResultCard
                                         key={`${it.id}-${it.calories}-${it.quantity_g}`}
                                         embedded
@@ -1253,7 +1253,7 @@ export function LogClient({
                           </div>
                           <button
                             type="button"
-                            className="shrink-0 self-stretch border-l-[0.5px] border-border px-3 py-3 text-muted-foreground transition-colors hover:text-[#E55A3C]"
+                            className="shrink-0 self-stretch border-l-[0.5px] border-border px-3 py-3 text-muted-foreground transition-colors hover:text-destructive"
                             aria-label="刪除此筆紀錄"
                             onClick={(e) => {
                               e.stopPropagation();

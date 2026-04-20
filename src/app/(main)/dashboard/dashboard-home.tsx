@@ -117,7 +117,7 @@ function CalorieRingBlock({
               </p>
             ) : (
               <>
-                <p className="text-[20px] font-medium leading-tight text-[#1E212B]">
+                <p className="text-[20px] font-medium leading-tight text-foreground">
                   {Math.round(todayKcal)}
                 </p>
                 <p className="text-[9px] text-muted-foreground">kcal</p>
@@ -285,8 +285,8 @@ export function DashboardHome({
       <PageHeader
         title={`嗨，${displayName}`}
         description={dateLabel}
-        action={
-          <span className="shrink-0 rounded-full bg-[#E8F5EE] px-2.5 py-0.5 text-[11px] font-medium text-[#2D6B4A]">
+        meta={
+          <span className="shrink-0 rounded-full bg-primary-light px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
             連續 {streakDays} 天
           </span>
         }
@@ -304,10 +304,10 @@ export function DashboardHome({
         <button
           type="button"
           onClick={openWeightDialog}
-          className="rounded-[10px] bg-[#F7F8F6] p-3 text-left transition-colors hover:bg-[#F0F2EE]"
+          className="rounded-[10px] bg-surface-secondary p-3 text-left transition-colors hover:bg-secondary"
         >
           <p className="text-[11px] text-muted-foreground">體重</p>
-          <p className="mt-0.5 tabular-nums text-xl font-medium text-[#1E212B]">
+          <p className="mt-0.5 tabular-nums text-[20px] font-medium text-foreground">
             {latestWeightKg != null ? (
               <>
                 {latestWeightKg}
@@ -332,7 +332,7 @@ export function DashboardHome({
             </p>
           )}
           {profileBmi != null ? (
-            <p className="mt-1 text-[11px] text-[#4C956C]">
+            <p className="mt-1 text-[11px] text-primary">
               BMI {profileBmi}（身高 {heightCm} cm）
             </p>
           ) : null}
@@ -400,15 +400,15 @@ export function DashboardHome({
         <p className="text-[15px] font-medium text-foreground">快速操作</p>
         <div className="grid grid-cols-3 gap-2">
           <Link href="/log" className={cn(ghostQuick)} title="記錄飲食">
-            <IconMeal className="text-[#4C956C]" />
+            <IconMeal className="text-primary" />
             <span className="text-center leading-tight">飲食</span>
           </Link>
           <button type="button" className={cn(ghostQuick)} onClick={openWeightDialog}>
-            <IconScale className="text-[#4C956C]" />
+            <IconScale className="text-primary" />
             <span className="text-center leading-tight">體重</span>
           </button>
           <Link href="/analytics" className={cn(ghostQuick)} title="數據分析">
-            <IconChart className="text-[#4C956C]" />
+            <IconChart className="text-primary" />
             <span className="text-center leading-tight">數據</span>
           </Link>
         </div>

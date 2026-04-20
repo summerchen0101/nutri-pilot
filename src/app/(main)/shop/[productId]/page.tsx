@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { notFound, redirect } from 'next/navigation';
 
 import { ProductDetailClient } from '@/app/(main)/shop/[productId]/product-detail-client';
+import { PageHeader } from '@/components/layout/page-header';
 import { SHOP_CATEGORY_LABEL } from '@/lib/shop/constants';
 import { generateFitReasons } from '@/lib/shop/fit-reasons';
 import { createClient } from '@/lib/supabase/server';
@@ -92,12 +93,15 @@ export default async function ShopProductPage({ params }: PageProps) {
 
   return (
     <div className="space-y-5">
-      <Link
-        href="/shop"
-        className="inline-block text-[13px] font-medium text-[#4C956C]"
-      >
-        ← 返回商城
-      </Link>
+      <PageHeader
+        title={product.name as string}
+        description={brand?.name ?? ''}
+        action={
+          <Link href="/shop" className="text-[13px] font-medium text-primary">
+            返回商城
+          </Link>
+        }
+      />
 
       <div className="overflow-hidden rounded-xl border-[0.5px] border-border bg-card">
         <div className="relative aspect-[4/3] w-full bg-muted">
@@ -115,12 +119,9 @@ export default async function ShopProductPage({ params }: PageProps) {
         </div>
         <div className="space-y-2 p-4">
           <BadgeRow categoryLabel={categoryLabel} dietTags={product.diet_tags} />
-          <h1 className="text-[20px] font-medium leading-snug text-foreground">
-            {product.name}
-          </h1>
-          <p className="text-[13px] text-muted-foreground">
-            {brand?.name ?? ''}
-          </p>
+          <h2 className="text-[15px] font-medium leading-snug text-foreground">
+            商品資訊
+          </h2>
         </div>
       </div>
 
@@ -142,7 +143,7 @@ export default async function ShopProductPage({ params }: PageProps) {
         }}
       />
 
-      <section className="rounded-xl border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] p-4">
+      <section className="rounded-xl border-[0.5px] border-blue-300 bg-blue-50 p-4">
         <p className="text-[15px] font-medium text-foreground">
           為什麼適合你
         </p>
@@ -238,7 +239,7 @@ export default async function ShopProductPage({ params }: PageProps) {
           </p>
           <Link
             href={`/shop`}
-            className="mt-3 inline-block text-[13px] font-medium text-[#4C956C]"
+            className="mt-3 inline-block text-[13px] font-medium text-primary"
           >
             查看商城全系列 →
           </Link>
@@ -305,7 +306,7 @@ function BadgeRow({
       {(dietTags ?? []).slice(0, 3).map((t) => (
         <span
           key={t}
-          className="rounded-full bg-[#E8F5EE] px-2.5 py-0.5 text-[11px] font-medium text-[#2D6B4A]"
+          className="rounded-full bg-primary-light px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground"
         >
           {t}
         </span>
@@ -318,7 +319,7 @@ function cnReason(
   type: 'positive' | 'info' | 'caution',
   base: string,
 ): string {
-  if (type === 'positive') return `${base} text-[#2D6B4A]`;
+  if (type === 'positive') return `${base} text-primary-foreground`;
   if (type === 'caution') return `${base} text-amber-600`;
   return base;
 }

@@ -8,9 +8,9 @@ import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-r
 
 type MacroKey = 'calories' | 'protein_g' | 'carb_g' | 'fat_g';
 
-const MACRO_CAL = '#4C956C';
+const MACRO_CAL = 'var(--primary)';
 const MACRO_CARB = '#378ADD';
-const MACRO_PROTEIN = '#4C956C';
+const MACRO_PROTEIN = 'var(--primary)';
 const MACRO_FAT = '#EF9F27';
 
 function normalizeAnalysisPayload(
@@ -81,7 +81,7 @@ function MacroCell({
       : (
         <button
           type="button"
-          className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
+          className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
           onClick={() => setEditing(true)}
         >
           <div
@@ -317,7 +317,7 @@ export function NutritionResultCard({
   return (
     <div className={outerClass}>
       {previewImageUrl ?
-        <div className="h-48 w-full overflow-hidden rounded-lg bg-[#F4F4F6]">
+        <div className="h-48 w-full overflow-hidden rounded-lg bg-secondary">
           {/* eslint-disable-next-line @next/next/no-img-element -- blob / external meal photos */}
           <img
             src={previewImageUrl}
@@ -342,15 +342,15 @@ export function NutritionResultCard({
                   finishEditingName();
                 }
               }}
-              className="w-full border-b border-[#4C956C] bg-transparent pb-0.5 text-[15px] font-medium text-[#1E212B] outline-none"
+              className="w-full border-b border-primary bg-transparent pb-0.5 text-[15px] font-medium text-foreground outline-none"
             />
           : (
             <button
               type="button"
               onClick={() => setIsEditingName(true)}
-              className="flex max-w-full items-start gap-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
+              className="flex max-w-full items-start gap-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
             >
-              <span className="min-w-0 break-words text-[15px] font-medium leading-snug text-[#1E212B]">
+              <span className="min-w-0 break-words text-[15px] font-medium leading-snug text-foreground">
                 {displayName}
               </span>
               <svg
@@ -358,7 +358,7 @@ export function NutritionResultCard({
                 height="13"
                 viewBox="0 0 13 13"
                 fill="none"
-                className="mt-0.5 shrink-0 opacity-60 text-[#9298A8]"
+                className="mt-0.5 shrink-0 opacity-60 text-neutral-text-tertiary"
                 aria-hidden
               >
                 <path
@@ -373,15 +373,15 @@ export function NutritionResultCard({
             </button>
           )}
           {displayResult.quantity_description ?
-            <p className="mt-0.5 text-[11px] font-normal text-[#9298A8]">
+            <p className="mt-0.5 text-[11px] font-normal text-neutral-text-tertiary">
               {displayResult.quantity_description}
             </p>
           : null}
         </div>
       </div>
 
-      <div className="mb-3 flex items-center gap-2 border-b-[0.5px] border-[#E8E9ED] py-2">
-        <span className="flex-1 text-[12px] text-[#4A4F63]">實際份量</span>
+      <div className="mb-3 flex items-center gap-2 border-b-[0.5px] border-neutral-border-tertiary py-2">
+        <span className="flex-1 text-[13px] text-neutral-text-secondary">實際份量</span>
         <input
           type="number"
           min={1}
@@ -394,14 +394,14 @@ export function NutritionResultCard({
             if (!Number.isFinite(v)) return;
             handleQuantityChange(Math.max(1, Math.floor(v)));
           }}
-          className="w-20 rounded-lg border-[0.5px] border-[#E8E9ED] px-2 py-1 text-right text-[13px] font-medium outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20"
+          className="w-20 rounded-lg border-[0.5px] border-neutral-border-tertiary px-2 py-1 text-right text-[13px] font-medium outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-1 focus:ring-primary/20"
         />
-        <span className="text-[12px] text-[#9298A8]">g</span>
+        <span className="text-[13px] text-neutral-text-tertiary">g</span>
         <button
           type="button"
           onClick={() => void handleReanalyze()}
           disabled={isReanalyzing}
-          className="ml-2 flex items-center gap-1 whitespace-nowrap text-[11px] font-medium text-[#4C956C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
+          className="ml-2 flex items-center gap-1 whitespace-nowrap text-[11px] font-medium text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isReanalyzing ?
             <>
@@ -439,7 +439,7 @@ export function NutritionResultCard({
           }
         </button>
         {nameWasChanged ?
-          <span className="ml-1 text-[10px] text-[#BA7517]">名稱已修改</span>
+          <span className="ml-1 text-[10px] text-amber-600">名稱已修改</span>
         : null}
       </div>
 
@@ -479,7 +479,7 @@ export function NutritionResultCard({
       </div>
 
       {showSecondary ?
-        <p className="text-[11px] font-normal leading-snug text-[#9298A8]">
+        <p className="text-[11px] font-normal leading-snug text-neutral-text-tertiary">
           {displayResult.fiber_g != null && displayResult.fiber_g > 0 ?
             <>纖維 {Math.round(displayResult.fiber_g)}g</>
           : null}

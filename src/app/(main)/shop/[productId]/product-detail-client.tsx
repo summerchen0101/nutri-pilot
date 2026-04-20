@@ -107,10 +107,10 @@ export function ProductDetailClient({ product }: Props) {
               type="button"
               onClick={() => setVariantId(v.id)}
               className={cn(
-                'rounded-[10px] border px-3 py-2 text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1',
+                'rounded-[10px] border px-3 py-2 text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
                 v.id === variant?.id ?
-                  'border-[#4C956C] bg-[#E8F5EE] font-medium text-[#2D6B4A]'
-                : 'border-[0.5px] border-border bg-background text-foreground hover:border-[#4C956C]/40',
+                  'border-primary bg-primary-light font-medium text-primary-foreground'
+                : 'border-[0.5px] border-border bg-background text-foreground hover:border-primary/40',
               )}
             >
               {v.label}
@@ -124,7 +124,7 @@ export function ProductDetailClient({ product }: Props) {
         <div className="mt-1 flex items-center gap-3">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
+            className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
           >
             −
@@ -134,7 +134,7 @@ export function ProductDetailClient({ product }: Props) {
           </span>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
+            className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
             onClick={() => setQty((q) => q + 1)}
           >
             +
@@ -147,9 +147,9 @@ export function ProductDetailClient({ product }: Props) {
           type="button"
           onClick={() => setMode('payment')}
           className={cn(
-            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1',
+            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
             mode === 'payment' ?
-              'bg-[#1E212B] text-white'
+              'bg-shadow-grey text-white'
             : 'border-[0.5px] border-border bg-secondary text-muted-foreground',
           )}
         >
@@ -160,9 +160,9 @@ export function ProductDetailClient({ product }: Props) {
           onClick={() => setMode('subscription')}
           disabled={!canSubscribe}
           className={cn(
-            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1',
+            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
             mode === 'subscription' ?
-              'bg-[#1E212B] text-white'
+              'bg-shadow-grey text-white'
             : 'border-[0.5px] border-border bg-secondary text-muted-foreground',
             !canSubscribe ? 'opacity-40' : '',
           )}
@@ -175,7 +175,7 @@ export function ProductDetailClient({ product }: Props) {
         <div className="mt-4">
           <span className="text-[11px] text-muted-foreground">寄送頻率</span>
           <select
-            className="mt-1 flex h-10 w-full rounded-[10px] border-[0.5px] border-border bg-card px-3 text-[13px] text-foreground focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none"
+            className="mt-1 flex h-10 w-full rounded-[10px] border-[0.5px] border-border bg-card px-3 text-[13px] text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none"
             value={frequency}
             onChange={(e) =>
               setFrequency(e.target.value as typeof frequency)
@@ -206,7 +206,7 @@ export function ProductDetailClient({ product }: Props) {
       </div>
 
       {err ?
-        <p className="mt-3 text-[13px] text-[#E24B4A]">{err}</p>
+        <p className="mt-3 text-[13px] text-destructive">{err}</p>
       : null}
 
       <div className="mt-4 flex flex-col gap-2">
