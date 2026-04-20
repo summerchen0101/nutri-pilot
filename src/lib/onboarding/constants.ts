@@ -38,38 +38,36 @@ export const DIET_METHOD_OPTIONS = [
   {
     value: 'mediterranean',
     label: '地中海飲食',
-    desc: '蔬果、橄欖油、魚類與全穀為主。',
+    desc: '蔬果、全穀、健康脂肪為主',
   },
   {
     value: 'keto',
-    label: '生酮（Keto）',
-    desc: '極低碳水、適量蛋白與脂肪。',
+    label: '生酮飲食',
+    desc: '低碳水、高脂肪，穩定醣類攝取',
   },
   {
     value: 'high_protein',
     label: '高蛋白',
-    desc: '拉高蛋白比例，適合增肌與飽足感。',
+    desc: '提高蛋白質比例，適合增肌與飽足感',
   },
   {
     value: 'low_cal',
     label: '低熱量',
-    desc: '控制總熱量，適合減重。',
+    desc: '優先控制總熱量，協助減重',
   },
   {
     value: 'intermittent',
     label: '間歇性斷食',
-    desc: '在固定時段進食。',
+    desc: '限制進食時段，幫助飲食節律',
   },
   {
     value: 'dash',
     label: 'DASH',
-    desc: '強調蔬果與低脂乳製品，適合心血管健康。',
+    desc: '蔬果與低鈉優先，支持心血管健康',
   },
   {
     value: 'custom',
-    label: '自訂／彈性',
-    desc: '依你的習慣自由搭配。',
+    label: '無特定飲食法',
+    desc: '無固定限制，依個人習慣彈性選擇',
   },
 ] as const;
-
-export const DURATION_OPTIONS = [7, 14, 21, 30] as const;

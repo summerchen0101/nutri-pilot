@@ -23,25 +23,18 @@ export default async function ShopPage() {
   const [
     { data: profile },
     { data: goal },
-    { data: plan },
     { data: scores },
     { data: catalog },
     { data: brandCounts },
   ] = await Promise.all([
     supabase
       .from('user_profiles')
-      .select('diet_type, allergens')
+      .select('diet_type, allergens, diet_method')
       .eq('user_id', user.id)
       .single(),
     supabase
       .from('user_goals')
       .select('type')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .maybeSingle(),
-    supabase
-      .from('diet_plans')
-      .select('diet_method')
       .eq('user_id', user.id)
       .eq('is_active', true)
       .maybeSingle(),
@@ -72,7 +65,7 @@ export default async function ShopPage() {
     supabase.from('products').select('brand_id').eq('is_active', true),
   ]);
 
-  if (!profile || !goal || !plan) redirect('/onboarding');
+  if (!profile || !goal || !profile.diet_method) redirect('/onboarding');
 
   const scoreMap = new Map(
     (scores ?? []).map((s) => [s.product_id as string, Number(s.score)]),
@@ -94,8 +87,8 @@ export default async function ShopPage() {
     DIET_TYPE_OPTIONS.find((o) => o.value === profile.diet_type)?.label ??
     profile.diet_type;
   const dietMethodLabel =
-    DIET_METHOD_OPTIONS.find((o) => o.value === plan.diet_method)?.label ??
-    plan.diet_method;
+    DIET_METHOD_OPTIONS.find((o) => o.value === profile.diet_method)?.label ??
+    profile.diet_method;
 
   const allergenLabels = profile.allergens ?? [];
 
@@ -105,7 +98,7 @@ export default async function ShopPage() {
         <div>
           <h1 className="text-[20px] font-medium text-foreground">健康商城</h1>
           <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-            為你的「{dietMethodLabel}」計畫篩選；已依過敏原（
+            依你的「{dietMethodLabel}」偏好篩選；已依過敏原（
             {allergenLabels.length ? allergenLabels.join('、') : '無'}
             ）排除不適合商品。
           </p>
@@ -130,7 +123,7 @@ export default async function ShopPage() {
           ...b,
           productCount: brandCountMap.get(b.id as string) ?? 0,
         }))}
-        dietMethod={plan.diet_method}
+        dietMethod={profile.diet_method}
       />
     </div>
   );

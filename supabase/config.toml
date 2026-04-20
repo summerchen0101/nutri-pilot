@@ -1,8 +1,4 @@
 # https://supabase.com/docs/guides/functions/function-configuration
-# QStash 呼叫不帶使用者 JWT，需關閉 JWT 驗證並改以簽章／內網限制保護。
-[functions.ai-menu-generate]
-verify_jwt = false
-
 # 專案若使用 ES256 簽發的 JWT，閘道 verify_jwt 可能回 UNAUTHORIZED_UNSUPPORTED_TOKEN_ALGORITHM；
 # 改為手動驗證：函式內 `createClient` + `auth.getUser()`。
 [functions.ai-photo-request]

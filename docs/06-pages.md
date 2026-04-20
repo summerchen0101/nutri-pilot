@@ -14,9 +14,9 @@
 | Header | `user_profiles.name` | 問候語 + 今日日期 + 連續打卡 badge |
 | 熱量圓環卡 | `food_log_items` 加總 | 今日攝取 / 目標，三大營養素進度條（carb/protein/fat） |
 | 體重卡 | `vital_logs`（最新一筆） | 今日或最近體重 + BMI 計算值 |
-| 今日餐食卡 | `daily_menus` → `meals` | 四餐打卡狀態（早中晚+點心），有未打卡的顯示提示 |
+| 今日餐食卡 | `food_logs` | 四餐記錄摘要（早中晚+點心），有未記錄的顯示提示 |
 | AI 今日建議卡 | 直接呼叫 Claude | lazy load，主畫面 skeleton 先顯示 |
-| 快速操作列 | — | 「記錄飲食」→ `/log`，「今日計畫」→ `/plan`，「量體重」→ 彈出輸入框 |
+| 快速操作列 | — | 「記錄飲食」→ `/log`，「量體重」→ 彈出輸入框 |
 
 ### 資料查詢（Server Component）
 
@@ -34,7 +34,6 @@ export default async function DashboardPage() {
   const [
     { data: foodLogs },
     { data: vitalLog },
-    { data: dailyMenu },
     { data: goal }
   ] = await Promise.all([
     // 今日飲食記錄
@@ -53,14 +52,6 @@ export default async function DashboardPage() {
       .limit(1)
       .single(),
 
-    // 今日菜單（含打卡狀態）
-    supabase
-      .from('daily_menus')
-      .select('*, meals(id, type, is_checked_in, total_calories)')
-      .eq('date', today.toISOString().split('T')[0])
-      .eq('plan_id', /* active plan id */ '')
-      .single(),
-
     // 用戶目標
     supabase
       .from('user_goals')
@@ -74,71 +65,8 @@ export default async function DashboardPage() {
   const todayCalories = foodLogs?.reduce((sum, log) =>
     sum + (log.items?.reduce((s, item) => s + item.calories, 0) ?? 0), 0) ?? 0
 
-  return <DashboardUI {...{ todayCalories, vitalLog, dailyMenu, goal }} />
+  return <DashboardUI {...{ todayCalories, vitalLog, foodLogs, goal }} />
 }
-```
-
----
-
-## `/plan`（飲食計畫）
-
-### 元件區塊
-
-| 區塊 | 說明 |
-|------|------|
-| 計畫進度卡 | 完成天數 / 總天數、打卡率進度條 |
-| 7 日日期選擇器 | 橫向 pill，完成=綠色，今日=藍色，未來=灰色 |
-| 熱量分配卡 | 四餐熱量長條 + 合計 + 是否達標 |
-| 菜單列表 | 依餐次展示，每個 MealItem 可以「換食材」 |
-| 菜單生成中 | `status === 'pending'` 或 `'generating'` 時顯示 Skeleton |
-
-### 互動邏輯
-
-**打卡**：
-```typescript
-async function checkIn(mealId: string) {
-  await supabase
-    .from('meals')
-    .update({ is_checked_in: true, checked_in_at: new Date().toISOString() })
-    .eq('id', mealId)
-  // 更新 daily_menus.completion_pct
-}
-```
-
-**換食材**：
-```typescript
-// 直接呼叫（不走 Queue，等待 2–3 秒）
-async function swapMealItem(item: MealItem) {
-  setSwapping(true)
-  const alternatives = await callClaudeJSON(buildSwapPrompt({
-    originalFood: item.name,
-    originalCalories: item.calories,
-    originalNutrition: { carb_g: item.carb_g, protein_g: item.protein_g, fat_g: item.fat_g },
-    dietMethod: activePlan.diet_method,
-    avoidFoods: profile.avoid_foods
-  }))
-  setAlternatives(alternatives) // 顯示 3 個替代選項的 modal
-  setSwapping(false)
-}
-```
-
-**Realtime 監聽菜單生成**：
-```typescript
-useEffect(() => {
-  if (menu?.status !== 'pending' && menu?.status !== 'generating') return
-
-  const channel = supabase
-    .channel('menu-ready')
-    .on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'daily_menus',
-      filter: `id=eq.${menu.id}`
-    }, () => mutate()) // 觸發 SWR 重新拉
-    .subscribe()
-
-  return () => { supabase.removeChannel(channel) }
-}, [menu?.id, menu?.status])
 ```
 
 ---
@@ -324,19 +252,18 @@ async function updateDietPreferences(userId: string, prefs: DietPreferences) {
 
 ---
 
-## Onboarding `/onboarding`
+## Onboarding `/onboarding`（4 步驟）
 
 ### Wizard 步驟管理
 
 ```typescript
 // 用 URL search params 管理步驟（支援瀏覽器上一步）
-// /onboarding?step=1 → step=2 → ... → step=5
+// /onboarding?step=1 → step=2 → ... → step=4
 // 每步驟完成儲存後才允許進入下一步
 
-const steps = ['基本資料', '身體數據', '飲食偏好', '目標設定', '飲食方式']
+const steps = ['基本資料', '身體數據', '飲食偏好', '目標設定']
 
-// Step 5 完成後：
-// 1. 建立 diet_plans（含 start_date = today）
-// 2. 發 AI 菜單生成 request（不等待結果）
-// 3. 導向 /dashboard
+// Step 4 完成後：
+// 1. 非同步觸發推薦分數重算
+// 2. 導向 /dashboard
 ```

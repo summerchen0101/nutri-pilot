@@ -12,7 +12,6 @@ import { cn } from '@/lib/utils/cn';
 export type DashboardMealVariant =
   | 'as_planned'
   | 'adjusted'
-  | 'planned_pending'
   | 'self_logged';
 
 export type DashboardMealRow = {
@@ -176,22 +175,6 @@ function IconMeal(props: { className?: string }) {
   );
 }
 
-function IconPlan(props: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      className={cn('h-4 w-4 shrink-0', props.className)}
-      aria-hidden
-    >
-      <rect x="4" y="5" width="16" height="15" rx="2" />
-      <path d="M8 3v4M16 3v4M4 11h16" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function IconScale(props: { className?: string }) {
   return (
     <svg
@@ -224,15 +207,6 @@ function IconChart(props: { className?: string }) {
 }
 
 function MealStatusDot({ variant }: { variant: DashboardMealVariant }) {
-  if (variant === 'planned_pending') {
-    return (
-      <span
-        className="mt-1.5 h-2 w-2 shrink-0 rounded-full border-[0.5px] bg-background"
-        style={{ borderColor: '#E8E9ED' }}
-        aria-hidden
-      />
-    );
-  }
   const bg =
     variant === 'as_planned' ? '#4C956C'
     : variant === 'adjusted' ? '#EF9F27'
@@ -410,14 +384,12 @@ export function DashboardHome({
                       </span>
                     </span>
                   ) : null}
-                  {m.variant === 'planned_pending' ? (
-                    <Link
-                      href={m.recordHref}
-                      className="rounded-full border-[0.5px] border-border bg-secondary px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-muted"
-                    >
-                      記錄
-                    </Link>
-                  ) : null}
+                  <Link
+                    href={m.recordHref}
+                    className="rounded-full border-[0.5px] border-border bg-secondary px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-muted"
+                  >
+                    記錄
+                  </Link>
                 </div>
               </div>
             </li>
@@ -427,14 +399,10 @@ export function DashboardHome({
 
       <div className="space-y-2">
         <p className="text-[15px] font-medium text-foreground">快速操作</p>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <Link href="/log" className={cn(ghostQuick)} title="記錄飲食">
             <IconMeal className="text-[#4C956C]" />
             <span className="text-center leading-tight">飲食</span>
-          </Link>
-          <Link href="/plan" className={cn(ghostQuick)} title="今日計畫">
-            <IconPlan className="text-[#4C956C]" />
-            <span className="text-center leading-tight">計畫</span>
           </Link>
           <button type="button" className={cn(ghostQuick)} onClick={openWeightDialog}>
             <IconScale className="text-[#4C956C]" />

@@ -22,33 +22,6 @@ function IconDashboard({ className }: { className?: string }) {
   );
 }
 
-function IconPlan({ className }: { className?: string }) {
-  return (
-    <svg
-      width={20}
-      height={20}
-      viewBox="0 0 20 20"
-      fill="none"
-      className={className}
-      aria-hidden
-    >
-      <rect
-        x="3"
-        y="3"
-        width="14"
-        height="14"
-        rx="3"
-        stroke="currentColor"
-        strokeWidth={1.4}
-        fill="none"
-      />
-      <line x1="7" y1="8" x2="13" y2="8" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
-      <line x1="7" y1="11" x2="11" y2="11" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
-      <line x1="7" y1="14" x2="10" y2="14" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function IconLog({ className }: { className?: string }) {
   return (
     <svg
@@ -114,7 +87,6 @@ function IconSettings({ className }: { className?: string }) {
 
 const NAV = [
   { href: '/dashboard', label: '總覽', Icon: IconDashboard },
-  { href: '/plan', label: '計畫', Icon: IconPlan },
   { href: '/log', label: '紀錄', Icon: IconLog },
   { href: '/shop', label: '商城', Icon: IconShop },
   { href: '/settings', label: '設定', Icon: IconSettings },
@@ -131,7 +103,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="主選單"
-      className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 border-t border-[0.5px] border-[#E8E9ED] bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+      className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-4 border-t border-[0.5px] border-[#E8E9ED] bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
     >
       {NAV.map(({ href, label, Icon }) => {
         const active = isActive(pathname, href);

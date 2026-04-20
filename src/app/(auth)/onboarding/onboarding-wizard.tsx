@@ -1,18 +1,17 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   ACTIVITY_OPTIONS,
   ALLERGEN_OPTIONS,
   DIET_METHOD_OPTIONS,
   DIET_TYPE_OPTIONS,
-  DURATION_OPTIONS,
   GENDER_OPTIONS,
   GOAL_TYPE_OPTIONS,
 } from '@/lib/onboarding/constants';
-import { addCalendarDaysISO, todayLocalISODate } from '@/lib/onboarding/date';
+import { todayLocalISODate } from '@/lib/onboarding/date';
 import {
   calcBMI,
   calcBMR,
@@ -40,6 +39,7 @@ import type {
 
 type ProfileRow = Database['public']['Tables']['user_profiles']['Row'];
 type GoalRow = Database['public']['Tables']['user_goals']['Row'];
+const TOTAL_STEPS = 4;
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
@@ -67,6 +67,7 @@ export function OnboardingWizard({
   initialGoal,
 }: OnboardingWizardProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
 
   const [step, setStep] = useState(1);
@@ -86,9 +87,6 @@ export function OnboardingWizard({
   );
 
   const [dietType, setDietType] = useState(initialProfile.diet_type);
-  const [mealFrequency, setMealFrequency] = useState(
-    initialProfile.meal_frequency || 3,
-  );
   const [avoidFoods, setAvoidFoods] = useState<string[]>(
     initialProfile.avoid_foods ?? [],
   );
@@ -110,10 +108,9 @@ export function OnboardingWizard({
   );
 
   const [dietMethod, setDietMethod] = useState(
-    'mediterranean' as (typeof DIET_METHOD_OPTIONS)[number]['value'],
+    (initialProfile.diet_method ??
+      'mediterranean') as (typeof DIET_METHOD_OPTIONS)[number]['value'],
   );
-  const [durationDays, setDurationDays] =
-    useState<number>(14);
 
   const computed = useMemo(() => {
     const h = Number(heightCm);
@@ -194,6 +191,23 @@ export function OnboardingWizard({
     setAvoidFoods((prev) => prev.filter((x) => x !== tag));
   }
 
+  useEffect(() => {
+    const raw = searchParams.get('step');
+    if (!raw) return;
+    const num = Number(raw);
+    if (Number.isInteger(num) && num >= 1) {
+      setStep(Math.min(TOTAL_STEPS, num));
+    }
+  }, [searchParams]);
+
+  function updateStep(nextStep: number) {
+    const clamped = Math.min(TOTAL_STEPS, Math.max(1, nextStep));
+    setStep(clamped);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('step', String(clamped));
+    router.replace(`/onboarding?${params.toString()}`);
+  }
+
   async function saveStep1(): Promise<boolean> {
     if (!name.trim()) {
       setError('請輸入姓名');
@@ -258,7 +272,7 @@ export function OnboardingWizard({
   async function saveStep3(): Promise<boolean> {
     const patch: TablesUpdate<'user_profiles'> = {
       diet_type: dietType,
-      meal_frequency: mealFrequency,
+      diet_method: dietMethod,
       avoid_foods: avoidFoods,
       allergens,
     };
@@ -271,6 +285,7 @@ export function OnboardingWizard({
       setError(err.message);
       return false;
     }
+
     return true;
   }
 
@@ -337,41 +352,6 @@ export function OnboardingWizard({
     return true;
   }
 
-  async function saveStep5(): Promise<boolean> {
-    const start = todayLocalISODate();
-    const end = addCalendarDaysISO(start, durationDays - 1);
-
-    await supabase
-      .from('diet_plans')
-      .update({ is_active: false })
-      .eq('user_id', userId)
-      .eq('is_active', true);
-
-    const planRow: TablesInsert<'diet_plans'> = {
-      user_id: userId,
-      diet_method: dietMethod,
-      duration_days: durationDays,
-      start_date: start,
-      end_date: end,
-      is_active: true,
-    };
-    const { data: inserted, error: insertErr } = await supabase
-      .from('diet_plans')
-      .insert(planRow)
-      .select('id')
-      .single();
-
-    if (insertErr) {
-      setError(insertErr.message);
-      return false;
-    }
-
-    /** Phase 2：改為呼叫 Edge Function / QStash 觸發 AI 菜單（docs/03-features.md）。 */
-    void inserted?.id;
-
-    return true;
-  }
-
   async function next() {
     setError(null);
     setPending(true);
@@ -383,20 +363,21 @@ export function OnboardingWizard({
 
     setPending(false);
     if (!ok) return;
-    setStep((s) => Math.min(s + 1, 5));
+    updateStep(step + 1);
   }
 
   async function back() {
     setError(null);
-    setStep((s) => Math.max(s - 1, 1));
+    updateStep(step - 1);
   }
 
   async function finish() {
     setError(null);
     setPending(true);
-    const ok = await saveStep5();
+    const ok = await saveStep4();
     setPending(false);
     if (!ok) return;
+    void fetch('/api/recalculate-scores', { method: 'POST' });
     router.push('/dashboard');
     router.refresh();
   }
@@ -405,8 +386,21 @@ export function OnboardingWizard({
     <Card className="border-slate-200 shadow-md">
       <CardHeader>
         <p className="text-sm font-medium text-slate-500">
-          步驟 {step} / 5
+          步驟 {step} / {TOTAL_STEPS}
         </p>
+        <div className="mt-2 flex gap-1.5">
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <span
+              key={i}
+              className="h-1.5 rounded-full transition-all duration-150"
+              style={{
+                width: i + 1 === step ? 18 : 10,
+                backgroundColor: i + 1 <= step ? '#4C956C' : '#E8E9ED',
+              }}
+              aria-hidden
+            />
+          ))}
+        </div>
         <CardTitle className="text-xl">建立你的飲控檔案</CardTitle>
         <CardDescription>
           依序填寫，每一步都會儲存到雲端，之後可在設定中修改。
@@ -537,19 +531,28 @@ export function OnboardingWizard({
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">
-                每日餐次
+                飲食法（影響商城推薦）
               </label>
-              <select
-                className={selectClass}
-                value={mealFrequency}
-                onChange={(e) => setMealFrequency(Number(e.target.value))}
-              >
-                {[2, 3, 4, 5, 6].map((n) => (
-                  <option key={n} value={n}>
-                    {n} 餐
-                  </option>
+              <div className="grid gap-2">
+                {DIET_METHOD_OPTIONS.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => setDietMethod(o.value)}
+                    className={`rounded-[10px] border-[0.5px] p-3 text-left transition-colors ${
+                      dietMethod === o.value
+                        ? 'border-[#4C956C] bg-[#E8F5EE]'
+                        : 'border-border bg-background hover:border-[#4C956C]'
+                    }`}
+                  >
+                    <p className="text-[13px] font-medium text-foreground">{o.label}</p>
+                    <p className="mt-1 text-[11px] text-[#9298A8]">{o.desc}</p>
+                  </button>
                 ))}
-              </select>
+              </div>
+              <p className="text-[11px] text-[#9298A8]">
+                此設定用於商城的個人化推薦，日後可在設定中修改
+              </p>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">
@@ -672,57 +675,6 @@ export function OnboardingWizard({
           </div>
         ) : null}
 
-        {step === 5 ? (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">
-                飲食法
-              </span>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {DIET_METHOD_OPTIONS.map((o) => (
-                  <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => setDietMethod(o.value)}
-                    className={`rounded-lg border p-3 text-left text-sm transition-colors ${
-                      dietMethod === o.value
-                        ? 'border-slate-900 bg-slate-900 text-white'
-                        : 'border-slate-200 bg-white text-slate-800 hover:border-slate-400'
-                    }`}
-                  >
-                    <span className="font-semibold">{o.label}</span>
-                    <p
-                      className={`mt-1 text-xs ${dietMethod === o.value ? 'text-slate-200' : 'text-slate-500'}`}
-                    >
-                      {o.desc}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
-                計畫天數
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {DURATION_OPTIONS.map((d) => (
-                  <Button
-                    key={d}
-                    type="button"
-                    variant={durationDays === d ? 'default' : 'outline'}
-                    onClick={() => setDurationDays(d)}
-                  >
-                    {d} 天
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <p className="text-xs text-slate-500">
-              完成後將建立飲食計畫並進入總覽。AI
-              菜單會在後續 Phase 由 Queue 非同步生成。
-            </p>
-          </div>
-        ) : null}
       </CardContent>
       <CardFooter className="flex flex-wrap justify-between gap-3 border-t border-slate-100 pt-6">
         <Button
@@ -734,7 +686,7 @@ export function OnboardingWizard({
           上一步
         </Button>
         <div className="flex gap-2">
-          {step < 5 ? (
+          {step < TOTAL_STEPS ? (
             <Button type="button" onClick={next} disabled={pending}>
               {pending ? '儲存中…' : '下一步'}
             </Button>

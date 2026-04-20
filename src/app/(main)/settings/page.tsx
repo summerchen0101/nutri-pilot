@@ -78,19 +78,12 @@ export default async function SettingsPage() {
   const [
     { data: profile, error: profileErr },
     { data: goal },
-    { data: plan },
     { data: subscriptions },
   ] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('user_id', user.id).single(),
     supabase
       .from('user_goals')
       .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .maybeSingle(),
-    supabase
-      .from('diet_plans')
-      .select('diet_method')
       .eq('user_id', user.id)
       .eq('is_active', true)
       .maybeSingle(),
@@ -119,7 +112,7 @@ export default async function SettingsPage() {
   ]);
 
   if (profileErr || !profile) redirect('/onboarding');
-  if (!goal || !plan) redirect('/onboarding');
+  if (!goal) redirect('/onboarding');
 
   const initial: SettingsInitialData = {
     name: profile.name ?? '',
@@ -130,7 +123,7 @@ export default async function SettingsPage() {
     mealFrequency: profile.meal_frequency ?? 3,
     avoidFoods: profile.avoid_foods ?? [],
     allergens: profile.allergens ?? [],
-    dietMethod: plan.diet_method,
+    dietMethod: profile.diet_method ?? 'mediterranean',
     goal: {
       type: goal.type,
       targetWeightKg: Number(goal.target_weight_kg),

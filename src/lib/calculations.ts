@@ -15,7 +15,7 @@ export interface RecommendProduct {
 export interface RecommendUserProfile {
   allergens: string[];
   avoid_foods: string[];
-  diet_plan?: { diet_method: string } | null;
+  diet_method?: string | null;
 }
 
 export interface RecommendUserGoal {
@@ -101,7 +101,7 @@ export function calcRecommendScore(
   );
   if (hasAllergenConflict) return -999;
 
-  const method = profile.diet_plan?.diet_method ?? '';
+  const method = profile.diet_method ?? '';
   if (method && product.diet_tags.includes(method)) {
     score += 40;
   }

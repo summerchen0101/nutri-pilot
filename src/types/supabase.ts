@@ -738,6 +738,7 @@ export type Database = {
           birth_date: string
           bmi: number | null
           bmr: number | null
+          diet_method: string | null
           diet_type: string
           gender: string
           height_cm: number
@@ -756,6 +757,7 @@ export type Database = {
           birth_date: string
           bmi?: number | null
           bmr?: number | null
+          diet_method?: string | null
           diet_type: string
           gender: string
           height_cm: number
@@ -774,6 +776,7 @@ export type Database = {
           birth_date?: string
           bmi?: number | null
           bmr?: number | null
+          diet_method?: string | null
           diet_type?: string
           gender?: string
           height_cm?: number

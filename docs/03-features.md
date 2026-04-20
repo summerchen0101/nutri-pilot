@@ -42,11 +42,11 @@
 - [x] 登出功能
 - [x] 未登入自動導向 `/login`
 
-### P1-4 Onboarding 建檔流程（5 步驟 Wizard）
+### P1-4 Onboarding 建檔流程（4 步驟 Wizard）
 
-- [x] `/onboarding` 五步 Wizard，每步寫入 Supabase
-- [x] 尚未完成建檔（無啟用中 `diet_plans`）時，無法使用 `/(main)` 內頁面，會導向 `/onboarding`
-- [ ] 完成 Step 5 後觸發 AI 菜單生成（Queue，Phase 2）
+- [x] `/onboarding` 四步 Wizard，每步寫入 Supabase
+- [x] 尚未完成建檔（`user_profiles.diet_method` 尚未設定）時，無法使用 `/(main)` 內頁面，會導向 `/onboarding`
+- [x] 完成 Step 4 後觸發推薦分數重算（非同步，不阻塞導頁）
 
 依序完成以下步驟，每步都要儲存到對應的 Supabase table：
 
@@ -61,12 +61,13 @@
 - 自動計算並顯示：BMI、BMR、TDEE（用 `lib/calculations.ts`）
 - 寫入：`user_profiles`（含計算結果）
 
-**Step 3：飲食偏好**
+**Step 3：飲食偏好 + 飲食法**
 
-- 欄位：飲食習慣（omnivore/vegetarian/vegan）、每日餐次
+- 欄位：飲食習慣（omnivore/vegetarian/vegan）、飲食法（mediterranean/keto/high_protein/low_cal/intermittent/dash/custom）
 - 忌食清單（標籤式多選輸入）
 - 過敏原勾選（shellfish、peanuts、gluten、dairy、eggs、soy、tree_nuts）
-- 寫入：`user_profiles`
+- 顯示提示文案：`此設定用於商城的個人化推薦，日後可在設定中修改`（11px / `#9298A8`）
+- 寫入：`user_profiles`（含 `diet_method`）
 
 **Step 4：目標設定**
 
@@ -74,12 +75,11 @@
 - 自動計算：每日熱量目標、預計達標日
 - 寫入：`user_goals`
 
-**Step 5：飲食方式選擇**
+Step 4 完成後：
 
-- 飲食法選擇（展示每種飲食法的簡短說明）
-- 計畫天數（7/14/21/30）
-- 寫入：`diet_plans`（start_date = 今天）
-- 完成後觸發 AI 菜單生成（發到 Queue，不等結果，直接導向 dashboard）
+- 寫入：`user_goals`
+- 非同步呼叫：`POST /api/recalculate-scores`
+- 直接導向：`/dashboard`（不等待推薦分數重算）
 
 ### P1-5 計算工具函數 `lib/calculations.ts`
 
@@ -128,24 +128,7 @@ export function calcRecommendScore(
 
 ## Phase 2：核心功能（Week 3–5）
 
-### P2-1 AI 菜單生成（Queue 架構）
-
-- [x] 建立 Upstash QStash 帳號，取得 token（本機可略：菜單會維持 `pending` 直至手動觸發 Worker）
-- [x] Next.js API：`/api/ai/menu-request`（寫入 `daily_menus`、條件允許時發佈 QStash）
-- [x] Edge Function：`supabase/functions/ai-menu-generate`（QStash callback，Claude → `meals` / `meal_items`）
-- [x] 菜單生成 prompt（`lib/ai/prompts/menu-generate.ts`，對齊 `04-ai-engine.md`）
-- [x] 前端 Realtime 監聽 `daily_menus`（`/plan` 頁 `postgres_changes`）
-
-### P2-2 飲食計畫頁 `/plan`
-
-- [x] 計畫進度卡（完成天數、剩餘天數、達成率）
-- [x] 7 日橫向日期選擇器（完成=綠，今日=藍）
-- [x] 當日菜單展示（按餐次）
-- [x] 每餐打卡按鈕（更新 `meals.is_checked_in`）
-- [x] 換食材按鈕（Server Action + Claude，見 `plan/actions.ts`）
-- [x] 菜單生成中的 Skeleton UI
-
-### P2-3 飲食記錄頁 `/log`
+### P2-1 飲食記錄頁 `/log`（手動輸入 + AI 分析）
 
 **搜尋記錄**：
 
@@ -165,6 +148,21 @@ export function calcRecommendScore(
 - [x] 每筆可以刪除
 - [x] 熱量加總顯示
 
+### P2-2 拍照辨識
+
+- [x] 上傳照片到 Supabase Storage（`food-photos` bucket）
+- [x] 發到 AI Queue（Edge：`ai-photo-request` → QStash → `ai-photo-analyze`）
+- [x] 分析完成後顯示食物列表讓用戶確認 → 寫入記錄
+
+### P2-3 Dashboard
+
+- [x] 問候語 + 今日日期 + 連續打卡 badge
+- [x] 熱量圓環（今日攝取 / 目標，三大營養素進度條）
+- [x] 體重卡（今日體重 + BMI）
+- [x] 今日飲食摘要
+- [x] AI 今日建議卡（直接呼叫，lazy load）
+- [x] 快速操作列（記錄飲食、量體重）
+
 ### P2-4 體重快速輸入
 
 - [x] Dashboard 的「記錄體重」快捷鍵
@@ -175,16 +173,7 @@ export function calcRecommendScore(
 
 ## Phase 3：分析與設定（Week 6–7）
 
-### P3-1 Dashboard `/dashboard`
-
-- [x] 問候語 + 今日日期 + 連續打卡 badge
-- [x] 熱量圓環（今日攝取 / 目標，三大營養素進度條）
-- [x] 體重卡（今日體重 + BMI）
-- [x] 今日飲食摘要（四餐打卡狀態）
-- [x] AI 今日建議卡（直接呼叫，lazy load）
-- [x] 快速操作列（記錄飲食、今日計畫、量體重）
-
-### P3-2 數據分析頁 `/analytics`
+### P3-1 數據分析頁 `/analytics`
 
 - [x] 體重趨勢折線圖（Recharts LineChart）
 - [x] 每日熱量長條圖（BarChart）
@@ -192,7 +181,7 @@ export function calcRecommendScore(
 - [x] 週期切換（本週 / 本月 / 全程）
 - [x] AI 週報洞察（每週日 cron 生成，頁面顯示最新一份）
 
-### P3-3 個人設定頁 `/settings`
+### P3-2 個人設定頁 `/settings`
 
 - [x] 個人資料編輯（姓名）
 - [x] 身體數據更新（身高、體重 → 自動重算 BMI/BMR/TDEE）

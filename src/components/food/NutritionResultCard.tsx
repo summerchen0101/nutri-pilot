@@ -264,9 +264,10 @@ export function NutritionResultCard({
         | ManualFoodAnalysisResult
         | { error?: string };
       if ('error' in payload && payload.error) return;
+      if (!('calories' in payload)) return;
       const next = normalizeAnalysisPayload({
         ...payload,
-        name: (payload as ManualFoodAnalysisResult).name?.trim() || nameResolved,
+        name: payload.name?.trim() || nameResolved,
         quantity_g: quantity,
       });
       setOriginalResult(next);

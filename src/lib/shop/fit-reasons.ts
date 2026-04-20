@@ -23,7 +23,7 @@ export interface FitReasonGoal {
   type: 'lose_weight' | 'gain_muscle' | 'maintain';
 }
 
-export interface FitReasonPlan {
+export interface FitReasonPreference {
   diet_method: string;
 }
 
@@ -51,10 +51,10 @@ export function generateFitReasons(
   product: FitReasonProduct,
   profile: FitReasonProfile,
   goal: FitReasonGoal,
-  plan: FitReasonPlan | null,
+  preference: FitReasonPreference | null,
 ): FitReason[] {
   const reasons: FitReason[] = [];
-  const dietMethod = plan?.diet_method ?? '';
+  const dietMethod = preference?.diet_method ?? '';
   const tags = product.diet_tags ?? [];
 
   if (dietMethod && tags.includes(dietMethod)) {

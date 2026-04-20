@@ -10,7 +10,6 @@ alwaysApply: false
 
 必須走 Queue（QStash）：
 
-- 菜單生成（3–6 秒）
 - 拍照辨識（圖片上傳 + Vision）
 - 週報洞察（cron 觸發）
 
@@ -21,9 +20,12 @@ alwaysApply: false
 
 ## Queue 流程
 
-前端 → `/api/ai/menu-request` → 寫 status:'pending' → 發 QStash
-→ Edge Function Worker → 呼叫 Claude → 寫結果 → status:'ready'
-→ Supabase Realtime 推給前端 → UI 更新
+拍照辨識：前端上傳照片 / 建立 job → 發 QStash
+→ Edge Function Worker（`ai-photo-analyze`）→ 呼叫 Claude Vision
+→ 寫回 `photo_analysis_jobs` 結果 → 前端 polling / Realtime 更新
+
+週報洞察：pg_cron 觸發 `ai-weekly-insight`
+→ Worker 聚合近 7 天資料 → 呼叫 Claude → 寫入 `weekly_insights`
 
 ## Claude wrapper
 

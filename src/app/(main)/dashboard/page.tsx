@@ -31,7 +31,6 @@ export default async function DashboardPage() {
     { data: profile },
     { data: latestVital },
     { data: goal },
-    { data: plan },
     { data: foodRows },
     { data: logDateRows },
   ] = await Promise.all([
@@ -54,18 +53,10 @@ export default async function DashboardPage() {
       .eq('is_active', true)
       .maybeSingle(),
     supabase
-      .from('diet_plans')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .maybeSingle(),
-    supabase
       .from('food_logs')
       .select(
         `
       meal_type,
-      log_type,
-      from_plan_meal_id,
       food_log_items (
         name,
         calories,
@@ -85,50 +76,7 @@ export default async function DashboardPage() {
       .lte('date', today),
   ]);
 
-  const { data: completedMenuRows } =
-    plan?.id ?
-      await supabase
-        .from('daily_menus')
-        .select('date')
-        .eq('plan_id', plan.id)
-        .eq('is_completed', true)
-        .gte('date', streakWindowStart)
-        .lte('date', today)
-    : { data: [] as { date: string }[] | null };
-
   if (!profile) redirect('/onboarding');
-
-  let menuRow: {
-    meals: {
-      id: string;
-      type: string;
-      is_checked_in: boolean | null;
-      checkin_type: string | null;
-      total_calories: number | null;
-      meal_items: { name: string }[] | null;
-    }[];
-  } | null = null;
-
-  if (plan?.id) {
-    const { data } = await supabase
-      .from('daily_menus')
-      .select(
-        `
-      meals (
-        id,
-        type,
-        is_checked_in,
-        checkin_type,
-        total_calories,
-        meal_items ( name )
-      )
-    `,
-      )
-      .eq('plan_id', plan.id)
-      .eq('date', today)
-      .maybeSingle();
-    menuRow = data as typeof menuRow;
-  }
 
   const latestWeightKg =
     latestVital?.weight_kg != null
@@ -152,11 +100,8 @@ export default async function DashboardPage() {
   const loggedDates = new Set(
     (logDateRows ?? []).map((r) => r.date).filter(Boolean),
   );
-  const completedDates = new Set(
-    (completedMenuRows ?? []).map((r) => r.date).filter(Boolean),
-  );
 
-  const streakDays = computeStreak(today, loggedDates, completedDates);
+  const streakDays = computeStreak(today, loggedDates);
 
   const homeProps: DashboardHomeProps = {
     displayName: profile.name,
@@ -171,7 +116,7 @@ export default async function DashboardPage() {
     proteinG: nutrientTotals.protein,
     fatG: nutrientTotals.fat,
     streakDays,
-    meals: buildMealRows(menuRow, foodRows ?? []),
+    meals: buildMealRows(foodRows ?? []),
   };
 
   return <DashboardHome {...homeProps} />;
@@ -210,22 +155,15 @@ function sumNutrientsFromLogs(
 function computeStreak(
   today: string,
   loggedDates: Set<string>,
-  completedMenuDates: Set<string>,
 ): number {
   let streak = 0;
   let cursor = today;
   for (;;) {
-    if (!loggedDates.has(cursor) && !completedMenuDates.has(cursor)) break;
+    if (!loggedDates.has(cursor)) break;
     streak++;
     cursor = addCalendarDaysISO(cursor, -1);
   }
   return streak;
-}
-
-function formatPlanPreview(names: string[]): string {
-  const u = Array.from(new Set(names.filter(Boolean)));
-  if (!u.length) return '—';
-  return u.slice(0, 3).join(' · ') + (u.length > 3 ? '…' : '');
 }
 
 function sumMealKcal(
@@ -242,7 +180,6 @@ function sumMealKcal(
   return Math.round(t);
 }
 
-/** 有熱量紀錄即視為「已記錄」（含項目為空之異常列） */
 function logsHaveEnergy(
   logs: {
     food_log_items: { calories: number | string }[] | null;
@@ -252,82 +189,27 @@ function logsHaveEnergy(
 }
 
 function buildMealRows(
-  menuRow: {
-    meals: {
-      id: string;
-      type: string;
-      is_checked_in: boolean | null;
-      checkin_type: string | null;
-      meal_items: { name: string }[] | null;
-    }[];
-  } | null,
   foodRows: {
     meal_type: string;
-    log_type: string;
     food_log_items: { name: string; calories: number }[] | null;
   }[],
 ): DashboardHomeProps['meals'] {
-  const plannedByType = new Map<
-    string,
-    { meal_items: { name: string }[] | null }
-  >();
-
-  if (menuRow?.meals?.length) {
-    for (const m of menuRow.meals) {
-      plannedByType.set(m.type, { meal_items: m.meal_items ?? [] });
-    }
-  }
-
   const rows: DashboardHomeProps['meals'] = [];
 
   for (const key of MEAL_ORDER) {
-    const planned = plannedByType.get(key);
-    const hasPlan = Boolean(planned);
     const logsForType = foodRows.filter((r) => r.meal_type === key);
     const totalKcal = sumMealKcal(logsForType);
     const hasLog = logsHaveEnergy(logsForType);
 
-    if (!hasPlan && !hasLog) continue;
+    if (!hasLog) continue;
 
     const recordHref = `/log?meal_type=${encodeURIComponent(key)}`;
-
-    if (!hasPlan && hasLog) {
-      rows.push({
-        key,
-        label: MEAL_LABEL[key],
-        variant: 'self_logged',
-        detailLine: '自行記錄',
-        kcal: totalKcal,
-        recordHref,
-      });
-      continue;
-    }
-
-    if (hasPlan && !hasLog) {
-      const names = (planned?.meal_items ?? []).map((i) => i.name);
-      rows.push({
-        key,
-        label: MEAL_LABEL[key],
-        variant: 'planned_pending',
-        detailLine: `計畫：${formatPlanPreview(names)}`,
-        kcal: null,
-        recordHref,
-      });
-      continue;
-    }
-
-    // hasPlan && hasLog
-    const onlyFromPlan =
-      logsForType.length === 1 && logsForType[0].log_type === 'from_plan';
-    const variant: 'as_planned' | 'adjusted' =
-      onlyFromPlan ? 'as_planned' : 'adjusted';
 
     rows.push({
       key,
       label: MEAL_LABEL[key],
-      variant,
-      detailLine:
-        variant === 'as_planned' ? '已記錄（照計畫）' : '已記錄（有調整）',
+      variant: 'self_logged',
+      detailLine: '自行記錄',
       kcal: totalKcal,
       recordHref,
     });

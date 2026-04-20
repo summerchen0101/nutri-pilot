@@ -757,10 +757,10 @@ export function LogClient({
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <Link
-          href="/plan"
+          href="/dashboard"
           className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          ← 飲食計畫
+          ← 返回總覽
         </Link>
         <p className="max-w-[min(100%,220px)] text-right text-[13px] leading-snug text-muted-foreground">
           <span className="block tabular-nums text-foreground">

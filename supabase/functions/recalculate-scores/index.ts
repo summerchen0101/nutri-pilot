@@ -33,6 +33,7 @@ interface ProductRow {
 interface ProfileRow {
   allergens: string[] | null;
   avoid_foods: string[] | null;
+  diet_method: string | null;
 }
 
 interface GoalRow {
@@ -110,16 +111,12 @@ Deno.serve(async (req) => {
 
   const admin = createClient(url, serviceKey);
 
-  const [{ data: profile }, { data: goal }, { data: plan }] = await Promise.all([
-    admin.from("user_profiles").select("allergens, avoid_foods").eq(
+  const [{ data: profile }, { data: goal }] = await Promise.all([
+    admin.from("user_profiles").select("allergens, avoid_foods, diet_method").eq(
       "user_id",
       userId,
     ).maybeSingle(),
     admin.from("user_goals").select("type").eq("user_id", userId).eq(
-      "is_active",
-      true,
-    ).maybeSingle(),
-    admin.from("diet_plans").select("diet_method").eq("user_id", userId).eq(
       "is_active",
       true,
     ).maybeSingle(),
@@ -131,7 +128,7 @@ Deno.serve(async (req) => {
 
   const allergens = profile.allergens ?? [];
   const avoidFoods = profile.avoid_foods ?? [];
-  const dietMethod = plan?.diet_method ?? "";
+  const dietMethod = profile.diet_method ?? "";
   const goalType = goal.type ?? "maintain";
 
   const { data: orders } = await admin.from("orders").select("id").eq(

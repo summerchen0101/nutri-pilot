@@ -11,7 +11,7 @@
 前端（Next.js）
   └── 讀取資料：直接用 Supabase client（anon key + RLS 保護）
   └── 寫入一般資料：直接用 Supabase client
-  └── AI 任務觸發：Next.js API Route → Upstash QStash
+  └── AI 任務觸發：前端 / Edge Function（依任務型別）
   └── 金流操作：Supabase Edge Function
 
 Supabase Edge Functions（後端邏輯）
@@ -24,18 +24,9 @@ Supabase Edge Functions（後端邏輯）
 
 ---
 
-## Next.js API Routes（僅此一個）
+## Next.js API Routes
 
-| 方法 | 路徑 | 說明 |
-|------|------|------|
-| POST | `/api/ai/menu-request` | 觸發 AI 菜單生成（驗 session → 發到 QStash） |
-
-```typescript
-// app/api/ai/menu-request/route.ts
-// 這是唯一保留的 Next.js API Route
-// 原因：需要存取 Next.js session cookie 取得 user_id
-// 之後發布到 QStash → Edge Function Worker 處理
-```
+目前無保留的 Next.js API Route；資料寫入以 Supabase client 與 Edge Functions 為主。
 
 ---
 
@@ -45,22 +36,8 @@ Supabase Edge Functions（後端邏輯）
 
 | Function 名稱 | 觸發方式 | 說明 |
 |--------------|---------|------|
-| `ai-menu-generate` | QStash callback | 呼叫 Claude 生成菜單，寫入 DB |
 | `ai-photo-analyze` | QStash callback | Claude Vision 分析照片，回傳食物列表 |
 | `ai-weekly-insight` | pg_cron（每週日 21:00）| 生成週報洞察，寫入 `weekly_insights` |
-
-**`ai-menu-generate` 輸入格式**：
-```json
-{
-  "menuId": "uuid",
-  "userId": "uuid"
-}
-```
-
-**`ai-menu-generate` 輸出**（寫入 DB）：
-- 更新 `daily_menus.status` = `'ready'`
-- 寫入 `meals`（4 筆）
-- 寫入 `meal_items`（每餐 3–5 筆）
 
 **`ai-photo-analyze` 輸入格式**：
 ```json
@@ -149,24 +126,6 @@ supabase.from('user_profiles').update(data).eq('user_id', userId)
 
 // 更新目標
 supabase.from('user_goals').update(data).eq('user_id', userId).eq('is_active', true)
-```
-
-### 飲食計畫
-```typescript
-// 取進行中計畫
-supabase.from('diet_plans').select('*').eq('user_id', userId).eq('is_active', true).single()
-
-// 取指定日菜單（含餐次和食材）
-supabase.from('daily_menus')
-  .select('*, meals(*, items:meal_items(*))')
-  .eq('date', date)
-  .eq('plan_id', planId)
-  .single()
-
-// 打卡
-supabase.from('meals')
-  .update({ is_checked_in: true, checked_in_at: new Date().toISOString() })
-  .eq('id', mealId)
 ```
 
 ### 飲食記錄

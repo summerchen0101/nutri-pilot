@@ -18,12 +18,11 @@ export default async function AnalyticsPage() {
 
   const today = todayLocalISODate();
 
-  const [{ data: plan }, { data: goal }] = await Promise.all([
+  const [{ data: profile }, { data: goal }] = await Promise.all([
     supabase
-      .from('diet_plans')
-      .select('start_date, carb_pct, protein_pct, fat_pct')
+      .from('user_profiles')
+      .select('updated_at')
       .eq('user_id', user.id)
-      .eq('is_active', true)
       .maybeSingle(),
     supabase
       .from('user_goals')
@@ -33,9 +32,9 @@ export default async function AnalyticsPage() {
       .maybeSingle(),
   ]);
 
-  if (!plan) redirect('/onboarding');
+  if (!profile) redirect('/onboarding');
 
-  const rangeStart = plan.start_date;
+  const rangeStart = profile.updated_at?.slice(0, 10) ?? today;
   const rangeEnd = today;
 
   const [{ data: vitals }, { data: foodRows }, insightResult] =
@@ -98,14 +97,14 @@ export default async function AnalyticsPage() {
   return (
     <AnalyticsView
       todayIso={today}
-      planStartIso={plan.start_date}
+      planStartIso={rangeStart}
       nutritionByDate={nutritionByDate}
       weightByDate={weightByDate}
       dailyCalTarget={dailyCalTarget}
       macroPct={{
-        carb: Number(plan.carb_pct ?? 45),
-        protein: Number(plan.protein_pct ?? 30),
-        fat: Number(plan.fat_pct ?? 25),
+        carb: 45,
+        protein: 30,
+        fat: 25,
       }}
       weeklyInsight={weeklyInsight}
     />

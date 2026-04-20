@@ -19,7 +19,7 @@ export default async function ShopProductPage({ params }: PageProps) {
 
   if (!user) redirect('/login');
 
-  const [{ data: profile }, { data: goal }, { data: plan }] = await Promise.all([
+  const [{ data: profile }, { data: goal }] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('user_id', user.id).single(),
     supabase
       .from('user_goals')
@@ -27,15 +27,9 @@ export default async function ShopProductPage({ params }: PageProps) {
       .eq('user_id', user.id)
       .eq('is_active', true)
       .maybeSingle(),
-    supabase
-      .from('diet_plans')
-      .select('diet_method')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .maybeSingle(),
   ]);
 
-  if (!profile || !goal || !plan) redirect('/onboarding');
+  if (!profile || !goal || !profile.diet_method) redirect('/onboarding');
 
   const { data: product, error } = await supabase
     .from('products')
@@ -73,7 +67,7 @@ export default async function ShopProductPage({ params }: PageProps) {
     {
       type: goal.type as 'lose_weight' | 'gain_muscle' | 'maintain',
     },
-    { diet_method: plan.diet_method },
+    { diet_method: profile.diet_method },
   );
 
   const { data: sameBrand } = await supabase

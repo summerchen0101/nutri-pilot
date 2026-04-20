@@ -28,7 +28,6 @@ function dateToISODateOnly(d: Date): string {
 function revalidateMain() {
   revalidatePath('/settings');
   revalidatePath('/dashboard');
-  revalidatePath('/plan');
 }
 
 export async function saveProfileName(
@@ -299,6 +298,7 @@ export async function saveDietPreferences(payload: {
     .update({
       diet_type: dietType,
       meal_frequency: mealFrequency,
+      diet_method: dietMethod,
       avoid_foods: avoidFoods.length ? avoidFoods : [],
       allergens: allergens.length ? allergens : [],
       updated_at: new Date().toISOString(),
@@ -306,22 +306,6 @@ export async function saveDietPreferences(payload: {
     .eq('user_id', user.id);
 
   if (pErr) return { error: pErr.message };
-
-  const { data: plan } = await supabase
-    .from('diet_plans')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .maybeSingle();
-
-  if (!plan) return { error: '找不到啟用中的飲食計畫' };
-
-  const { error: planErr } = await supabase
-    .from('diet_plans')
-    .update({ diet_method: dietMethod })
-    .eq('id', plan.id);
-
-  if (planErr) return { error: planErr.message };
 
   await triggerRecalculateScores(user.id);
 
