@@ -79,3 +79,33 @@ confidence 判斷標準：
 }
 `;
 }
+
+export function buildReanalyzePrompt(name: string, quantityG: number): string {
+  const safeName = escapeManualInputFragment(name.trim() || '未命名');
+  const safeQuantity = Math.max(1, Math.round(Number(quantityG) || 1));
+
+  return `
+用戶指定食物：「${safeName}」，份量：${safeQuantity}g
+
+你是台灣的專業營養師，請直接估算該份量的營養成分。
+
+規則：
+1. 以用戶指定的 ${safeQuantity}g 為準，直接計算該重量的數值
+2. 不要回傳 per 100g，直接回傳 ${safeQuantity}g 的總量
+3. 優先參考台灣在地食物的營養數值
+4. 數值四捨五入到整數
+
+回傳 JSON（只回傳 JSON，不加任何說明）：
+{
+  "name": "${safeName}",
+  "quantity_g": ${safeQuantity},
+  "quantity_description": "份量描述",
+  "calories": 熱量數字,
+  "protein_g": 蛋白質數字,
+  "carb_g": 碳水化合物數字,
+  "fat_g": 脂肪數字,
+  "fiber_g": 膳食纖維或null,
+  "sodium_mg": 鈉或null
+}
+`;
+}

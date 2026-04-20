@@ -153,6 +153,7 @@ export function NutritionResultCard({
   const [displayName, setDisplayName] = useState(
     () => normalizeAnalysisPayload(resultProp).name,
   );
+  const [isReanalyzing, setIsReanalyzing] = useState(false);
 
   useEffect(() => {
     const next = normalizeAnalysisPayload(resultProp);
@@ -164,6 +165,7 @@ export function NutritionResultCard({
     setManual({});
     setOverride({});
     setIsEditingName(false);
+    setIsReanalyzing(false);
   }, [resultProp]);
 
   const handleQuantityChange = useCallback(
@@ -242,6 +244,43 @@ export function NutritionResultCard({
     setIsEditingName(false);
   }, [displayName, originalResult.name]);
 
+  const handleReanalyze = useCallback(async () => {
+    const nameResolved = displayName.trim() || originalResult.name;
+    if (!nameResolved || isReanalyzing) return;
+
+    setIsReanalyzing(true);
+    try {
+      const res = await fetch('/api/ai/analyze-food', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: nameResolved,
+          quantity,
+        }),
+      });
+      if (!res.ok) return;
+
+      const payload = (await res.json()) as
+        | ManualFoodAnalysisResult
+        | { error?: string };
+      if ('error' in payload && payload.error) return;
+      const next = normalizeAnalysisPayload({
+        ...payload,
+        name: (payload as ManualFoodAnalysisResult).name?.trim() || nameResolved,
+        quantity_g: quantity,
+      });
+      setOriginalResult(next);
+      setDisplayResult(next);
+      setDisplayName(next.name);
+      setManual({});
+      setOverride({});
+    } catch (error) {
+      console.error('重新分析失敗', error);
+    } finally {
+      setIsReanalyzing(false);
+    }
+  }, [displayName, isReanalyzing, originalResult.name, quantity]);
+
   const handleConfirm = useCallback(() => {
     const nameResolved = displayName.trim() || originalResult.name;
     const payload: ManualFoodAnalysisResult = {
@@ -266,6 +305,7 @@ export function NutritionResultCard({
   const showSecondary =
     (displayResult.fiber_g != null && displayResult.fiber_g > 0) ||
     (displayResult.sodium_mg != null && displayResult.sodium_mg > 0);
+  const nameWasChanged = displayName !== originalResult.name;
 
   const outerClass = embedded ?
       'mt-0 space-y-3'
@@ -356,6 +396,50 @@ export function NutritionResultCard({
           className="w-20 rounded-lg border-[0.5px] border-[#E8E9ED] px-2 py-1 text-right text-[13px] font-medium outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20"
         />
         <span className="text-[12px] text-[#9298A8]">g</span>
+        <button
+          type="button"
+          onClick={() => void handleReanalyze()}
+          disabled={isReanalyzing}
+          className="ml-2 flex items-center gap-1 whitespace-nowrap text-[11px] font-medium text-[#4C956C] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {isReanalyzing ?
+            <>
+              <svg className="h-3 w-3 animate-spin" viewBox="0 0 12 12" fill="none">
+                <circle
+                  cx="6"
+                  cy="6"
+                  r="4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeDasharray="16"
+                  strokeDashoffset="8"
+                />
+              </svg>
+              分析中
+            </>
+          : <>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path
+                  d="M10 6A4 4 0 112 6"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M10 3v3H7"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              重新分析
+            </>
+          }
+        </button>
+        {nameWasChanged ?
+          <span className="ml-1 text-[10px] text-[#BA7517]">名稱已修改</span>
+        : null}
       </div>
 
       <div className="grid grid-cols-2 gap-2.5">

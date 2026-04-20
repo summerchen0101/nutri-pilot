@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { callClaudeJSON } from '@/lib/ai/claude';
 import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
-import { buildManualInputPrompt } from '@/lib/food/prompts';
+import { buildManualInputPrompt, buildReanalyzePrompt } from '@/lib/food/prompts';
 import { fetchFoodCacheHintsForManualInput } from '@/lib/food/search';
 import { createClient } from '@/lib/supabase/server';
 
@@ -39,16 +39,37 @@ export async function POST(req: Request) {
     typeof (body as { input: unknown }).input === 'string'
       ? (body as { input: string }).input.trim()
       : '';
+  const reanalyzeName =
+    typeof body === 'object' &&
+    body !== null &&
+    'name' in body &&
+    typeof (body as { name: unknown }).name === 'string'
+      ? (body as { name: string }).name.trim()
+      : '';
+  const reanalyzeQuantity =
+    typeof body === 'object' &&
+    body !== null &&
+    'quantity' in body &&
+    typeof (body as { quantity: unknown }).quantity === 'number'
+      ? (body as { quantity: number }).quantity
+      : NaN;
+  const shouldReanalyze =
+    reanalyzeName.length > 0 &&
+    Number.isFinite(reanalyzeQuantity) &&
+    reanalyzeQuantity >= 1;
 
-  if (input.length < 1) {
+  if (!shouldReanalyze && input.length < 1) {
     return NextResponse.json({ error: '請輸入食物描述' }, { status: 422 });
   }
 
-  const hints = await fetchFoodCacheHintsForManualInput(supabase, input);
-  const referenceLines =
-    hints.length > 0 ? formatCacheReference(hints) : undefined;
-
-  const prompt = buildManualInputPrompt(input, referenceLines);
+  const prompt = shouldReanalyze ?
+      buildReanalyzePrompt(reanalyzeName, Math.round(reanalyzeQuantity))
+    : await (async () => {
+        const hints = await fetchFoodCacheHintsForManualInput(supabase, input);
+        const referenceLines =
+          hints.length > 0 ? formatCacheReference(hints) : undefined;
+        return buildManualInputPrompt(input, referenceLines);
+      })();
 
   try {
     const result = await callClaudeJSON<ManualFoodAnalysisResult>(prompt);
