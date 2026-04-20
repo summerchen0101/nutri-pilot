@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { FiActivity, FiBarChart2, FiCoffee } from 'react-icons/fi';
 import { createPortal } from 'react-dom';
 
 import { logWeightAction } from '@/app/(main)/dashboard/actions';
@@ -176,52 +177,6 @@ function CalorieRingBlock({
         </div>
       </div>
     </div>
-  );
-}
-
-function IconMeal(props: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      className={cn('h-4 w-4 shrink-0', props.className)}
-      aria-hidden
-    >
-      <path d="M8 3v15M12 3v15M16 10v8M6 21h12" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconScale(props: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      className={cn('h-4 w-4 shrink-0', props.className)}
-      aria-hidden
-    >
-      <path d="M12 3a7 7 0 108 7h-8V3z" strokeLinecap="round" />
-      <path d="M12 14v4M10 18h4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconChart(props: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      className={cn('h-4 w-4 shrink-0', props.className)}
-      aria-hidden
-    >
-      <path d="M4 19h16M7 16V9M12 16v-5M17 16V6" strokeLinecap="round" />
-    </svg>
   );
 }
 
@@ -633,15 +588,15 @@ export function DashboardHome({
         <p className="text-[15px] font-medium text-foreground">快速操作</p>
         <div className="mt-3 grid grid-cols-3 gap-2">
           <Link href="/log" className={cn(ghostQuick)} title="記錄飲食">
-            <IconMeal className="text-primary" />
+            <FiCoffee className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <span className="text-center leading-tight">飲食</span>
           </Link>
           <button type="button" className={cn(ghostQuick)} onClick={openWeightDialog}>
-            <IconScale className="text-primary" />
+            <FiActivity className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <span className="text-center leading-tight">體重</span>
           </button>
           <Link href="/analytics" className={cn(ghostQuick)} title="數據分析">
-            <IconChart className="text-primary" />
+            <FiBarChart2 className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <span className="text-center leading-tight">數據</span>
           </Link>
         </div>

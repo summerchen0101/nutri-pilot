@@ -2,126 +2,22 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  FiBarChart2,
+  FiPlusCircle,
+  FiShoppingCart,
+  FiTrendingUp,
+  FiUser,
+} from 'react-icons/fi';
 
 import { cn } from '@/lib/utils/cn';
 
-function IconDashboard({ className }: { className?: string }) {
-  return (
-    <svg
-      width={20}
-      height={20}
-      viewBox="0 0 20 20"
-      fill="none"
-      className={className}
-      aria-hidden
-    >
-      <rect x="3" y="10" width="4" height="7" rx="1" fill="currentColor" />
-      <rect x="8" y="6" width="4" height="11" rx="1" fill="currentColor" opacity=".6" />
-      <rect x="13" y="3" width="4" height="14" rx="1" fill="currentColor" opacity=".4" />
-    </svg>
-  );
-}
-
-function IconLog({ className }: { className?: string }) {
-  return (
-    <svg
-      width={20}
-      height={20}
-      viewBox="0 0 20 20"
-      fill="none"
-      className={className}
-      aria-hidden
-    >
-      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth={1.4} fill="none" />
-      <line x1="10" y1="6.5" x2="10" y2="13.5" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
-      <line x1="6.5" y1="10" x2="13.5" y2="10" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconShop({ className }: { className?: string }) {
-  return (
-    <svg
-      width={20}
-      height={20}
-      viewBox="0 0 20 20"
-      fill="none"
-      className={className}
-      aria-hidden
-    >
-      <path
-        d="M3.5 4h2l2 7h7l1.5-5H7"
-        stroke="currentColor"
-        strokeWidth={1.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <circle cx="9" cy="16.5" r="1" fill="currentColor" />
-      <circle cx="14" cy="16.5" r="1" fill="currentColor" />
-    </svg>
-  );
-}
-
-function IconAnalytics({ className }: { className?: string }) {
-  return (
-    <svg
-      width={20}
-      height={20}
-      viewBox="0 0 20 20"
-      fill="none"
-      className={className}
-      aria-hidden
-    >
-      <polyline
-        points="3,14 7,9 11,12 17,5"
-        stroke="currentColor"
-        strokeWidth={1.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <line
-        x1="3"
-        y1="17"
-        x2="17"
-        y2="17"
-        stroke="currentColor"
-        strokeWidth={1.4}
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconProfile({ className }: { className?: string }) {
-  return (
-    <svg
-      width={20}
-      height={20}
-      viewBox="0 0 20 20"
-      fill="none"
-      className={className}
-      aria-hidden
-    >
-      <circle cx="10" cy="7" r="3" stroke="currentColor" strokeWidth={1.4} fill="none" />
-      <path
-        d="M4 17c0-3.31 2.69-5 6-5s6 1.69 6 5"
-        stroke="currentColor"
-        strokeWidth={1.4}
-        strokeLinecap="round"
-        fill="none"
-      />
-    </svg>
-  );
-}
-
 const NAV = [
-  { href: '/dashboard', label: '總覽', Icon: IconDashboard },
-  { href: '/log', label: '紀錄', Icon: IconLog },
-  { href: '/shop', label: '商城', Icon: IconShop },
-  { href: '/analytics', label: '分析', Icon: IconAnalytics },
-  { href: '/settings', label: '我的', Icon: IconProfile },
+  { href: '/dashboard', label: '總覽', Icon: FiBarChart2 },
+  { href: '/log', label: '紀錄', Icon: FiPlusCircle },
+  { href: '/shop', label: '商城', Icon: FiShoppingCart },
+  { href: '/analytics', label: '分析', Icon: FiTrendingUp },
+  { href: '/settings', label: '我的', Icon: FiUser },
 ] as const;
 
 function isActive(pathname: string, href: string) {

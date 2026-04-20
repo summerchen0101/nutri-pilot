@@ -9,6 +9,7 @@ import {
   useState,
   type ChangeEvent,
 } from 'react';
+import { FiCamera, FiTrash2 } from 'react-icons/fi';
 
 import {
   AddFoodManualAiPanel,
@@ -161,22 +162,7 @@ function ItemMacrosMutedLine(props: {
 }
 
 function TrashIcon(props: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      className={props.className}
-      aria-hidden
-    >
-      <path
-        d="M4 7h16M10 11v6M14 11v6M9 7V5c0-.6.4-1 1-1h4c.6 0 1 .4 1 1v2"
-        strokeLinecap="round"
-      />
-      <path d="M10 21h4c1.1 0 2-.9 2-2V9H8v10c0 1.1.9 2 2 2z" />
-    </svg>
-  );
+  return <FiTrash2 className={props.className} aria-hidden />;
 }
 
 function secondaryExpandable(it: LogItemSnapshot): boolean {
@@ -1082,29 +1068,7 @@ export function LogClient({
                   onClick={() => fileInputRef.current?.click()}
                   className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-primary-light bg-primary-light py-8 transition-colors active:bg-secondary"
                 >
-                  <svg
-                    width="32"
-                    height="32"
-                    viewBox="0 0 32 32"
-                    fill="none"
-                    aria-hidden
-                  >
-                    <path
-                      d="M6 10h2.5L10 7h12l1.5 3H26a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V12a2 2 0 012-2z"
-                      stroke="#4C956C"
-                      strokeWidth={1.5}
-                      strokeLinejoin="round"
-                      fill="none"
-                    />
-                    <circle
-                      cx="16"
-                      cy="17"
-                      r="4"
-                      stroke="#4C956C"
-                      strokeWidth={1.5}
-                      fill="none"
-                    />
-                  </svg>
+                  <FiCamera className="h-8 w-8 text-primary" aria-hidden />
                   <span className="text-[13px] font-medium text-primary">
                     拍照或選擇相片
                   </span>

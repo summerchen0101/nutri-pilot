@@ -3,6 +3,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import {
+  FiBox,
+  FiCoffee,
+  FiDisc,
+  FiGrid,
+  FiPackage,
+  FiShoppingBag,
+  FiTag,
+} from 'react-icons/fi';
 
 import {
   SHOP_CATEGORY_KEYS,
@@ -55,57 +64,24 @@ interface Props {
 
 function CategoryIcon({ category }: { category: ShopCategoryKey }) {
   if (category === 'all') {
-    return (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-        <circle cx="10" cy="10" r="6" />
-      </svg>
-    );
+    return <FiGrid className="h-4 w-4" aria-hidden />;
   }
   if (category === 'nuts') {
-    return (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-        <path d="M10 3c2.6 0 4.5 2 4.5 4.7v2.8c0 3-2 5.5-4.5 5.5s-4.5-2.5-4.5-5.5V7.7C5.5 5 7.4 3 10 3z" />
-      </svg>
-    );
+    return <FiDisc className="h-4 w-4" aria-hidden />;
   }
   if (category === 'protein_bar') {
-    return (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-        <rect x="3.5" y="6.5" width="13" height="7" rx="2" />
-        <path d="M7 8.5h6M7 11.5h4" />
-      </svg>
-    );
+    return <FiPackage className="h-4 w-4" aria-hidden />;
   }
   if (category === 'supplement') {
-    return (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-        <rect x="6" y="4" width="8" height="12" rx="2" />
-        <path d="M8 4h4M8 9h4" />
-      </svg>
-    );
+    return <FiBox className="h-4 w-4" aria-hidden />;
   }
   if (category === 'drink') {
-    return (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-        <path d="M6 4h8l-1 12H7L6 4z" />
-        <path d="M8 4V2h4v2" />
-      </svg>
-    );
+    return <FiCoffee className="h-4 w-4" aria-hidden />;
   }
   if (category === 'snack') {
-    return (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-        <path d="M6 6h8l1 8H5l1-8z" />
-        <path d="M8 6V4h4v2" />
-      </svg>
-    );
+    return <FiShoppingBag className="h-4 w-4" aria-hidden />;
   }
-  return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-      <path d="M5 6h10v8H5z" />
-      <path d="M8 6V4h4v2M8 10h4" />
-    </svg>
-  );
+  return <FiTag className="h-4 w-4" aria-hidden />;
 }
 
 export function ShopHomeClient({

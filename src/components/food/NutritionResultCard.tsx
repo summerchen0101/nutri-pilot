@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FiEdit2, FiLoader, FiRotateCw } from 'react-icons/fi';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -353,23 +354,10 @@ export function NutritionResultCard({
               <span className="min-w-0 break-words text-[15px] font-medium leading-snug text-foreground">
                 {displayName}
               </span>
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 13 13"
-                fill="none"
-                className="mt-0.5 shrink-0 opacity-60 text-neutral-text-tertiary"
+              <FiEdit2
+                className="mt-0.5 h-[13px] w-[13px] shrink-0 text-neutral-text-tertiary opacity-60"
                 aria-hidden
-              >
-                <path
-                  d="M9 2L11 4L4 11H2V9L9 2Z"
-                  stroke="currentColor"
-                  strokeWidth={1.2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                />
-              </svg>
+              />
             </button>
           )}
           {displayResult.quantity_description ?
@@ -405,35 +393,11 @@ export function NutritionResultCard({
         >
           {isReanalyzing ?
             <>
-              <svg className="h-3 w-3 animate-spin" viewBox="0 0 12 12" fill="none">
-                <circle
-                  cx="6"
-                  cy="6"
-                  r="4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeDasharray="16"
-                  strokeDashoffset="8"
-                />
-              </svg>
+              <FiLoader className="h-3 w-3 animate-spin" aria-hidden />
               分析中
             </>
           : <>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path
-                  d="M10 6A4 4 0 112 6"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M10 3v3H7"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <FiRotateCw className="h-3 w-3" aria-hidden />
               重新分析
             </>
           }

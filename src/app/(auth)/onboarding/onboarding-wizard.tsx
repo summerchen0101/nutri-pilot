@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { FiCheck } from 'react-icons/fi';
 
 import {
   ACTIVITY_OPTIONS,
@@ -616,15 +617,7 @@ export function OnboardingWizard({
                       }`}
                     >
                       {allergens.includes(o.value) ? (
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                          <path
-                            d="M2 5.5L4.5 8L9 3"
-                            stroke="white"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                        <FiCheck className="h-[11px] w-[11px] text-white" aria-hidden />
                       ) : null}
                     </div>
                     <span className="text-[13px] text-[#1E212B]">{o.label}</span>
