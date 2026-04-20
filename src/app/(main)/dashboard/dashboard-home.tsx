@@ -224,7 +224,6 @@ function MealStatusDot({ variant }: { variant: DashboardMealVariant }) {
 }
 
 export function DashboardHome({
-  displayName,
   dateLabel,
   latestWeightKg,
   latestWeightDate,
@@ -280,10 +279,9 @@ export function DashboardHome({
   }
 
   return (
-    <div className="space-y-5">
-      <section className="space-y-2">
-        <div className="flex items-end justify-between gap-2">
-          <h1 className="text-[20px] font-medium text-foreground">嗨，{displayName}</h1>
+    <div className="space-y-3">
+      <section className="space-y-1.5">
+        <div className="flex justify-end">
           <p className="text-[13px] text-muted-foreground">{dateLabel}</p>
         </div>
         <span className="inline-flex rounded-full bg-primary-light px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
@@ -299,7 +297,7 @@ export function DashboardHome({
         fatG={fatG}
       />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2.5">
         <button
           type="button"
           onClick={openWeightDialog}
@@ -339,7 +337,7 @@ export function DashboardHome({
 
         <MetricTile
           label="今日熱量"
-          className="bg-card"
+          className="border-[#4C956C] bg-[#E8F5EE]"
           value={
             <>
               {Math.round(todayKcal)}

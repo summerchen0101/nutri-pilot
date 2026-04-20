@@ -189,10 +189,11 @@ export function AnalyticsView({
   const chartMargin = { top: 4, right: 8, left: -18, bottom: 4 };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="數據分析"
         description="查看體重、熱量與營養素達成率的變化。"
+        spacing="compact"
       />
 
       <SegmentedTabs

@@ -95,7 +95,7 @@ export default async function LogPage({
   }));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <PageHeader
         title="飲食紀錄"
         description="記錄今日用餐，對照熱量目標。"

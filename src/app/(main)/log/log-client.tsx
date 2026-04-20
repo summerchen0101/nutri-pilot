@@ -753,7 +753,7 @@ export function LogClient({
     'h-9 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="rounded-xl border-[0.5px] border-border bg-card px-4 py-3">
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
@@ -1175,9 +1175,9 @@ export function LogClient({
       </Card>
       ) : null}
 
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         <h2 className="text-[15px] font-medium text-foreground">今日紀錄</h2>
-        <div className="space-y-5">
+        <div className="space-y-3">
           {MEAL_ORDER.map((m) => {
             const mealLogs = grouped.get(m) ?? [];
             return (

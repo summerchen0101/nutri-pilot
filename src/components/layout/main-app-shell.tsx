@@ -22,9 +22,9 @@ export function MainAppShell({ children }: { children: ReactNode }) {
   const compactBottomPadding = shouldUseCompactBottomPadding(pathname);
   const contentPaddingClass = showBottomNav
     ? compactBottomPadding
-      ? 'mx-auto max-w-sm px-4 pb-24 pt-7'
-      : 'mx-auto max-w-sm px-4 pb-28 pt-7'
-    : 'mx-auto max-w-sm px-4 pb-8 pt-7';
+      ? 'mx-auto max-w-sm px-4 pb-24 pt-5'
+      : 'mx-auto max-w-sm px-4 pb-28 pt-5'
+    : 'mx-auto max-w-sm px-4 pb-8 pt-5';
 
   return (
     <div className="relative min-h-screen bg-surface-secondary">
