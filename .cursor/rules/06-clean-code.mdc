@@ -1,0 +1,94 @@
+---
+description: Clean code 規範，適用所有程式碼撰寫與修改
+alwaysApply: true
+---
+
+# Clean Code 規範
+
+## 檔案與模組結構
+每個檔案只做一件事（SRP）。
+檔案超過 200 行時，主動提示拆分方式。
+不在同一個元件或函式裡混合 UI 邏輯、資料處理、API 呼叫。
+
+## 命名規範
+變數與函式：camelCase，名稱要能說明用途。
+- 好：getUserById、isLoadingData
+- 壞：data、temp、x、doStuff
+
+常數：UPPER_SNAKE_CASE（MAX_RETRY_COUNT）
+型別 / 介面：PascalCase（UserProfile、ApiResponse）
+布林值：以 is / has / can / should 開頭。
+- 好：isAuthenticated、hasPermission
+- 壞：authenticated、permission
+
+## 函式設計
+函式只做一件事，超過 30 行主動提示拆分。
+函式參數超過 3 個時，改用物件傳入。
+- 壞：function create(name, email, role, age)
+- 好：function create({ name, email, role, age })
+
+避免巢狀超過 2 層，改用 early return。
+- 壞：if (user) { if (user.active) { if (...) { } } }
+- 好：if (!user) return; if (!user.active) return; ...
+
+## 程式碼品質
+不留下 console.log、無說明的 TODO、死程式碼。
+魔術數字定義為常數並加說明。
+- 壞：setTimeout(fn, 86400000)
+- 好：const ONE_DAY_MS = 86400000; setTimeout(fn, ONE_DAY_MS)
+
+禁止使用 any（TypeScript 專案）。
+錯誤要明確處理，不可吞掉：
+- 壞：catch (e) {}
+- 好：catch (e) { logger.error('...', e); throw e; }
+
+## React 元件設計
+一個元件只負責一個 UI 區塊。
+元件超過 100 行，提示拆分子元件。
+不使用 class component，全部用 function component。
+props 超過 3 個要定義 interface，不用 inline type。
+避免 prop drilling 超過 2 層，改用 context 或 zustand。
+key 不使用 index，除非列表靜態且不會重新排序。
+
+## 邏輯分離
+資料拉取、狀態管理邏輯一律抽到 custom hook：
+- 壞：在元件裡直接寫 fetch / useEffect 處理 API
+- 好：useUserData()、useOrderList() 等 hook
+
+表單邏輯抽到 hook，不在 JSX 裡混合大量事件處理。
+複雜計算邏輯抽到獨立的 utility 函式。
+
+## 目錄結構規範
+```
+components/   → 純 UI 元件（不含 API 呼叫）
+hooks/        → 所有 custom hooks
+services/     → API 呼叫與資料處理
+utils/        → 純函式工具
+types/        → TypeScript 型別定義
+```
+
+## TypeScript 規範
+嚴格禁止 any，不確定的型別用 unknown 並收窄。
+不允許 as 強制轉型，除非有充分理由並加上註解。
+API 回應一律定義 interface，不用隱式型別推斷。
+不使用 non-null assertion（!）除非有型別守衛。
+避免 default export（page 元件除外），改用 named export。
+每個資料夾建立 index.ts 統一匯出。
+
+## Supabase 查詢規範（此專案專用）
+不在迴圈裡做 N+1 查詢，使用 select 一次帶關聯資料。
+所有查詢解構 { data, error }，error 要處理不可忽略。
+不寫原生 SQL 在應用層，複雜查詢改用 Supabase RPC function。
+
+## AI 回應行為
+回應語言：繁體中文。
+修改程式碼前，先用一句話說明打算怎麼做。
+不要一次重寫整個檔案，只修改相關的部分。
+不要安裝新的套件，除非明確要求。
+有多種解法時，列出選項讓我選擇。
+發現潛在問題（效能、安全性）時主動提示，即使沒問。
+
+## 程式碼風格
+縮排：2 個空格。
+字串：單引號（JavaScript / TypeScript）。
+import 順序：外部套件 → 內部模組 → 樣式檔。
