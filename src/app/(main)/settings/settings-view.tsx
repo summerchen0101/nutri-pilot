@@ -33,7 +33,15 @@ export type SettingsInitialData = {
   };
 };
 
-type SheetType = null | 'dietMethod' | 'allergens';
+type SheetType =
+  | null
+  | 'dietMethod'
+  | 'allergens'
+  | 'goalType'
+  | 'goalWeight'
+  | 'goalWeeklyRate'
+  | 'goalDailyCal'
+  | 'goalTargetDate';
 
 function goalTypeLabel(value: string): string {
   return GOAL_TYPE_OPTIONS.find((option) => option.value === value)?.label ?? value;
@@ -146,6 +154,9 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
   const [goalType, setGoalType] = useState(initial.goal.type);
   const [targetW, setTargetW] = useState(String(initial.goal.targetWeightKg));
   const [weeklyRate, setWeeklyRate] = useState(initial.goal.type === 'maintain' ? '0' : String(initial.goal.weeklyRateKg));
+  const [goalTypeDraft, setGoalTypeDraft] = useState(initial.goal.type);
+  const [targetWDraft, setTargetWDraft] = useState(String(initial.goal.targetWeightKg));
+  const [weeklyRateDraft, setWeeklyRateDraft] = useState(initial.goal.type === 'maintain' ? '0' : String(initial.goal.weeklyRateKg));
 
   const [dietMethod, setDietMethod] = useState(initial.dietMethod);
   const [dietType] = useState(initial.dietType);
@@ -193,6 +204,55 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
       await supabase.auth.signOut();
       router.push('/login');
       router.refresh();
+    });
+  }
+
+  function openGoalSheet(sheet: Exclude<SheetType, null | 'dietMethod' | 'allergens'>) {
+    setGoalTypeDraft(goalType);
+    setTargetWDraft(targetW);
+    setWeeklyRateDraft(weeklyRate);
+    setErrGoal(null);
+    setActiveSheet(sheet);
+  }
+
+  function openGoalDependencySheet(sheet: 'goalDailyCal' | 'goalTargetDate') {
+    setGoalTypeDraft(goalType);
+    setTargetWDraft(targetW);
+    setWeeklyRateDraft(weeklyRate);
+    setErrGoal(null);
+    setActiveSheet(sheet);
+  }
+
+  function onGoalTypeDraftChange(next: string) {
+    setGoalTypeDraft(next);
+    if (next === 'maintain') {
+      setWeeklyRateDraft('0');
+    } else if (!weeklyRateDraft || Number.parseFloat(weeklyRateDraft) <= 0) {
+      setWeeklyRateDraft('0.25');
+    }
+  }
+
+  function applyGoalDraft() {
+    setErrGoal(null);
+    startTransition(async () => {
+      const targetWeight = Number.parseFloat(targetWDraft.replace(',', '.'));
+      const weekly = goalTypeDraft === 'maintain' ? 0 : Number.parseFloat(weeklyRateDraft.replace(',', '.'));
+
+      const response = await saveGoals({
+        type: goalTypeDraft,
+        targetWeightKg: targetWeight,
+        weeklyRateKg: weekly,
+      });
+      if (response.error) {
+        setErrGoal(response.error);
+        return;
+      }
+
+      setGoalType(goalTypeDraft);
+      setTargetW(String(targetWeight));
+      setWeeklyRate(String(weekly));
+      setActiveSheet(null);
+      refresh();
     });
   }
 
@@ -349,47 +409,31 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         <Row
           label="目標類型"
           value={goalTypeLabel(goalType)}
-          onClick={() => {
-            const next = goalType === 'lose_weight' ? 'maintain' : goalType === 'maintain' ? 'gain_muscle' : 'lose_weight';
-            const rate = next === 'maintain' ? 0 : Number.parseFloat(weeklyRate) || 0.25;
-            setGoalType(next);
-            setWeeklyRate(String(rate));
-            setErrGoal(null);
-            startTransition(async () => {
-              const response = await saveGoals({
-                type: next,
-                targetWeightKg: Number.parseFloat(targetW),
-                weeklyRateKg: rate,
-              });
-              if (response.error) setErrGoal(response.error);
-              else refresh();
-            });
-          }}
+          onClick={() => openGoalSheet('goalType')}
         />
         <Row
           label="目標體重"
           value={`${targetW} kg`}
-          onClick={() => {
-            const next = window.prompt('請輸入目標體重（kg）', targetW);
-            if (!next) return;
-            setTargetW(next);
-          }}
+          onClick={() => openGoalSheet('goalWeight')}
         />
         <Row
           label="每週速率"
           value={`${weeklyRate} kg/週`}
-          onClick={() => {
-            const next = window.prompt('請輸入每週速率（kg/週）', weeklyRate);
-            if (!next) return;
-            setWeeklyRate(next);
-          }}
+          onClick={() => openGoalSheet('goalWeeklyRate')}
         />
         <Row
           label="每日熱量目標"
           value={`${Math.round(initial.goal.dailyCalTarget).toLocaleString()} kcal`}
           trailing={<span className="rounded-full bg-[#EBF5EF] px-2 py-0.5 text-[11px] font-medium text-[#4C956C]">自動</span>}
+          onClick={() => openGoalDependencySheet('goalDailyCal')}
         />
-        <Row label="預計達標日" value={formatDate(initial.goal.targetDate)} valueClassName="text-[13px] text-[#4C956C]" withBorder={false} trailing={null} />
+        <Row
+          label="預計達標日"
+          value={formatDate(initial.goal.targetDate)}
+          valueClassName="text-[13px] text-[#4C956C]"
+          withBorder={false}
+          onClick={() => openGoalDependencySheet('goalTargetDate')}
+        />
         {errGoal ? <p className="mt-1 text-[11px] text-[#E55A3C]">{errGoal}</p> : null}
       </section>
 
@@ -534,6 +578,130 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
           }}
         >
           儲存
+        </button>
+      </BottomSheet>
+
+      <BottomSheet open={activeSheet === 'goalType'} title="編輯目標類型" onClose={() => setActiveSheet(null)}>
+        <div className="grid gap-2 pb-3">
+          {GOAL_TYPE_OPTIONS.map((option) => {
+            const active = goalTypeDraft === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                className={[
+                  'w-full rounded-[10px] border px-3 py-2 text-left text-[13px]',
+                  active ? 'border-[#4C956C] bg-[#EBF5EF] text-[#2D6B4A]' : 'border-[#E8E9ED] text-[#1E212B]',
+                ].join(' ')}
+                onClick={() => onGoalTypeDraftChange(option.value)}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+          {errGoal ? <p className="text-[11px] text-[#E55A3C]">{errGoal}</p> : null}
+        </div>
+        <button
+          type="button"
+          disabled={pending}
+          className="w-full rounded-[10px] bg-[#1E212B] py-2 text-[13px] font-medium text-white disabled:opacity-60"
+          onClick={applyGoalDraft}
+        >
+          儲存
+        </button>
+      </BottomSheet>
+
+      <BottomSheet open={activeSheet === 'goalWeight'} title="編輯目標體重" onClose={() => setActiveSheet(null)}>
+        <div className="space-y-2 pb-3">
+          <Input
+            value={targetWDraft}
+            inputMode="decimal"
+            className="border-[0.5px] border-[#E8E9ED] bg-white text-[13px]"
+            onChange={(event) => setTargetWDraft(event.target.value)}
+            placeholder="請輸入目標體重（kg）"
+          />
+          {errGoal ? <p className="text-[11px] text-[#E55A3C]">{errGoal}</p> : null}
+        </div>
+        <button
+          type="button"
+          disabled={pending}
+          className="w-full rounded-[10px] bg-[#1E212B] py-2 text-[13px] font-medium text-white disabled:opacity-60"
+          onClick={applyGoalDraft}
+        >
+          儲存
+        </button>
+      </BottomSheet>
+
+      <BottomSheet open={activeSheet === 'goalWeeklyRate'} title="編輯每週速率" onClose={() => setActiveSheet(null)}>
+        <div className="space-y-2 pb-3">
+          <Input
+            value={weeklyRateDraft}
+            inputMode="decimal"
+            className="border-[0.5px] border-[#E8E9ED] bg-white text-[13px]"
+            onChange={(event) => setWeeklyRateDraft(event.target.value)}
+            placeholder="請輸入每週速率（kg/週）"
+            disabled={goalTypeDraft === 'maintain'}
+          />
+          {goalTypeDraft === 'maintain' ? <p className="text-[11px] text-[#9298A8]">維持體重目標的每週速率固定為 0。</p> : null}
+          {errGoal ? <p className="text-[11px] text-[#E55A3C]">{errGoal}</p> : null}
+        </div>
+        <button
+          type="button"
+          disabled={pending}
+          className="w-full rounded-[10px] bg-[#1E212B] py-2 text-[13px] font-medium text-white disabled:opacity-60"
+          onClick={applyGoalDraft}
+        >
+          儲存
+        </button>
+      </BottomSheet>
+
+      <BottomSheet open={activeSheet === 'goalDailyCal'} title="編輯每日熱量目標" onClose={() => setActiveSheet(null)}>
+        <div className="space-y-2 pb-3">
+          <p className="text-[11px] text-[#9298A8]">每日熱量目標會依目標類型、目標體重與每週速率自動計算。</p>
+          <div className="rounded-[10px] border border-[#E8E9ED] px-3 py-2 text-[13px] text-[#1E212B]">
+            目前目標：{Math.round(initial.goal.dailyCalTarget).toLocaleString()} kcal
+          </div>
+          <button
+            type="button"
+            className="w-full rounded-[10px] border border-[#4C956C] py-2 text-[13px] text-[#4C956C]"
+            onClick={() => {
+              setActiveSheet('goalType');
+            }}
+          >
+            編輯計算條件
+          </button>
+        </div>
+        <button
+          type="button"
+          className="w-full rounded-[10px] bg-[#1E212B] py-2 text-[13px] font-medium text-white"
+          onClick={() => setActiveSheet(null)}
+        >
+          關閉
+        </button>
+      </BottomSheet>
+
+      <BottomSheet open={activeSheet === 'goalTargetDate'} title="編輯預計達標日" onClose={() => setActiveSheet(null)}>
+        <div className="space-y-2 pb-3">
+          <p className="text-[11px] text-[#9298A8]">預計達標日會依目前體重、目標體重與每週速率自動計算。</p>
+          <div className="rounded-[10px] border border-[#E8E9ED] px-3 py-2 text-[13px] text-[#1E212B]">
+            目前日期：{formatDate(initial.goal.targetDate)}
+          </div>
+          <button
+            type="button"
+            className="w-full rounded-[10px] border border-[#4C956C] py-2 text-[13px] text-[#4C956C]"
+            onClick={() => {
+              setActiveSheet('goalWeight');
+            }}
+          >
+            編輯計算條件
+          </button>
+        </div>
+        <button
+          type="button"
+          className="w-full rounded-[10px] bg-[#1E212B] py-2 text-[13px] font-medium text-white"
+          onClick={() => setActiveSheet(null)}
+        >
+          關閉
         </button>
       </BottomSheet>
     </div>
