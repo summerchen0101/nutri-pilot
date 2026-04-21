@@ -261,7 +261,8 @@ export default async function DashboardPage() {
     heightCm: Number(profile.height_cm),
     profileBmi: profile.bmi != null ? Number(profile.bmi) : null,
     streakDays,
-    meals: buildMealRows(foodRows ?? []),
+    todayIsoDate: today,
+    meals: buildMealRows(foodRows ?? [], today),
     weeklyWeight: weeklyTrend.weightRows,
     weeklyKcal: weeklyTrend.kcalRows,
     insightBullets,
@@ -550,14 +551,6 @@ function sumMealKcal(
   return Math.round(t);
 }
 
-function logsHaveEnergy(
-  logs: {
-    food_log_items: { calories: number | string }[] | null;
-  }[],
-): boolean {
-  return sumMealKcal(logs) > 0;
-}
-
 function mealItemNameSummary(
   logs: {
     food_log_items: { name: string }[] | null;
@@ -578,27 +571,36 @@ function buildMealRows(
     meal_type: string;
     food_log_items: { name: string; calories: number }[] | null;
   }[],
+  today: string,
 ): DashboardHomeProps['meals'] {
   const rows: DashboardHomeProps['meals'] = [];
 
   for (const key of MEAL_ORDER) {
     const logsForType = foodRows.filter((r) => r.meal_type === key);
+    const hasLog = logsForType.length > 0;
     const totalKcal = sumMealKcal(logsForType);
-    const hasLog = logsHaveEnergy(logsForType);
+    const recordHref = `/log?date=${encodeURIComponent(today)}&tab=food&meal_type=${encodeURIComponent(key)}`;
 
-    if (!hasLog) continue;
-
-    const recordHref = `/log?meal_type=${encodeURIComponent(key)}`;
-    const summary = mealItemNameSummary(logsForType);
-
-    rows.push({
-      key,
-      label: MEAL_LABEL[key],
-      variant: 'self_logged',
-      detailLine: summary || '自行記錄',
-      kcal: totalKcal,
-      recordHref,
-    });
+    if (hasLog) {
+      const summary = mealItemNameSummary(logsForType);
+      rows.push({
+        key,
+        label: MEAL_LABEL[key],
+        variant: 'self_logged',
+        detailLine: summary || '自行記錄',
+        kcal: totalKcal,
+        recordHref,
+      });
+    } else {
+      rows.push({
+        key,
+        label: MEAL_LABEL[key],
+        variant: 'self_logged',
+        detailLine: '尚無紀錄',
+        kcal: null,
+        recordHref,
+      });
+    }
   }
 
   return rows;

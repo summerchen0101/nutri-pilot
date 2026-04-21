@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
-  ArrowUpRight,
   BarChart3,
   Dumbbell,
+  PlusCircle,
   Scale,
   Tag,
   UtensilsCrossed,
@@ -53,6 +53,8 @@ function shouldShowNoAchievementLine(
 
 export type DashboardHomeProps = {
   dateLabel: string;
+  /** 今日 ISO 日期（YYYY-MM-DD），用於紀錄頁連結 */
+  todayIsoDate: string;
   userName: string | null;
   latestWeightKg: number | null;
   latestWeightDate: string | null;
@@ -365,6 +367,7 @@ function WeeklyPopularBrandsRail({
 
 export function DashboardHome({
   dateLabel,
+  todayIsoDate,
   userName,
   latestWeightKg,
   latestWeightDate,
@@ -416,11 +419,19 @@ export function DashboardHome({
   }
 
   const quickActionClass =
-    "flex h-[56px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border-[0.5px] border-border bg-card px-1 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
+    "flex h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border-[0.5px] border-border bg-card px-1 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
 
-  const quickIconClass = "h-4 w-4 shrink-0 text-primary";
+  const quickIconClass = "h-[18px] w-[18px] shrink-0 text-primary";
 
   const headerTitle = userName ? `Hi, ${userName}` : "Hi there";
+
+  const mealsKcalTotal = meals.reduce((sum, m) => {
+    if (m.kcal != null && Number.isFinite(m.kcal)) return sum + m.kcal;
+    return sum;
+  }, 0);
+  const showMealsKcalTotal = meals.some(
+    (m) => m.kcal != null && Number.isFinite(m.kcal),
+  );
 
   return (
     <div className="space-y-3">
@@ -604,6 +615,61 @@ export function DashboardHome({
         </div>
       </section>
 
+      <InsightCard bullets={insightBullets} />
+
+      <SectionCard>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-baseline gap-2">
+            <p className="text-[15px] font-medium text-foreground">今日餐食</p>
+            {showMealsKcalTotal ? (
+              <span className="shrink-0 text-[11px] font-medium tabular-nums text-primary">
+                共 {Math.round(mealsKcalTotal)} kcal
+              </span>
+            ) : null}
+          </div>
+          <Link
+            href={`/log?date=${encodeURIComponent(todayIsoDate)}&tab=food`}
+            aria-label="新增餐點紀錄"
+            className={cn(HEADER_ACTION_ICON_CLASS)}>
+            <PlusCircle className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden />
+          </Link>
+        </div>
+        <ul className="mt-3 space-y-1">
+          {meals.map((m) => (
+            <li key={m.key}>
+              <Link
+                href={m.recordHref}
+                className="flex items-start gap-2 rounded-lg px-1 py-1.5 transition-colors hover:bg-muted/60">
+                <MealStatusDot
+                  mealKey={m.key}
+                  isRecorded={m.kcal != null}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium text-foreground">
+                    {m.label}
+                  </p>
+                  {m.detailLine ? (
+                    <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
+                      {m.detailLine}
+                    </p>
+                  ) : null}
+                </div>
+                {m.kcal != null ? (
+                  <span className="shrink-0 tabular-nums text-[13px] font-medium text-foreground">
+                    {m.kcal}{" "}
+                    <span className="font-normal text-muted-foreground">
+                      kcal
+                    </span>
+                  </span>
+                ) : null}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </SectionCard>
+
+      <WeeklyTrendCard weeklyWeight={weeklyWeight} weeklyKcal={weeklyKcal} />
+
       {milestoneChips.length > 0 ? (
         <SectionCard>
           <p className="text-[15px] font-medium text-foreground">里程碑</p>
@@ -618,55 +684,6 @@ export function DashboardHome({
           </div>
         </SectionCard>
       ) : null}
-
-      <SectionCard>
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-[15px] font-medium text-foreground">今日餐食</p>
-          <Link
-            href="/log"
-            className="inline-flex items-center gap-0.5 rounded-[10px] border-[0.5px] border-border bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:bg-muted">
-            + 新增
-            <ArrowUpRight className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
-          </Link>
-        </div>
-        {meals.length === 0 ? (
-          <p className="mt-3 text-[13px] text-muted-foreground">
-            今日尚無餐點紀錄
-          </p>
-        ) : (
-          <ul className="mt-3 space-y-3">
-            {meals.map((m) => (
-              <li key={m.key}>
-                <div className="flex items-start gap-2">
-                  <MealStatusDot mealKey={m.key} isRecorded />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-medium text-foreground">
-                      {m.label}
-                    </p>
-                    {m.detailLine ? (
-                      <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
-                        {m.detailLine}
-                      </p>
-                    ) : null}
-                  </div>
-                  {m.kcal != null ? (
-                    <span className="shrink-0 tabular-nums text-[13px] font-medium text-foreground">
-                      {m.kcal}{" "}
-                      <span className="font-normal text-muted-foreground">
-                        kcal
-                      </span>
-                    </span>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </SectionCard>
-
-      <WeeklyTrendCard weeklyWeight={weeklyWeight} weeklyKcal={weeklyKcal} />
-
-      <InsightCard bullets={insightBullets} />
 
       {recommendProducts.length > 0 ? (
         <RecommendationRail products={recommendProducts} />
