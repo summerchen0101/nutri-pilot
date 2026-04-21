@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { FiTrash2 } from 'react-icons/fi';
 
 import {
@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { KCAL_PER_MINUTE } from '@/lib/activity/kcal-per-minute';
 import { cn } from '@/lib/utils/cn';
 
 export type ActivityLogRow = {
@@ -55,6 +56,16 @@ export function ActivityLogSection({
   const [minutes, setMinutes] = useState('30');
   const [calEst, setCalEst] = useState('');
   const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    const m = Number(minutes.replace(',', '.'));
+    if (!Number.isFinite(m) || m < 1 || m > 1440) {
+      setCalEst('');
+      return;
+    }
+    const rate = KCAL_PER_MINUTE[activityType];
+    setCalEst(String(Math.round(rate * m)));
+  }, [activityType, minutes]);
 
   const dayTotalMin = rows.reduce((s, r) => s + r.duration_minutes, 0);
 
@@ -102,7 +113,7 @@ export function ActivityLogSection({
         <CardHeader className="pb-2">
           <CardTitle>新增運動</CardTitle>
           <CardDescription>
-            手動記錄運動類型與時間；可填估計消耗熱量（選填）。
+            手動記錄運動類型與時間；估計消耗會依類型與分鐘自動帶入（可修改，仍非醫療建議）。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -153,6 +164,9 @@ export function ActivityLogSection({
                 onChange={(e) => setCalEst(e.target.value)}
                 placeholder="—"
               />
+              <p className="mt-1 text-[10px] font-normal leading-snug text-muted-foreground">
+                此類型約 {KCAL_PER_MINUTE[activityType]} kcal／分（估計值）
+              </p>
             </div>
           </div>
           <div>

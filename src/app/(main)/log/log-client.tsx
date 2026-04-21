@@ -9,7 +9,13 @@ import {
   useState,
   type ChangeEvent,
 } from 'react';
-import { FiCamera, FiTrash2 } from 'react-icons/fi';
+import {
+  FiActivity,
+  FiCamera,
+  FiCoffee,
+  FiTag,
+  FiTrash2,
+} from 'react-icons/fi';
 
 import {
   AddFoodManualAiPanel,
@@ -321,27 +327,35 @@ function LogSectionTabs({
     router.replace(`/log?${p.toString()}`);
   }
 
-  const tabBtn = (tab: LogSectionTab, label: string) => (
+  const tabBtn = (
+    tab: LogSectionTab,
+    label: string,
+    Icon: typeof FiCoffee,
+  ) => (
     <button
       key={tab}
       type="button"
       onClick={() => go(tab)}
       className={cn(
-        'min-h-[40px] flex-1 rounded-[10px] px-2 py-2 text-[13px] font-medium transition-colors',
+        'flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[10px] px-2 py-2 text-[13px] font-medium transition-colors',
         active === tab
-          ? 'bg-primary text-primary-foreground'
-          : 'border-[0.5px] border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground',
+          ? 'bg-primary-light text-primary-foreground'
+          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
       )}
     >
-      {label}
+      <Icon className="h-4 w-4 shrink-0" aria-hidden />
+      <span>{label}</span>
     </button>
   );
 
   return (
-    <div className="flex gap-2">
-      {tabBtn('food', '飲食')}
-      {tabBtn('activity', '運動')}
-      {tabBtn('label', '標籤')}
+    <div
+      className="flex gap-1 rounded-xl border-[0.5px] border-border bg-card p-1"
+      role="tablist"
+    >
+      {tabBtn('food', '飲食', FiCoffee)}
+      {tabBtn('activity', '運動', FiActivity)}
+      {tabBtn('label', '標籤', FiTag)}
     </div>
   );
 }

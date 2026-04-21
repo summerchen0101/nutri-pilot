@@ -70,7 +70,7 @@ export function WeeklyReportShare(props: {
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-[11px] font-medium text-[#378ADD]">分享週報卡</p>
+        <p className="text-[11px] font-medium text-[#EF9F27]">分享週報卡</p>
         <p className="mt-1 text-[11px] text-muted-foreground">
           將下方卡片存成圖片分享給親友（非醫療建議）。
         </p>

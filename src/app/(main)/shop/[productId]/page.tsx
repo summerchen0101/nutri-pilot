@@ -249,7 +249,7 @@ export default async function ShopProductPage({ params }: PageProps) {
       {(sameBrand ?? []).length > 0 ?
         <section>
           <p className="text-[15px] font-medium text-foreground">同品牌推薦</p>
-          <div className="mt-3 flex gap-3 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+          <div className="hide-scrollbar mt-3 flex gap-3 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
             {(sameBrand ?? []).map((sp) => {
               const variants = sp.variants as { price: number }[] | null;
               const minP = variants?.length ?

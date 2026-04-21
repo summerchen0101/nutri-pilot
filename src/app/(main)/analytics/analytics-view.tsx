@@ -351,9 +351,9 @@ export function AnalyticsView({
         </div>
       </SectionCard>
 
-      <section className="space-y-4 rounded-xl border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] p-3.5">
+      <section className="space-y-4 rounded-xl border-[0.5px] border-[#F0C896] bg-[#FFF4E8] p-3.5">
         <div>
-          <p className="text-[11px] font-medium text-[#378ADD]">AI 週報洞察</p>
+          <p className="text-[11px] font-medium text-[#EF9F27]">AI 週報洞察</p>
           {!weeklyInsight?.items?.length ? (
             <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
               尚無週報。系統會在週日自動產生洞察摘要；若有新報告會顯示於此。
@@ -373,7 +373,7 @@ export function AnalyticsView({
                         "mt-1 h-1.5 w-1.5 shrink-0 rounded-full",
                         row.type === "positive" && "bg-[#4C956C]",
                         row.type === "warning" && "bg-[#EF9F27]",
-                        row.type === "info" && "bg-[#378ADD]",
+                        row.type === "info" && "bg-[#EF9F27]",
                       )}
                       aria-hidden
                     />

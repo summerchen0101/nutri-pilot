@@ -28,8 +28,8 @@ export function DietPreferencesCard({
       <div className="mb-1 text-[15px] font-medium text-foreground">飲食偏好</div>
       <SettingsRow label="飲食方式" value={dietMethodText} onClick={onEditMethod} />
       <SettingsRow label="忌食 / 過敏" value={allergenText} onClick={onEditAllergens} />
-      <div className="flex items-center justify-between gap-3 border-b-0 py-3">
-        <div className="min-w-0 flex-1">
+      <div className="flex items-start justify-between gap-3 border-b-0 py-3">
+        <div className="min-w-0 flex-1 pr-1">
           <p className="text-[13px] text-neutral-text-tertiary">
             糖量／血糖相關提醒
           </p>
@@ -52,7 +52,7 @@ export function DietPreferencesCard({
           <span
             className={[
               'absolute top-0.5 h-6 w-6 rounded-full bg-card shadow transition-transform',
-              tracksGlycemicConcern ? 'translate-x-5' : 'translate-x-0.5',
+              tracksGlycemicConcern ? 'translate-x-[18px]' : 'translate-x-0.5',
             ].join(' ')}
           />
         </button>

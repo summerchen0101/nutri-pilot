@@ -345,7 +345,7 @@ function RecommendationRail({
           看更多
         </Link>
       </div>
-      <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+      <div className="hide-scrollbar mt-3 flex gap-2.5 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
         {products.map((product) => (
           <Link
             key={product.id}
@@ -395,16 +395,16 @@ function PromoBanner({
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) return null;
   return (
-    <section className="rounded-xl border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] p-3.5">
+    <section className="rounded-xl border-[0.5px] border-[#F0C896] bg-[#FFF4E8] p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-[#2D6B4A]">{title}</p>
+          <p className="text-[13px] font-medium text-[#C2410C]">{title}</p>
           <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
             {description}
           </p>
           <Link
             href={href}
-            className="mt-2 inline-flex rounded-full border-[0.5px] border-[#4C956C] bg-[#E8F5EE] px-3 py-1 text-[11px] font-medium text-[#2D6B4A]">
+            className="mt-2 inline-flex rounded-full border-[0.5px] border-[#EF9F27] bg-[#FFFBF5] px-3 py-1 text-[11px] font-medium text-[#C2410C]">
             {ctaLabel}
           </Link>
         </div>
@@ -438,7 +438,7 @@ function WeeklyPopularBrandsRail({
           看更多
         </Link>
       </div>
-      <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+      <div className="hide-scrollbar mt-3 flex gap-2.5 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
         {brands.map((brand) => (
           <Link
             key={brand.id}

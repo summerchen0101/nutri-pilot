@@ -239,7 +239,7 @@ export function ShopHomeClient({
 
       <section>
         <p className="text-[15px] font-medium text-foreground">精選品牌</p>
-        <div className="mt-3 flex gap-3 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+        <div className="hide-scrollbar mt-3 flex gap-3 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
           {brands
             .filter((b) => b.productCount > 0)
             .map((b) => (
