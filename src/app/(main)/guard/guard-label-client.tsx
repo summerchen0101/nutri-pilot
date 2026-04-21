@@ -6,6 +6,11 @@ import { FiCamera } from 'react-icons/fi';
 import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
 import { invokeLabelGuardRequestFromBrowser } from '@/lib/food/invoke-label-guard-request';
 import {
+  allergenDetailSheetBody,
+  resolveAlertKeywordExplanation,
+  resolveRiskItemExplanation,
+} from '@/lib/food/label-guard-lookups';
+import {
   audienceSegmentLabelZh,
   parseLabelGuardReportJson,
   tierLabelZh,
@@ -14,6 +19,7 @@ import {
   type RiskTier,
 } from '@/lib/food/label-guard-report';
 import { createClient } from '@/lib/supabase/client';
+import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import type { Json } from '@/types/supabase';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,14 +60,12 @@ function applyGuardJobUpdate(
 function tierBadgeClass(tier: RiskTier): string {
   switch (tier) {
     case 'high':
-      return 'bg-destructive/15 text-destructive';
     case 'medium':
-      return 'bg-amber-500/15 text-amber-800 dark:text-amber-200';
     case 'watch':
-      return 'bg-orange-500/12 text-orange-800 dark:text-orange-200';
+      return 'bg-[#FFF4E5] text-[#C57A12]';
     case 'low':
     default:
-      return 'bg-muted text-muted-foreground';
+      return 'bg-[#E8F5EE] text-[#2D6B4A]';
   }
 }
 
@@ -75,6 +79,9 @@ export function GuardLabelClient() {
   const [report, setReport] = useState<LabelGuardReport | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailTitle, setDetailTitle] = useState('');
+  const [detailBody, setDetailBody] = useState('');
 
   const applyUpdate = useCallback(
     (row: {
@@ -284,7 +291,14 @@ export function GuardLabelClient() {
         jobStatus !== 'ready' &&
         jobStatus !== 'error'));
 
+  function openDetailSheet(title: string, body: string) {
+    setDetailTitle(title);
+    setDetailBody(body);
+    setDetailOpen(true);
+  }
+
   return (
+    <>
     <Card className="min-w-0 overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle>食品標示智慧分析</CardTitle>
@@ -378,11 +392,17 @@ export function GuardLabelClient() {
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {report.alert_keywords.map((kw, i) => (
-                    <span
+                    <button
                       key={`${kw}-${i}`}
-                      className="rounded-full bg-card px-2.5 py-1 text-[12px] text-foreground ring-1 ring-border">
+                      type="button"
+                      className="rounded-full bg-[#FFF4E5] px-2.5 py-1 text-left text-[12px] text-[#C57A12] ring-1 ring-[#EF9F27]/45 transition-colors active:bg-[#FFF8ED]"
+                      aria-label={`${kw} 說明`}
+                      onClick={() => {
+                        const { title, body } = resolveAlertKeywordExplanation(kw);
+                        openDetailSheet(title, body);
+                      }}>
                       {kw}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -415,24 +435,33 @@ export function GuardLabelClient() {
                 </p>
                 <ul className="mt-2 space-y-2">
                   {report.risk_items.map((r, i) => (
-                    <li
-                      key={`${r.name}-${i}`}
-                      className="rounded-lg border-[0.5px] border-border bg-card px-2.5 py-2 text-[13px]">
-                      <span className="font-medium text-foreground">
-                        {r.name}
-                      </span>
-                      <span
-                        className={cn(
-                          'ml-2 rounded px-1 text-[10px]',
-                          tierBadgeClass(r.tier),
-                        )}>
-                        {tierLabelZh(r.tier)}
-                      </span>
-                      {r.plain_language ? (
-                        <p className="mt-1 text-[12px] leading-snug text-muted-foreground">
-                          {r.plain_language}
-                        </p>
-                      ) : null}
+                    <li key={`${r.name}-${i}`}>
+                      <button
+                        type="button"
+                        className="w-full rounded-lg border-[0.5px] border-border bg-card px-2.5 py-2 text-left text-[13px] transition-colors active:bg-secondary"
+                        onClick={() => {
+                          const { title, body } = resolveRiskItemExplanation(
+                            r.name,
+                            r.plain_language,
+                          );
+                          openDetailSheet(title, body);
+                        }}>
+                        <span className="font-medium text-foreground">
+                          {r.name}
+                        </span>
+                        <span
+                          className={cn(
+                            'ml-2 rounded px-1 text-[10px] font-medium',
+                            tierBadgeClass(r.tier),
+                          )}>
+                          {tierLabelZh(r.tier)}
+                        </span>
+                        {r.plain_language ? (
+                          <p className="mt-1 text-[12px] leading-snug text-muted-foreground">
+                            {r.plain_language}
+                          </p>
+                        ) : null}
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -443,32 +472,42 @@ export function GuardLabelClient() {
               <p className="text-[11px] font-medium text-muted-foreground">
                 過敏原標示（14 類矩陣）
               </p>
-              <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
-                {report.allergens_tw14.map((row) => (
-                  <li
-                    key={row.category_key}
-                    className={cn(
-                      'rounded-md border-[0.5px] px-2 py-1.5 text-[12px]',
-                      row.detected
-                        ? 'border-destructive/40 bg-destructive/10 text-destructive'
-                        : 'border-border bg-card text-muted-foreground',
-                    )}>
-                    <span className="font-medium">
-                      {TW_ALLERGEN_LABEL_ZH[row.category_key]}
-                    </span>
-                    {row.detected ? (
-                      <span className="ml-1">· 疑似含有</span>
-                    ) : (
-                      <span className="ml-1">· 未標示／未見</span>
-                    )}
-                    {row.detail ? (
-                      <span className="mt-0.5 block text-[11px] opacity-90">
-                        {row.detail}
-                      </span>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
+              {report.allergens_tw14.some((row) => row.detected) ? (
+                <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                  {report.allergens_tw14
+                    .filter((row) => row.detected)
+                    .map((row) => (
+                      <li key={row.category_key}>
+                        <button
+                          type="button"
+                          className="w-full rounded-md border-[0.5px] border-[#EF9F27]/45 bg-[#FFF4E5] px-2 py-1.5 text-left text-[12px] text-[#B45309] transition-colors active:bg-[#FFF8ED]"
+                          onClick={() => {
+                            openDetailSheet(
+                              TW_ALLERGEN_LABEL_ZH[row.category_key],
+                              allergenDetailSheetBody(
+                                row.category_key,
+                                row.detail,
+                              ),
+                            );
+                          }}>
+                          <span className="font-medium">
+                            {TW_ALLERGEN_LABEL_ZH[row.category_key]}
+                          </span>
+                          <span className="ml-1">· 疑似含有</span>
+                          {row.detail ? (
+                            <span className="mt-0.5 block text-[11px] opacity-95">
+                              {row.detail}
+                            </span>
+                          ) : null}
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
+                  本次未偵測到須標示之過敏原類別（依影像可讀文字推估，非完整標示認證）。
+                </p>
+              )}
             </div>
 
             {report.summary_note ? (
@@ -494,5 +533,15 @@ export function GuardLabelClient() {
         ) : null}
       </CardContent>
     </Card>
+
+    <BottomSheetShell
+      open={detailOpen}
+      title={detailTitle}
+      onClose={() => setDetailOpen(false)}>
+      <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-foreground">
+        {detailBody}
+      </p>
+    </BottomSheetShell>
+    </>
   );
 }
