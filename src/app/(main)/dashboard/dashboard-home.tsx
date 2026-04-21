@@ -206,19 +206,19 @@ function WeeklyTrendCard({
 
 function InsightCard({ bullets }: { bullets: string[] }) {
   return (
-    <SectionCard>
-      <p className="text-[15px] font-medium text-foreground">今日建議</p>
+    <section className="rounded-xl border-[0.5px] border-primary/20 bg-primary-light p-4">
+      <p className="text-[15px] font-medium text-primary">今日建議</p>
       <ul className="mt-3 space-y-2">
         {bullets.map((text, idx) => (
           <li key={`${idx}-${text.slice(0, 8)}`} className="flex gap-2">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#4C956C]" />
-            <span className="text-[13px] leading-relaxed text-foreground">
+            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+            <span className="text-[13px] leading-relaxed text-primary-foreground">
               {text}
             </span>
           </li>
         ))}
       </ul>
-    </SectionCard>
+    </section>
   );
 }
 
@@ -288,29 +288,18 @@ function PromoBanner({
   ctaLabel: string;
   href: string;
 }) {
-  const [dismissed, setDismissed] = useState(false);
-  if (dismissed) return null;
   return (
-    <section className="rounded-xl border-[0.5px] border-[#F0C896] bg-[#FFF4E8] p-3.5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[13px] font-medium text-[#C2410C]">{title}</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-          <Link
-            href={href}
-            className="mt-2 inline-flex rounded-full border-[0.5px] border-[#EF9F27] bg-[#FFFBF5] px-3 py-1 text-[11px] font-medium text-[#C2410C]">
-            {ctaLabel}
-          </Link>
-        </div>
-        <button
-          type="button"
-          onClick={() => setDismissed(true)}
-          className="text-[11px] text-muted-foreground hover:text-foreground"
-          aria-label="關閉橫幅">
-          關閉
-        </button>
+    <section className="rounded-xl border-[0.5px] border-primary/20 bg-primary-light p-4">
+      <div className="min-w-0">
+        <p className="text-[15px] font-medium text-primary">{title}</p>
+        <p className="mt-1 text-[13px] leading-relaxed text-primary-foreground">
+          {description}
+        </p>
+        <Link
+          href={href}
+          className="mt-2 inline-flex rounded-full border-[0.5px] border-primary bg-background px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary-light">
+          {ctaLabel}
+        </Link>
       </div>
     </section>
   );
