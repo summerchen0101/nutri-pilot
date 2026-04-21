@@ -34,7 +34,7 @@ export default async function DashboardPage() {
     { data: latestVital },
     { data: goal },
     { data: foodRows },
-    { data: logDateRows },
+    { data: streakFoodRows },
     { data: weekVitalRows },
     { data: weekFoodRows },
     { data: productScores },
@@ -78,7 +78,14 @@ export default async function DashboardPage() {
       .eq('date', today),
     supabase
       .from('food_logs')
-      .select('date')
+      .select(
+        `
+      date,
+      food_log_items (
+        calories
+      )
+    `,
+      )
       .eq('user_id', user.id)
       .gte('date', streakWindowStart)
       .lte('date', today),
@@ -177,11 +184,11 @@ export default async function DashboardPage() {
     profile.diet_method ??
     '目前飲食設定';
 
-  const loggedDates = new Set(
-    (logDateRows ?? []).map((r) => r.date).filter(Boolean),
-  );
-
-  const streakDays = computeStreak(today, loggedDates);
+  const kcalByDate = aggregateKcalByDate(streakFoodRows ?? []);
+  const streakDays =
+    targetKcal != null && targetKcal > 0 ?
+      computeGoalMetStreak(today, targetKcal, kcalByDate)
+    : 0;
 
   const homeProps: DashboardHomeProps = {
     dateLabel,
@@ -405,14 +412,38 @@ function sumNutrientsFromLogs(
   return { kcal, carb, protein, fat };
 }
 
-function computeStreak(
+function aggregateKcalByDate(
+  rows: {
+    date: string | null;
+    food_log_items: { calories: number | string }[] | null;
+  }[],
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    const d = row.date;
+    if (!d) continue;
+    let sum = map.get(d) ?? 0;
+    for (const it of row.food_log_items ?? []) {
+      sum += Number(it.calories) || 0;
+    }
+    map.set(d, sum);
+  }
+  return new Map(
+    Array.from(map.entries(), ([d, v]) => [d, Math.round(v)] as const),
+  );
+}
+
+function computeGoalMetStreak(
   today: string,
-  loggedDates: Set<string>,
+  targetKcal: number,
+  kcalByDate: Map<string, number>,
 ): number {
   let streak = 0;
   let cursor = today;
   for (;;) {
-    if (!loggedDates.has(cursor)) break;
+    if (!kcalByDate.has(cursor)) break;
+    const kcal = kcalByDate.get(cursor)!;
+    if (kcal > targetKcal) break;
     streak++;
     cursor = addCalendarDaysISO(cursor, -1);
   }

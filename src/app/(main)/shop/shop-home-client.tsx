@@ -183,7 +183,7 @@ export function ShopHomeClient({
         <p className="text-[13px] font-medium text-foreground">
           推薦商品（依個人化分數）
         </p>
-        <div className="mt-3 grid grid-cols-2 gap-3">
+        <div className="mt-3 grid grid-cols-2 gap-3 items-stretch">
           {filtered.map((p) => {
             const minPrice = Math.min(
               ...p.variants.map((v) => Number(v.price)),
@@ -192,9 +192,9 @@ export function ShopHomeClient({
               <Link
                 key={p.id}
                 href={`/shop/${p.id}`}
-                className="overflow-hidden rounded-xl border-[0.5px] border-border bg-card transition-colors hover:border-[#4C956C]/50"
+                className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-border bg-card transition-colors hover:border-[#4C956C]/50"
               >
-                <div className="relative aspect-square bg-muted">
+                <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
                   {p.image_url ?
                     <Image
                       src={p.image_url}
@@ -211,7 +211,7 @@ export function ShopHomeClient({
                     </span>
                   : null}
                 </div>
-                <div className="p-3">
+                <div className="flex min-h-0 flex-1 flex-col p-3">
                   <p className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground">
                     {p.name}
                   </p>

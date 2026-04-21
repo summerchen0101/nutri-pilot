@@ -259,9 +259,9 @@ export default async function ShopProductPage({ params }: PageProps) {
                 <Link
                   key={sp.id}
                   href={`/shop/${sp.id}`}
-                  className="w-36 shrink-0 overflow-hidden rounded-xl border-[0.5px] border-border bg-card"
+                  className="flex w-36 shrink-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-border bg-card"
                 >
-                  <div className="relative h-28 w-full bg-muted">
+                  <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
                     {sp.image_url ?
                       <Image
                         src={sp.image_url}
@@ -273,7 +273,7 @@ export default async function ShopProductPage({ params }: PageProps) {
                       />
                     : null}
                   </div>
-                  <div className="p-2">
+                  <div className="flex flex-1 flex-col p-2">
                     <p className="line-clamp-2 text-[11px] font-medium leading-snug text-foreground">
                       {sp.name as string}
                     </p>
