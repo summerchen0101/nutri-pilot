@@ -5,6 +5,7 @@ import { FiShoppingCart } from "react-icons/fi";
 import type { ShopProductRow } from './shop-home-client';
 import { ShopHomeClient } from './shop-home-client';
 import { ensureShopScores } from "@/app/(main)/shop/actions";
+import { HEADER_ACTION_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   DIET_METHOD_OPTIONS,
@@ -106,7 +107,7 @@ export default async function ShopPage() {
           <Link
             href="/shop/cart"
             aria-label="購物車"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border-[1.5px] border-primary text-primary transition-colors hover:bg-primary-light"
+            className={HEADER_ACTION_ICON_CLASS}
           >
             <FiShoppingCart className="h-[18px] w-[18px]" aria-hidden />
           </Link>

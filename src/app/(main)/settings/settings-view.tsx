@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
+import { FiLogOut } from 'react-icons/fi';
 
 import { AccountManagementCard } from '@/app/(main)/settings/_components/account-management-card';
 import { BodyMetricsCard } from '@/app/(main)/settings/_components/body-metrics-card';
@@ -24,7 +25,9 @@ import {
   formatDate,
   goalTypeLabel,
 } from '@/app/(main)/settings/_lib/formatters';
+import { HEADER_ACTION_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
 import { PageHeader } from '@/components/layout/page-header';
+import { cn } from '@/lib/utils/cn';
 import { createClient } from '@/lib/supabase/client';
 import { ALLERGEN_OPTIONS, DIET_METHOD_OPTIONS, GOAL_TYPE_OPTIONS } from '@/lib/onboarding/constants';
 
@@ -96,6 +99,7 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
   const [errBody, setErrBody] = useState<string | null>(null);
   const [errGoal, setErrGoal] = useState<string | null>(null);
   const [errDiet, setErrDiet] = useState<string | null>(null);
+  const [signOutPending, setSignOutPending] = useState(false);
 
   const bmiValue = useMemo(() => {
     const h = Number.parseFloat(heightCm.replace(',', '.'));
@@ -125,6 +129,7 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
   }
 
   function signOut() {
+    setSignOutPending(true);
     startTransition(async () => {
       const supabase = createClient();
       await supabase.auth.signOut();
@@ -228,7 +233,23 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
 
   return (
     <div className="space-y-3 pb-4">
-      <PageHeader title="設定" description="管理個人資料、目標與飲食偏好。" />
+      <PageHeader
+        title="設定"
+        description="管理個人資料、目標與飲食偏好。"
+        action={
+          <button
+            type="button"
+            aria-label="登出"
+            disabled={signOutPending}
+            onClick={() => signOut()}
+            className={cn(
+              HEADER_ACTION_ICON_CLASS,
+              'disabled:pointer-events-none disabled:opacity-50',
+            )}>
+            <FiLogOut className="h-[18px] w-[18px]" aria-hidden />
+          </button>
+        }
+      />
 
       <ProfileSummaryCard
         name={name}

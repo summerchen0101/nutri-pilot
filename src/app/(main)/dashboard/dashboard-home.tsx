@@ -4,10 +4,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { FiActivity, FiAward, FiBarChart2, FiCoffee } from "react-icons/fi";
+import {
+  FiActivity,
+  FiAward,
+  FiBarChart2,
+  FiBell,
+  FiCoffee,
+  FiHeadphones,
+} from "react-icons/fi";
 import { createPortal } from "react-dom";
 
 import { logWeightAction } from "@/app/(main)/dashboard/actions";
+import { HEADER_ACTION_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +70,7 @@ export type DashboardHomeProps = {
     slug: string;
     logoUrl: string | null;
   }[];
+  hasUnreadAnnouncements: boolean;
 };
 
 function macroTargetsFromKcal(kcal: number): {
@@ -475,6 +484,7 @@ export function DashboardHome({
   recommendProducts,
   promoBanner,
   popularBrands,
+  hasUnreadAnnouncements,
 }: DashboardHomeProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -539,7 +549,32 @@ export function DashboardHome({
 
   return (
     <div className="space-y-3">
-      <PageHeader title="總覽" spacing="compact" />
+      <PageHeader
+        title="總覽"
+        spacing="compact"
+        action={
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/announcements"
+              aria-label="公告"
+              className={cn("relative", HEADER_ACTION_ICON_CLASS)}>
+              <FiBell className="h-[18px] w-[18px]" aria-hidden />
+              {hasUnreadAnnouncements ? (
+                <span
+                  className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive"
+                  aria-hidden
+                />
+              ) : null}
+            </Link>
+            <Link
+              href="/support"
+              aria-label="客服"
+              className={HEADER_ACTION_ICON_CLASS}>
+              <FiHeadphones className="h-[18px] w-[18px]" aria-hidden />
+            </Link>
+          </div>
+        }
+      />
 
       <section
         className={cn(

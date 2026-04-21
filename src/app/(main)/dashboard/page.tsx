@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 
 import {
@@ -138,6 +139,11 @@ export default async function DashboardPage() {
 
   if (!profile) redirect('/onboarding');
 
+  const hasUnreadAnnouncements = await hasUnreadAnnouncementsForUser(
+    supabase,
+    user.id,
+  );
+
   const latestWeightKg =
     latestVital?.weight_kg != null
       ? Number(latestVital.weight_kg)
@@ -222,6 +228,7 @@ export default async function DashboardPage() {
       slug: row.slug as string,
       logoUrl: row.logo_url as string | null,
     })),
+    hasUnreadAnnouncements,
   };
 
   return <DashboardHome {...homeProps} />;
@@ -516,4 +523,32 @@ function pickRandomBrands<
     shuffled[swapIdx] = current;
   }
   return shuffled.slice(0, maxCount);
+}
+
+async function hasUnreadAnnouncementsForUser(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  const nowIso = new Date().toISOString();
+  const { data: visible, error: visibleError } = await supabase
+    .from('announcements')
+    .select('id')
+    .eq('is_active', true)
+    .lte('published_at', nowIso);
+
+  if (visibleError || !visible?.length) return false;
+
+  const ids = visible.map((row) => row.id as string);
+  const { data: reads, error: readsError } = await supabase
+    .from('user_announcement_reads')
+    .select('announcement_id')
+    .eq('user_id', userId)
+    .in('announcement_id', ids);
+
+  if (readsError) return false;
+
+  const readSet = new Set(
+    (reads ?? []).map((row) => row.announcement_id as string),
+  );
+  return ids.some((id) => !readSet.has(id));
 }

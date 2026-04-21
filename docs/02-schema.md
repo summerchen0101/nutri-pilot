@@ -328,6 +328,30 @@ CREATE TABLE user_product_scores (
 
 ---
 
+## 公告與已讀（App 鈴鐺／公告頁）
+
+後台透過 Supabase Studio（service role）維護 `announcements`；使用者端僅能 **SELECT** 符合 `is_active AND published_at <= now()` 的列。
+
+```sql
+CREATE TABLE announcements (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title         TEXT NOT NULL,
+  body          TEXT NOT NULL,
+  published_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE user_announcement_reads (
+  user_id          UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  announcement_id  UUID NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
+  read_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, announcement_id)
+);
+```
+
+---
+
 ## 觸發器與自動化
 
 ```sql
