@@ -62,7 +62,7 @@ export default async function GuardRecordsPage() {
         <PageHeader
           leading={<HeaderBackButton />}
           title="標籤紀錄"
-          description="查看你儲存過的標籤守衛分析結果。"
+          description="查看你儲存過的食品守衛分析結果。"
           spacing="compact"
         />
         {quotaLine}
@@ -82,7 +82,7 @@ export default async function GuardRecordsPage() {
       <PageHeader
         leading={<HeaderBackButton />}
         title="標籤紀錄"
-        description="查看你儲存過的標籤守衛分析結果。"
+        description="查看你儲存過的食品守衛分析結果。"
         spacing="compact"
       />
       {quotaLine}
