@@ -58,7 +58,8 @@ export type DashboardHomeProps = {
   userName: string | null;
   latestWeightKg: number | null;
   latestWeightDate: string | null;
-  heightCm: number;
+  /** 最近兩筆 vital 體重差（kg）；僅在至少兩筆皆有體重時有值 */
+  weightDeltaKg: number | null;
   profileBmi: number | null;
   streakDays: number;
   meals: DashboardMealRow[];
@@ -360,7 +361,7 @@ export function DashboardHome({
   userName,
   latestWeightKg,
   latestWeightDate,
-  heightCm,
+  weightDeltaKg,
   profileBmi,
   streakDays,
   meals,
@@ -506,9 +507,25 @@ export function DashboardHome({
               尚無體重紀錄
             </p>
           )}
-          {profileBmi != null ? (
-            <p className="mt-1 text-[11px] text-primary">
-              BMI {profileBmi}（身高 {heightCm} cm）
+          {weightDeltaKg != null || profileBmi != null ? (
+            <p className="mt-1 text-[11px] leading-snug">
+              {weightDeltaKg != null ? (
+                <span
+                  className={cn(
+                    "tabular-nums",
+                    weightDeltaKg > 0 && "text-[#EF9F27]",
+                    weightDeltaKg < 0 && "text-primary",
+                    weightDeltaKg === 0 && "text-muted-foreground",
+                  )}>
+                  {weightDeltaKg > 0 ? "+" : ""}
+                  {weightDeltaKg} kg
+                </span>
+              ) : null}
+              {weightDeltaKg != null && profileBmi != null ? (
+                <span className="text-muted-foreground"> · BMI {profileBmi}</span>
+              ) : profileBmi != null ? (
+                <span className="text-muted-foreground">BMI {profileBmi}</span>
+              ) : null}
             </p>
           ) : null}
         </button>

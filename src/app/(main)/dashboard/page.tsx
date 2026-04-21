@@ -12,6 +12,7 @@ import {
 import { addCalendarDaysISO, todayLocalISODate } from '@/lib/onboarding/date';
 import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
 import { DIET_METHOD_OPTIONS } from '@/lib/onboarding/constants';
+import { round1 } from '@/lib/food/nutrition';
 import { createClient } from '@/lib/supabase/server';
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
@@ -40,7 +41,7 @@ export default async function DashboardPage() {
 
   const [
     { data: profile },
-    { data: latestVital },
+    { data: latestVitalRows },
     { data: goal },
     { data: foodRows },
     { data: streakFoodRows },
@@ -62,8 +63,7 @@ export default async function DashboardPage() {
       .select('weight_kg, date')
       .eq('user_id', user.id)
       .order('date', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+      .limit(2),
     supabase
       .from('user_goals')
       .select('daily_cal_target')
@@ -187,11 +187,26 @@ export default async function DashboardPage() {
     user.id,
   );
 
+  const vitalRowsDesc = latestVitalRows ?? [];
+  const latestVital = vitalRowsDesc[0];
   const latestWeightKg =
     latestVital?.weight_kg != null
       ? Number(latestVital.weight_kg)
       : Number(profile.weight_kg);
   const latestWeightDate = latestVital?.date ?? null;
+
+  let weightDeltaKg: number | null = null;
+  if (vitalRowsDesc.length >= 2) {
+    const w0 = vitalRowsDesc[0]?.weight_kg;
+    const w1 = vitalRowsDesc[1]?.weight_kg;
+    if (w0 != null && w1 != null) {
+      const a = Number(w0);
+      const b = Number(w1);
+      if (Number.isFinite(a) && Number.isFinite(b)) {
+        weightDeltaKg = round1(a - b);
+      }
+    }
+  }
 
   const dateLabel = new Intl.DateTimeFormat('zh-Hant', {
     weekday: 'long',
@@ -258,7 +273,7 @@ export default async function DashboardPage() {
     userName: normalizeDashboardUserName(profile.name),
     latestWeightKg: Number.isFinite(latestWeightKg) ? latestWeightKg : null,
     latestWeightDate,
-    heightCm: Number(profile.height_cm),
+    weightDeltaKg,
     profileBmi: profile.bmi != null ? Number(profile.bmi) : null,
     streakDays,
     todayIsoDate: today,
