@@ -39,6 +39,8 @@ export default async function DashboardPage() {
     { data: weekFoodRows },
     { data: productScores },
     { data: productCatalog },
+    { data: brandProductRows },
+    { data: brandRows },
   ] = await Promise.all([
     supabase
       .from('user_profiles')
@@ -120,6 +122,11 @@ export default async function DashboardPage() {
     `,
       )
       .eq('is_active', true),
+    supabase.from('products').select('brand_id').eq('is_active', true),
+    supabase
+      .from('brands')
+      .select('id, name, slug, logo_url')
+      .eq('is_active', true),
   ]);
 
   if (!profile) redirect('/onboarding');
@@ -148,6 +155,16 @@ export default async function DashboardPage() {
     scores: productScores ?? [],
     dietMethod: profile.diet_method ?? null,
   });
+  const activeBrandCounts = new Map<string, number>();
+  for (const row of brandProductRows ?? []) {
+    const brandId = row.brand_id as string | null;
+    if (!brandId) continue;
+    activeBrandCounts.set(brandId, (activeBrandCounts.get(brandId) ?? 0) + 1);
+  }
+  const popularBrands = pickRandomBrands(
+    (brandRows ?? []).filter((row) => activeBrandCounts.has(row.id as string)),
+    8,
+  );
   const insightBullets = buildInsightBullets({
     todayKcal: nutrientTotals.kcal,
     targetKcal,
@@ -192,6 +209,12 @@ export default async function DashboardPage() {
       ctaLabel: '前往商城',
       href: '/shop',
     },
+    popularBrands: popularBrands.map((row) => ({
+      id: row.id as string,
+      name: row.name as string,
+      slug: row.slug as string,
+      logoUrl: row.logo_url as string | null,
+    })),
   };
 
   return <DashboardHome {...homeProps} />;
@@ -446,4 +469,20 @@ function buildMealRows(
   }
 
   return rows;
+}
+
+function pickRandomBrands<
+  T extends {
+    id: string;
+  },
+>(rows: T[], maxCount: number): T[] {
+  if (rows.length <= 1) return rows.slice(0, maxCount);
+  const shuffled = [...rows];
+  for (let idx = shuffled.length - 1; idx > 0; idx--) {
+    const swapIdx = Math.floor(Math.random() * (idx + 1));
+    const current = shuffled[idx];
+    shuffled[idx] = shuffled[swapIdx];
+    shuffled[swapIdx] = current;
+  }
+  return shuffled.slice(0, maxCount);
 }

@@ -58,6 +58,12 @@ export type DashboardHomeProps = {
     ctaLabel: string;
     href: string;
   };
+  popularBrands: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+  }[];
 };
 
 function macroTargetsFromKcal(
@@ -373,6 +379,46 @@ function PromoBanner({
   );
 }
 
+function WeeklyPopularBrandsRail({
+  brands,
+}: {
+  brands: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+  }[];
+}) {
+  return (
+    <SectionCard>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[15px] font-medium text-foreground">本週人氣</p>
+        <Link href="/shop" className="text-[11px] font-medium text-primary">
+          看更多
+        </Link>
+      </div>
+      <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+        {brands.map((brand) => (
+          <Link
+            key={brand.id}
+            href={`/shop?brand=${encodeURIComponent(brand.slug)}`}
+            className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border-[0.5px] border-border bg-card p-2 transition-colors hover:bg-muted"
+            aria-label={brand.name}
+          >
+            <div className="relative h-11 w-11 overflow-hidden rounded-full bg-secondary">
+              {brand.logoUrl ? (
+                <Image src={brand.logoUrl} alt="" fill sizes="44px" className="object-cover" unoptimized />
+              ) : (
+                <div className="h-full w-full rounded-full bg-muted" aria-hidden />
+              )}
+            </div>
+          </Link>
+        ))}
+      </div>
+    </SectionCard>
+  );
+}
+
 export function DashboardHome({
   dateLabel,
   latestWeightKg,
@@ -391,6 +437,7 @@ export function DashboardHome({
   insightBullets,
   recommendProducts,
   promoBanner,
+  popularBrands,
 }: DashboardHomeProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -536,6 +583,24 @@ export function DashboardHome({
       </div>
 
       <SectionCard>
+        <p className="text-[15px] font-medium text-foreground">快速操作</p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <Link href="/log" className={cn(ghostQuick)} title="記錄飲食">
+            <FiCoffee className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span className="text-center leading-tight">飲食</span>
+          </Link>
+          <button type="button" className={cn(ghostQuick)} onClick={openWeightDialog}>
+            <FiActivity className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span className="text-center leading-tight">體重</span>
+          </button>
+          <Link href="/analytics" className={cn(ghostQuick)} title="數據分析">
+            <FiBarChart2 className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span className="text-center leading-tight">數據</span>
+          </Link>
+        </div>
+      </SectionCard>
+
+      <SectionCard>
         <p className="text-[15px] font-medium text-foreground">今日餐食</p>
         <ul className="mt-3 space-y-3">
           {displayMeals.map((m) => (
@@ -584,23 +649,7 @@ export function DashboardHome({
         href={promoBanner.href}
       />
 
-      <SectionCard>
-        <p className="text-[15px] font-medium text-foreground">快速操作</p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <Link href="/log" className={cn(ghostQuick)} title="記錄飲食">
-            <FiCoffee className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-            <span className="text-center leading-tight">飲食</span>
-          </Link>
-          <button type="button" className={cn(ghostQuick)} onClick={openWeightDialog}>
-            <FiActivity className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-            <span className="text-center leading-tight">體重</span>
-          </button>
-          <Link href="/analytics" className={cn(ghostQuick)} title="數據分析">
-            <FiBarChart2 className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-            <span className="text-center leading-tight">數據</span>
-          </Link>
-        </div>
-      </SectionCard>
+      {popularBrands.length > 0 ? <WeeklyPopularBrandsRail brands={popularBrands} /> : null}
 
       {open
         ? createPortal(
