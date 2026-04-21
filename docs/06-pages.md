@@ -16,7 +16,7 @@
 | 體重卡 | `vital_logs`（最新一筆） | 今日或最近體重 + BMI 計算值 |
 | 今日餐食卡 | `food_logs` | 四餐記錄摘要（早中晚+點心），有未記錄的顯示提示 |
 | AI 今日建議卡 | 直接呼叫 Claude | lazy load，主畫面 skeleton 先顯示 |
-| 快速操作列 | — | 五項入口：飲食(`/log`)、體重(彈窗)、運動(`/log?tab=activity`)、數據(`/analytics`)、標籤(`/guard/records`)；樣式為「無外層白底卡」、採分類按鈕列 |
+| 快速操作列 | — | 五項入口：飲食(`/log`)、體重(彈窗)、運動(`/log?tab=activity`)、數據(`/analytics`)、紀錄(`/guard/records`，History 圖示)；樣式為「無外層白底卡」、採分類按鈕列 |
 
 ### 資料查詢（Server Component）
 
@@ -90,11 +90,11 @@ export default async function DashboardPage() {
 
 ## `/guard`（守衛 · 食品標示智慧分析）
 
-獨立於紀錄頁：上傳至 `label-guard-photos` → `label-guard-request` → QStash → `label-guard-analyze`，結果寫入 `label_guard_jobs`，前端 Realtime／輪詢顯示安全分數、警示關鍵字、族群建議、風險分級與 14 類過敏矩陣（非醫療診斷）。底部導覽「守衛」進入；數據分析頁 `/analytics` 仍可由總覽等連結進入。結果卡可「儲存到個人紀錄」：預設名稱為 `YYYY-MM-DD 分數分`（可修改），每位使用者最多 5 筆，超過時阻擋並提示先刪除舊紀錄。頁首右上角提供「標籤紀錄 icon」入口至 `/guard/records`。
+獨立於紀錄頁：上傳至 `label-guard-photos` → `label-guard-request` → QStash → `label-guard-analyze`，結果寫入 `label_guard_jobs`，前端 Realtime／輪詢顯示安全分數、警示關鍵字、族群建議、風險分級與 14 類過敏矩陣（非醫療診斷）。底部導覽「守衛」進入；數據分析頁 `/analytics` 仍可由總覽等連結進入。結果卡可「儲存到個人紀錄」：預設名稱為 `YYYY-MM-DD 分數分`（可修改），每位使用者最多 5 筆，超過時阻擋並提示先刪除舊紀錄。頁首右上角提供「標籤紀錄」入口（icon）至 `/guard/records`。
 
 ## `/guard/records`（守衛儲存紀錄）
 
-顯示當前使用者已儲存的 `label_guard_saved_reports`（依 `created_at desc`）。每筆顯示名稱、儲存時間與安全分數摘要。若無資料，顯示空狀態並引導回 `/guard` 建立第一筆。
+顯示當前使用者已儲存的 `label_guard_saved_reports`（依 `created_at desc`）。頁首下方顯示 **尚可紀錄數：n/5**（n 為已儲存筆數，上限與 DB `label_guard_saved_reports` 一致）。每筆顯示名稱、儲存時間與安全分數摘要；可刪除（確認後）、可點入 **`/guard/records/[id]`** 檢視原圖（經 `job_id` → `label_guard_jobs.storage_path` 對 `label-guard-photos` 簽名 URL）與完整分析（與守衛頁共用 `LabelGuardReportBody`）。若無資料，顯示空狀態並引導回 `/guard` 建立第一筆。若 `job_id` 為空或無法簽名，仍顯示已儲存之 `report_json` 分析，僅缺原圖。
 
 ## 次級頁返回規則
 

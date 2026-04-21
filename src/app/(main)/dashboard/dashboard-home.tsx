@@ -7,9 +7,9 @@ import { useState, useTransition } from "react";
 import {
   BarChart3,
   Dumbbell,
+  History,
   PlusCircle,
   Scale,
-  Tag,
   UtensilsCrossed,
 } from "lucide-react";
 import { FiAward, FiBell, FiHeadphones } from "react-icons/fi";
@@ -522,7 +522,10 @@ export function DashboardHome({
                 </span>
               ) : null}
               {weightDeltaKg != null && profileBmi != null ? (
-                <span className="text-muted-foreground"> · BMI {profileBmi}</span>
+                <span className="text-muted-foreground">
+                  {" "}
+                  · BMI {profileBmi}
+                </span>
               ) : profileBmi != null ? (
                 <span className="text-muted-foreground">BMI {profileBmi}</span>
               ) : null}
@@ -615,7 +618,7 @@ export function DashboardHome({
             href="/guard/records"
             className={cn(quickActionClass)}
             title="標籤紀錄">
-            <Tag className={quickIconClass} strokeWidth={1.8} aria-hidden />
+            <History className={quickIconClass} strokeWidth={1.8} aria-hidden />
             <span className="text-center leading-tight">標籤</span>
           </Link>
         </div>
@@ -637,7 +640,11 @@ export function DashboardHome({
             href={`/log?date=${encodeURIComponent(todayIsoDate)}&tab=food`}
             aria-label="新增餐點紀錄"
             className={cn(HEADER_ACTION_ICON_CLASS)}>
-            <PlusCircle className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden />
+            <PlusCircle
+              className="h-[18px] w-[18px]"
+              strokeWidth={1.8}
+              aria-hidden
+            />
           </Link>
         </div>
         <ul className="mt-3 space-y-1">
@@ -646,10 +653,7 @@ export function DashboardHome({
               <Link
                 href={m.recordHref}
                 className="flex items-start gap-2 rounded-lg px-1 py-1.5 transition-colors hover:bg-muted/60">
-                <MealStatusDot
-                  mealKey={m.key}
-                  isRecorded={m.kcal != null}
-                />
+                <MealStatusDot mealKey={m.key} isRecorded={m.kcal != null} />
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-foreground">
                     {m.label}

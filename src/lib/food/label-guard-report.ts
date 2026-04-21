@@ -85,6 +85,11 @@ export function audienceSegmentLabelZh(s: AudienceSegment): string {
   return AUDIENCE_LABEL_ZH[s] ?? s;
 }
 
+/** 低於 75 為警示（琥珀橘）；其餘為主綠（與 UI 規範一致）。 */
+export function safetyScoreTextClass(score: number): string {
+  return score < 75 ? 'text-[#EF9F27]' : 'text-[#4C956C]';
+}
+
 function asRiskTier(v: unknown): RiskTier {
   if (v === 'high' || v === 'medium' || v === 'watch' || v === 'low') return v;
   return 'watch';
