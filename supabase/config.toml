@@ -7,6 +7,12 @@ verify_jwt = false
 [functions.ai-photo-analyze]
 verify_jwt = false
 
+[functions.label-guard-request]
+verify_jwt = false
+
+[functions.label-guard-analyze]
+verify_jwt = false
+
 [functions.recalculate-scores]
 verify_jwt = false
 

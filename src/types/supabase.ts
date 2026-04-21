@@ -342,6 +342,39 @@ export type Database = {
         }
         Relationships: []
       }
+      label_guard_jobs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          result_json: Json | null
+          status: string
+          storage_path: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          result_json?: Json | null
+          status?: string
+          storage_path: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          result_json?: Json | null
+          status?: string
+          storage_path?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_items: {
         Row: {
           calories: number

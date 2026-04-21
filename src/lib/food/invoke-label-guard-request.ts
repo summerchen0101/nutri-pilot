@@ -6,12 +6,9 @@ import {
 import { createClient } from '@/lib/supabase/client';
 
 /**
- * 必須在瀏覽器呼叫：Server Action 內 `getSession()` 可能拿不到完整 `access_token`，
- * Edge `ai-photo-request` 會回 401 Unauthorized。
- *
- * 使用 `functions.invoke`，由 SDK 組裝與閘道一致的標頭；避免手動 fetch 出現 Failed to fetch。
+ * 瀏覽器呼叫 label-guard-request（與餐桌拍照 ai-photo-request 分離）。
  */
-export async function invokeAiPhotoRequestFromBrowser(
+export async function invokeLabelGuardRequestFromBrowser(
   storagePath: string,
 ): Promise<{
   jobId?: string;
@@ -41,7 +38,7 @@ export async function invokeAiPhotoRequestFromBrowser(
     queued?: boolean;
     hint?: string;
     error?: string;
-  }>('ai-photo-request', {
+  }>('label-guard-request', {
     body: { storagePath },
     headers: {
       Authorization: `Bearer ${session.access_token}`,
@@ -62,14 +59,14 @@ export async function invokeAiPhotoRequestFromBrowser(
       return {
         error:
           error.message ||
-          `Edge Function 回應異常（HTTP）。請確認已部署 ai-photo-request。`,
+          `Edge Function 回應異常（HTTP）。請確認已部署 label-guard-request。`,
       };
     }
 
     if (error instanceof FunctionsFetchError) {
       return {
         error:
-          '無法連線到 Edge Function。請確認瀏覽器可連到 Supabase、`NEXT_PUBLIC_SUPABASE_URL` 為目前專案網址，並已部署 `ai-photo-request`。',
+          '無法連線到 Edge Function。請確認瀏覽器可連到 Supabase、`NEXT_PUBLIC_SUPABASE_URL` 為目前專案網址，並已部署 `label-guard-request`。',
       };
     }
 
@@ -84,7 +81,7 @@ export async function invokeAiPhotoRequestFromBrowser(
   let hint = j.hint;
   if (j.queued === false && hint == null) {
     hint =
-      'QStash 排隊失敗（queued=false）。請確認 Edge secrets：QSTASH_TOKEN 為 Upstash「QStash Token」（不是 Signing Key）；EDGE_FUNCTIONS_URL=https://<專案>.supabase.co/functions/v1。重新部署 ai-photo-request 後，Response 會帶 hint 顯示 QStash HTTP 錯誤。';
+      'QStash 排隊失敗（queued=false）。請確認 Edge secrets：QSTASH_TOKEN 為 Upstash「QStash Token」（不是 Signing Key）；EDGE_FUNCTIONS_URL=https://<專案>.supabase.co/functions/v1。重新部署 label-guard-request 後，Response 會帶 hint 顯示 QStash HTTP 錯誤。';
   }
 
   return { jobId: j.jobId, hint, queued: j.queued };

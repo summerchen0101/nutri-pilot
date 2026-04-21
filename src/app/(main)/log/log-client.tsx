@@ -13,7 +13,6 @@ import {
   FiActivity,
   FiCamera,
   FiCoffee,
-  FiTag,
   FiTrash2,
 } from 'react-icons/fi';
 
@@ -40,7 +39,6 @@ import {
   ActivityLogSection,
   type ActivityLogRow,
 } from '@/app/(main)/log/activity-log-section';
-import { LabelScanSection } from '@/app/(main)/log/label-scan-section';
 import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
 import { invokeAiPhotoRequestFromBrowser } from '@/lib/food/invoke-photo-request';
 import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
@@ -259,7 +257,7 @@ function patchLogItemInLogs(
   }));
 }
 
-export type LogSectionTab = 'food' | 'activity' | 'label';
+export type LogSectionTab = 'food' | 'activity';
 
 interface LogClientProps {
   date: string;
@@ -268,7 +266,7 @@ interface LogClientProps {
   /** URL `meal_type`，無預填時用來選預設餐次 Tab */
   initialMealTab?: MealType | null;
   prefillFromMeal?: PlanPrefillPayload | null;
-  /** URL `tab`：飲食 / 運動 / 拍標籤 */
+  /** URL `tab`：飲食 / 運動 */
   sectionTab?: LogSectionTab;
   initialActivities?: ActivityLogRow[];
 }
@@ -355,7 +353,6 @@ function LogSectionTabs({
     >
       {tabBtn('food', '飲食', FiCoffee)}
       {tabBtn('activity', '運動', FiActivity)}
-      {tabBtn('label', '標籤', FiTag)}
     </div>
   );
 }
@@ -1213,10 +1210,6 @@ export function LogClient({
 
       {!prefillFromMeal && sectionTab === 'activity' ? (
         <ActivityLogSection date={date} rows={initialActivities} />
-      ) : null}
-
-      {!prefillFromMeal && sectionTab === 'label' ? (
-        <LabelScanSection />
       ) : null}
 
       {sectionTab === 'food' ? (

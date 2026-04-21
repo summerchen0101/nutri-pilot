@@ -1,15 +1,10 @@
 /**
- * 使用者上傳後呼叫：建立 photo_analysis_jobs → QStash → ai-photo-analyze
+ * 標示拍照後呼叫：建立 label_guard_jobs → QStash → label-guard-analyze
  * Secrets: SUPABASE_URL, SUPABASE_ANON_KEY
- * Optional: QSTASH_TOKEN, QSTASH_URL, EDGE_FUNCTIONS_URL（不可用 SUPABASE_ 開頭：CLI secrets 會拒絕）
- * 上述三項須以 `supabase secrets set --project-ref …` 設在**專案上**，本機 Next `.env.local` 不會帶入 Edge。
- *
- * config.toml `verify_jwt = false`：避免閘道僅支援 HS256 時與 ES256 使用者 JWT 衝突；
- * 授權改為本函式內 `Authorization` + `auth.getUser()`。
+ * Optional: QSTASH_TOKEN, QSTASH_URL, EDGE_FUNCTIONS_URL
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
-/** 瀏覽器從 localhost／正式網域 fetch 需 CORS，否則會出現 `TypeError: Failed to fetch`。 */
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -24,7 +19,6 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-/** QStash 要求 destination 含 scheme；secrets 常漏 `https://`、夾引號 */
 function normalizeEdgeFunctionsBaseUrl(raw: string): string {
   let s = raw
     .replace(/^\uFEFF/, "")
@@ -44,9 +38,6 @@ function normalizeEdgeFunctionsBaseUrl(raw: string): string {
   return `${u.origin}${path}`;
 }
 
-/**
- * 僅基底 `https://qstash.upstash.io`，勿含 `/v2/publish`（否則 path 重複會導致 QStash 400 invalid scheme）
- */
 function normalizeQstashApiBaseUrl(raw: string | undefined): string {
   const fallback = "https://qstash.upstash.io";
   if (raw == null || !String(raw).trim()) return fallback;
@@ -74,11 +65,10 @@ type PublishOutcome =
     ok: false;
     reason: "missing_secrets" | "qstash_error";
     detail?: string;
-    /** 實際當作 QStash destination 的 URL，除錯用 */
     destinationTried?: string;
   };
 
-async function publishPhotoJob(jobId: string): Promise<PublishOutcome> {
+async function publishLabelGuardJob(jobId: string): Promise<PublishOutcome> {
   const token = Deno.env.get("QSTASH_TOKEN")?.trim();
   const qstashUrl = normalizeQstashApiBaseUrl(Deno.env.get("QSTASH_URL"));
   const functionsUrlRaw = Deno.env.get("EDGE_FUNCTIONS_URL")?.trim();
@@ -97,8 +87,7 @@ async function publishPhotoJob(jobId: string): Promise<PublishOutcome> {
     };
   }
 
-  const destination = `${base}/ai-photo-analyze`;
-  /** 與 @upstash/qstash 相同：勿對 destination 整段 encodeURIComponent */
+  const destination = `${base}/label-guard-analyze`;
   const publishUrl = [qstashUrl.replace(/\/$/, ""), "v2", "publish", destination].join(
     "/",
   );
@@ -168,12 +157,11 @@ Deno.serve(async (req) => {
   }
 
   const { data: job, error: insErr } = await supabase
-    .from("photo_analysis_jobs")
+    .from("label_guard_jobs")
     .insert({
       user_id: user.id,
       storage_path: storagePath,
       status: "pending",
-      job_kind: "meal",
     })
     .select("id")
     .single();
@@ -185,7 +173,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  const pub = await publishPhotoJob(job.id);
+  const pub = await publishLabelGuardJob(job.id);
   const queued = pub.ok;
 
   let hint: string | undefined;

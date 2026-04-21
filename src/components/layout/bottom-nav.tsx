@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  BarChart3,
   LayoutDashboard,
   PlusCircle,
   ShoppingCart,
+  Tag,
   UserRound,
 } from 'lucide-react';
 
@@ -16,7 +16,7 @@ const NAV = [
   { href: '/dashboard', label: '總覽', Icon: LayoutDashboard },
   { href: '/log', label: '紀錄', Icon: PlusCircle },
   { href: '/shop', label: '商城', Icon: ShoppingCart },
-  { href: '/analytics', label: '分析', Icon: BarChart3 },
+  { href: '/guard', label: '守衛', Icon: Tag },
   { href: '/settings', label: '我的', Icon: UserRound },
 ] as const;
 

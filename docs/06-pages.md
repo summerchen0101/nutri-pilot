@@ -71,21 +71,26 @@ export default async function DashboardPage() {
 
 ---
 
-## `/log`（每日紀錄：飲食 / 運動 / 標籤）
+## `/log`（每日紀錄：飲食 / 運動）
 
 ### 元件區塊
 
 | 區塊 | 說明 |
 |------|------|
-| 主分頁 | URL `?tab=food`（預設）/ `activity` / `label`；`?date=` 仍用於當日篩選 |
+| 主分頁 | URL `?tab=food`（預設）/ `activity`；`?date=` 仍用於當日篩選 |
 | 餐次 Tab | 僅在飲食分頁：早餐 / 午餐 / 晚餐 / 點心 |
-| 輸入方式切換 | 手動（搜尋＋AI）/ 拍照餐點（`job_kind=meal`） |
+| 輸入方式切換 | 手動（搜尋＋AI）/ 拍照餐點 |
 | 搜尋輸入 | Open Food Facts 搜尋 + 結果列表 + 份量調整 + 加入 |
-| 拍照餐點 | 上傳 `food-photos` → `ai-photo-request`（預設 meal）→ 分析 → 確認營養卡 |
+| 拍照餐點 | 上傳 `food-photos` → `ai-photo-request` → `ai-photo-analyze` → 確認營養卡 |
 | 運動分頁 | 手寫入 `activity_logs`；當日列表、刪除；類型與分鐘、估熱與備註（選填） |
-| 標籤分頁 | 上傳至 `.../label/...` → `jobKind: label` → 成分／添加物與族群風險提示（非醫療建議） |
 | 今日記錄列表 | 飲食分頁下依餐次分組，可刪除 |
 | 熱量加總 | 今日四餐總熱量 vs 目標（同一路徑顯示） |
+
+---
+
+## `/guard`（守衛 · 食品標示智慧分析）
+
+獨立於紀錄頁：上傳至 `label-guard-photos` → `label-guard-request` → QStash → `label-guard-analyze`，結果寫入 `label_guard_jobs`，前端 Realtime／輪詢顯示安全分數、警示關鍵字、族群建議、風險分級與 14 類過敏矩陣（非醫療診斷）。底部導覽「守衛」進入；數據分析頁 `/analytics` 仍可由總覽等連結進入。
 
 ### 搜尋食品邏輯
 

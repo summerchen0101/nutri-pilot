@@ -5,8 +5,8 @@ import type { ReactNode } from 'react';
 
 import { BottomNav } from '@/components/layout/bottom-nav';
 
-const SHOW_BOTTOM_NAV = ['/dashboard', '/log', '/shop', '/analytics', '/settings'] as const;
-const COMPACT_BOTTOM_PADDING = ['/dashboard', '/analytics'] as const;
+const SHOW_BOTTOM_NAV = ['/dashboard', '/log', '/shop', '/guard', '/settings'] as const;
+const COMPACT_BOTTOM_PADDING = ['/dashboard', '/guard'] as const;
 
 function shouldShowBottomNav(pathname: string): boolean {
   return SHOW_BOTTOM_NAV.some((basePath) => pathname === basePath);

@@ -23,6 +23,7 @@ const MAIN_PROTECTED_PREFIXES = [
   '/plan',
   '/log',
   '/analytics',
+  '/guard',
   '/shop',
   '/settings',
   '/onboarding',

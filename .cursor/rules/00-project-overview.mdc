@@ -29,7 +29,7 @@ PDF 匯出、用餐飲水提醒通知、血糖血壓即時警示、
 ## 路由結構
 
 - `/(auth)` — 登入、Onboarding
-- `/(main)` — 一般用戶（dashboard/log/analytics/shop/settings）
+- `/(main)` — 一般用戶（dashboard/log/guard/shop/settings；analytics 可由總覽等連結進入）
 - `/admin` — 主後台（同一個 Next.js 專案，Middleware 保護）
 
 ## 規格文件位置

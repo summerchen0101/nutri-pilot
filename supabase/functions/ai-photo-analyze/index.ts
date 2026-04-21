@@ -1,15 +1,12 @@
 /**
- * QStash → 下載照片 → Claude Vision → photo_analysis_jobs.result_json
+ * QStash → food-photos → Claude Vision → photo_analysis_jobs.result_json（餐桌餐點）
  * Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY
- * Optional: ANTHROPIC_MODEL
- *
- * job_kind meal：食物營養估算（陣列或單一事物件）
- * job_kind label：營養標／成分分析（單一 JSON，含 _kind: label_analysis）
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
-import { buildLabelAnalyzePrompt } from "../_shared/label-analyze-prompt.ts";
+import { anthropicVision } from "../_shared/anthropic-vision.ts";
 import { PHOTO_ANALYZE_PROMPT } from "../_shared/photo-analyze-prompt.ts";
+import { mediaTypeFromPath, toBase64 } from "../_shared/image-utils.ts";
 
 interface PhotoItem {
   name: string;
@@ -25,28 +22,7 @@ interface PhotoItem {
   note: string | null;
 }
 
-function mediaTypeFromPath(path: string): "image/jpeg" | "image/png" | "image/webp" {
-  const lower = path.toLowerCase();
-  if (lower.endsWith(".png")) return "image/png";
-  if (lower.endsWith(".webp")) return "image/webp";
-  return "image/jpeg";
-}
-
-function toBase64(u8: Uint8Array): string {
-  const CHUNK = 0x8000;
-  let binary = "";
-  for (let i = 0; i < u8.length; i += CHUNK) {
-    binary += String.fromCharCode.apply(
-      null,
-      u8.subarray(i, i + CHUNK) as unknown as number[],
-    );
-  }
-  return btoa(binary);
-}
-
-function normalizeConfidence(
-  v: unknown,
-): "high" | "medium" | "low" {
+function normalizeConfidence(v: unknown): "high" | "medium" | "low" {
   if (v === "high" || v === "medium" || v === "low") return v;
   return "medium";
 }
@@ -101,88 +77,9 @@ function parseItems(raw: string): PhotoItem[] {
     rows.push(parsed as Record<string, unknown>);
   }
 
-  const items = rows
+  return rows
     .map((row) => normalizePhotoRow(row))
     .filter((it): it is PhotoItem => it !== null);
-
-  return items;
-}
-
-function ageFromBirthIso(birthIso: string): number {
-  const bd = new Date(birthIso);
-  if (Number.isNaN(bd.getTime())) return 30;
-  const now = new Date();
-  let age = now.getFullYear() - bd.getFullYear();
-  const m = now.getMonth() - bd.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < bd.getDate())) age--;
-  return Math.max(0, Math.min(120, age));
-}
-
-function parseLabelJson(raw: string): Record<string, unknown> {
-  const cleaned = raw.replace(/```json|```/g, "").trim();
-  const parsed = JSON.parse(cleaned) as unknown;
-  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-    return parsed as Record<string, unknown>;
-  }
-  throw new Error("標籤分析必須回傳單一 JSON 物件");
-}
-
-async function anthropicVision(params: {
-  mediaType: "image/jpeg" | "image/png" | "image/webp";
-  base64: string;
-  prompt: string;
-  maxTokens?: number;
-}): Promise<string> {
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
-
-  const model =
-    Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-20250514";
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: params.maxTokens ?? 2048,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: params.mediaType,
-                data: params.base64,
-              },
-            },
-            {
-              type: "text",
-              text:
-                params.prompt +
-                "\n\n只回傳 JSON，不加 markdown code block 或任何說明文字。",
-            },
-          ],
-        },
-      ],
-    }),
-  });
-
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Anthropic HTTP ${res.status}: ${t.slice(0, 400)}`);
-  }
-
-  const data = (await res.json()) as {
-    content?: { type: string; text?: string }[];
-  };
-  const block = data.content?.[0];
-  return block?.type === "text" ? (block.text ?? "") : "";
 }
 
 Deno.serve(async (req) => {
@@ -216,13 +113,11 @@ Deno.serve(async (req) => {
   try {
     const { data: job, error: jobErr } = await admin
       .from("photo_analysis_jobs")
-      .select("id, user_id, storage_path, job_kind")
+      .select("id, storage_path")
       .eq("id", jobId)
       .single();
 
     if (jobErr || !job) throw new Error("job not found");
-
-    const jobKind = (job.job_kind as string) === "label" ? "label" : "meal";
 
     await admin
       .from("photo_analysis_jobs")
@@ -240,60 +135,6 @@ Deno.serve(async (req) => {
     const buf = new Uint8Array(await fileBlob.arrayBuffer());
     const mediaType = mediaTypeFromPath(job.storage_path);
     const base64 = toBase64(buf);
-
-    if (jobKind === "label") {
-      const { data: profile } = await admin
-        .from("user_profiles")
-        .select("birth_date, allergens, avoid_foods, tracks_glycemic_concern")
-        .eq("user_id", job.user_id)
-        .maybeSingle();
-
-      const birth = profile?.birth_date
-        ? String(profile.birth_date).slice(0, 10)
-        : "1990-01-01";
-      const userAgeYears = ageFromBirthIso(birth);
-      const allergens = Array.isArray(profile?.allergens)
-        ? (profile!.allergens as string[])
-        : [];
-      const avoidFoods = Array.isArray(profile?.avoid_foods)
-        ? (profile!.avoid_foods as string[])
-        : [];
-      const tracksGlycemicConcern =
-        profile?.tracks_glycemic_concern === true;
-
-      const prompt = buildLabelAnalyzePrompt({
-        userAgeYears,
-        allergens,
-        avoidFoods,
-        tracksGlycemicConcern,
-      });
-
-      const raw = await anthropicVision({
-        mediaType,
-        base64,
-        prompt,
-        maxTokens: 3072,
-      });
-
-      const obj = parseLabelJson(raw);
-      if (obj._kind !== "label_analysis") {
-        obj._kind = "label_analysis";
-      }
-      obj.disclaimer_required = true;
-
-      await admin
-        .from("photo_analysis_jobs")
-        .update({
-          status: "ready",
-          result_json: obj as unknown as Record<string, unknown>,
-          error_message: null,
-        })
-        .eq("id", jobId);
-
-      return new Response(JSON.stringify({ ok: true, jobId }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
 
     const raw = await anthropicVision({
       mediaType,

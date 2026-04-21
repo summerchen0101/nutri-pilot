@@ -10,7 +10,8 @@ alwaysApply: false
 
 必須走 Queue（QStash）：
 
-- 拍照辨識（圖片上傳 + Vision）
+- 拍照辨識餐桌（圖片上傳 + Vision，`ai-photo-analyze` → `photo_analysis_jobs`）
+- 食品標示智慧分析／守衛（獨立 bucket，`label-guard-analyze` → `label_guard_jobs`）
 - 週報洞察（cron 觸發）
 
 直接呼叫（可以等）：
@@ -20,9 +21,11 @@ alwaysApply: false
 
 ## Queue 流程
 
-拍照辨識：前端上傳照片 / 建立 job → 發 QStash
-→ Edge Function Worker（`ai-photo-analyze`）→ 呼叫 Claude Vision
-→ 寫回 `photo_analysis_jobs` 結果 → 前端 polling / Realtime 更新
+餐桌拍照：前端上傳 `food-photos` / 建立 `photo_analysis_jobs` → QStash → `ai-photo-analyze`
+→ 寫回 `photo_analysis_jobs`。
+
+守衛標示：前端上傳 `label-guard-photos` / 建立 `label_guard_jobs` → QStash → `label-guard-analyze`
+→ 寫回 `label_guard_jobs`。前端均以 polling / Realtime 更新。
 
 週報洞察：pg_cron 觸發 `ai-weekly-insight`
 → Worker 聚合近 7 天資料 → 呼叫 Claude → 寫入 `weekly_insights`

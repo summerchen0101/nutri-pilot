@@ -32,7 +32,7 @@ function parseMealType(
 }
 
 function parseSectionTab(raw: string | undefined): LogSectionTab {
-  if (raw === 'activity' || raw === 'label' || raw === 'food') return raw;
+  if (raw === 'activity' || raw === 'food') return raw;
   return 'food';
 }
 
@@ -130,7 +130,7 @@ export default async function LogPage({
     <div className="space-y-3">
       <PageHeader
         title="每日紀錄"
-        description="飲食、運動與成分標示辨識。"
+        description="飲食與運動紀錄。"
         spacing="compact"
       />
 

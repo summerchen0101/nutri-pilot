@@ -36,22 +36,30 @@ Supabase Edge Functions（後端邏輯）
 
 | Function 名稱 | 觸發方式 | 說明 |
 |--------------|---------|------|
-| `ai-photo-request` | 前端（使用者 JWT）| 建立 `photo_analysis_jobs` 並觸發 QStash → `ai-photo-analyze` |
-| `ai-photo-analyze` | QStash callback | Claude Vision；`job_kind=meal` 回傳食物營養 JSON；`label` 回傳成分／標示分析 JSON |
+| `ai-photo-request` | 前端（使用者 JWT）| 建立 `photo_analysis_jobs`（`job_kind=meal`）並觸發 QStash → `ai-photo-analyze` |
+| `ai-photo-analyze` | QStash callback | Claude Vision；餐桌食物營養 JSON（陣列或單一物件） |
+| `label-guard-request` | 前端（使用者 JWT）| 建立 `label_guard_jobs` 並觸發 QStash → `label-guard-analyze` |
+| `label-guard-analyze` | QStash callback | Claude Vision；標示報告 JSON（`_kind: label_guard_report`） |
 | `ai-weekly-insight` | pg_cron（每週日 21:00）| 生成週報洞察，寫入 `weekly_insights` |
 
 **`ai-photo-request` 輸入**（JSON body）：
-- `storagePath`：必填，路徑須為 `{userId}/...`；標籤圖建議 `{userId}/label/...`。
-- `jobKind` 或 `job_kind`：可選，`meal`（預設）或 `label`。
+- `storagePath`：必填，路徑須為 `{userId}/...`（餐點圖建議 `food-photos` bucket）。
 
-**`ai-photo-analyze` 輸入格式**（QStash 轉送）：
+**`label-guard-request` 輸入**（JSON body）：
+- `storagePath`：必填，路徑須為 `{userId}/...`（標示圖用 `label-guard-photos` bucket）。
+
+**`ai-photo-analyze` / `label-guard-analyze` 輸入格式**（QStash 轉送）：
 ```json
 { "jobId": "uuid" }
 ```
 
 **`ai-photo-analyze` 輸出**（寫入 DB）：
 - 更新 `photo_analysis_jobs.status` = `ready` 或 `error`
-- 寫入 `photo_analysis_jobs.result_json`：`meal` 為食物陣列或單一物件；`label` 為單一物件且含 `_kind: "label_analysis"`
+- 寫入 `photo_analysis_jobs.result_json`：食物營養項目陣列或單一物件
+
+**`label-guard-analyze` 輸出**（寫入 DB）：
+- 更新 `label_guard_jobs.status` = `ready` 或 `error`
+- 寫入 `label_guard_jobs.result_json`：單一物件且含 `_kind: "label_guard_report"`
 
 ---
 
@@ -196,6 +204,7 @@ supabase.from('subscriptions')
 | Bucket 名稱 | 存取權限 | 用途 |
 |------------|---------|------|
 | `food-photos` | 私有（只有 owner 可存取） | 用戶拍照上傳的餐點照片 |
+| `label-guard-photos` | 私有（只有 owner 可存取） | 「守衛」食品標示／成分表拍照 |
 
 ```sql
 -- Storage 政策：只有上傳者本人可以存取
