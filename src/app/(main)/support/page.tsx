@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
+import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import { SectionCard } from '@/components/ui/section-card';
 import { createClient } from '@/lib/supabase/server';
@@ -15,6 +16,7 @@ export default async function SupportPage() {
   return (
     <div className="space-y-3 pb-4">
       <PageHeader
+        leading={<HeaderBackButton />}
         title="客服"
         description="若有問題請透過下列方式聯絡（詳細管道將於之後更新）。"
         spacing="compact"

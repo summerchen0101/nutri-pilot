@@ -522,8 +522,8 @@ export function DashboardHome({
     }
   }
 
-  const ghostQuick =
-    "flex min-h-[72px] flex-1 flex-col items-center justify-center gap-1 rounded-xl border-[0.5px] border-border bg-card px-2 py-2 text-[13px] font-normal text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground";
+  const quickActionClass =
+    "flex h-[60px] min-w-[60px] flex-col items-center justify-center gap-1 rounded-xl border-[0.5px] border-border bg-card px-1.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
 
   const goal = targetKcal != null && targetKcal > 0 ? targetKcal : null;
   let calorieRemainKcal: number | null = null;
@@ -695,28 +695,28 @@ export function DashboardHome({
         />
       </div>
 
-      <SectionCard>
+      <section>
         <p className="text-[15px] font-medium text-foreground">快速操作</p>
         <div className="mt-3 grid grid-cols-5 gap-2">
-          <Link href="/log" className={cn(ghostQuick)} title="記錄飲食">
+          <Link href="/log" className={cn(quickActionClass)} title="記錄飲食">
             <FiCoffee className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <span className="text-center leading-tight">飲食</span>
           </Link>
           <button
             type="button"
-            className={cn(ghostQuick)}
+            className={cn(quickActionClass)}
             onClick={openWeightDialog}>
             <FiActivity className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <span className="text-center leading-tight">體重</span>
           </button>
           <Link
             href="/log?tab=activity"
-            className={cn(ghostQuick)}
+            className={cn(quickActionClass)}
             title="記錄運動">
             <FiActivity className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <span className="text-center leading-tight">運動</span>
           </Link>
-          <Link href="/analytics" className={cn(ghostQuick)} title="數據分析">
+          <Link href="/analytics" className={cn(quickActionClass)} title="數據分析">
             <FiBarChart2
               className="h-4 w-4 shrink-0 text-primary"
               aria-hidden
@@ -725,13 +725,13 @@ export function DashboardHome({
           </Link>
           <Link
             href="/guard/records"
-            className={cn(ghostQuick)}
+            className={cn(quickActionClass)}
             title="標籤紀錄">
             <FiTag className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <span className="text-center leading-tight">標籤</span>
           </Link>
         </div>
-      </SectionCard>
+      </section>
 
       {milestoneChips.length > 0 ? (
         <SectionCard>

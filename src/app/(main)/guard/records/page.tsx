@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import {
   Card,
@@ -51,6 +52,7 @@ export default async function GuardRecordsPage() {
     return (
       <div className="space-y-3">
         <PageHeader
+          leading={<HeaderBackButton />}
           title="標籤紀錄"
           description="查看你儲存過的標籤守衛分析結果。"
           spacing="compact"
@@ -69,6 +71,7 @@ export default async function GuardRecordsPage() {
   return (
     <div className="space-y-3">
       <PageHeader
+        leading={<HeaderBackButton />}
         title="標籤紀錄"
         description="查看你儲存過的標籤守衛分析結果。"
         spacing="compact"

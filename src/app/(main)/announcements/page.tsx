@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { markAnnouncementsReadForUser } from '@/app/(main)/announcements/actions';
+import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SectionCard } from '@/components/ui/section-card';
@@ -43,6 +44,7 @@ export default async function AnnouncementsPage() {
   return (
     <div className="space-y-3 pb-4">
       <PageHeader
+        leading={<HeaderBackButton />}
         title="公告"
         description="最新消息與維護通知。"
         spacing="compact"

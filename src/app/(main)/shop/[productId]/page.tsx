@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { notFound, redirect } from 'next/navigation';
 
 import { ProductDetailClient } from '@/app/(main)/shop/[productId]/product-detail-client';
+import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import { SHOP_CATEGORY_LABEL } from '@/lib/shop/constants';
 import { generateFitReasons } from '@/lib/shop/fit-reasons';
@@ -94,6 +95,7 @@ export default async function ShopProductPage({ params }: PageProps) {
   return (
     <div className="space-y-5">
       <PageHeader
+        leading={<HeaderBackButton />}
         title={product.name as string}
         description={brand?.name ?? ''}
         action={
