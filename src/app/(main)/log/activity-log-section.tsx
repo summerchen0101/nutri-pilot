@@ -42,6 +42,8 @@ const TYPE_ORDER: ActivityType[] = [
   'other',
 ];
 
+const QUICK_DURATION_MINUTES = [15, 30, 45, 60, 90] as const;
+
 export function ActivityLogSection({
   date,
   rows,
@@ -53,9 +55,15 @@ export function ActivityLogSection({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [activityType, setActivityType] = useState<ActivityType>('walk');
-  const [minutes, setMinutes] = useState('30');
+  const [minutes, setMinutes] = useState('');
   const [calEst, setCalEst] = useState('');
   const [notes, setNotes] = useState('');
+
+  const parsedMinutes = Number(minutes.replace(',', '.'));
+  const minutesOk =
+    Number.isFinite(parsedMinutes) &&
+    parsedMinutes >= 1 &&
+    parsedMinutes <= 1440;
 
   useEffect(() => {
     const m = Number(minutes.replace(',', '.'));
@@ -83,7 +91,7 @@ export function ActivityLogSection({
         setError(res.error);
         return;
       }
-      setMinutes('30');
+      setMinutes('');
       setCalEst('');
       setNotes('');
       router.refresh();
@@ -138,36 +146,53 @@ export function ActivityLogSection({
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[11px] text-muted-foreground">
-                時長（分鐘）
-              </label>
-              <Input
-                type="number"
-                min={1}
-                max={1440}
-                className="mt-1 tabular-nums"
-                value={minutes}
-                onChange={(e) => setMinutes(e.target.value)}
-              />
+          <div>
+            <label className="text-[11px] text-muted-foreground">
+              時長（分鐘）
+            </label>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {QUICK_DURATION_MINUTES.map((m) => {
+                const selected = minutesOk && parsedMinutes === m;
+                return (
+                  <Button
+                    key={m}
+                    type="button"
+                    variant={selected ? 'default' : 'ghost'}
+                    className={
+                      selected ? mealPillPrimary : mealPillInactive
+                    }
+                    onClick={() => setMinutes(String(m))}
+                  >
+                    {m}
+                  </Button>
+                );
+              })}
             </div>
-            <div>
-              <label className="text-[11px] text-muted-foreground">
-                估計消耗 kcal（選填）
-              </label>
-              <Input
-                type="number"
-                min={0}
-                className="mt-1 tabular-nums"
-                value={calEst}
-                onChange={(e) => setCalEst(e.target.value)}
-                placeholder="—"
-              />
-              <p className="mt-1 text-[10px] font-normal leading-snug text-muted-foreground">
-                此類型約 {KCAL_PER_MINUTE[activityType]} kcal／分（估計值）
-              </p>
-            </div>
+            <Input
+              type="number"
+              min={1}
+              max={1440}
+              className="mt-2 tabular-nums"
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+              placeholder="選快捷或輸入"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-foreground">
+              估計消耗 kcal（選填）
+            </label>
+            <Input
+              type="number"
+              min={0}
+              className="mt-1 tabular-nums"
+              value={calEst}
+              onChange={(e) => setCalEst(e.target.value)}
+              placeholder="—"
+            />
+            <p className="mt-1 text-[10px] font-normal leading-snug text-muted-foreground">
+              此類型約 {KCAL_PER_MINUTE[activityType]} kcal／分（估計值）
+            </p>
           </div>
           <div>
             <label className="text-[11px] text-muted-foreground">備註（選填）</label>
@@ -181,8 +206,8 @@ export function ActivityLogSection({
           </div>
           <Button
             type="button"
-            className="w-full"
-            disabled={pending}
+            className="w-full bg-primary text-white hover:bg-primary-dark focus-visible:ring-primary/25"
+            disabled={pending || !minutesOk}
             onClick={() => void onSubmit()}
           >
             {pending ? '儲存中…' : '加入紀錄'}
