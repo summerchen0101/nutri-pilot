@@ -10,6 +10,7 @@ import {
   syncUserMilestones,
 } from '@/lib/milestones/sync-user-milestones';
 import { addCalendarDaysISO, todayLocalISODate } from '@/lib/onboarding/date';
+import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
 import { DIET_METHOD_OPTIONS } from '@/lib/onboarding/constants';
 import { createClient } from '@/lib/supabase/server';
 
@@ -21,6 +22,9 @@ const MEAL_LABEL: Record<(typeof MEAL_ORDER)[number], string> = {
   dinner: '晚餐',
   snack: '點心',
 };
+
+/** 首頁飲水進度目標（ml）；Schema 尚無使用者欄位時僅供 UI */
+const DASHBOARD_WATER_TARGET_ML = 2000;
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -46,6 +50,7 @@ export default async function DashboardPage() {
     { data: productCatalog },
     { data: brandProductRows },
     { data: brandRows },
+    { data: activityRowsToday },
   ] = await Promise.all([
     supabase
       .from('user_profiles')
@@ -139,13 +144,18 @@ export default async function DashboardPage() {
       .from('brands')
       .select('id, name, slug, logo_url')
       .eq('is_active', true),
+    supabase
+      .from('activity_logs')
+      .select('duration_minutes, calories_est, activity_type')
+      .eq('user_id', user.id)
+      .eq('logged_date', today),
   ]);
 
   if (!profile) redirect('/onboarding');
 
   await syncUserMilestones(supabase, user.id);
 
-  const [{ data: milestoneRows }, { data: activityTodayRows }] =
+  const [{ data: milestoneRows }, { data: todayVitalRow }] =
     await Promise.all([
       supabase
         .from('user_milestones')
@@ -154,10 +164,11 @@ export default async function DashboardPage() {
         .order('unlocked_at', { ascending: false })
         .limit(6),
       supabase
-        .from('activity_logs')
-        .select('duration_minutes')
+        .from('vital_logs')
+        .select('water_ml')
         .eq('user_id', user.id)
-        .eq('logged_date', today),
+        .eq('date', today)
+        .maybeSingle(),
     ]);
 
   const milestoneChips = (milestoneRows ?? []).map((r) => ({
@@ -165,10 +176,11 @@ export default async function DashboardPage() {
     label: MILESTONE_LABELS[r.milestone_key] ?? r.milestone_key,
   }));
 
-  const activityMinutesToday = (activityTodayRows ?? []).reduce(
-    (s, r) => s + Number(r.duration_minutes ?? 0),
-    0,
-  );
+  const waterMlRaw = todayVitalRow?.water_ml;
+  const waterMlToday =
+    waterMlRaw != null && Number.isFinite(Number(waterMlRaw)) ?
+      Math.max(0, Math.round(Number(waterMlRaw)))
+    : 0;
 
   const hasUnreadAnnouncements = await hasUnreadAnnouncementsForUser(
     supabase,
@@ -227,17 +239,27 @@ export default async function DashboardPage() {
       computeGoalMetStreak(today, targetKcal, kcalByDate)
     : 0;
 
+  let activityMinutesToday = 0;
+  let activityKcalEstToday = 0;
+  for (const row of activityRowsToday ?? []) {
+    activityMinutesToday += Math.round(Number(row.duration_minutes) || 0);
+    if (row.calories_est != null && Number.isFinite(Number(row.calories_est))) {
+      activityKcalEstToday += Number(row.calories_est);
+    }
+  }
+  activityKcalEstToday = Math.round(activityKcalEstToday);
+
+  const activityTypesLabel = summarizeActivityTypesForToday(
+    activityRowsToday ?? [],
+  );
+
   const homeProps: DashboardHomeProps = {
     dateLabel,
+    userName: normalizeDashboardUserName(profile.name),
     latestWeightKg: Number.isFinite(latestWeightKg) ? latestWeightKg : null,
     latestWeightDate,
     heightCm: Number(profile.height_cm),
     profileBmi: profile.bmi != null ? Number(profile.bmi) : null,
-    todayKcal: nutrientTotals.kcal,
-    targetKcal,
-    carbG: nutrientTotals.carb,
-    proteinG: nutrientTotals.protein,
-    fatG: nutrientTotals.fat,
     streakDays,
     meals: buildMealRows(foodRows ?? []),
     weeklyWeight: weeklyTrend.weightRows,
@@ -261,10 +283,34 @@ export default async function DashboardPage() {
     })),
     hasUnreadAnnouncements,
     milestoneChips,
+    waterMlToday,
+    waterTargetMl: DASHBOARD_WATER_TARGET_ML,
     activityMinutesToday,
+    activityKcalEstToday,
+    activityTypesLabel,
   };
 
   return <DashboardHome {...homeProps} />;
+}
+
+function summarizeActivityTypesForToday(
+  rows: { activity_type: string }[],
+): string | null {
+  const seen = new Set<string>();
+  const labels: string[] = [];
+  for (const row of rows) {
+    const raw = String(row.activity_type ?? '').trim();
+    if (!raw || seen.has(raw)) continue;
+    seen.add(raw);
+    labels.push(activityTypeLabelZh(raw));
+  }
+  return labels.length > 0 ? labels.join('、') : null;
+}
+
+function normalizeDashboardUserName(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 function shortLabel(iso: string): string {
@@ -512,6 +558,21 @@ function logsHaveEnergy(
   return sumMealKcal(logs) > 0;
 }
 
+function mealItemNameSummary(
+  logs: {
+    food_log_items: { name: string }[] | null;
+  }[],
+): string {
+  const parts: string[] = [];
+  for (const log of logs) {
+    for (const it of log.food_log_items ?? []) {
+      const n = String(it.name ?? '').trim();
+      if (n) parts.push(n);
+    }
+  }
+  return parts.join(' · ');
+}
+
 function buildMealRows(
   foodRows: {
     meal_type: string;
@@ -528,12 +589,13 @@ function buildMealRows(
     if (!hasLog) continue;
 
     const recordHref = `/log?meal_type=${encodeURIComponent(key)}`;
+    const summary = mealItemNameSummary(logsForType);
 
     rows.push({
       key,
       label: MEAL_LABEL[key],
       variant: 'self_logged',
-      detailLine: '自行記錄',
+      detailLine: summary || '自行記錄',
       kcal: totalKcal,
       recordHref,
     });

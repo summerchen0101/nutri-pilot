@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { ACTIVITY_TYPE_LABEL } from '@/lib/activity/activity-type-labels';
 import { KCAL_PER_MINUTE } from '@/lib/activity/kcal-per-minute';
 import { cn } from '@/lib/utils/cn';
 
@@ -22,25 +23,6 @@ export type ActivityLogRow = {
   duration_minutes: number;
   calories_est: number | null;
   notes: string | null;
-};
-
-const TYPE_LABEL: Record<ActivityType, string> = {
-  walk: '走路',
-  run: '跑步',
-  cycling: '單車',
-  swimming: '游泳',
-  cardio: '有氧',
-  hiit: '間歇有氧',
-  jump_rope: '跳繩',
-  dance: '舞蹈有氧',
-  basketball: '籃球',
-  tennis: '網球',
-  badminton: '羽球',
-  strength: '重訓',
-  yoga: '瑜珈',
-  pilates: '皮拉提斯',
-  stretching: '伸展',
-  other: '其他',
 };
 
 const ACTIVITY_GROUPS: { label: string; types: readonly ActivityType[] }[] = [
@@ -172,7 +154,7 @@ export function ActivityLogSection({
                 <optgroup key={g.label} label={g.label}>
                   {g.types.map((t) => (
                     <option key={t} value={t}>
-                      {TYPE_LABEL[t]}
+                      {ACTIVITY_TYPE_LABEL[t]}
                     </option>
                   ))}
                 </optgroup>
@@ -272,7 +254,7 @@ export function ActivityLogSection({
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-foreground">
-                    {TYPE_LABEL[r.activity_type as ActivityType] ??
+                    {ACTIVITY_TYPE_LABEL[r.activity_type as ActivityType] ??
                       r.activity_type}
                     <span className="ml-1.5 text-[11px] font-normal tabular-nums text-muted-foreground">
                       {r.duration_minutes} 分鐘

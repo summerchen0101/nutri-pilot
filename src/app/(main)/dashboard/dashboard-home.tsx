@@ -5,22 +5,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
-  FiActivity,
-  FiAward,
-  FiBarChart2,
-  FiBell,
-  FiCoffee,
-  FiHeadphones,
-  FiTag,
-} from "react-icons/fi";
+  ArrowUpRight,
+  BarChart3,
+  Dumbbell,
+  Scale,
+  Tag,
+  UtensilsCrossed,
+} from "lucide-react";
+import { FiAward, FiBell, FiHeadphones } from "react-icons/fi";
 import { createPortal } from "react-dom";
 
 import { logWeightAction } from "@/app/(main)/dashboard/actions";
+import { DashboardWaterGrid } from "@/app/(main)/dashboard/dashboard-water-grid";
 import { HEADER_ACTION_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MetricTile } from "@/components/ui/metric-tile";
 import { SectionCard } from "@/components/ui/section-card";
 import { cn } from "@/lib/utils/cn";
 
@@ -36,17 +36,28 @@ export type DashboardMealRow = {
   recordHref: string;
 };
 
+/** 僅「首次操作」里程碑：不視為「達成紀錄」以顯示首屏提示 */
+const FIRST_STEP_MILESTONE_KEYS = new Set([
+  "first_meal",
+  "first_activity",
+  "first_weight",
+]);
+
+function shouldShowNoAchievementLine(
+  streakDays: number,
+  milestoneChips: { key: string }[],
+): boolean {
+  if (streakDays >= 1) return false;
+  return !milestoneChips.some((m) => !FIRST_STEP_MILESTONE_KEYS.has(m.key));
+}
+
 export type DashboardHomeProps = {
   dateLabel: string;
+  userName: string | null;
   latestWeightKg: number | null;
   latestWeightDate: string | null;
   heightCm: number;
   profileBmi: number | null;
-  todayKcal: number;
-  targetKcal: number | null;
-  carbG: number;
-  proteinG: number;
-  fatG: number;
   streakDays: number;
   meals: DashboardMealRow[];
   weeklyWeight: { label: string; kg: number | null }[];
@@ -74,135 +85,17 @@ export type DashboardHomeProps = {
   hasUnreadAnnouncements: boolean;
   /** 最近解鎖的里程碑（已依時間倒序截斷） */
   milestoneChips: { key: string; label: string }[];
-  /** 今日運動紀錄分鐘加總 */
+  /** 今日 `vital_logs.water_ml` 加總（無紀錄為 0） */
+  waterMlToday: number;
+  /** 飲水目標（ml，僅 UI；日後可改為使用者設定） */
+  waterTargetMl: number;
+  /** 今日 `activity_logs` 分鐘合計 */
   activityMinutesToday: number;
+  /** 今日 `activity_logs.calories_est` 合計（無估熱則為 0） */
+  activityKcalEstToday: number;
+  /** 今日運動類型彙總（去重、出現順序，以「、」串接） */
+  activityTypesLabel: string | null;
 };
-
-function macroTargetsFromKcal(kcal: number): {
-  carb: number;
-  protein: number;
-  fat: number;
-} {
-  if (!Number.isFinite(kcal) || kcal <= 0) {
-    return { carb: 0, protein: 0, fat: 0 };
-  }
-  return {
-    carb: (kcal * 0.5) / 4,
-    protein: (kcal * 0.25) / 4,
-    fat: (kcal * 0.25) / 9,
-  };
-}
-
-function CalorieRingBlock({
-  todayKcal,
-  targetKcal,
-  carbG,
-  proteinG,
-  fatG,
-}: {
-  todayKcal: number;
-  targetKcal: number | null;
-  carbG: number;
-  proteinG: number;
-  fatG: number;
-}) {
-  const ringR = 36;
-  const circumference = 2 * Math.PI * ringR;
-  const target = targetKcal != null && targetKcal > 0 ? targetKcal : 0;
-  const ratio =
-    target > 0 && todayKcal > 0 ? Math.min(1, todayKcal / target) : 0;
-
-  const t = targetKcal != null && targetKcal > 0 ? targetKcal : 0;
-  const m = t > 0 ? macroTargetsFromKcal(t) : { carb: 0, protein: 0, fat: 0 };
-  const bar = (v: number, cap: number) =>
-    cap > 0 ? Math.min(100, (v / cap) * 100) : 0;
-
-  return (
-    <div className="rounded-xl border-[0.5px] border-border bg-card p-4">
-      <div className="flex items-center gap-4">
-        <div className="relative h-[120px] w-[120px] shrink-0">
-          <svg
-            className="h-full w-full -rotate-90"
-            viewBox="0 0 100 100"
-            aria-hidden>
-            <circle
-              cx="50"
-              cy="50"
-              r={ringR}
-              fill="none"
-              className="stroke-border"
-              strokeWidth="6"
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r={ringR}
-              fill="none"
-              stroke="#4C956C"
-              strokeWidth="6"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={circumference * (1 - ratio)}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            {todayKcal <= 0 ? (
-              <p className="px-2 text-center text-[11px] text-muted-foreground">
-                尚未記錄
-              </p>
-            ) : (
-              <>
-                <p className="text-[20px] font-medium leading-tight text-foreground">
-                  {Math.round(todayKcal)}
-                </p>
-                <p className="text-[9px] text-muted-foreground">kcal</p>
-                {t > 0 ? (
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">
-                    目標 {Math.round(t)}
-                  </p>
-                ) : null}
-              </>
-            )}
-          </div>
-        </div>
-        <div className="min-w-0 flex-1 space-y-2.5">
-          {(
-            [
-              { label: "碳水", v: carbG, cap: m.carb, color: "#378ADD" },
-              {
-                label: "蛋白質",
-                v: proteinG,
-                cap: m.protein,
-                color: "#4C956C",
-              },
-              { label: "脂肪", v: fatG, cap: m.fat, color: "#EF9F27" },
-            ] as const
-          ).map((row) => (
-            <div key={row.label}>
-              <div className="mb-0.5 flex items-center justify-between">
-                <span className="text-[11px] text-muted-foreground">
-                  {row.label}
-                </span>
-                <span className="text-[11px] tabular-nums text-muted-foreground">
-                  {Math.round(row.v)}g
-                </span>
-              </div>
-              <div className="h-[5px] w-full overflow-hidden rounded-full bg-secondary">
-                <div
-                  className="h-full rounded-full transition-all duration-200"
-                  style={{
-                    width: `${bar(row.v, row.cap)}%`,
-                    backgroundColor: row.color,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function MealStatusDot({
   mealKey,
@@ -472,15 +365,11 @@ function WeeklyPopularBrandsRail({
 
 export function DashboardHome({
   dateLabel,
+  userName,
   latestWeightKg,
   latestWeightDate,
   heightCm,
   profileBmi,
-  todayKcal,
-  targetKcal,
-  carbG,
-  proteinG,
-  fatG,
   streakDays,
   meals,
   weeklyWeight,
@@ -491,7 +380,11 @@ export function DashboardHome({
   popularBrands,
   hasUnreadAnnouncements,
   milestoneChips,
+  waterMlToday,
+  waterTargetMl,
   activityMinutesToday,
+  activityKcalEstToday,
+  activityTypesLabel,
 }: DashboardHomeProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -523,41 +416,16 @@ export function DashboardHome({
   }
 
   const quickActionClass =
-    "flex h-[60px] min-w-[60px] flex-col items-center justify-center gap-1 rounded-xl border-[0.5px] border-border bg-card px-1.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
+    "flex h-[56px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border-[0.5px] border-border bg-card px-1 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
 
-  const goal = targetKcal != null && targetKcal > 0 ? targetKcal : null;
-  let calorieRemainKcal: number | null = null;
-  if (goal != null && todayKcal > 0) {
-    const diff = goal - todayKcal;
-    if (diff >= 0) {
-      calorieRemainKcal = Math.round(diff);
-    }
-  }
+  const quickIconClass = "h-4 w-4 shrink-0 text-primary";
 
-  const mealSlots = [
-    { key: "breakfast", label: "早餐" },
-    { key: "lunch", label: "午餐" },
-    { key: "dinner", label: "晚餐" },
-    { key: "snack", label: "點心" },
-  ] as const;
-  const mealByKey = new Map(meals.map((meal) => [meal.key, meal]));
-  const displayMeals = mealSlots.map((slot) => {
-    const existing = mealByKey.get(slot.key);
-    return {
-      key: slot.key,
-      label: slot.label,
-      variant: existing?.variant ?? "self_logged",
-      kcal: existing?.kcal ?? null,
-      recordHref:
-        existing?.recordHref ??
-        `/log?meal_type=${encodeURIComponent(slot.key)}`,
-    };
-  });
+  const headerTitle = userName ? `Hi, ${userName}` : "Hi there";
 
   return (
     <div className="space-y-3">
       <PageHeader
-        title="總覽"
+        title={headerTitle}
         spacing="compact"
         action={
           <div className="flex shrink-0 items-center gap-2">
@@ -583,11 +451,7 @@ export function DashboardHome({
         }
       />
 
-      <section
-        className={cn(
-          "flex items-center gap-2",
-          streakDays >= 1 ? "justify-between" : "justify-end",
-        )}>
+      <section className="flex items-center justify-between gap-2">
         {streakDays >= 1 ? (
           <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary-light px-2.5 py-1 text-[11px] font-medium leading-none text-primary-foreground">
             <FiAward className="h-3 w-3 shrink-0 opacity-90" aria-hidden />
@@ -597,42 +461,28 @@ export function DashboardHome({
               <span>天達成！</span>
             </span>
           </span>
-        ) : null}
-        <p className="min-w-0 text-right text-[13px] text-muted-foreground">
+        ) : shouldShowNoAchievementLine(streakDays, milestoneChips) ? (
+          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary-light px-2.5 py-1 text-[11px] font-medium leading-none text-primary-foreground">
+            <FiAward className="h-3 w-3 shrink-0 opacity-90" aria-hidden />
+            <span className="inline-flex items-center gap-0.5">
+              尚未有達成紀錄
+            </span>
+          </span>
+        ) : (
+          <div className="min-w-0 flex-1" />
+        )}
+        <p className="shrink-0 text-right text-[13px] text-muted-foreground">
           {dateLabel}
         </p>
       </section>
-
-      <CalorieRingBlock
-        todayKcal={todayKcal}
-        targetKcal={targetKcal}
-        carbG={carbG}
-        proteinG={proteinG}
-        fatG={fatG}
-      />
-
-      {activityMinutesToday > 0 ? (
-        <p className="text-center text-[11px] text-muted-foreground">
-          今日已記錄活動約{" "}
-          <span className="tabular-nums font-medium text-foreground">
-            {activityMinutesToday}
-          </span>{" "}
-          分鐘 ·{" "}
-          <Link
-            href="/log?tab=activity"
-            className="text-primary underline-offset-2 hover:underline">
-            紀錄更多
-          </Link>
-        </p>
-      ) : null}
 
       <div className="grid grid-cols-2 items-stretch gap-2.5">
         <button
           type="button"
           onClick={openWeightDialog}
-          className="flex min-h-[136px] flex-col rounded-[10px] border-[0.5px] border-border bg-card p-3 text-left transition-colors hover:bg-muted">
-          <p className="text-[11px] text-muted-foreground">體重</p>
-          <p className="mt-0.5 tabular-nums text-[20px] font-medium text-foreground">
+          className="flex min-h-[112px] flex-col rounded-[10px] border-[0.5px] border-border bg-card p-2.5 text-left transition-colors hover:bg-muted">
+          <p className="text-[15px] font-medium text-foreground">體重</p>
+          <p className="mt-1 tabular-nums text-[20px] font-medium leading-tight text-foreground">
             {latestWeightKg != null ? (
               <>
                 {latestWeightKg}
@@ -663,62 +513,83 @@ export function DashboardHome({
           ) : null}
         </button>
 
-        <MetricTile
-          label="今日熱量"
-          className="h-full min-h-[136px] border-[0.5px] border-border bg-card"
-          value={
-            <>
-              {Math.round(todayKcal)}
-              <span className="text-[13px] font-normal text-muted-foreground">
-                {" "}
-                kcal
-              </span>
-            </>
-          }
-          hint={
-            goal != null ? (
+        <Link
+          href="/log?tab=activity"
+          className="flex min-h-[112px] flex-col rounded-[10px] border-[0.5px] border-border bg-card p-2.5 text-left transition-colors hover:bg-muted">
+          <p className="text-[15px] font-medium text-foreground">運動消耗</p>
+          <p className="mt-1 tabular-nums text-[20px] font-medium leading-tight text-primary">
+            {activityKcalEstToday > 0 ? (
               <>
-                目標 {Math.round(goal)} kcal
-                {calorieRemainKcal != null ? (
-                  <>
-                    {" · 尚可攝取約 "}
-                    <span className="text-primary">
-                      {calorieRemainKcal} kcal
-                    </span>
-                  </>
-                ) : null}
+                −{activityKcalEstToday}
+                <span className="text-[13px] font-normal text-primary">
+                  {" "}
+                  kcal
+                </span>
               </>
             ) : (
-              "尚未設定目標"
-            )
-          }
-        />
+              <span className="text-[13px] font-normal text-muted-foreground">
+                —
+              </span>
+            )}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {activityMinutesToday > 0
+              ? `${activityMinutesToday} 分鐘`
+              : "尚無紀錄 · 點此前往記錄"}
+          </p>
+          {activityMinutesToday > 0 && activityTypesLabel ? (
+            <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">
+              {activityTypesLabel}
+            </p>
+          ) : null}
+        </Link>
       </div>
+
+      <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+        <DashboardWaterGrid
+          initialWaterMl={waterMlToday}
+          embedded
+          waterTargetMl={waterTargetMl}
+          showQuickAdds
+        />
+      </section>
 
       <section>
         <p className="text-[15px] font-medium text-foreground">快速操作</p>
-        <div className="mt-3 grid grid-cols-5 gap-2">
+        <div className="mt-3 grid grid-cols-5 gap-1.5">
           <Link href="/log" className={cn(quickActionClass)} title="記錄飲食">
-            <FiCoffee className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <UtensilsCrossed
+              className={quickIconClass}
+              strokeWidth={1.8}
+              aria-hidden
+            />
             <span className="text-center leading-tight">飲食</span>
           </Link>
           <button
             type="button"
             className={cn(quickActionClass)}
             onClick={openWeightDialog}>
-            <FiActivity className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <Scale className={quickIconClass} strokeWidth={1.8} aria-hidden />
             <span className="text-center leading-tight">體重</span>
           </button>
           <Link
             href="/log?tab=activity"
             className={cn(quickActionClass)}
             title="記錄運動">
-            <FiActivity className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <Dumbbell
+              className={quickIconClass}
+              strokeWidth={1.8}
+              aria-hidden
+            />
             <span className="text-center leading-tight">運動</span>
           </Link>
-          <Link href="/analytics" className={cn(quickActionClass)} title="數據分析">
-            <FiBarChart2
-              className="h-4 w-4 shrink-0 text-primary"
+          <Link
+            href="/analytics"
+            className={cn(quickActionClass)}
+            title="數據分析">
+            <BarChart3
+              className={quickIconClass}
+              strokeWidth={1.8}
               aria-hidden
             />
             <span className="text-center leading-tight">數據</span>
@@ -727,7 +598,7 @@ export function DashboardHome({
             href="/guard/records"
             className={cn(quickActionClass)}
             title="標籤紀錄">
-            <FiTag className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <Tag className={quickIconClass} strokeWidth={1.8} aria-hidden />
             <span className="text-center leading-tight">標籤</span>
           </Link>
         </div>
@@ -749,36 +620,48 @@ export function DashboardHome({
       ) : null}
 
       <SectionCard>
-        <p className="text-[15px] font-medium text-foreground">今日餐食</p>
-        <ul className="mt-3 space-y-3">
-          {displayMeals.map((m) => (
-            <li key={m.key}>
-              <div className="flex items-start gap-2">
-                <MealStatusDot mealKey={m.key} isRecorded={m.kcal != null} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-foreground">
-                    {m.label}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[15px] font-medium text-foreground">今日餐食</p>
+          <Link
+            href="/log"
+            className="inline-flex items-center gap-0.5 rounded-[10px] border-[0.5px] border-border bg-secondary px-2.5 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:bg-muted">
+            + 新增
+            <ArrowUpRight className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+          </Link>
+        </div>
+        {meals.length === 0 ? (
+          <p className="mt-3 text-[13px] text-muted-foreground">
+            今日尚無餐點紀錄
+          </p>
+        ) : (
+          <ul className="mt-3 space-y-3">
+            {meals.map((m) => (
+              <li key={m.key}>
+                <div className="flex items-start gap-2">
+                  <MealStatusDot mealKey={m.key} isRecorded />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-medium text-foreground">
+                      {m.label}
+                    </p>
+                    {m.detailLine ? (
+                      <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
+                        {m.detailLine}
+                      </p>
+                    ) : null}
+                  </div>
                   {m.kcal != null ? (
-                    <span className="tabular-nums text-[13px] font-medium text-foreground">
+                    <span className="shrink-0 tabular-nums text-[13px] font-medium text-foreground">
                       {m.kcal}{" "}
                       <span className="font-normal text-muted-foreground">
                         kcal
                       </span>
                     </span>
                   ) : null}
-                  <Link
-                    href={m.recordHref}
-                    className="rounded-full border-[0.5px] border-border bg-secondary px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-muted">
-                    記錄
-                  </Link>
                 </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        )}
       </SectionCard>
 
       <WeeklyTrendCard weeklyWeight={weeklyWeight} weeklyKcal={weeklyKcal} />

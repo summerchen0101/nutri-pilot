@@ -40,11 +40,19 @@ export async function logWeightAction(
 
   const date = todayLocalISODate();
 
+  const { data: existingVital } = await supabase
+    .from('vital_logs')
+    .select('water_ml')
+    .eq('user_id', user.id)
+    .eq('date', date)
+    .maybeSingle();
+
   const { error: vitalErr } = await supabase.from('vital_logs').upsert(
     {
       user_id: user.id,
       date,
       weight_kg: weightKg,
+      water_ml: existingVital?.water_ml ?? null,
     },
     { onConflict: 'user_id,date' },
   );
@@ -130,6 +138,51 @@ export async function logWeightAction(
     if (goalErr) {
       return { error: goalErr.message };
     }
+  }
+
+  revalidatePath('/dashboard');
+  return {};
+}
+
+export async function setWaterMlForTodayAction(
+  totalMlRaw: number,
+): Promise<{ error?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: '未登入' };
+
+  const totalMl = Math.round(totalMlRaw);
+  if (!Number.isFinite(totalMl) || totalMl < 0 || totalMl > 8000) {
+    return { error: '請輸入合理水量（0–8000 ml）' };
+  }
+
+  const date = todayLocalISODate();
+
+  const { data: row, error: readErr } = await supabase
+    .from('vital_logs')
+    .select('weight_kg')
+    .eq('user_id', user.id)
+    .eq('date', date)
+    .maybeSingle();
+
+  if (readErr) {
+    return { error: readErr.message };
+  }
+
+  const { error: upsertErr } = await supabase.from('vital_logs').upsert(
+    {
+      user_id: user.id,
+      date,
+      weight_kg: row?.weight_kg ?? null,
+      water_ml: totalMl,
+    },
+    { onConflict: 'user_id,date' },
+  );
+
+  if (upsertErr) {
+    return { error: upsertErr.message };
   }
 
   revalidatePath('/dashboard');
