@@ -57,6 +57,7 @@ export default async function SettingsPage() {
     mealFrequency: profile.meal_frequency ?? 3,
     avoidFoods: profile.avoid_foods ?? [],
     allergens: profile.allergens ?? [],
+    tracksGlycemicConcern: profile.tracks_glycemic_concern ?? false,
     dietMethod: profile.diet_method ?? 'mediterranean',
     goal: {
       type: goal.type,

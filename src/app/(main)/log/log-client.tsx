@@ -30,10 +30,16 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  ActivityLogSection,
+  type ActivityLogRow,
+} from '@/app/(main)/log/activity-log-section';
+import { LabelScanSection } from '@/app/(main)/log/label-scan-section';
 import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
 import { invokeAiPhotoRequestFromBrowser } from '@/lib/food/invoke-photo-request';
 import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
 import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils/cn';
 import type { Json } from '@/types/supabase';
 
 export interface LogItemSnapshot {
@@ -247,6 +253,8 @@ function patchLogItemInLogs(
   }));
 }
 
+export type LogSectionTab = 'food' | 'activity' | 'label';
+
 interface LogClientProps {
   date: string;
   dailyCalTarget: number | null;
@@ -254,6 +262,9 @@ interface LogClientProps {
   /** URL `meal_type`，無預填時用來選預設餐次 Tab */
   initialMealTab?: MealType | null;
   prefillFromMeal?: PlanPrefillPayload | null;
+  /** URL `tab`：飲食 / 運動 / 拍標籤 */
+  sectionTab?: LogSectionTab;
+  initialActivities?: ActivityLogRow[];
 }
 
 type PlanItemShape = PlanPrefillPayload['items'][number];
@@ -294,12 +305,55 @@ function scaleMacrosFromBaseline(
   };
 }
 
+function LogSectionTabs({
+  date,
+  active,
+}: {
+  date: string;
+  active: LogSectionTab;
+}) {
+  const router = useRouter();
+
+  function go(tab: LogSectionTab) {
+    const p = new URLSearchParams();
+    p.set('date', date);
+    p.set('tab', tab);
+    router.replace(`/log?${p.toString()}`);
+  }
+
+  const tabBtn = (tab: LogSectionTab, label: string) => (
+    <button
+      key={tab}
+      type="button"
+      onClick={() => go(tab)}
+      className={cn(
+        'min-h-[40px] flex-1 rounded-[10px] px-2 py-2 text-[13px] font-medium transition-colors',
+        active === tab
+          ? 'bg-primary text-primary-foreground'
+          : 'border-[0.5px] border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground',
+      )}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="flex gap-2">
+      {tabBtn('food', '飲食')}
+      {tabBtn('activity', '運動')}
+      {tabBtn('label', '標籤')}
+    </div>
+  );
+}
+
 export function LogClient({
   date,
   dailyCalTarget,
   initialLogs,
   initialMealTab = null,
   prefillFromMeal = null,
+  sectionTab = 'food',
+  initialActivities = [],
 }: LogClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -740,6 +794,10 @@ export function LogClient({
 
   return (
     <div className="space-y-2.5">
+      {!prefillFromMeal ? (
+        <LogSectionTabs date={date} active={sectionTab} />
+      ) : null}
+
       <div className="rounded-xl border-[0.5px] border-border bg-card px-4 py-3">
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
@@ -977,7 +1035,7 @@ export function LogClient({
         </div>
       ) : null}
 
-      {!prefillFromMeal ? (
+      {!prefillFromMeal && sectionTab === 'food' ? (
       <Card className="min-w-0 max-w-full overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle>新增紀錄</CardTitle>
@@ -1139,6 +1197,15 @@ export function LogClient({
       </Card>
       ) : null}
 
+      {!prefillFromMeal && sectionTab === 'activity' ? (
+        <ActivityLogSection date={date} rows={initialActivities} />
+      ) : null}
+
+      {!prefillFromMeal && sectionTab === 'label' ? (
+        <LabelScanSection />
+      ) : null}
+
+      {sectionTab === 'food' ? (
       <div className="space-y-2.5">
         <h2 className="text-[15px] font-medium text-foreground">今日紀錄</h2>
         <div className="space-y-3">
@@ -1245,6 +1312,7 @@ export function LogClient({
           })}
         </div>
       </div>
+      ) : null}
     </div>
   );
 }

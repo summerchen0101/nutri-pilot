@@ -1,10 +1,12 @@
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import type { ActivityLogRow } from '@/app/(main)/log/activity-log-section';
 import {
   LogClient,
   type FoodLogSnapshot,
   type LogItemSnapshot,
+  type LogSectionTab,
 } from '@/app/(main)/log/log-client';
 import { PageHeader } from '@/components/layout/page-header';
 import { SectionCard } from '@/components/ui/section-card';
@@ -29,12 +31,18 @@ function parseMealType(
   return undefined;
 }
 
+function parseSectionTab(raw: string | undefined): LogSectionTab {
+  if (raw === 'activity' || raw === 'label' || raw === 'food') return raw;
+  return 'food';
+}
+
 export default async function LogPage({
   searchParams,
 }: {
   searchParams?: {
     date?: string;
     meal_type?: string;
+    tab?: string;
   };
 }) {
   const supabase = createClient();
@@ -49,6 +57,9 @@ export default async function LogPage({
     typeof rawDate === 'string' && isoDateOk(rawDate) ? rawDate : undefined;
 
   const initialMealTab = parseMealType(searchParams?.meal_type);
+  const sectionTab = parseSectionTab(
+    typeof searchParams?.tab === 'string' ? searchParams.tab : undefined,
+  );
 
   let activeDate = dateParam ?? todayLocalISODate();
 
@@ -94,11 +105,32 @@ export default async function LogPage({
     food_log_items: normalizeItems(row.food_log_items),
   }));
 
+  const { data: activityRows } = await supabase
+    .from('activity_logs')
+    .select(
+      'id, logged_date, activity_type, duration_minutes, calories_est, notes',
+    )
+    .eq('user_id', user.id)
+    .eq('logged_date', activeDate)
+    .order('created_at', { ascending: false });
+
+  const initialActivities: ActivityLogRow[] = (activityRows ?? []).map(
+    (r) => ({
+      id: r.id,
+      logged_date: r.logged_date,
+      activity_type: r.activity_type,
+      duration_minutes: r.duration_minutes,
+      calories_est:
+        r.calories_est != null ? Number(r.calories_est) : null,
+      notes: r.notes ?? null,
+    }),
+  );
+
   return (
     <div className="space-y-3">
       <PageHeader
-        title="飲食紀錄"
-        description="記錄今日用餐，對照熱量目標。"
+        title="每日紀錄"
+        description="飲食、運動與成分標示辨識。"
         spacing="compact"
       />
 
@@ -114,6 +146,8 @@ export default async function LogPage({
           dailyCalTarget={goal?.daily_cal_target ?? null}
           initialLogs={initialLogs}
           initialMealTab={initialMealTab}
+          sectionTab={sectionTab}
+          initialActivities={initialActivities}
         />
       </Suspense>
     </div>

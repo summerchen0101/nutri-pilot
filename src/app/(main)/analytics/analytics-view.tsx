@@ -23,6 +23,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { SectionCard } from '@/components/ui/section-card';
 import { SegmentedTabs } from '@/components/ui/segmented-tabs';
 
+import { WeeklyReportShare } from '@/app/(main)/analytics/weekly-report-share';
 import {
   addCalendarDaysISO,
   iterateISODatesInclusive,
@@ -47,6 +48,11 @@ export type AnalyticsViewProps = {
   dailyCalTarget: number | null;
   macroPct: { carb: number; protein: number; fat: number };
   weeklyInsight: WeeklyInsightPayload | null;
+  weekShareSummary: {
+    rangeLabel: string;
+    avgKcal: number;
+    weightSummaryLine: string;
+  };
 };
 
 function periodBounds(
@@ -107,6 +113,7 @@ export function AnalyticsView({
   dailyCalTarget,
   macroPct,
   weeklyInsight,
+  weekShareSummary,
 }: AnalyticsViewProps) {
   const [period, setPeriod] = useState<AnalyticsPeriod>('week');
 
@@ -344,37 +351,46 @@ export function AnalyticsView({
         </div>
       </SectionCard>
 
-      <section className="rounded-xl border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] p-3.5">
-        <p className="text-[11px] font-medium text-[#378ADD]">AI 週報洞察</p>
-        {!weeklyInsight?.items?.length ? (
-          <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-            尚無週報。系統會在週日自動產生洞察摘要；若有新報告會顯示於此。
-          </p>
-        ) : (
-          <>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              最新 · {formatCreatedAt(weeklyInsight.createdAt)}
+      <section className="space-y-4 rounded-xl border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] p-3.5">
+        <div>
+          <p className="text-[11px] font-medium text-[#378ADD]">AI 週報洞察</p>
+          {!weeklyInsight?.items?.length ? (
+            <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+              尚無週報。系統會在週日自動產生洞察摘要；若有新報告會顯示於此。
             </p>
-            <ul className="mt-3 space-y-2.5">
-              {weeklyInsight.items.map((row, idx) => (
-                <li
-                  key={`${idx}-${row.text.slice(0, 12)}`}
-                  className="flex gap-2 text-[13px] leading-relaxed text-foreground">
-                  <span
-                    className={cn(
-                      "mt-1 h-1.5 w-1.5 shrink-0 rounded-full",
-                      row.type === "positive" && "bg-[#4C956C]",
-                      row.type === "warning" && "bg-[#EF9F27]",
-                      row.type === "info" && "bg-[#378ADD]",
-                    )}
-                    aria-hidden
-                  />
-                  <span>{row.text}</span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
+          ) : (
+            <>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                最新 · {formatCreatedAt(weeklyInsight.createdAt)}
+              </p>
+              <ul className="mt-3 space-y-2.5">
+                {weeklyInsight.items.map((row, idx) => (
+                  <li
+                    key={`${idx}-${row.text.slice(0, 12)}`}
+                    className="flex gap-2 text-[13px] leading-relaxed text-foreground">
+                    <span
+                      className={cn(
+                        "mt-1 h-1.5 w-1.5 shrink-0 rounded-full",
+                        row.type === "positive" && "bg-[#4C956C]",
+                        row.type === "warning" && "bg-[#EF9F27]",
+                        row.type === "info" && "bg-[#378ADD]",
+                      )}
+                      aria-hidden
+                    />
+                    <span>{row.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+
+        <WeeklyReportShare
+          rangeLabel={weekShareSummary.rangeLabel}
+          avgKcal={weekShareSummary.avgKcal}
+          weightSummaryLine={weekShareSummary.weightSummaryLine}
+          insightLines={weeklyInsight?.items?.map((i) => i.text) ?? []}
+        />
       </section>
     </div>
   );

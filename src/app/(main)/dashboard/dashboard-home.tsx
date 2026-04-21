@@ -71,6 +71,10 @@ export type DashboardHomeProps = {
     logoUrl: string | null;
   }[];
   hasUnreadAnnouncements: boolean;
+  /** 最近解鎖的里程碑（已依時間倒序截斷） */
+  milestoneChips: { key: string; label: string }[];
+  /** 今日運動紀錄分鐘加總 */
+  activityMinutesToday: number;
 };
 
 function macroTargetsFromKcal(kcal: number): {
@@ -485,6 +489,8 @@ export function DashboardHome({
   promoBanner,
   popularBrands,
   hasUnreadAnnouncements,
+  milestoneChips,
+  activityMinutesToday,
 }: DashboardHomeProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -604,6 +610,21 @@ export function DashboardHome({
         fatG={fatG}
       />
 
+      {activityMinutesToday > 0 ? (
+        <p className="text-center text-[11px] text-muted-foreground">
+          今日已記錄活動約{" "}
+          <span className="tabular-nums font-medium text-foreground">
+            {activityMinutesToday}
+          </span>{" "}
+          分鐘 ·{" "}
+          <Link
+            href="/log?tab=activity"
+            className="text-primary underline-offset-2 hover:underline">
+            紀錄更多
+          </Link>
+        </p>
+      ) : null}
+
       <div className="grid grid-cols-2 items-stretch gap-2.5">
         <button
           type="button"
@@ -696,6 +717,21 @@ export function DashboardHome({
           </Link>
         </div>
       </SectionCard>
+
+      {milestoneChips.length > 0 ? (
+        <SectionCard>
+          <p className="text-[15px] font-medium text-foreground">里程碑</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {milestoneChips.map((m) => (
+              <span
+                key={m.key}
+                className="inline-flex items-center rounded-full bg-primary-light px-3 py-1.5 text-[12px] font-medium text-primary-foreground">
+                {m.label}
+              </span>
+            ))}
+          </div>
+        </SectionCard>
+      ) : null}
 
       <SectionCard>
         <p className="text-[15px] font-medium text-foreground">今日餐食</p>

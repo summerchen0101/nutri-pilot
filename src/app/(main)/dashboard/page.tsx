@@ -5,6 +5,10 @@ import {
   DashboardHome,
   type DashboardHomeProps,
 } from '@/app/(main)/dashboard/dashboard-home';
+import {
+  MILESTONE_LABELS,
+  syncUserMilestones,
+} from '@/lib/milestones/sync-user-milestones';
 import { addCalendarDaysISO, todayLocalISODate } from '@/lib/onboarding/date';
 import { DIET_METHOD_OPTIONS } from '@/lib/onboarding/constants';
 import { createClient } from '@/lib/supabase/server';
@@ -139,6 +143,33 @@ export default async function DashboardPage() {
 
   if (!profile) redirect('/onboarding');
 
+  await syncUserMilestones(supabase, user.id);
+
+  const [{ data: milestoneRows }, { data: activityTodayRows }] =
+    await Promise.all([
+      supabase
+        .from('user_milestones')
+        .select('milestone_key, unlocked_at')
+        .eq('user_id', user.id)
+        .order('unlocked_at', { ascending: false })
+        .limit(6),
+      supabase
+        .from('activity_logs')
+        .select('duration_minutes')
+        .eq('user_id', user.id)
+        .eq('logged_date', today),
+    ]);
+
+  const milestoneChips = (milestoneRows ?? []).map((r) => ({
+    key: r.milestone_key,
+    label: MILESTONE_LABELS[r.milestone_key] ?? r.milestone_key,
+  }));
+
+  const activityMinutesToday = (activityTodayRows ?? []).reduce(
+    (s, r) => s + Number(r.duration_minutes ?? 0),
+    0,
+  );
+
   const hasUnreadAnnouncements = await hasUnreadAnnouncementsForUser(
     supabase,
     user.id,
@@ -229,6 +260,8 @@ export default async function DashboardPage() {
       logoUrl: row.logo_url as string | null,
     })),
     hasUnreadAnnouncements,
+    milestoneChips,
+    activityMinutesToday,
   };
 
   return <DashboardHome {...homeProps} />;

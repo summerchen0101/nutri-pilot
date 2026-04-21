@@ -10,7 +10,8 @@
 | 任務 | 模型 | 方式 | 原因 |
 |------|------|------|------|
 | 菜單生成 | claude-sonnet-4-5 | **Queue** | 耗時 3–6 秒，用戶等不住 |
-| 拍照辨識 | claude-sonnet-4-5 | **Queue** | 圖片上傳 + Vision 處理，耗時不定 |
+| 拍照辨識（餐桌食物） | claude-sonnet-4-5 | **Queue** | 圖片上傳 + Vision 處理，耗時不定 |
+| 拍照辨識（營養標／成分，`job_kind=label`） | claude-sonnet-4-5 | **Queue** | 同 pipeline；prompt 見 `supabase/functions/_shared/label-analyze-prompt.ts`，輸出須含 `_kind: label_analysis` |
 | 週報洞察 | claude-sonnet-4-5 | **Queue（cron 觸發）** | 資料量大，每週日自動跑 |
 | 換食材建議 | claude-sonnet-4-5 | 直接呼叫 | prompt 短，回應快（< 2 秒） |
 | 今日 Dashboard 建議 | claude-sonnet-4-5 | 直接呼叫 | lazy load，不擋主畫面 |

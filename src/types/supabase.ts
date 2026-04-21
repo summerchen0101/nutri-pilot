@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          activity_type: string
+          calories_est: number | null
+          created_at: string | null
+          duration_minutes: number
+          id: string
+          logged_date: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          calories_est?: number | null
+          created_at?: string | null
+          duration_minutes: number
+          id?: string
+          logged_date: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          calories_est?: number | null
+          created_at?: string | null
+          duration_minutes?: number
+          id?: string
+          logged_date?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           country: string | null
@@ -278,6 +311,7 @@ export type Database = {
           created_at: string | null
           error_message: string | null
           id: string
+          job_kind: string
           result_json: Json | null
           status: string
           storage_path: string
@@ -288,6 +322,7 @@ export type Database = {
           created_at?: string | null
           error_message?: string | null
           id?: string
+          job_kind?: string
           result_json?: Json | null
           status?: string
           storage_path: string
@@ -298,6 +333,7 @@ export type Database = {
           created_at?: string | null
           error_message?: string | null
           id?: string
+          job_kind?: string
           result_json?: Json | null
           status?: string
           storage_path?: string
@@ -730,6 +766,24 @@ export type Database = {
           },
         ]
       }
+      user_milestones: {
+        Row: {
+          milestone_key: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          milestone_key: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          milestone_key?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           activity_level: string
@@ -746,6 +800,7 @@ export type Database = {
           meal_frequency: number
           name: string
           tdee: number | null
+          tracks_glycemic_concern: boolean
           updated_at: string | null
           user_id: string
           weight_kg: number
@@ -765,6 +820,7 @@ export type Database = {
           meal_frequency?: number
           name: string
           tdee?: number | null
+          tracks_glycemic_concern?: boolean
           updated_at?: string | null
           user_id: string
           weight_kg: number
@@ -784,6 +840,7 @@ export type Database = {
           meal_frequency?: number
           name?: string
           tdee?: number | null
+          tracks_glycemic_concern?: boolean
           updated_at?: string | null
           user_id?: string
           weight_kg?: number

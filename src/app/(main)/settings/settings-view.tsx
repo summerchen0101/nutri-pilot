@@ -31,7 +31,13 @@ import { cn } from '@/lib/utils/cn';
 import { createClient } from '@/lib/supabase/client';
 import { ALLERGEN_OPTIONS, DIET_METHOD_OPTIONS, GOAL_TYPE_OPTIONS } from '@/lib/onboarding/constants';
 
-import { saveBodyMetrics, saveDietPreferences, saveGoals, saveProfileName } from '@/app/(main)/settings/actions';
+import {
+  saveBodyMetrics,
+  saveDietPreferences,
+  saveGoals,
+  saveProfileName,
+  saveTracksGlycemicConcern,
+} from '@/app/(main)/settings/actions';
 
 export type SettingsInitialData = {
   name: string;
@@ -47,6 +53,7 @@ export type SettingsInitialData = {
   dietMethod: string;
   avoidFoods: string[];
   allergens: string[];
+  tracksGlycemicConcern: boolean;
   goal: {
     type: string;
     targetWeightKg: number;
@@ -93,6 +100,10 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
   const [allergens, setAllergens] = useState<string[]>(initial.allergens ?? []);
   const [avoidFoods, setAvoidFoods] = useState<string[]>(initial.avoidFoods ?? []);
   const [avoidInput, setAvoidInput] = useState('');
+  const [tracksGlycemic, setTracksGlycemic] = useState(
+    initial.tracksGlycemicConcern,
+  );
+  const [glycemicPending, setGlycemicPending] = useState(false);
   const [activeSheet, setActiveSheet] = useState<SheetType>(null);
 
   const [errProfile, setErrProfile] = useState<string | null>(null);
@@ -287,9 +298,25 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
       <DietPreferencesCard
         dietMethodText={dietMethodLabel(dietMethod)}
         allergenText={allergenText}
+        tracksGlycemicConcern={tracksGlycemic}
+        glycemicPending={glycemicPending}
         error={errDiet}
         onEditMethod={() => setActiveSheet('dietMethod')}
         onEditAllergens={() => setActiveSheet('allergens')}
+        onToggleGlycemic={(next) => {
+          setGlycemicPending(true);
+          startTransition(async () => {
+            const res = await saveTracksGlycemicConcern(next);
+            setGlycemicPending(false);
+            if (res.error) {
+              setErrDiet(res.error);
+              return;
+            }
+            setTracksGlycemic(next);
+            setErrDiet(null);
+            refresh();
+          });
+        }}
       />
 
       <AccountManagementCard

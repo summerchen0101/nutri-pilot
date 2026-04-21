@@ -4,7 +4,11 @@ import {
   AnalyticsView,
   type WeeklyInsightPayload,
 } from '@/app/(main)/analytics/analytics-view';
-import { todayLocalISODate } from '@/lib/onboarding/date';
+import {
+  addCalendarDaysISO,
+  iterateISODatesInclusive,
+  todayLocalISODate,
+} from '@/lib/onboarding/date';
 import { createClient } from '@/lib/supabase/server';
 import type { Json } from '@/types/supabase';
 
@@ -94,6 +98,47 @@ export default async function AnalyticsPage() {
     };
   }
 
+  const weekStartRolling = addCalendarDaysISO(today, -6);
+  const rollingWeekDates = iterateISODatesInclusive(
+    weekStartRolling,
+    today,
+  );
+  let kcalSumRolling = 0;
+  let kcalDaysRolling = 0;
+  for (const d of rollingWeekDates) {
+    const n = nutritionByDate[d];
+    if (n && n.kcal > 0) {
+      kcalSumRolling += n.kcal;
+      kcalDaysRolling++;
+    }
+  }
+  const weekAvgKcal =
+    kcalDaysRolling > 0 ? Math.round(kcalSumRolling / kcalDaysRolling) : 0;
+
+  const weekVitals = (vitals ?? [])
+    .filter(
+      (v) =>
+        v.date >= weekStartRolling &&
+        v.date <= today &&
+        v.weight_kg != null,
+    )
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  let weightSummaryLine: string;
+  if (weekVitals.length >= 2) {
+    const w0 = Number(weekVitals[0].weight_kg);
+    const w1 = Number(weekVitals[weekVitals.length - 1].weight_kg);
+    const diff = w1 - w0;
+    const sign = diff > 0 ? '+' : '';
+    weightSummaryLine = `本週變化 ${sign}${diff.toFixed(1)} kg`;
+  } else if (weekVitals.length === 1) {
+    weightSummaryLine = `最近 ${Number(weekVitals[0].weight_kg).toFixed(1)} kg`;
+  } else {
+    weightSummaryLine = '本週尚無體重紀錄';
+  }
+
+  const rangeLabel = `${weekStartRolling.slice(5)} ~ ${today.slice(5)}`;
+
   return (
     <AnalyticsView
       todayIso={today}
@@ -107,6 +152,11 @@ export default async function AnalyticsPage() {
         fat: 25,
       }}
       weeklyInsight={weeklyInsight}
+      weekShareSummary={{
+        rangeLabel,
+        avgKcal: weekAvgKcal,
+        weightSummaryLine,
+      }}
     />
   );
 }

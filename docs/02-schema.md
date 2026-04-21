@@ -391,3 +391,14 @@ FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 # 每次 schema 改動後執行
 supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/supabase.ts
 ```
+
+---
+
+## 補充（2026-04）：運動紀錄、里程碑、`photo_analysis_jobs.job_kind`、`tracks_glycemic_concern`
+
+詳見 migration `014_activity_milestones_label_jobs.sql`。摘要：
+
+- **`activity_logs`**：`user_id`、`logged_date`、`activity_type`（walk/run/strength/yoga/cardio/other）、`duration_minutes`、`calories_est`、`notes`。
+- **`user_milestones`**：複合鍵 `(user_id, milestone_key)`、`unlocked_at`。
+- **`photo_analysis_jobs.job_kind`**：`meal`（預設）或 `label`。
+- **`user_profiles.tracks_glycemic_concern`**：BOOLEAN，預設 FALSE；影響標籤 AI prompt 對高糖提示的強度。

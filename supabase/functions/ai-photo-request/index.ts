@@ -155,9 +155,14 @@ Deno.serve(async (req) => {
   }
 
   let storagePath = "";
+  let jobKind: "meal" | "label" = "meal";
   try {
     const body = await req.json();
     storagePath = typeof body.storagePath === "string" ? body.storagePath : "";
+    const rawKind = body.jobKind ?? body.job_kind;
+    if (rawKind === "label" || rawKind === "meal") {
+      jobKind = rawKind;
+    }
   } catch {
     return jsonResponse({ error: "Invalid JSON" }, 400);
   }
@@ -173,6 +178,7 @@ Deno.serve(async (req) => {
       user_id: user.id,
       storage_path: storagePath,
       status: "pending",
+      job_kind: jobKind,
     })
     .select("id")
     .single();

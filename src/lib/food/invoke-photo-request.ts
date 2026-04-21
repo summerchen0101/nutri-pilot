@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client';
  */
 export async function invokeAiPhotoRequestFromBrowser(
   storagePath: string,
+  jobKind: 'meal' | 'label' = 'meal',
 ): Promise<{
   jobId?: string;
   hint?: string;
@@ -42,7 +43,7 @@ export async function invokeAiPhotoRequestFromBrowser(
     hint?: string;
     error?: string;
   }>('ai-photo-request', {
-    body: { storagePath },
+    body: { storagePath, jobKind },
     headers: {
       Authorization: `Bearer ${session.access_token}`,
     },
