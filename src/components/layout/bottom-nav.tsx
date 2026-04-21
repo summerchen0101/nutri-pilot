@@ -14,9 +14,9 @@ import { cn } from '@/lib/utils/cn';
 
 const NAV = [
   { href: '/dashboard', label: '總覽', Icon: LayoutDashboard },
+  { href: '/guard', label: '守衛', Icon: Tag },
   { href: '/log', label: '紀錄', Icon: PlusCircle },
   { href: '/shop', label: '商城', Icon: ShoppingCart },
-  { href: '/guard', label: '守衛', Icon: Tag },
   { href: '/settings', label: '我的', Icon: UserRound },
 ] as const;
 

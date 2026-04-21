@@ -7,6 +7,7 @@ import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
 import { invokeLabelGuardRequestFromBrowser } from '@/lib/food/invoke-label-guard-request';
 import {
   allergenDetailSheetBody,
+  canOpenAlertKeywordDetail,
   resolveAlertKeywordExplanation,
   resolveRiskItemExplanation,
 } from '@/lib/food/label-guard-lookups';
@@ -391,19 +392,33 @@ export function GuardLabelClient() {
                   偵測到的警示
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {report.alert_keywords.map((kw, i) => (
-                    <button
-                      key={`${kw}-${i}`}
-                      type="button"
-                      className="rounded-full bg-[#FFF4E5] px-2.5 py-1 text-left text-[12px] text-[#C57A12] ring-1 ring-[#EF9F27]/45 transition-colors active:bg-[#FFF8ED]"
-                      aria-label={`${kw} 說明`}
-                      onClick={() => {
-                        const { title, body } = resolveAlertKeywordExplanation(kw);
-                        openDetailSheet(title, body);
-                      }}>
-                      {kw}
-                    </button>
-                  ))}
+                  {report.alert_keywords.map((kw, i) => {
+                    const canOpen = canOpenAlertKeywordDetail(kw);
+                    if (!canOpen) {
+                      return (
+                        <span
+                          key={`${kw}-${i}`}
+                          className="rounded-full bg-muted px-2.5 py-1 text-left text-[12px] text-muted-foreground ring-1 ring-border"
+                          aria-label={`${kw}（一般性參考）`}>
+                          {kw}
+                        </span>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={`${kw}-${i}`}
+                        type="button"
+                        className="rounded-full bg-[#FFF4E5] px-2.5 py-1 text-left text-[12px] text-[#C57A12] ring-1 ring-[#EF9F27]/45 transition-colors active:bg-[#FFF8ED]"
+                        aria-label={`${kw} 說明`}
+                        onClick={() => {
+                          const { title, body } = resolveAlertKeywordExplanation(kw);
+                          openDetailSheet(title, body);
+                        }}>
+                        {kw}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}

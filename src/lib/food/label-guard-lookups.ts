@@ -134,6 +134,10 @@ export function resolveAlertKeywordExplanation(kw: string): {
   return { title, body };
 }
 
+export function canOpenAlertKeywordDetail(kw: string): boolean {
+  return tryExplainByKeywordTable(kw) !== null;
+}
+
 export function resolveRiskItemExplanation(
   name: string,
   plainLanguage: string,
