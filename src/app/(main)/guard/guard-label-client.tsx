@@ -32,6 +32,21 @@ import {
 } from '@/components/ui/card';
 import { cn } from '@/lib/utils/cn';
 
+const MAX_SAVED_REPORTS = 5;
+const MAX_SAVED_NAME_LENGTH = 30;
+
+function getTodayYmd(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function buildDefaultSavedName(safetyScore: number): string {
+  return `${getTodayYmd()} ${safetyScore}分`;
+}
+
 function applyGuardJobUpdate(
   row: {
     status?: string;
@@ -83,6 +98,11 @@ export function GuardLabelClient() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailTitle, setDetailTitle] = useState('');
   const [detailBody, setDetailBody] = useState('');
+  const [saveEditorOpen, setSaveEditorOpen] = useState(false);
+  const [savedName, setSavedName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveHint, setSaveHint] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const applyUpdate = useCallback(
     (row: {
@@ -196,6 +216,10 @@ export function GuardLabelClient() {
     if (!file) return;
     setReportError(null);
     setReport(null);
+    setSaveEditorOpen(false);
+    setSavedName('');
+    setSaveHint(null);
+    setSaveError(null);
     setHint(null);
     setJobStatus(null);
     setActiveJobId(null);
@@ -296,6 +320,78 @@ export function GuardLabelClient() {
     setDetailTitle(title);
     setDetailBody(body);
     setDetailOpen(true);
+  }
+
+  function openSaveEditor() {
+    if (!report) return;
+    setSavedName(buildDefaultSavedName(report.safety_score));
+    setSaveHint(null);
+    setSaveError(null);
+    setSaveEditorOpen(true);
+  }
+
+  async function saveToPersonalRecord() {
+    if (!report) return;
+    const name = savedName.trim();
+    if (!name) {
+      setSaveError('請輸入名稱');
+      return;
+    }
+    if (name.length > MAX_SAVED_NAME_LENGTH) {
+      setSaveError(`名稱最多 ${MAX_SAVED_NAME_LENGTH} 字`);
+      return;
+    }
+
+    setSaving(true);
+    setSaveError(null);
+    setSaveHint(null);
+
+    const supabase = createClient();
+    const {
+      data: { user },
+      error: userErr,
+    } = await supabase.auth.getUser();
+
+    if (userErr || !user) {
+      setSaving(false);
+      setSaveError('未登入');
+      return;
+    }
+
+    const { count, error: countErr } = await supabase
+      .from('label_guard_saved_reports')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+
+    if (countErr) {
+      setSaving(false);
+      setSaveError(countErr.message);
+      return;
+    }
+
+    if ((count ?? 0) >= MAX_SAVED_REPORTS) {
+      setSaving(false);
+      setSaveError('最多 5 筆，請先刪除舊紀錄');
+      return;
+    }
+
+    const { error: insertErr } = await supabase
+      .from('label_guard_saved_reports')
+      .insert({
+        user_id: user.id,
+        job_id: activeJobId,
+        name,
+        report_json: report as unknown as Json,
+      });
+
+    setSaving(false);
+    if (insertErr) {
+      setSaveError(insertErr.message);
+      return;
+    }
+
+    setSaveEditorOpen(false);
+    setSaveHint('已儲存到個人紀錄');
   }
 
   return (
@@ -544,6 +640,60 @@ export function GuardLabelClient() {
               }}>
               清除並重新拍攝
             </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full border-[0.5px]"
+              onClick={openSaveEditor}>
+              儲存到個人紀錄
+            </Button>
+
+            {saveEditorOpen ? (
+              <div className="space-y-2 rounded-lg border-[0.5px] border-border bg-card p-3">
+                <label
+                  htmlFor="saved-report-name"
+                  className="text-[11px] font-medium text-muted-foreground">
+                  紀錄名稱（可修改）
+                </label>
+                <input
+                  id="saved-report-name"
+                  type="text"
+                  value={savedName}
+                  maxLength={MAX_SAVED_NAME_LENGTH}
+                  onChange={(e) => setSavedName(e.target.value)}
+                  className="w-full rounded-md border-[0.5px] border-border bg-background px-2.5 py-2 text-[13px] text-foreground outline-none ring-primary transition-colors focus:border-primary focus:ring-2"
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    {savedName.trim().length}/{MAX_SAVED_NAME_LENGTH}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-8 border-[0.5px] border-border px-3 text-[12px]"
+                      onClick={() => setSaveEditorOpen(false)}>
+                      取消
+                    </Button>
+                    <Button
+                      type="button"
+                      className="h-8 px-3 text-[12px]"
+                      onClick={() => void saveToPersonalRecord()}
+                      disabled={saving}>
+                      {saving ? '儲存中…' : '儲存'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {saveError ? (
+              <p className="text-[12px] text-destructive">{saveError}</p>
+            ) : null}
+            {saveHint ? (
+              <p className="text-[12px] text-primary">{saveHint}</p>
+            ) : null}
           </div>
         ) : null}
       </CardContent>

@@ -375,6 +375,44 @@ export type Database = {
         }
         Relationships: []
       }
+      label_guard_saved_reports: {
+        Row: {
+          created_at: string | null
+          id: string
+          job_id: string | null
+          name: string
+          report_json: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          job_id?: string | null
+          name: string
+          report_json: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          job_id?: string | null
+          name?: string
+          report_json?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "label_guard_saved_reports_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "label_guard_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_items: {
         Row: {
           calories: number

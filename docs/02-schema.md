@@ -409,3 +409,4 @@ supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/supabase.
 
 - **`label_guard_jobs`**：結構類似 `photo_analysis_jobs`（無 `job_kind`），供「食品標示智慧分析」Queue 結果。
 - **Storage `label-guard-photos`**：標示／成分表拍照，RLS 與 `food-photos` 相同模式（路徑首段為 `user_id`）。
+- **`label_guard_saved_reports`**（migration `018_label_guard_saved_reports.sql`）：守衛結果可存為「個人紀錄」，欄位包含 `name`、`report_json`、`job_id`；RLS 僅允許本人存取，DB trigger 限制每位使用者最多 5 筆。

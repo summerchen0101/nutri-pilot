@@ -11,6 +11,7 @@ import {
   FiBell,
   FiCoffee,
   FiHeadphones,
+  FiTag,
 } from "react-icons/fi";
 import { createPortal } from "react-dom";
 
@@ -696,7 +697,7 @@ export function DashboardHome({
 
       <SectionCard>
         <p className="text-[15px] font-medium text-foreground">快速操作</p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-5 gap-2">
           <Link href="/log" className={cn(ghostQuick)} title="記錄飲食">
             <FiCoffee className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <span className="text-center leading-tight">飲食</span>
@@ -708,12 +709,26 @@ export function DashboardHome({
             <FiActivity className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <span className="text-center leading-tight">體重</span>
           </button>
+          <Link
+            href="/log?tab=activity"
+            className={cn(ghostQuick)}
+            title="記錄運動">
+            <FiActivity className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span className="text-center leading-tight">運動</span>
+          </Link>
           <Link href="/analytics" className={cn(ghostQuick)} title="數據分析">
             <FiBarChart2
               className="h-4 w-4 shrink-0 text-primary"
               aria-hidden
             />
             <span className="text-center leading-tight">數據</span>
+          </Link>
+          <Link
+            href="/guard/records"
+            className={cn(ghostQuick)}
+            title="標籤紀錄">
+            <FiTag className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span className="text-center leading-tight">標籤</span>
           </Link>
         </div>
       </SectionCard>
