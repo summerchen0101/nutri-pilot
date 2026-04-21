@@ -6,9 +6,19 @@
 export const KCAL_PER_MINUTE = {
   walk: 4,
   run: 11,
+  cycling: 8,
+  swimming: 9,
+  cardio: 9,
+  hiit: 11,
+  jump_rope: 11,
+  dance: 6,
+  basketball: 8,
+  tennis: 7,
+  badminton: 7,
   strength: 6,
   yoga: 3,
-  cardio: 9,
+  pilates: 3,
+  stretching: 2,
   other: 5,
 } as const;
 

@@ -24,22 +24,43 @@ export type ActivityLogRow = {
   notes: string | null;
 };
 
-const TYPE_LABEL: Record<string, string> = {
+const TYPE_LABEL: Record<ActivityType, string> = {
   walk: '走路',
   run: '跑步',
+  cycling: '單車',
+  swimming: '游泳',
+  cardio: '有氧',
+  hiit: '間歇有氧',
+  jump_rope: '跳繩',
+  dance: '舞蹈有氧',
+  basketball: '籃球',
+  tennis: '網球',
+  badminton: '羽球',
   strength: '重訓',
   yoga: '瑜珈',
-  cardio: '有氧',
+  pilates: '皮拉提斯',
+  stretching: '伸展',
   other: '其他',
 };
 
-const TYPE_ORDER: ActivityType[] = [
-  'walk',
-  'run',
-  'strength',
-  'yoga',
-  'cardio',
-  'other',
+const ACTIVITY_GROUPS: { label: string; types: readonly ActivityType[] }[] = [
+  {
+    label: '有氧與心肺',
+    types: [
+      'walk',
+      'run',
+      'cycling',
+      'swimming',
+      'cardio',
+      'hiit',
+      'jump_rope',
+      'dance',
+    ],
+  },
+  { label: '球類', types: ['basketball', 'tennis', 'badminton'] },
+  { label: '肌力', types: ['strength'] },
+  { label: '瑜珈與伸展', types: ['yoga', 'pilates', 'stretching'] },
+  { label: '其他', types: ['other'] },
 ];
 
 const QUICK_DURATION_MINUTES = [15, 30, 45, 60, 90] as const;
@@ -129,22 +150,34 @@ export function ActivityLogSection({
             <p className="text-[13px] text-destructive">{error}</p>
           ) : null}
           <div className="space-y-2">
-            <p className="text-[11px] font-medium text-muted-foreground">
+            <label
+              htmlFor="activity-type-select"
+              className="text-[11px] font-medium text-muted-foreground"
+            >
               類型
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {TYPE_ORDER.map((t) => (
-                <Button
-                  key={t}
-                  type="button"
-                  variant={activityType === t ? 'default' : 'ghost'}
-                  className={activityType === t ? mealPillPrimary : mealPillInactive}
-                  onClick={() => setActivityType(t)}
-                >
-                  {TYPE_LABEL[t]}
-                </Button>
+            </label>
+            <select
+              id="activity-type-select"
+              className={cn(
+                'mt-1 flex h-10 w-full rounded-[10px] border-[0.5px] border-border bg-card px-3 py-2 text-[13px] text-foreground',
+                'focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none',
+                'disabled:cursor-not-allowed disabled:opacity-50',
+              )}
+              value={activityType}
+              onChange={(e) =>
+                setActivityType(e.target.value as ActivityType)
+              }
+            >
+              {ACTIVITY_GROUPS.map((g) => (
+                <optgroup key={g.label} label={g.label}>
+                  {g.types.map((t) => (
+                    <option key={t} value={t}>
+                      {TYPE_LABEL[t]}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
-            </div>
+            </select>
           </div>
           <div>
             <label className="text-[11px] text-muted-foreground">
@@ -239,7 +272,8 @@ export function ActivityLogSection({
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-foreground">
-                    {TYPE_LABEL[r.activity_type] ?? r.activity_type}
+                    {TYPE_LABEL[r.activity_type as ActivityType] ??
+                      r.activity_type}
                     <span className="ml-1.5 text-[11px] font-normal tabular-nums text-muted-foreground">
                       {r.duration_minutes} 分鐘
                     </span>

@@ -7,9 +7,19 @@ import { createClient } from '@/lib/supabase/server';
 const ACTIVITY_TYPES = [
   'walk',
   'run',
+  'cycling',
+  'swimming',
+  'cardio',
+  'hiit',
+  'jump_rope',
+  'dance',
+  'basketball',
+  'tennis',
+  'badminton',
   'strength',
   'yoga',
-  'cardio',
+  'pilates',
+  'stretching',
   'other',
 ] as const;
 

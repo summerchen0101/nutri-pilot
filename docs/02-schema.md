@@ -398,7 +398,7 @@ supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/supabase.
 
 詳見 migration `014_activity_milestones_label_jobs.sql`。摘要：
 
-- **`activity_logs`**：`user_id`、`logged_date`、`activity_type`（walk/run/strength/yoga/cardio/other）、`duration_minutes`、`calories_est`、`notes`。
+- **`activity_logs`**：`user_id`、`logged_date`、`activity_type`（`walk` / `run` / `cycling` / `swimming` / `cardio` / `hiit` / `jump_rope` / `dance` / `basketball` / `tennis` / `badminton` / `strength` / `yoga` / `pilates` / `stretching` / `other`；見 migration `015_activity_expand_types.sql`、`016_activity_types_sports.sql`）、`duration_minutes`、`calories_est`、`notes`。紀錄頁以分類下拉選取類型。
 - **`user_milestones`**：複合鍵 `(user_id, milestone_key)`、`unlocked_at`。
 - **`photo_analysis_jobs.job_kind`**：`meal`（預設）或 `label`。
 - **`user_profiles.tracks_glycemic_concern`**：BOOLEAN，預設 FALSE；影響標籤 AI prompt 對高糖提示的強度。
