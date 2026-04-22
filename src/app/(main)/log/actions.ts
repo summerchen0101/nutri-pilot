@@ -216,3 +216,132 @@ export async function commitPrefillFromPlanAction(_: {
   return { error: '飲食計畫功能已下線，請改用手動輸入或拍照記錄。' };
 }
 
+/** 與每日紀錄 `LogItemSnapshot` 欄位一致，供「選擇常用」帶入。 */
+export type FrequentFoodItemSnapshot = {
+  id: string;
+  name: string;
+  quantity_g: number;
+  calories: number;
+  carb_g: number;
+  protein_g: number;
+  fat_g: number;
+  fiber_g: number | null;
+  sodium_mg: number | null;
+  brand: string | null;
+  is_verified: boolean | null;
+};
+
+function normalizeFrequentItem(raw: {
+  id: string;
+  name: string;
+  quantity_g: number;
+  calories: number;
+  carb_g: number;
+  protein_g: number;
+  fat_g: number;
+  fiber_g: number | null;
+  sodium_mg: number | null;
+  brand: string | null;
+  is_verified: boolean | null;
+}): FrequentFoodItemSnapshot {
+  return {
+    id: raw.id,
+    name: String(raw.name ?? '').trim() || '未命名',
+    quantity_g: Math.round(Number(raw.quantity_g)),
+    calories: Math.round(Number(raw.calories)),
+    carb_g: Math.round(Number(raw.carb_g)),
+    protein_g: Math.round(Number(raw.protein_g)),
+    fat_g: Math.round(Number(raw.fat_g)),
+    fiber_g:
+      raw.fiber_g == null ? null : Math.round(Number(raw.fiber_g)),
+    sodium_mg:
+      raw.sodium_mg == null ? null : Math.round(Number(raw.sodium_mg)),
+    brand: raw.brand,
+    is_verified: raw.is_verified,
+  };
+}
+
+/** 依歷史紀錄彙整「常用」項目：同名計次，營養資料取最近一次。 */
+export async function listFrequentFoodLogItemsAction(): Promise<{
+  items?: Array<{ snapshot: FrequentFoodItemSnapshot; useCount: number }>;
+  error?: string;
+}> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: '未登入' };
+
+  const { data: rows, error } = await supabase
+    .from('food_logs')
+    .select(
+      `
+      food_log_items (
+        id,
+        name,
+        quantity_g,
+        calories,
+        carb_g,
+        protein_g,
+        fat_g,
+        fiber_g,
+        sodium_mg,
+        brand,
+        is_verified
+      )
+    `,
+    )
+    .eq('user_id', user.id)
+    .order('logged_at', { ascending: false })
+    .limit(100);
+
+  if (error) return { error: error.message };
+
+  type Row = {
+    food_log_items:
+      | {
+          id: string;
+          name: string;
+          quantity_g: number;
+          calories: number;
+          carb_g: number;
+          protein_g: number;
+          fat_g: number;
+          fiber_g: number | null;
+          sodium_mg: number | null;
+          brand: string | null;
+          is_verified: boolean | null;
+        }[]
+      | null;
+  };
+
+  const freq = new Map<
+    string,
+    { snapshot: FrequentFoodItemSnapshot; useCount: number }
+  >();
+
+  for (const log of (rows ?? []) as Row[]) {
+    const items = log.food_log_items ?? [];
+    for (const it of items) {
+      const key = String(it.name ?? '')
+        .trim()
+        .toLowerCase();
+      if (!key) continue;
+      const snap = normalizeFrequentItem(it);
+      const existing = freq.get(key);
+      if (!existing) {
+        freq.set(key, { snapshot: snap, useCount: 1 });
+      } else {
+        existing.useCount++;
+      }
+    }
+  }
+
+  const list = Array.from(freq.values()).sort((a, b) => {
+    if (b.useCount !== a.useCount) return b.useCount - a.useCount;
+    return a.snapshot.name.localeCompare(b.snapshot.name, 'zh-Hant');
+  });
+
+  return { items: list };
+}
+

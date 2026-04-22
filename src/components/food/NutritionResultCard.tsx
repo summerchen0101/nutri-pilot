@@ -112,6 +112,8 @@ export interface NutritionResultCardProps {
   stagingOnly?: boolean;
   confirmBusy?: boolean;
   onConfirm: (edited: ManualFoodAnalysisResult) => void;
+  /** 非 editMode：回到上一層輸入／選圖 */
+  onReselect?: () => void;
   /** 已紀錄項目編輯：顯示取消／儲存 */
   editMode?: boolean;
   onCancel?: () => void;
@@ -127,6 +129,7 @@ export function NutritionResultCard({
   stagingOnly,
   confirmBusy,
   onConfirm,
+  onReselect,
   editMode = false,
   onCancel,
   editBusy,
@@ -343,7 +346,7 @@ export function NutritionResultCard({
                   finishEditingName();
                 }
               }}
-              className="w-full border-b border-primary bg-transparent pb-0.5 text-[15px] font-medium text-foreground outline-none"
+              className="w-full rounded-none border-0 border-b border-primary bg-transparent pb-0.5 text-[15px] font-medium text-foreground outline-none focus:border-0 focus:border-b focus:border-primary focus:[box-shadow:none!important] focus-visible:outline-none"
             />
           : (
             <button
@@ -481,19 +484,30 @@ export function NutritionResultCard({
           </Button>
         </div>
       : (
-        <Button
-          type="button"
-          variant="default"
-          className="h-10 w-full rounded-[10px] text-[13px] font-medium"
-          disabled={busy}
-          onClick={() => handleConfirm()}
-        >
-          {busy ?
-            '加入中…'
-          : stagingOnly ?
-            '加入清單'
-          : `加入${mealLabelZh ?? ''}`}
-        </Button>
+        <div className="flex gap-2 pt-1">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 min-h-10 min-w-0 shrink-0 basis-[34%] rounded-[10px] text-[13px] font-medium"
+            disabled={busy}
+            onClick={() => onReselect?.()}
+          >
+            重選
+          </Button>
+          <Button
+            type="button"
+            variant="default"
+            className="h-10 min-h-10 min-w-0 flex-1 rounded-[10px] text-[13px] font-medium"
+            disabled={busy}
+            onClick={() => handleConfirm()}
+          >
+            {busy ?
+              '加入中…'
+            : stagingOnly ?
+              '加入清單'
+            : `加入${mealLabelZh ?? ''}`}
+          </Button>
+        </div>
       )}
     </div>
   );

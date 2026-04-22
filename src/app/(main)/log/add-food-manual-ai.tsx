@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 
 import { addFoodFromAiAnalysisAction } from '@/app/(main)/log/actions';
 import { NutritionResultCard } from '@/components/food/NutritionResultCard';
@@ -63,6 +63,11 @@ interface AddFoodManualAiProps {
   onError?: (message: string) => void;
   stagingOnly?: boolean;
   onStagedItem?: (item: StagedFoodItemForPlan) => void;
+  /** 由「選擇常用」等外部觸發；`version` 每次遞增即套用 `result`。 */
+  applyHistoryPrefill?: {
+    version: number;
+    result: ManualFoodAnalysisResult;
+  } | null;
 }
 
 export function AddFoodManualAiPanel({
@@ -73,6 +78,7 @@ export function AddFoodManualAiPanel({
   onError,
   stagingOnly,
   onStagedItem,
+  applyHistoryPrefill,
 }: AddFoodManualAiProps) {
   const [rawInput, setRawInput] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
@@ -85,6 +91,14 @@ export function AddFoodManualAiPanel({
   const resetResult = useCallback((next: ManualFoodAnalysisResult) => {
     setResult(normalizeAnalysisPayload(next));
   }, []);
+
+  useEffect(() => {
+    if (!applyHistoryPrefill || applyHistoryPrefill.version < 1) return;
+    setRawInput('');
+    setAnalysisError(null);
+    setAnalyzing(false);
+    setResult(normalizeAnalysisPayload(applyHistoryPrefill.result));
+  }, [applyHistoryPrefill]);
 
   const runAnalyze = useCallback(async () => {
     const q = rawInput.trim();
@@ -229,6 +243,12 @@ export function AddFoodManualAiPanel({
           stagingOnly={stagingOnly}
           confirmBusy={addBusy}
           onConfirm={(edited) => void handleConfirm(edited)}
+          onReselect={() => {
+            setResult(null);
+            setRawInput('');
+            setAnalysisError(null);
+            setAnalyzing(false);
+          }}
         />
       : null}
     </div>

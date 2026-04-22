@@ -24,9 +24,12 @@ import {
   commitPrefillFromPlanAction,
   confirmPhotoItemsAction,
   deleteFoodLogAction,
+  listFrequentFoodLogItemsAction,
+  type FrequentFoodItemSnapshot,
 } from '@/app/(main)/log/actions';
 import { NutritionResultCard } from '@/components/food/NutritionResultCard';
 import { Button } from '@/components/ui/button';
+import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import {
   Card,
   CardContent,
@@ -376,6 +379,17 @@ export function LogClient({
   );
   const [inputMode, setInputMode] = useState<'manual' | 'photo'>('manual');
 
+  const [frequentOpen, setFrequentOpen] = useState(false);
+  const [frequentLoading, setFrequentLoading] = useState(false);
+  const [frequentErr, setFrequentErr] = useState<string | null>(null);
+  const [frequentRows, setFrequentRows] = useState<
+    Array<{ snapshot: FrequentFoodItemSnapshot; useCount: number }>
+  >([]);
+  const [applyHistoryPrefill, setApplyHistoryPrefill] = useState<{
+    version: number;
+    result: ManualFoodAnalysisResult;
+  } | null>(null);
+
   const [actionError, setActionError] = useState<string | null>(null);
   const [addBusy, setAddBusy] = useState(false);
 
@@ -607,6 +621,49 @@ export function LogClient({
     if (initialMealTab) setMealTab(initialMealTab);
   }, [initialMealTab, prefillFromMeal]);
 
+  useEffect(() => {
+    if (!frequentOpen) return;
+    let cancelled = false;
+    setFrequentLoading(true);
+    setFrequentErr(null);
+    void listFrequentFoodLogItemsAction().then((res) => {
+      if (cancelled) return;
+      setFrequentLoading(false);
+      if (res.error) {
+        setFrequentErr(res.error);
+        return;
+      }
+      setFrequentRows(res.items ?? []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [frequentOpen]);
+
+  function pickFrequentItem(row: {
+    snapshot: FrequentFoodItemSnapshot;
+    useCount: number;
+  }) {
+    const snap: LogItemSnapshot = { ...row.snapshot };
+    const manual = logItemToManualResult(snap);
+    setFrequentOpen(false);
+    if (inputMode === 'manual') {
+      setApplyHistoryPrefill((p) => ({
+        version: (p?.version ?? 0) + 1,
+        result: manual,
+      }));
+    } else {
+      setPhotoError(null);
+      setPhotoBusy(false);
+      setPhotoHint('已從常用項目帶入，可調整後確認');
+      setActiveJobId(null);
+      setJobStatus(null);
+      clearLocalPhotoPreview();
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setPhotoResult(manual);
+    }
+  }
+
   function stagedFoodToPlanShape(item: StagedFoodItemForPlan): PlanItemShape {
     return {
       name: item.name,
@@ -661,6 +718,17 @@ export function LogClient({
       photoPreviewUrlRef.current = null;
     }
     setPhotoPreviewUrl(null);
+  }
+
+  function resetPhotoResultForReselect() {
+    setPhotoError(null);
+    setPhotoBusy(false);
+    setPhotoHint(null);
+    setJobStatus(null);
+    setActiveJobId(null);
+    setPhotoResult(null);
+    clearLocalPhotoPreview();
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function onPhotoFile(file: File | null) {
@@ -1101,6 +1169,16 @@ export function LogClient({
               >
                 拍照辨識
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  'h-9 shrink-0 rounded-full border-[0.5px] px-4 py-0 text-[13px] font-medium',
+                )}
+                onClick={() => setFrequentOpen(true)}
+              >
+                選擇常用
+              </Button>
             </div>
           </div>
 
@@ -1113,6 +1191,7 @@ export function LogClient({
                 mealType={mealTab}
                 mealLabelZh={MEAL_LABEL[mealTab]}
                 date={date}
+                applyHistoryPrefill={applyHistoryPrefill}
                 onError={(msg) => setActionError(msg)}
                 onCommitted={() => {
                   setActionError(null);
@@ -1131,7 +1210,7 @@ export function LogClient({
                 onChange={handlePhotoFileChange}
               />
 
-              {!photoPreviewUrl ?
+              {!photoPreviewUrl && !photoResult ?
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -1143,7 +1222,7 @@ export function LogClient({
                   </span>
                   <span className="text-[11px] text-neutral-text-tertiary">支援 JPG、PNG</span>
                 </button>
-              : !photoResult ?
+              : photoPreviewUrl && !photoResult ?
                 <div className="relative w-full overflow-hidden rounded-xl">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -1200,6 +1279,7 @@ export function LogClient({
                   previewImageUrl={photoPreviewUrl ?? undefined}
                   confirmBusy={addBusy}
                   onConfirm={(edited) => void onConfirmPhoto(edited)}
+                  onReselect={resetPhotoResultForReselect}
                 />
               ) : null}
             </div>
@@ -1319,6 +1399,55 @@ export function LogClient({
           })}
         </div>
       </div>
+      ) : null}
+
+      {!prefillFromMeal && sectionTab === 'food' ? (
+        <BottomSheetShell
+          open={frequentOpen}
+          title="選擇常用項目"
+          onClose={() => setFrequentOpen(false)}
+        >
+          <div className="max-h-[min(50vh,420px)] space-y-2 overflow-y-auto pb-2">
+            {frequentLoading ? (
+              <p className="text-[13px] text-muted-foreground">載入中…</p>
+            ) : frequentErr ? (
+              <p className="text-[13px] text-destructive">{frequentErr}</p>
+            ) : frequentRows.length === 0 ? (
+              <p className="text-[13px] text-muted-foreground">
+                尚無可選的歷史項目
+              </p>
+            ) : (
+              frequentRows.map((row) => (
+                <button
+                  key={row.snapshot.id}
+                  type="button"
+                  className="w-full rounded-xl border-[0.5px] border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+                  onClick={() => pickFrequentItem(row)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="min-w-0 text-[13px] font-medium text-foreground">
+                      {row.snapshot.name}
+                      <span className="ml-1 text-[11px] font-normal text-muted-foreground">
+                        {Math.round(Number(row.snapshot.quantity_g))}g
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                      {row.useCount} 次
+                    </span>
+                  </div>
+                  <div className="mt-1">
+                    <ItemMacrosMutedLine
+                      calories={row.snapshot.calories}
+                      carb_g={row.snapshot.carb_g}
+                      protein_g={row.snapshot.protein_g}
+                      fat_g={row.snapshot.fat_g}
+                    />
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </BottomSheetShell>
       ) : null}
     </div>
   );
