@@ -13,6 +13,7 @@ import { addCalendarDaysISO, todayLocalISODate } from '@/lib/onboarding/date';
 import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
 import { DIET_METHOD_OPTIONS } from '@/lib/onboarding/constants';
 import { round1 } from '@/lib/food/nutrition';
+import { macroTargetsFromKcal } from '@/lib/dashboard/macro-targets';
 import { createClient } from '@/lib/supabase/server';
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
@@ -276,6 +277,11 @@ export default async function DashboardPage() {
     weightDeltaKg,
     profileBmi: profile.bmi != null ? Number(profile.bmi) : null,
     streakDays,
+    todayKcal: nutrientTotals.kcal,
+    targetKcal,
+    carbG: nutrientTotals.carb,
+    proteinG: nutrientTotals.protein,
+    fatG: nutrientTotals.fat,
     todayIsoDate: today,
     meals: buildMealRows(foodRows ?? [], today),
     weeklyWeight: weeklyTrend.weightRows,
@@ -377,19 +383,6 @@ function buildWeeklyTrend(
       label: shortLabel(date),
       kcal: kcalMap.get(date) ?? 0,
     })),
-  };
-}
-
-function macroTargetsFromKcal(
-  kcal: number,
-): { carb: number; protein: number; fat: number } {
-  if (!Number.isFinite(kcal) || kcal <= 0) {
-    return { carb: 0, protein: 0, fat: 0 };
-  }
-  return {
-    carb: (kcal * 0.5) / 4,
-    protein: (kcal * 0.25) / 4,
-    fat: (kcal * 0.25) / 9,
   };
 }
 

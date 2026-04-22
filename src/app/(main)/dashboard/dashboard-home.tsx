@@ -22,6 +22,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SectionCard } from "@/components/ui/section-card";
+import { macroTargetsFromKcal } from "@/lib/dashboard/macro-targets";
 import { cn } from "@/lib/utils/cn";
 
 export type DashboardMealVariant = "as_planned" | "adjusted" | "self_logged";
@@ -51,6 +52,117 @@ function shouldShowNoAchievementLine(
   return !milestoneChips.some((m) => !FIRST_STEP_MILESTONE_KEYS.has(m.key));
 }
 
+function CalorieRingBlock({
+  todayKcal,
+  targetKcal,
+  carbG,
+  proteinG,
+  fatG,
+}: {
+  todayKcal: number;
+  targetKcal: number | null;
+  carbG: number;
+  proteinG: number;
+  fatG: number;
+}) {
+  const ringR = 36;
+  const circumference = 2 * Math.PI * ringR;
+  const target = targetKcal != null && targetKcal > 0 ? targetKcal : 0;
+  const ratio =
+    target > 0 && todayKcal > 0 ? Math.min(1, todayKcal / target) : 0;
+
+  const t = targetKcal != null && targetKcal > 0 ? targetKcal : 0;
+  const m = t > 0 ? macroTargetsFromKcal(t) : { carb: 0, protein: 0, fat: 0 };
+  const bar = (v: number, cap: number) =>
+    cap > 0 ? Math.min(100, (v / cap) * 100) : 0;
+
+  return (
+    <div className="rounded-xl border-[0.5px] border-border bg-card p-3">
+      <div className="flex items-center gap-3">
+        <div className="relative h-[120px] w-[120px] shrink-0">
+          <svg
+            className="h-full w-full -rotate-90"
+            viewBox="0 0 100 100"
+            aria-hidden>
+            <circle
+              cx="50"
+              cy="50"
+              r={ringR}
+              fill="none"
+              className="stroke-border"
+              strokeWidth="6"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r={ringR}
+              fill="none"
+              stroke="#4C956C"
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - ratio)}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            {todayKcal <= 0 ? (
+              <p className="px-2 text-center text-[11px] text-muted-foreground">
+                尚未記錄
+              </p>
+            ) : (
+              <>
+                <p className="text-[20px] font-medium leading-tight text-foreground">
+                  {Math.round(todayKcal)}
+                </p>
+                <p className="text-[9px] text-muted-foreground">kcal</p>
+                {t > 0 ? (
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">
+                    目標 {Math.round(t)}
+                  </p>
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
+        <div className="min-w-0 flex-1 space-y-2.5">
+          {(
+            [
+              { label: "碳水", v: carbG, cap: m.carb, color: "#378ADD" },
+              {
+                label: "蛋白質",
+                v: proteinG,
+                cap: m.protein,
+                color: "#4C956C",
+              },
+              { label: "脂肪", v: fatG, cap: m.fat, color: "#EF9F27" },
+            ] as const
+          ).map((row) => (
+            <div key={row.label}>
+              <div className="mb-0.5 flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground">
+                  {row.label}
+                </span>
+                <span className="text-[11px] tabular-nums text-muted-foreground">
+                  {Math.round(row.v)}g
+                </span>
+              </div>
+              <div className="h-[5px] w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full transition-all duration-200"
+                  style={{
+                    width: `${bar(row.v, row.cap)}%`,
+                    backgroundColor: row.color,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export type DashboardHomeProps = {
   dateLabel: string;
   /** 今日 ISO 日期（YYYY-MM-DD），用於紀錄頁連結 */
@@ -62,6 +174,12 @@ export type DashboardHomeProps = {
   weightDeltaKg: number | null;
   profileBmi: number | null;
   streakDays: number;
+  /** 今日 `food_log_items` 熱量加總 */
+  todayKcal: number;
+  targetKcal: number | null;
+  carbG: number;
+  proteinG: number;
+  fatG: number;
   meals: DashboardMealRow[];
   weeklyWeight: { label: string; kg: number | null }[];
   weeklyKcal: { label: string; kcal: number }[];
@@ -364,6 +482,11 @@ export function DashboardHome({
   weightDeltaKg,
   profileBmi,
   streakDays,
+  todayKcal,
+  targetKcal,
+  carbG,
+  proteinG,
+  fatG,
   meals,
   weeklyWeight,
   weeklyKcal,
@@ -476,6 +599,14 @@ export function DashboardHome({
           {dateLabel}
         </p>
       </section>
+
+      <CalorieRingBlock
+        todayKcal={todayKcal}
+        targetKcal={targetKcal}
+        carbG={carbG}
+        proteinG={proteinG}
+        fatG={fatG}
+      />
 
       <div className="grid grid-cols-2 items-stretch gap-2.5">
         <button
