@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { GuardSavedRecordDeleteButton } from "@/app/(main)/guard/records/guard-saved-record-delete-button";
+import { GuardSavedRecordRenameButton } from "@/app/(main)/guard/records/guard-saved-record-rename-button";
 import { HeaderBackButton } from "@/components/layout/header-back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -108,14 +109,20 @@ export default async function GuardRecordsPage() {
               <Card
                 key={record.id}
                 className="min-w-0 overflow-hidden !bg-white">
-                <div className="flex min-h-[44px] items-stretch">
+                <div className="flex min-h-[44px] items-center gap-2 pr-2">
                   <Link
                     href={`/guard/records/${record.id}`}
                     className="min-w-0 flex-1 px-3.5 py-3 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                     <div className="flex flex-col gap-1">
-                      <p className="text-[15px] font-medium leading-normal text-foreground">
-                        {record.name}
-                      </p>
+                      <div className="flex min-w-0 items-center gap-0.5">
+                        <span className="min-w-0 truncate text-[15px] font-medium leading-normal text-foreground">
+                          {record.name}
+                        </span>
+                        <GuardSavedRecordRenameButton
+                          recordId={record.id}
+                          initialName={record.name}
+                        />
+                      </div>
                       <p className="text-[12px] leading-normal text-muted-foreground">
                         儲存時間：{formatDateLabel(record.created_at)}
                       </p>
@@ -132,9 +139,7 @@ export default async function GuardRecordsPage() {
                       </p>
                     </div>
                   </Link>
-                  <div className="flex w-11 shrink-0 items-center justify-center border-l border-border">
-                    <GuardSavedRecordDeleteButton recordId={record.id} />
-                  </div>
+                  <GuardSavedRecordDeleteButton recordId={record.id} />
                 </div>
               </Card>
             );

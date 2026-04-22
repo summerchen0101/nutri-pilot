@@ -47,7 +47,7 @@ export function GuardSavedRecordDeleteButton({
       disabled={pending}
       onClick={onDelete}
       className={cn(
-        "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border-0 bg-transparent text-destructive transition-colors",
+        "inline-flex shrink-0 items-center justify-center rounded-md p-1.5 text-destructive transition-colors",
         "hover:bg-destructive/10 hover:text-destructive",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         "disabled:pointer-events-none disabled:opacity-50",

@@ -94,7 +94,7 @@ export default async function DashboardPage() {
 
 ## `/guard/records`（守衛儲存紀錄）
 
-顯示當前使用者已儲存的 `label_guard_saved_reports`（依 `created_at desc`）。頁首下方顯示 **尚可紀錄數：n/5**（n 為已儲存筆數，上限與 DB `label_guard_saved_reports` 一致）。每筆顯示名稱、儲存時間與安全分數摘要；可刪除（確認後）、可點入 **`/guard/records/[id]`** 檢視原圖（經 `job_id` → `label_guard_jobs.storage_path` 對 `label-guard-photos` 簽名 URL）與完整分析（與守衛頁共用 `LabelGuardReportBody`）。若無資料，顯示空狀態並引導回 `/guard` 建立第一筆。若 `job_id` 為空或無法簽名，仍顯示已儲存之 `report_json` 分析，僅缺原圖。
+顯示當前使用者已儲存的 `label_guard_saved_reports`（依 `created_at desc`）。頁首下方顯示 **尚可紀錄數：n/5**（n 為已儲存筆數，上限與 DB `label_guard_saved_reports` 一致）。每筆顯示名稱、儲存時間與安全分數摘要；可修改名稱（底層表單）、可刪除（確認後）、可點入 **`/guard/records/[id]`** 檢視原圖（經 `job_id` → `label_guard_jobs.storage_path` 對 `label-guard-photos` 簽名 URL）與完整分析（與守衛頁共用 `LabelGuardReportBody`）。若無資料，顯示空狀態並引導回 `/guard` 建立第一筆。若 `job_id` 為空或無法簽名，仍顯示已儲存之 `report_json` 分析，僅缺原圖。
 
 ## 次級頁返回規則
 

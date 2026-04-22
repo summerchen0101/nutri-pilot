@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 
+import { GuardSavedRecordRenameButton } from '@/app/(main)/guard/records/guard-saved-record-rename-button';
 import { LabelGuardReportBody } from '@/components/guard/label-guard-report-body';
 import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import type { LabelGuardReport } from '@/lib/food/label-guard-report';
 
 type GuardSavedRecordDetailClientProps = {
+  recordId: string;
   name: string;
   createdAtLabel: string;
   imageUrl: string | null;
@@ -15,6 +17,7 @@ type GuardSavedRecordDetailClientProps = {
 };
 
 export function GuardSavedRecordDetailClient({
+  recordId,
   name,
   createdAtLabel,
   imageUrl,
@@ -35,7 +38,14 @@ export function GuardSavedRecordDetailClient({
     <>
       <div className="space-y-3">
         <div className="rounded-xl border-[0.5px] border-border !bg-white px-4 py-3">
-          <h1 className="text-[17px] font-semibold text-foreground">{name}</h1>
+          <h1 className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0 text-[17px] font-semibold text-foreground">
+            <span className="min-w-0 break-words">{name}</span>
+            <GuardSavedRecordRenameButton
+              recordId={recordId}
+              initialName={name}
+              className="shrink-0"
+            />
+          </h1>
           <p className="mt-0.5 text-[12px] text-muted-foreground">儲存時間：{createdAtLabel}</p>
         </div>
 

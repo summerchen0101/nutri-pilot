@@ -6,12 +6,16 @@ import { FiCamera } from 'react-icons/fi';
 import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
 import { invokeLabelGuardRequestFromBrowser } from '@/lib/food/invoke-label-guard-request';
 import { LabelGuardReportBody } from '@/components/guard/label-guard-report-body';
-import { MAX_LABEL_GUARD_SAVED_REPORTS } from '@/lib/food/label-guard-saved';
+import {
+  MAX_LABEL_GUARD_SAVED_NAME_LENGTH,
+  MAX_LABEL_GUARD_SAVED_REPORTS,
+} from '@/lib/food/label-guard-saved';
 import { parseLabelGuardReportJson, type LabelGuardReport } from '@/lib/food/label-guard-report';
 import { createClient } from '@/lib/supabase/client';
 import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import type { Json } from '@/types/supabase';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
@@ -19,8 +23,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-
-const MAX_SAVED_NAME_LENGTH = 30;
 
 function getTodayYmd(): string {
   const d = new Date();
@@ -312,8 +314,8 @@ export function GuardLabelClient() {
       setSaveError('請輸入名稱');
       return;
     }
-    if (name.length > MAX_SAVED_NAME_LENGTH) {
-      setSaveError(`名稱最多 ${MAX_SAVED_NAME_LENGTH} 字`);
+    if (name.length > MAX_LABEL_GUARD_SAVED_NAME_LENGTH) {
+      setSaveError(`名稱最多 ${MAX_LABEL_GUARD_SAVED_NAME_LENGTH} 字`);
       return;
     }
 
@@ -470,46 +472,7 @@ export function GuardLabelClient() {
               儲存到個人紀錄
             </Button>
 
-            {saveEditorOpen ? (
-              <div className="space-y-2 rounded-lg border-[0.5px] border-border bg-card p-3">
-                <label
-                  htmlFor="saved-report-name"
-                  className="text-[11px] font-medium text-muted-foreground">
-                  紀錄名稱（可修改）
-                </label>
-                <input
-                  id="saved-report-name"
-                  type="text"
-                  value={savedName}
-                  maxLength={MAX_SAVED_NAME_LENGTH}
-                  onChange={(e) => setSavedName(e.target.value)}
-                  className="w-full rounded-md border-[0.5px] border-border bg-background px-2.5 py-2 text-[13px] text-foreground outline-none ring-primary transition-colors focus:border-primary focus:ring-2"
-                />
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-muted-foreground">
-                    {savedName.trim().length}/{MAX_SAVED_NAME_LENGTH}
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="h-8 border-[0.5px] border-border px-3 text-[12px]"
-                      onClick={() => setSaveEditorOpen(false)}>
-                      取消
-                    </Button>
-                    <Button
-                      type="button"
-                      className="h-8 px-3 text-[12px]"
-                      onClick={() => void saveToPersonalRecord()}
-                      disabled={saving}>
-                      {saving ? '儲存中…' : '儲存'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {saveError ? (
+            {saveError && !saveEditorOpen ? (
               <p className="text-[12px] text-destructive">{saveError}</p>
             ) : null}
             {saveHint ? (
@@ -527,6 +490,40 @@ export function GuardLabelClient() {
       <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-foreground">
         {detailBody}
       </p>
+    </BottomSheetShell>
+
+    <BottomSheetShell
+      open={saveEditorOpen}
+      title="儲存到個人紀錄"
+      onClose={() => setSaveEditorOpen(false)}>
+      <div className="space-y-2 pb-3">
+        <label
+          htmlFor="saved-report-name"
+          className="text-[11px] font-medium text-muted-foreground">
+          紀錄名稱（可修改）
+        </label>
+        <Input
+          id="saved-report-name"
+          value={savedName}
+          maxLength={MAX_LABEL_GUARD_SAVED_NAME_LENGTH}
+          onChange={(e) => setSavedName(e.target.value)}
+          className="text-[13px]"
+          placeholder="輸入紀錄名稱"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          {savedName.trim().length}/{MAX_LABEL_GUARD_SAVED_NAME_LENGTH}
+        </p>
+        {saveError ? (
+          <p className="text-[11px] text-destructive">{saveError}</p>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        disabled={saving}
+        className="w-full rounded-[10px] bg-shadow-grey py-2 text-[13px] font-medium text-white disabled:opacity-60"
+        onClick={() => void saveToPersonalRecord()}>
+        {saving ? '儲存中…' : '儲存'}
+      </button>
     </BottomSheetShell>
     </>
   );

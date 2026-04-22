@@ -115,6 +115,7 @@ export default async function GuardSavedRecordDetailPage({ params }: PageProps) 
         spacing="compact"
       />
       <GuardSavedRecordDetailClient
+        recordId={row.id}
         name={row.name}
         createdAtLabel={formatDateLabel(row.created_at)}
         imageUrl={imageUrl}
