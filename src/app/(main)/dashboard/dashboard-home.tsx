@@ -77,7 +77,7 @@ function CalorieRingBlock({
     cap > 0 ? Math.min(100, (v / cap) * 100) : 0;
 
   return (
-    <div className="rounded-xl border-[0.5px] border-border bg-card p-3">
+    <div className="rounded-xl border-[0.5px] border-border bg-card px-3 py-2">
       <div className="flex items-center gap-3">
         <div className="relative h-[120px] w-[120px] shrink-0">
           <svg
