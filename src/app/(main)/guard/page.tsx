@@ -18,13 +18,13 @@ export default async function GuardPage() {
   return (
     <div className="space-y-3">
       <PageHeader
-        title="食品守衛"
-        description="食品標示智慧分析：拍下成分表，秒懂是否適合你與家人。"
+        title="食品安全守衛"
+        description="從成分與營養標示快速留意食安與過敏風險，協助判斷是否適合你與家人（辨識僅供參考）。"
         spacing="compact"
         action={
           <Link
             href="/guard/records"
-            aria-label="標籤紀錄"
+            aria-label="食品安全分析紀錄"
             className={HEADER_ACTION_ICON_CLASS}>
             <History
               className="h-[18px] w-[18px]"

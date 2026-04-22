@@ -204,7 +204,7 @@ supabase.from('subscriptions')
 | Bucket 名稱 | 存取權限 | 用途 |
 |------------|---------|------|
 | `food-photos` | 私有（只有 owner 可存取） | 用戶拍照上傳的餐點照片 |
-| `label-guard-photos` | 私有（只有 owner 可存取） | 「守衛」食品標示／成分表拍照 |
+| `label-guard-photos` | 私有（只有 owner 可存取） | 「食品安全守衛」食品標示／成分表拍照 |
 
 ```sql
 -- Storage 政策：只有上傳者本人可以存取

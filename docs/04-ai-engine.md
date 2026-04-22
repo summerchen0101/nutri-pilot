@@ -11,7 +11,7 @@
 |------|------|------|------|
 | 菜單生成 | claude-sonnet-4-5 | **Queue** | 耗時 3–6 秒，用戶等不住 |
 | 拍照辨識（餐桌食物） | claude-sonnet-4-5 | **Queue** | 圖片上傳 + Vision 處理，耗時不定 |
-| 食品標示智慧分析（守衛） | claude-sonnet-4-5 | **Queue** | 獨立 `label-guard-photos` + `label_guard_jobs`；prompt 見 `supabase/functions/_shared/label-guard-report-prompt.ts`，輸出 `_kind: label_guard_report` |
+| 食品標示智慧分析（食品安全守衛） | claude-sonnet-4-5 | **Queue** | 獨立 `label-guard-photos` + `label_guard_jobs`；prompt 見 `supabase/functions/_shared/label-guard-report-prompt.ts`，輸出 `_kind: label_guard_report` |
 | 週報洞察 | claude-sonnet-4-5 | **Queue（cron 觸發）** | 資料量大，每週日自動跑 |
 | 換食材建議 | claude-sonnet-4-5 | 直接呼叫 | prompt 短，回應快（< 2 秒） |
 | 今日 Dashboard 建議 | claude-sonnet-4-5 | 直接呼叫 | lazy load，不擋主畫面 |

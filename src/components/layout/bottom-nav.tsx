@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   PlusCircle,
-  Search,
+  Shield,
   ShoppingCart,
   UserRound,
 } from 'lucide-react';
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils/cn';
 
 const NAV = [
   { href: '/dashboard', label: '總覽', Icon: LayoutDashboard },
-  { href: '/guard', label: '守衛', Icon: Search },
+  { href: '/guard', label: '守衛', Icon: Shield },
   { href: '/log', label: '紀錄', Icon: PlusCircle },
   { href: '/shop', label: '商城', Icon: ShoppingCart },
   { href: '/settings', label: '我的', Icon: UserRound },

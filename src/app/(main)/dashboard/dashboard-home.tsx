@@ -617,7 +617,7 @@ export function DashboardHome({
           <Link
             href="/guard/records"
             className={cn(quickActionClass)}
-            title="標籤紀錄">
+            title="食品安全分析紀錄">
             <History className={quickIconClass} strokeWidth={1.8} aria-hidden />
             <span className="text-center leading-tight">標籤</span>
           </Link>

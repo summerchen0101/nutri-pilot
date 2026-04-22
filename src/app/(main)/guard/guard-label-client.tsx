@@ -375,9 +375,9 @@ export function GuardLabelClient() {
     <>
     <Card className="min-w-0 overflow-hidden">
       <CardHeader className="pb-2">
-        <CardTitle>食品標示智慧分析</CardTitle>
+        <CardTitle>食品標示與食安分析</CardTitle>
         <CardDescription>
-          拍攝成分與營養標示，取得分級警示與族群提示（辨識僅供參考）。
+          拍攝成分與營養標示，由食品安全守衛產生分級警示與族群提示（辨識僅供參考）。
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

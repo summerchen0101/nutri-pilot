@@ -1,5 +1,5 @@
 /**
- * 食品標示智慧分析（守衛）報告；須與 src/lib/food/label-guard-report.ts 型別對齊。
+ * 食品標示智慧分析（食品安全守衛）報告；須與 src/lib/food/label-guard-report.ts 型別對齊。
  *
  * 台灣過敏原標示：請依圖片可讀文字，對下列 14 類強制標示項目逐項判斷 detected（僅依成分表／警語推論）。
  */

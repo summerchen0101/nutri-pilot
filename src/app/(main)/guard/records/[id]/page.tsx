@@ -57,7 +57,7 @@ export default async function GuardSavedRecordDetailPage({ params }: PageProps) 
       <div className="space-y-3">
         <PageHeader
           leading={<HeaderBackButton />}
-          title="標籤紀錄"
+          title="食品安全分析紀錄"
           spacing="compact"
         />
         <p className="text-[13px] text-destructive">讀取紀錄失敗：{error.message}</p>
@@ -73,7 +73,7 @@ export default async function GuardSavedRecordDetailPage({ params }: PageProps) 
       <div className="space-y-3">
         <PageHeader
           leading={<HeaderBackButton />}
-          title="標籤紀錄"
+          title="食品安全分析紀錄"
           spacing="compact"
         />
         <p className="text-[13px] text-destructive">無法解析此筆分析內容。</p>
@@ -110,7 +110,7 @@ export default async function GuardSavedRecordDetailPage({ params }: PageProps) 
     <div className="space-y-3">
       <PageHeader
         leading={<HeaderBackButton />}
-        title="標籤紀錄"
+        title="食品安全分析紀錄"
         description="檢視儲存時的相片與分析結果。"
         spacing="compact"
       />

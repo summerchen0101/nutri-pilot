@@ -62,8 +62,8 @@ export default async function GuardRecordsPage() {
       <div className="space-y-3">
         <PageHeader
           leading={<HeaderBackButton />}
-          title="標籤紀錄"
-          description="查看你儲存過的食品守衛分析結果。"
+          title="食品安全分析紀錄"
+          description="查看你儲存過的食品安全守衛分析結果。"
           spacing="compact"
         />
         {quotaLine}
@@ -82,8 +82,8 @@ export default async function GuardRecordsPage() {
     <div className="space-y-3">
       <PageHeader
         leading={<HeaderBackButton />}
-        title="標籤紀錄"
-        description="查看你儲存過的食品守衛分析結果。"
+        title="食品安全分析紀錄"
+        description="查看你儲存過的食品安全守衛分析結果。"
         spacing="compact"
       />
       {quotaLine}
@@ -92,7 +92,7 @@ export default async function GuardRecordsPage() {
         <Card className="min-w-0 overflow-hidden !bg-white">
           <CardContent className="space-y-2 py-6">
             <p className="text-[13px] text-foreground">
-              目前還沒有儲存的標籤紀錄。
+              目前還沒有儲存的食品安全分析紀錄。
             </p>
             <Link
               href="/guard"
