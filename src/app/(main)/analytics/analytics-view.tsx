@@ -148,9 +148,9 @@ const analyticsQuickNavButtonClass = cn(
 );
 
 const analyticsQuickAiNavButtonClass = cn(
-  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-[#F0C896] bg-[#FFF4E8] px-2 text-[12px] font-medium text-[#EF9F27]',
-  'hover:border-[#EF9F27] hover:bg-[#FFEDD4] hover:text-[#C2410C]',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EF9F27]/30',
+  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] px-2 text-[12px] font-medium text-[#378ADD]',
+  'hover:border-[#378ADD]/70 hover:bg-[#D6EAF9] hover:text-[#2B6CB0]',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#378ADD]/25',
 );
 
 const analyticsFloatingNavButtonClass = cn(
@@ -160,9 +160,9 @@ const analyticsFloatingNavButtonClass = cn(
 );
 
 const analyticsFloatingAiNavButtonClass = cn(
-  'flex h-10 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-[#F0C896] border-r-0 bg-[#FFF4E8] pl-2.5 pr-0 text-[#EF9F27] shadow-md',
-  'hover:border-[#EF9F27] hover:bg-[#FFEDD4] hover:text-[#C2410C]',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EF9F27]/30 focus-visible:ring-offset-2',
+  'flex h-10 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-[#B5D4F4] border-r-0 bg-[#E6F1FB] pl-2.5 pr-0 text-[#378ADD] shadow-md',
+  'hover:border-[#378ADD]/70 hover:bg-[#D6EAF9] hover:text-[#2B6CB0]',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#378ADD]/25 focus-visible:ring-offset-2',
 );
 
 const ANALYTICS_CHART_NAV: {
@@ -703,9 +703,16 @@ export function AnalyticsView({
 
       <section
         id="analytics-weekly-insight"
-        className="scroll-mt-3 space-y-4 rounded-xl border-[0.5px] border-[#F0C896] bg-[#FFF4E8] p-3.5">
+        className="scroll-mt-3 rounded-xl border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] p-3.5">
         <div>
-          <p className="text-[11px] font-medium text-[#EF9F27]">AI 週報洞察</p>
+          <div className="flex items-center gap-1.5">
+            <Sparkles
+              className="h-4 w-4 shrink-0 text-[#378ADD]"
+              strokeWidth={1.8}
+              aria-hidden
+            />
+            <p className="text-[15px] font-medium text-foreground">AI 週報洞察</p>
+          </div>
           {!weeklyInsight?.items?.length ? (
             <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
               尚無週報。系統會在週日自動產生洞察摘要；若有新報告會顯示於此。
@@ -719,13 +726,20 @@ export function AnalyticsView({
                 {weeklyInsight.items.map((row, idx) => (
                   <li
                     key={`${idx}-${row.text.slice(0, 12)}`}
-                    className="flex gap-2 text-[13px] leading-relaxed text-foreground">
+                    className="flex gap-2 text-[13px] leading-relaxed text-foreground"
+                    aria-label={
+                      row.type === "positive"
+                        ? `正面：${row.text}`
+                        : row.type === "warning"
+                          ? `提醒：${row.text}`
+                          : `補充：${row.text}`
+                    }>
                     <span
                       className={cn(
                         "mt-1 h-1.5 w-1.5 shrink-0 rounded-full",
                         row.type === "positive" && "bg-[#4C956C]",
                         row.type === "warning" && "bg-[#EF9F27]",
-                        row.type === "info" && "bg-[#EF9F27]",
+                        row.type === "info" && "bg-[#378ADD]",
                       )}
                       aria-hidden
                     />
@@ -737,14 +751,16 @@ export function AnalyticsView({
           )}
         </div>
 
-        <WeeklyReportShare
-          rangeLabel={weekShareSummary.rangeLabel}
-          avgKcal={weekShareSummary.avgKcal}
-          weightSummaryLine={weekShareSummary.weightSummaryLine}
-          activityMinutesLine={weekShareSummary.activityMinutesLine}
-          activityKcalLine={weekShareSummary.activityKcalLine}
-          insightLines={weeklyInsight?.items?.map((i) => i.text) ?? []}
-        />
+        <div className="mt-4 border-t-[0.5px] border-[#B5D4F4]/60 pt-4">
+          <WeeklyReportShare
+            rangeLabel={weekShareSummary.rangeLabel}
+            avgKcal={weekShareSummary.avgKcal}
+            weightSummaryLine={weekShareSummary.weightSummaryLine}
+            activityMinutesLine={weekShareSummary.activityMinutesLine}
+            activityKcalLine={weekShareSummary.activityKcalLine}
+            insightLines={weeklyInsight?.items?.map((i) => i.text) ?? []}
+          />
+        </div>
       </section>
     </div>
   );
