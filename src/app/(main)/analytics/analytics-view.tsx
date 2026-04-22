@@ -2,6 +2,15 @@
 
 import { useMemo, useState } from 'react';
 import {
+  ChevronUp,
+  Dumbbell,
+  Scale,
+  Sparkles,
+  Target,
+  UtensilsCrossed,
+  type LucideIcon,
+} from 'lucide-react';
+import {
   Bar,
   BarChart,
   CartesianGrid,
@@ -18,12 +27,14 @@ import {
   YAxis,
 } from 'recharts';
 
+import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SectionCard } from '@/components/ui/section-card';
 import { SegmentedTabs } from '@/components/ui/segmented-tabs';
 
 import { WeeklyReportShare } from '@/app/(main)/analytics/weekly-report-share';
+import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
 import {
   addCalendarDaysISO,
   iterateISODatesInclusive,
@@ -37,6 +48,17 @@ export type WeeklyInsightPayload = {
   items: { type: 'positive' | 'warning' | 'info'; text: string }[];
 };
 
+export type ActivityByDateEntry = {
+  minutes: number;
+  kcalEst: number;
+};
+
+export type ActivityEventSlice = {
+  logged_date: string;
+  activity_type: string;
+  duration_minutes: number;
+};
+
 export type AnalyticsViewProps = {
   todayIso: string;
   planStartIso: string;
@@ -45,6 +67,8 @@ export type AnalyticsViewProps = {
     { kcal: number; carbG: number; proteinG: number; fatG: number }
   >;
   weightByDate: Record<string, number>;
+  activityByDate: Record<string, ActivityByDateEntry>;
+  activityEvents: ActivityEventSlice[];
   dailyCalTarget: number | null;
   macroPct: { carb: number; protein: number; fat: number };
   weeklyInsight: WeeklyInsightPayload | null;
@@ -52,6 +76,8 @@ export type AnalyticsViewProps = {
     rangeLabel: string;
     avgKcal: number;
     weightSummaryLine: string;
+    activityMinutesLine: string;
+    activityKcalLine: string;
   };
 };
 
@@ -105,11 +131,79 @@ function formatCreatedAt(iso: string): string {
   }
 }
 
+function scrollToChart(id: string) {
+  const el = typeof document !== 'undefined' ? document.getElementById(id) : null;
+  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function scrollToTop() {
+  if (typeof window === 'undefined') return;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+const analyticsQuickNavButtonClass = cn(
+  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-[#4C956C] bg-transparent px-2 text-[12px] font-medium text-[#4C956C]',
+  'hover:bg-[#4C956C]/10 hover:text-[#3d7a56]',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C]/25',
+);
+
+const analyticsQuickAiNavButtonClass = cn(
+  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-[#F0C896] bg-[#FFF4E8] px-2 text-[12px] font-medium text-[#EF9F27]',
+  'hover:border-[#EF9F27] hover:bg-[#FFEDD4] hover:text-[#C2410C]',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EF9F27]/30',
+);
+
+const analyticsFloatingNavButtonClass = cn(
+  'flex h-10 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-[#4C956C] border-r-0 bg-card pl-2.5 pr-0 text-[#4C956C] shadow-md',
+  'hover:bg-[#4C956C]/10 hover:text-[#3d7a56]',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C]/25 focus-visible:ring-offset-2',
+);
+
+const analyticsFloatingAiNavButtonClass = cn(
+  'flex h-10 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-[#F0C896] border-r-0 bg-[#FFF4E8] pl-2.5 pr-0 text-[#EF9F27] shadow-md',
+  'hover:border-[#EF9F27] hover:bg-[#FFEDD4] hover:text-[#C2410C]',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EF9F27]/30 focus-visible:ring-offset-2',
+);
+
+const ANALYTICS_CHART_NAV: {
+  chartId: string;
+  ariaLabel: string;
+  shortLabel: string;
+  Icon: LucideIcon;
+}[] = [
+  {
+    chartId: 'analytics-chart-weight',
+    ariaLabel: '捲動至：體重趨勢',
+    shortLabel: '體重',
+    Icon: Scale,
+  },
+  {
+    chartId: 'analytics-chart-calories',
+    ariaLabel: '捲動至：每日熱量',
+    shortLabel: '熱量',
+    Icon: UtensilsCrossed,
+  },
+  {
+    chartId: 'analytics-chart-activity',
+    ariaLabel: '捲動至：每日運動時間',
+    shortLabel: '運動',
+    Icon: Dumbbell,
+  },
+  {
+    chartId: 'analytics-chart-nutrients',
+    ariaLabel: '捲動至：營養素達成率',
+    shortLabel: '營養素',
+    Icon: Target,
+  },
+];
+
 export function AnalyticsView({
   todayIso,
   planStartIso,
   nutritionByDate,
   weightByDate,
+  activityByDate,
+  activityEvents,
   dailyCalTarget,
   macroPct,
   weeklyInsight,
@@ -134,6 +228,48 @@ export function AnalyticsView({
       kcal: Math.round(nutritionByDate[d]?.kcal ?? 0),
     }));
   }, [dateList, nutritionByDate]);
+
+  const activityMinuteRows = useMemo(() => {
+    return dateList.map((d) => ({
+      iso: d,
+      label: shortTickLabel(d),
+      minutes: Math.round(activityByDate[d]?.minutes ?? 0),
+    }));
+  }, [dateList, activityByDate]);
+
+  const activityKcalRows = useMemo(() => {
+    return dateList.map((d) => ({
+      iso: d,
+      label: shortTickLabel(d),
+      kcal: Math.round(activityByDate[d]?.kcalEst ?? 0),
+    }));
+  }, [dateList, activityByDate]);
+
+  const activityTypeRows = useMemo(() => {
+    const byType: Record<string, number> = {};
+    for (const ev of activityEvents) {
+      if (ev.logged_date < start || ev.logged_date > end) continue;
+      const t = ev.activity_type || 'other';
+      byType[t] = (byType[t] ?? 0) + (Number(ev.duration_minutes) || 0);
+    }
+    return Object.entries(byType)
+      .filter(([, minutes]) => minutes > 0)
+      .map(([typeKey, minutes]) => ({
+        label: activityTypeLabelZh(typeKey),
+        minutes: Math.round(minutes),
+      }))
+      .sort((a, b) => b.minutes - a.minutes);
+  }, [activityEvents, start, end]);
+
+  const hasActivityMinutesInPeriod = useMemo(
+    () => activityMinuteRows.some((r) => r.minutes > 0),
+    [activityMinuteRows],
+  );
+
+  const hasActivityKcalInPeriod = useMemo(
+    () => activityKcalRows.some((r) => r.kcal > 0),
+    [activityKcalRows],
+  );
 
   const weightRows = useMemo(() => {
     const rows: { iso: string; label: string; kg: number }[] = [];
@@ -194,12 +330,17 @@ export function AnalyticsView({
   }, [dateList.length]);
 
   const chartMargin = { top: 4, right: 8, left: -18, bottom: 4 };
+  const typeChartHeight = Math.min(
+    320,
+    Math.max(200, activityTypeRows.length * 36 + 48),
+  );
 
   return (
     <div className="space-y-3">
       <PageHeader
+        leading={<HeaderBackButton />}
         title="數據分析"
-        description="查看體重、熱量與營養素達成率的變化。"
+        description="查看體重、飲食熱量、營養素達成率與運動紀錄的變化。"
         spacing="compact"
       />
 
@@ -214,7 +355,69 @@ export function AnalyticsView({
         ]}
       />
 
-      <SectionCard>
+      <nav
+        id="analytics-quick-nav"
+        aria-label="圖表區塊錨點"
+        className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+        <button
+          type="button"
+          className={analyticsQuickAiNavButtonClass}
+          aria-label="捲動至：AI 週報洞察"
+          onClick={() => scrollToChart('analytics-weekly-insight')}>
+          <Sparkles
+            className="h-3 w-3 shrink-0"
+            strokeWidth={1.8}
+            aria-hidden
+          />
+          AI 洞察
+        </button>
+        {ANALYTICS_CHART_NAV.map(({ chartId, ariaLabel, shortLabel, Icon }) => (
+          <button
+            key={chartId}
+            type="button"
+            className={analyticsQuickNavButtonClass}
+            aria-label={ariaLabel}
+            onClick={() => scrollToChart(chartId)}>
+            <Icon
+              className="h-3 w-3 shrink-0"
+              strokeWidth={1.8}
+              aria-hidden
+            />
+            {shortLabel}
+          </button>
+        ))}
+      </nav>
+
+      <nav
+        aria-label="圖表快速導覽（浮動）"
+        className="fixed right-0 top-1/2 z-40 flex -translate-y-1/2 flex-col gap-2 pr-[max(0px,env(safe-area-inset-right))]">
+        <button
+          type="button"
+          className={analyticsFloatingAiNavButtonClass}
+          aria-label="捲動至：AI 週報洞察"
+          onClick={() => scrollToChart('analytics-weekly-insight')}>
+          <Sparkles className="h-5 w-5" strokeWidth={1.8} aria-hidden />
+        </button>
+        {ANALYTICS_CHART_NAV.map(({ chartId, ariaLabel, Icon }) => (
+          <button
+            key={chartId}
+            type="button"
+            className={analyticsFloatingNavButtonClass}
+            aria-label={ariaLabel}
+            onClick={() => scrollToChart(chartId)}>
+            <Icon className="h-5 w-5" strokeWidth={1.8} aria-hidden />
+          </button>
+        ))}
+        <button
+          type="button"
+          className={analyticsFloatingNavButtonClass}
+          aria-label="回到頁面頂端"
+          onClick={() => scrollToTop()}>
+          <ChevronUp className="h-5 w-5" strokeWidth={1.8} aria-hidden />
+        </button>
+      </nav>
+
+      <SectionCard id="analytics-chart-weight" className="scroll-mt-3">
         <p className="text-[15px] font-medium text-foreground">體重趨勢</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">單位 · kg</p>
         <div className="mt-3 h-[200px] w-full">
@@ -264,7 +467,7 @@ export function AnalyticsView({
         </div>
       </SectionCard>
 
-      <SectionCard>
+      <SectionCard id="analytics-chart-calories" className="scroll-mt-3">
         <p className="text-[15px] font-medium text-foreground">每日熱量</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
           依紀錄加總 · kcal
@@ -306,7 +509,154 @@ export function AnalyticsView({
         </div>
       </SectionCard>
 
+      <SectionCard id="analytics-chart-activity" className="scroll-mt-3">
+        <p className="text-[15px] font-medium text-foreground">每日運動時間</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          依紀錄加總 · 分鐘
+        </p>
+        <div className="mt-3 h-[200px] w-full">
+          {!hasActivityMinutesInPeriod ? (
+            <div className="h-full">
+              <EmptyState message="此區間尚無運動紀錄" />
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={activityMinuteRows} margin={chartMargin}>
+                <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  interval={xAxisInterval}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  width={40}
+                  axisLine={false}
+                  tickLine={false}
+                  domain={[0, 'auto']}
+                />
+                <Tooltip
+                  contentStyle={{
+                    fontSize: 11,
+                    borderRadius: 10,
+                    border: '0.5px solid hsl(var(--border))',
+                  }}
+                  formatter={(v) => [`${v ?? '—'} 分鐘`, '運動']}
+                />
+                <Bar
+                  dataKey="minutes"
+                  fill="#4C956C"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={28}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </SectionCard>
+
       <SectionCard>
+        <p className="text-[15px] font-medium text-foreground">每日估計消耗</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          僅加總有填寫估熱的紀錄 · kcal
+        </p>
+        <div className="mt-3 h-[200px] w-full">
+          {!hasActivityKcalInPeriod ? (
+            <div className="h-full">
+              <EmptyState message="此區間無估熱資料。紀錄運動時可填估計消耗以顯示圖表。" />
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={activityKcalRows} margin={chartMargin}>
+                <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  interval={xAxisInterval}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  width={40}
+                  axisLine={false}
+                  tickLine={false}
+                  domain={[0, 'auto']}
+                />
+                <Tooltip
+                  contentStyle={{
+                    fontSize: 11,
+                    borderRadius: 10,
+                    border: '0.5px solid hsl(var(--border))',
+                  }}
+                  formatter={(v) => [`${v ?? '—'} kcal`, '估消耗']}
+                />
+                <Bar
+                  dataKey="kcal"
+                  fill="#4C956C"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={28}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </SectionCard>
+
+      <SectionCard>
+        <p className="text-[15px] font-medium text-foreground">運動類型分布</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          本區間各類型分鐘數（可多筆同日）
+        </p>
+        <div className="mt-3 w-full" style={{ height: typeChartHeight }}>
+          {activityTypeRows.length === 0 ? (
+            <div className="flex h-[200px] items-center justify-center">
+              <EmptyState message="此區間尚無運動紀錄" />
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                layout="vertical"
+                data={activityTypeRows}
+                margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
+                <CartesianGrid stroke="hsl(var(--border))" horizontal />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="label"
+                  width={88}
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    fontSize: 11,
+                    borderRadius: 10,
+                    border: '0.5px solid hsl(var(--border))',
+                  }}
+                  formatter={(v) => [`${v ?? '—'} 分鐘`, '時間']}
+                />
+                <Bar
+                  dataKey="minutes"
+                  fill="#4C956C"
+                  radius={[0, 6, 6, 0]}
+                  maxBarSize={22}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </SectionCard>
+
+      <SectionCard id="analytics-chart-nutrients" className="scroll-mt-3">
         <p className="text-[15px] font-medium text-foreground">營養素達成率</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
           區間內總量 ÷（每日目標 × 天數），100% 為剛好達標
@@ -351,7 +701,9 @@ export function AnalyticsView({
         </div>
       </SectionCard>
 
-      <section className="space-y-4 rounded-xl border-[0.5px] border-[#F0C896] bg-[#FFF4E8] p-3.5">
+      <section
+        id="analytics-weekly-insight"
+        className="scroll-mt-3 space-y-4 rounded-xl border-[0.5px] border-[#F0C896] bg-[#FFF4E8] p-3.5">
         <div>
           <p className="text-[11px] font-medium text-[#EF9F27]">AI 週報洞察</p>
           {!weeklyInsight?.items?.length ? (
@@ -389,6 +741,8 @@ export function AnalyticsView({
           rangeLabel={weekShareSummary.rangeLabel}
           avgKcal={weekShareSummary.avgKcal}
           weightSummaryLine={weekShareSummary.weightSummaryLine}
+          activityMinutesLine={weekShareSummary.activityMinutesLine}
+          activityKcalLine={weekShareSummary.activityKcalLine}
           insightLines={weeklyInsight?.items?.map((i) => i.text) ?? []}
         />
       </section>

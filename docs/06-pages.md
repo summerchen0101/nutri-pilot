@@ -98,7 +98,7 @@ export default async function DashboardPage() {
 
 ## 次級頁返回規則
 
-除底部導覽主頁（`/dashboard`、`/log`、`/shop`、`/guard`、`/analytics`、`/settings`）外，其餘次級頁頁首皆提供左箭頭返回，點擊行為為 `router.back()`。
+除底部導覽主頁（`/dashboard`、`/log`、`/shop`、`/guard`、`/settings`）外，其餘次級頁頁首皆提供左箭頭返回，點擊行為為 `router.back()`。
 
 ### 搜尋食品邏輯
 
@@ -155,12 +155,17 @@ async function uploadPhoto(file: File, userId: string) {
 
 ## `/analytics`（數據分析）
 
+非底部導覽主頁，由總覽等連結進入。頁首提供左箭頭返回（`router.back()`），與其他次級頁一致。
+
 ### 圖表規格
 
 | 圖表 | 類型 | X 軸 | Y 軸 | 資料來源 |
 |------|------|------|------|---------|
 | 體重趨勢 | LineChart | 日期 | kg | `vital_logs.weight_kg` |
 | 每日熱量 | BarChart | 日期 | kcal | `food_log_items` 每日加總 |
+| 每日運動時間 | BarChart | 日期 | 分鐘 | `activity_logs.duration_minutes` 每日加總 |
+| 每日估計消耗 | BarChart | 日期 | kcal | `activity_logs.calories_est` 每日加總（僅有填估熱之列） |
+| 運動類型分布 | BarChart（橫向） | 分鐘 | 類型（中文標籤） | 區間內 `activity_logs` 依 `activity_type` 加總分鐘 |
 | 營養素達成率 | RadarChart | 碳水/蛋白/脂肪 | % | 實際 vs 目標比例 |
 
 ### 週期切換
@@ -185,6 +190,10 @@ const { data: insight } = await supabase
 
 // insights 是 JSON 陣列：[{ type: 'positive'|'warning'|'info', text: string }]
 ```
+
+### 分享週報卡
+
+除平均熱量、體重摘要外，含最近 7 日滾動視窗之運動合計分鐘與估消耗摘要（資料來源 `activity_logs`）。
 
 ---
 

@@ -41,7 +41,7 @@ export default async function AnalyticsPage() {
   const rangeStart = profile.updated_at?.slice(0, 10) ?? today;
   const rangeEnd = today;
 
-  const [{ data: vitals }, { data: foodRows }, insightResult] =
+  const [{ data: vitals }, { data: foodRows }, { data: activityRows }, insightResult] =
     await Promise.all([
       supabase
         .from('vital_logs')
@@ -67,6 +67,12 @@ export default async function AnalyticsPage() {
         .gte('date', rangeStart)
         .lte('date', rangeEnd),
       supabase
+        .from('activity_logs')
+        .select('logged_date, activity_type, duration_minutes, calories_est')
+        .eq('user_id', user.id)
+        .gte('logged_date', rangeStart)
+        .lte('logged_date', rangeEnd),
+      supabase
         .from('weekly_insights')
         .select('insights, created_at')
         .eq('user_id', user.id)
@@ -79,6 +85,9 @@ export default async function AnalyticsPage() {
     insightResult.error ? null : insightResult.data;
 
   const nutritionByDate = aggregateFoodRows(foodRows ?? []);
+  const { activityByDate, activityEvents } = aggregateActivityRows(
+    activityRows ?? [],
+  );
 
   const weightByDate: Record<string, number> = {};
   for (const v of vitals ?? []) {
@@ -139,12 +148,45 @@ export default async function AnalyticsPage() {
 
   const rangeLabel = `${weekStartRolling.slice(5)} ~ ${today.slice(5)}`;
 
+  const weekActivityRows = (activityRows ?? []).filter(
+    (r) =>
+      r.logged_date >= weekStartRolling &&
+      r.logged_date <= today,
+  );
+  let weekActivityMinutes = 0;
+  let weekActivityKcalEst = 0;
+  let weekActivityHadEst = false;
+  for (const r of weekActivityRows) {
+    weekActivityMinutes += Number(r.duration_minutes) || 0;
+    if (
+      r.calories_est != null &&
+      Number.isFinite(Number(r.calories_est))
+    ) {
+      weekActivityHadEst = true;
+      weekActivityKcalEst += Number(r.calories_est);
+    }
+  }
+
+  let activityMinutesLine: string;
+  let activityKcalLine: string;
+  if (weekActivityMinutes <= 0) {
+    activityMinutesLine = '本週尚無運動紀錄';
+    activityKcalLine = '—';
+  } else {
+    activityMinutesLine = `本週合計 ${weekActivityMinutes} 分鐘`;
+    activityKcalLine = weekActivityHadEst
+      ? `估消耗約 ${Math.round(weekActivityKcalEst)} kcal`
+      : '尚無估熱紀錄';
+  }
+
   return (
     <AnalyticsView
       todayIso={today}
       planStartIso={rangeStart}
       nutritionByDate={nutritionByDate}
       weightByDate={weightByDate}
+      activityByDate={activityByDate}
+      activityEvents={activityEvents}
       dailyCalTarget={dailyCalTarget}
       macroPct={{
         carb: 45,
@@ -156,6 +198,8 @@ export default async function AnalyticsPage() {
         rangeLabel,
         avgKcal: weekAvgKcal,
         weightSummaryLine,
+        activityMinutesLine,
+        activityKcalLine,
       }}
     />
   );
@@ -196,6 +240,52 @@ function aggregateFoodRows(
   }
 
   return map;
+}
+
+function aggregateActivityRows(
+  rows: {
+    logged_date: string;
+    activity_type: string;
+    duration_minutes: number;
+    calories_est: number | null;
+  }[],
+): {
+  activityByDate: Record<string, { minutes: number; kcalEst: number }>;
+  activityEvents: {
+    logged_date: string;
+    activity_type: string;
+    duration_minutes: number;
+  }[];
+} {
+  const activityByDate: Record<string, { minutes: number; kcalEst: number }> =
+    {};
+  const activityEvents: {
+    logged_date: string;
+    activity_type: string;
+    duration_minutes: number;
+  }[] = [];
+
+  for (const row of rows) {
+    const d = row.logged_date;
+    if (!activityByDate[d]) {
+      activityByDate[d] = { minutes: 0, kcalEst: 0 };
+    }
+    const min = Number(row.duration_minutes) || 0;
+    activityByDate[d].minutes += min;
+    if (
+      row.calories_est != null &&
+      Number.isFinite(Number(row.calories_est))
+    ) {
+      activityByDate[d].kcalEst += Number(row.calories_est);
+    }
+    activityEvents.push({
+      logged_date: d,
+      activity_type: row.activity_type,
+      duration_minutes: min,
+    });
+  }
+
+  return { activityByDate, activityEvents };
 }
 
 function parseInsightsJson(raw: Json): WeeklyInsightPayload['items'] {

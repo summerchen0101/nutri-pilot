@@ -9,6 +9,8 @@ export function WeeklyReportShare(props: {
   rangeLabel: string;
   avgKcal: number;
   weightSummaryLine: string;
+  activityMinutesLine: string;
+  activityKcalLine: string;
   insightLines: string[];
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -65,7 +67,7 @@ export function WeeklyReportShare(props: {
   const previewBullets =
     props.insightLines.length > 0
       ? props.insightLines.slice(0, 4)
-      : ['尚無 AI 週報摘要，仍可分享熱量與體重摘要。'];
+      : ['尚無 AI 週報摘要，仍可分享熱量、體重與運動摘要。'];
 
   return (
     <div className="space-y-3">
@@ -102,6 +104,18 @@ export function WeeklyReportShare(props: {
             <p className="text-[10px] text-muted-foreground">體重</p>
             <p className="mt-0.5 text-[13px] font-medium leading-snug text-foreground">
               {props.weightSummaryLine}
+            </p>
+          </div>
+          <div className="rounded-lg bg-secondary px-3 py-2.5">
+            <p className="text-[10px] text-muted-foreground">運動時間</p>
+            <p className="mt-0.5 text-[13px] font-medium leading-snug text-foreground">
+              {props.activityMinutesLine}
+            </p>
+          </div>
+          <div className="rounded-lg bg-secondary px-3 py-2.5">
+            <p className="text-[10px] text-muted-foreground">估計消耗</p>
+            <p className="mt-0.5 text-[13px] font-medium leading-snug text-foreground">
+              {props.activityKcalLine}
             </p>
           </div>
         </div>
