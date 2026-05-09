@@ -29,3 +29,6 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# Local-only marketing / SBIR drafts (not versioned)
+/intro
