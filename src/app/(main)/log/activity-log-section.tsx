@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
+import { Dumbbell } from 'lucide-react';
 import { FiTrash2 } from 'react-icons/fi';
 
 import {
@@ -10,8 +11,9 @@ import {
   insertActivityLogAction,
 } from '@/app/(main)/log/activity-actions';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { SectionHeading } from '@/components/ui/section-heading';
 import { ACTIVITY_TYPE_LABEL } from '@/lib/activity/activity-type-labels';
 import { KCAL_PER_MINUTE } from '@/lib/activity/kcal-per-minute';
 import { cn } from '@/lib/utils/cn';
@@ -122,7 +124,13 @@ export function ActivityLogSection({
     <div className="space-y-3">
       <Card className="min-w-0 overflow-hidden">
         <CardHeader className="pb-2">
-          <CardTitle>新增運動</CardTitle>
+          <SectionHeading
+            icon={Dumbbell}
+            as="h3"
+            className="leading-none tracking-tight"
+          >
+            新增運動
+          </SectionHeading>
           <CardDescription>
             手動記錄運動類型與時間；估計消耗會依類型與分鐘自動帶入（可修改，仍非醫療建議）。
           </CardDescription>

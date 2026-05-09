@@ -6,4 +6,5 @@ export * from '@/components/ui/empty-state';
 export * from '@/components/ui/input';
 export * from '@/components/ui/metric-tile';
 export * from '@/components/ui/section-card';
+export * from '@/components/ui/section-heading';
 export * from '@/components/ui/segmented-tabs';

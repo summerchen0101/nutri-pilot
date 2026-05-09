@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { Receipt } from 'lucide-react';
 
 import { startCheckout } from '@/app/(main)/shop/actions';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SectionCard } from '@/components/ui/section-card';
+import { SectionHeading } from '@/components/ui/section-heading';
 import { SegmentedTabs } from '@/components/ui/segmented-tabs';
-import { Button } from '@/components/ui/button';
 import {
   cartTotalPayment,
   cartTotalSubscription,
@@ -155,9 +157,13 @@ export function CartView() {
       : null}
 
       <SectionCard className="bg-secondary/40 px-4 py-3">
-        <p className="text-[11px] text-muted-foreground">
+        <SectionHeading
+          icon={Receipt}
+          className="text-[11px] font-normal normal-case text-muted-foreground"
+          iconClassName="h-3.5 w-3.5"
+        >
           {mode === 'payment' ? '預估總計（單次）' : '預估每期（訂閱）'}
-        </p>
+        </SectionHeading>
         <p className="text-[20px] font-medium tabular-nums">
           NT${' '}
           {mode === 'payment' ?

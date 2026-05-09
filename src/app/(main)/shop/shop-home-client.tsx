@@ -7,12 +7,16 @@ import {
   Cookie,
   CupSoda,
   LayoutGrid,
+  ListFilter,
   Nut,
   Package,
   PillBottle,
+  Sparkles,
+  Store,
   UtensilsCrossed,
 } from 'lucide-react';
 
+import { SectionHeading } from '@/components/ui/section-heading';
 import {
   SHOP_CATEGORY_KEYS,
   SHOP_CATEGORY_LABEL,
@@ -128,7 +132,7 @@ export function ShopHomeClient({
   return (
     <div className="space-y-5">
       <section>
-        <p className="text-[13px] font-medium text-foreground">分類</p>
+        <SectionHeading icon={LayoutGrid}>分類</SectionHeading>
         <div className="hide-scrollbar mt-2 flex gap-2 overflow-x-auto pb-1 pr-1 [-webkit-overflow-scrolling:touch]">
           {SHOP_CATEGORY_KEYS.map((key) => (
             <button
@@ -154,7 +158,7 @@ export function ShopHomeClient({
       </section>
 
       <section>
-        <p className="text-[13px] font-medium text-foreground">篩選</p>
+        <SectionHeading icon={ListFilter}>篩選</SectionHeading>
         <div className="mt-2 flex flex-wrap gap-2">
           {[
             { key: 'matches_diet', label: '符合計畫飲食法' },
@@ -180,9 +184,7 @@ export function ShopHomeClient({
       </section>
 
       <section>
-        <p className="text-[13px] font-medium text-foreground">
-          推薦商品（依個人化分數）
-        </p>
+        <SectionHeading icon={Sparkles}>推薦商品（依個人化分數）</SectionHeading>
         <div className="mt-3 grid grid-cols-2 gap-3 items-stretch">
           {filtered.map((p) => {
             const minPrice = Math.min(
@@ -238,7 +240,7 @@ export function ShopHomeClient({
       </section>
 
       <section>
-        <p className="text-[15px] font-medium text-foreground">精選品牌</p>
+        <SectionHeading icon={Store}>精選品牌</SectionHeading>
         <div className="hide-scrollbar mt-3 flex gap-3 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
           {brands
             .filter((b) => b.productCount > 0)

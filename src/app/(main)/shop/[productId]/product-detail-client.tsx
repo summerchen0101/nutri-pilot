@@ -2,9 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
+import { ShoppingBag } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { startCheckout } from '@/app/(main)/shop/actions';
+import { SectionHeading } from '@/components/ui/section-heading';
+import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/shop/cart-store';
 import { cn } from '@/lib/utils/cn';
 
@@ -96,7 +98,7 @@ export function ProductDetailClient({ product }: Props) {
 
   return (
     <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
-      <p className="text-[15px] font-medium text-foreground">規格與購買</p>
+      <SectionHeading icon={ShoppingBag}>規格與購買</SectionHeading>
 
       <div className="mt-3">
         <span className="text-[11px] text-muted-foreground">規格</span>

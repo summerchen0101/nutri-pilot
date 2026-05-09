@@ -1,6 +1,8 @@
-import { SectionCard } from '@/components/ui/section-card';
+import { UserCog } from 'lucide-react';
 
 import { SettingsRow } from '@/app/(main)/settings/_components/settings-row';
+import { SectionCard } from '@/components/ui/section-card';
+import { SectionHeading } from '@/components/ui/section-heading';
 
 interface AccountManagementCardProps {
   onResetData: () => void;
@@ -15,7 +17,9 @@ export function AccountManagementCard({
 }: AccountManagementCardProps) {
   return (
     <SectionCard className="bg-neutral-bg-primary">
-      <div className="mb-1 text-[15px] font-medium text-foreground">帳號管理</div>
+      <SectionHeading icon={UserCog} className="mb-1">
+        帳號管理
+      </SectionHeading>
       <SettingsRow label="重置數據" onClick={onResetData} />
       <SettingsRow label="登出" onClick={onSignOut} />
       <SettingsRow label="刪除帳號" onClick={onDeleteAccount} danger withBorder={false} />

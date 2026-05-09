@@ -8,9 +8,15 @@ import type { ReactNode } from "react";
 import {
   BarChart3,
   Dumbbell,
+  Flame,
   History,
+  Lightbulb,
+  Megaphone,
   PlusCircle,
   Scale,
+  Sparkles,
+  TrendingUp,
+  Trophy,
   UtensilsCrossed,
 } from "lucide-react";
 import { FiAward, FiBell, FiHeadphones } from "react-icons/fi";
@@ -23,6 +29,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SectionCard } from "@/components/ui/section-card";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { macroTargetsFromKcal } from "@/lib/dashboard/macro-targets";
 import { cn } from "@/lib/utils/cn";
 
@@ -257,7 +264,7 @@ function WeeklyTrendCard({
 
   return (
     <SectionCard>
-      <p className="text-[15px] font-medium text-foreground">本週趨勢</p>
+      <SectionHeading icon={TrendingUp}>本週趨勢</SectionHeading>
       <div className="mt-3 grid grid-cols-2 gap-3">
         <div className="rounded-[10px] border-[0.5px] border-border bg-secondary/40 p-3">
           <p className="text-[11px] text-muted-foreground">體重（7 日）</p>
@@ -318,7 +325,9 @@ function WeeklyTrendCard({
 function InsightCard({ bullets }: { bullets: string[] }) {
   return (
     <section className="rounded-xl border-[0.5px] border-primary/20 bg-primary-light p-4">
-      <p className="text-[15px] font-medium text-primary">今日建議</p>
+      <SectionHeading icon={Lightbulb} tone="primary">
+        今日建議
+      </SectionHeading>
       <ul className="mt-3 space-y-2">
         {bullets.map((text, idx) => (
           <li key={`${idx}-${text.slice(0, 8)}`} className="flex gap-2">
@@ -347,7 +356,7 @@ export function RecommendationRail({
   return (
     <SectionCard>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[15px] font-medium text-foreground">為你推薦</p>
+        <SectionHeading icon={Sparkles}>為你推薦</SectionHeading>
         <Link href="/shop" className="text-[11px] font-medium text-primary">
           看更多
         </Link>
@@ -402,7 +411,9 @@ function PromoBanner({
   return (
     <section className="rounded-xl border-[0.5px] border-primary/20 bg-primary-light p-4">
       <div className="min-w-0">
-        <p className="text-[15px] font-medium text-primary">{title}</p>
+        <SectionHeading icon={Megaphone} tone="primary">
+          {title}
+        </SectionHeading>
         <p className="mt-1 text-[13px] leading-relaxed text-primary-foreground">
           {description}
         </p>
@@ -429,7 +440,7 @@ export function WeeklyPopularBrandsRail({
   return (
     <SectionCard>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[15px] font-medium text-foreground">本週人氣</p>
+        <SectionHeading icon={Flame}>本週人氣</SectionHeading>
         <Link href="/shop" className="text-[11px] font-medium text-primary">
           看更多
         </Link>
@@ -783,8 +794,8 @@ export function DashboardHome({
 
       <SectionCard>
         <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 flex-1 items-baseline gap-2">
-            <p className="text-[15px] font-medium text-foreground">今日餐食</p>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <SectionHeading icon={UtensilsCrossed}>今日餐食</SectionHeading>
             {showMealsKcalTotal ? (
               <span className="shrink-0 text-[11px] font-medium tabular-nums text-primary">
                 共 {Math.round(mealsKcalTotal)} kcal
@@ -837,7 +848,7 @@ export function DashboardHome({
 
       {milestoneChips.length > 0 ? (
         <SectionCard>
-          <p className="text-[15px] font-medium text-foreground">里程碑</p>
+          <SectionHeading icon={Trophy}>里程碑</SectionHeading>
           <div className="mt-3 flex flex-wrap gap-2">
             {milestoneChips.map((m) => (
               <span

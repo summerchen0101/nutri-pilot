@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import { FiCamera } from 'react-icons/fi';
 
 import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
@@ -21,8 +22,8 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
+import { SectionHeading } from '@/components/ui/section-heading';
 
 function getTodayYmd(): string {
   const d = new Date();
@@ -375,7 +376,13 @@ export function GuardLabelClient() {
     <>
     <Card className="min-w-0 overflow-hidden">
       <CardHeader className="pb-2">
-        <CardTitle>食品標示與食安分析</CardTitle>
+        <SectionHeading
+          icon={ShieldCheck}
+          as="h3"
+          className="leading-none tracking-tight"
+        >
+          食品標示與食安分析
+        </SectionHeading>
         <CardDescription>
           拍攝成分與營養標示，由食品安全守衛產生分級警示與族群提示（辨識僅供參考）。
         </CardDescription>

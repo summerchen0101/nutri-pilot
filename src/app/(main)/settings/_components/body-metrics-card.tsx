@@ -1,5 +1,8 @@
+import { Ruler } from 'lucide-react';
+
 import { MetricTile } from '@/components/ui/metric-tile';
 import { SectionCard } from '@/components/ui/section-card';
+import { SectionHeading } from '@/components/ui/section-heading';
 
 interface BodyMetricsCardProps {
   heightCm: string;
@@ -24,8 +27,8 @@ export function BodyMetricsCard({
 }: BodyMetricsCardProps) {
   return (
     <SectionCard className="bg-neutral-bg-primary">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-[15px] font-medium text-foreground">身體數據</div>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <SectionHeading icon={Ruler}>身體數據</SectionHeading>
         <button
           type="button"
           className="rounded-[8px] border border-primary px-3 py-1 text-[13px] text-primary"

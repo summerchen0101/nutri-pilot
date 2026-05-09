@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import {
   ChevronUp,
   Dumbbell,
+  Flame,
+  PieChart,
   Scale,
   Sparkles,
   Target,
@@ -31,6 +33,7 @@ import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SectionCard } from '@/components/ui/section-card';
+import { SectionHeading } from '@/components/ui/section-heading';
 import { SegmentedTabs } from '@/components/ui/segmented-tabs';
 
 import { WeeklyReportShare } from '@/app/(main)/analytics/weekly-report-share';
@@ -165,37 +168,56 @@ const analyticsFloatingAiNavButtonClass = cn(
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#378ADD]/25 focus-visible:ring-offset-2',
 );
 
-const ANALYTICS_CHART_NAV: {
+type AnalyticsMainChartNav = {
   chartId: string;
   ariaLabel: string;
   shortLabel: string;
+  heading: string;
+  subtitle: string;
   Icon: LucideIcon;
-}[] = [
+};
+
+const ANALYTICS_MAIN_CHARTS: AnalyticsMainChartNav[] = [
   {
     chartId: 'analytics-chart-weight',
     ariaLabel: '捲動至：體重趨勢',
     shortLabel: '體重',
+    heading: '體重趨勢',
+    subtitle: '單位 · kg',
     Icon: Scale,
   },
   {
     chartId: 'analytics-chart-calories',
     ariaLabel: '捲動至：每日熱量',
     shortLabel: '熱量',
+    heading: '每日熱量',
+    subtitle: '依紀錄加總 · kcal',
     Icon: UtensilsCrossed,
   },
   {
     chartId: 'analytics-chart-activity',
     ariaLabel: '捲動至：每日運動時間',
     shortLabel: '運動',
+    heading: '每日運動時間',
+    subtitle: '依紀錄加總 · 分鐘',
     Icon: Dumbbell,
   },
   {
     chartId: 'analytics-chart-nutrients',
     ariaLabel: '捲動至：營養素達成率',
     shortLabel: '營養素',
+    heading: '營養素達成率',
+    subtitle: '區間內總量 ÷（每日目標 × 天數），100% 為剛好達標',
     Icon: Target,
   },
 ];
+
+const [
+  chartWeight,
+  chartCalories,
+  chartActivityMinutes,
+  chartNutrients,
+] = ANALYTICS_MAIN_CHARTS;
 
 export function AnalyticsView({
   todayIso,
@@ -371,7 +393,7 @@ export function AnalyticsView({
           />
           AI 洞察
         </button>
-        {ANALYTICS_CHART_NAV.map(({ chartId, ariaLabel, shortLabel, Icon }) => (
+        {ANALYTICS_MAIN_CHARTS.map(({ chartId, ariaLabel, shortLabel, Icon }) => (
           <button
             key={chartId}
             type="button"
@@ -398,7 +420,7 @@ export function AnalyticsView({
           onClick={() => scrollToChart('analytics-weekly-insight')}>
           <Sparkles className="h-5 w-5" strokeWidth={1.8} aria-hidden />
         </button>
-        {ANALYTICS_CHART_NAV.map(({ chartId, ariaLabel, Icon }) => (
+        {ANALYTICS_MAIN_CHARTS.map(({ chartId, ariaLabel, Icon }) => (
           <button
             key={chartId}
             type="button"
@@ -417,9 +439,9 @@ export function AnalyticsView({
         </button>
       </nav>
 
-      <SectionCard id="analytics-chart-weight" className="scroll-mt-3">
-        <p className="text-[15px] font-medium text-foreground">體重趨勢</p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">單位 · kg</p>
+      <SectionCard id={chartWeight.chartId} className="scroll-mt-3">
+        <SectionHeading icon={chartWeight.Icon}>{chartWeight.heading}</SectionHeading>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">{chartWeight.subtitle}</p>
         <div className="mt-3 h-[200px] w-full">
           {weightRows.length === 0 ? (
             <div className="h-full">
@@ -467,10 +489,10 @@ export function AnalyticsView({
         </div>
       </SectionCard>
 
-      <SectionCard id="analytics-chart-calories" className="scroll-mt-3">
-        <p className="text-[15px] font-medium text-foreground">每日熱量</p>
+      <SectionCard id={chartCalories.chartId} className="scroll-mt-3">
+        <SectionHeading icon={chartCalories.Icon}>{chartCalories.heading}</SectionHeading>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
-          依紀錄加總 · kcal
+          {chartCalories.subtitle}
         </p>
         <div className="mt-3 h-[200px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -509,10 +531,12 @@ export function AnalyticsView({
         </div>
       </SectionCard>
 
-      <SectionCard id="analytics-chart-activity" className="scroll-mt-3">
-        <p className="text-[15px] font-medium text-foreground">每日運動時間</p>
+      <SectionCard id={chartActivityMinutes.chartId} className="scroll-mt-3">
+        <SectionHeading icon={chartActivityMinutes.Icon}>
+          {chartActivityMinutes.heading}
+        </SectionHeading>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
-          依紀錄加總 · 分鐘
+          {chartActivityMinutes.subtitle}
         </p>
         <div className="mt-3 h-[200px] w-full">
           {!hasActivityMinutesInPeriod ? (
@@ -558,7 +582,7 @@ export function AnalyticsView({
       </SectionCard>
 
       <SectionCard>
-        <p className="text-[15px] font-medium text-foreground">每日估計消耗</p>
+        <SectionHeading icon={Flame}>每日估計消耗</SectionHeading>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
           僅加總有填寫估熱的紀錄 · kcal
         </p>
@@ -606,7 +630,7 @@ export function AnalyticsView({
       </SectionCard>
 
       <SectionCard>
-        <p className="text-[15px] font-medium text-foreground">運動類型分布</p>
+        <SectionHeading icon={PieChart}>運動類型分布</SectionHeading>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
           本區間各類型分鐘數（可多筆同日）
         </p>
@@ -656,10 +680,10 @@ export function AnalyticsView({
         </div>
       </SectionCard>
 
-      <SectionCard id="analytics-chart-nutrients" className="scroll-mt-3">
-        <p className="text-[15px] font-medium text-foreground">營養素達成率</p>
+      <SectionCard id={chartNutrients.chartId} className="scroll-mt-3">
+        <SectionHeading icon={chartNutrients.Icon}>{chartNutrients.heading}</SectionHeading>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
-          區間內總量 ÷（每日目標 × 天數），100% 為剛好達標
+          {chartNutrients.subtitle}
         </p>
         <div className="mt-3 h-[220px] w-full">
           {!radarRow ? (

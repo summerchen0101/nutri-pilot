@@ -9,6 +9,7 @@ import {
   useState,
   type ChangeEvent,
 } from 'react';
+import { UtensilsCrossed } from 'lucide-react';
 import {
   FiActivity,
   FiCamera,
@@ -35,8 +36,8 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
+import { SectionHeading } from '@/components/ui/section-heading';
 import { Input } from '@/components/ui/input';
 import {
   ActivityLogSection,
@@ -1117,7 +1118,13 @@ export function LogClient({
       {!prefillFromMeal && sectionTab === 'food' ? (
       <Card className="min-w-0 max-w-full overflow-hidden">
         <CardHeader className="pb-2">
-          <CardTitle>新增紀錄</CardTitle>
+          <SectionHeading
+            icon={UtensilsCrossed}
+            as="h3"
+            className="leading-none tracking-tight"
+          >
+            新增紀錄
+          </SectionHeading>
           <CardDescription>
             選擇餐次後，以文字描述或拍照加入今日飲食。
           </CardDescription>

@@ -1,6 +1,8 @@
-import { SectionCard } from '@/components/ui/section-card';
+import { Carrot } from 'lucide-react';
 
 import { SettingsRow } from '@/app/(main)/settings/_components/settings-row';
+import { SectionCard } from '@/components/ui/section-card';
+import { SectionHeading } from '@/components/ui/section-heading';
 
 interface DietPreferencesCardProps {
   dietMethodText: string;
@@ -25,7 +27,9 @@ export function DietPreferencesCard({
 }: DietPreferencesCardProps) {
   return (
     <SectionCard className="bg-neutral-bg-primary">
-      <div className="mb-1 text-[15px] font-medium text-foreground">飲食偏好</div>
+      <SectionHeading icon={Carrot} className="mb-1">
+        飲食偏好
+      </SectionHeading>
       <SettingsRow label="飲食方式" value={dietMethodText} onClick={onEditMethod} />
       <SettingsRow label="忌食 / 過敏" value={allergenText} onClick={onEditAllergens} />
       <div className="flex items-start justify-between gap-3 border-b-0 py-3">
