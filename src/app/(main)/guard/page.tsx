@@ -1,16 +1,26 @@
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { History } from "lucide-react";
+import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { History } from 'lucide-react';
 
-import { GuardLabelClient } from "@/app/(main)/guard/guard-label-client";
-import { HEADER_ACTION_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
-import { PageHeader } from "@/components/layout/page-header";
+import { GuardLabelClient } from '@/app/(main)/guard/guard-label-client';
+import { HEADER_ACTION_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
+import { PageHeader } from '@/components/layout/page-header';
 import { getCachedAuthContext } from '@/lib/auth';
+
+function GuardMainSkeleton() {
+  return (
+    <div className="space-y-3" aria-busy aria-label="載入辨識區">
+      <div className="h-48 w-full animate-pulse rounded-xl bg-muted/70" />
+      <div className="h-28 w-full animate-pulse rounded-xl bg-muted/60" />
+    </div>
+  );
+}
 
 export default async function GuardPage() {
   const { user } = await getCachedAuthContext();
 
-  if (!user) redirect("/login");
+  if (!user) redirect('/login');
 
   return (
     <div className="space-y-3">
@@ -21,7 +31,8 @@ export default async function GuardPage() {
           <Link
             href="/guard/records"
             aria-label="食品安全分析紀錄"
-            className={HEADER_ACTION_ICON_CLASS}>
+            className={HEADER_ACTION_ICON_CLASS}
+          >
             <History
               className="h-[18px] w-[18px]"
               aria-hidden
@@ -30,7 +41,9 @@ export default async function GuardPage() {
           </Link>
         }
       />
-      <GuardLabelClient />
+      <Suspense fallback={<GuardMainSkeleton />}>
+        <GuardLabelClient />
+      </Suspense>
     </div>
   );
 }

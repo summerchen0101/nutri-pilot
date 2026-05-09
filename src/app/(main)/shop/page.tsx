@@ -1,111 +1,22 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { FiShoppingCart } from "react-icons/fi";
+import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 
-import type { ShopProductRow } from './shop-home-client';
-import { ShopHomeClient } from './shop-home-client';
-import { ensureShopScores } from "@/app/(main)/shop/actions";
-import { HEADER_ACTION_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
-import { PageHeader } from "@/components/layout/page-header";
-import { getCachedAuthContext } from "@/lib/auth";
+import { ShopCatalogBody } from '@/app/(main)/shop/shop-catalog-body';
+import { ShopPageHeader } from '@/app/(main)/shop/shop-page-header';
+import { ShopHomeSkeleton } from '@/app/(main)/shop/shop-home-skeleton';
+import { getCachedAuthContext } from '@/lib/auth';
 
 export default async function ShopPage() {
-  const { supabase, user } = await getCachedAuthContext();
+  const { user } = await getCachedAuthContext();
 
-  if (!user) redirect("/login");
-
-  await ensureShopScores(user.id);
-
-  const [
-    { data: profile },
-    { data: goal },
-    { data: scores },
-    { data: catalog },
-    { data: brandCounts },
-  ] = await Promise.all([
-    supabase
-      .from("user_profiles")
-      .select("diet_type, allergens, diet_method")
-      .eq("user_id", user.id)
-      .single(),
-    supabase
-      .from("user_goals")
-      .select("type")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .maybeSingle(),
-    supabase
-      .from("user_product_scores")
-      .select("product_id, score")
-      .eq("user_id", user.id),
-    supabase
-      .from("products")
-      .select(
-        `
-      id,
-      name,
-      slug,
-      image_url,
-      category,
-      calories,
-      protein_g,
-      sugar_g,
-      diet_tags,
-      cert_tags,
-      avg_rating,
-      brand:brands ( id, name, slug, logo_url ),
-      variants:product_variants ( id, label, price, sub_price, stock )
-    `,
-      )
-      .eq("is_active", true),
-    supabase.from("products").select("brand_id").eq("is_active", true),
-  ]);
-
-  if (!profile || !goal || !profile.diet_method) redirect("/onboarding");
-
-  const scoreMap = new Map(
-    (scores ?? []).map((s) => [s.product_id as string, Number(s.score)]),
-  );
-
-  const brandCountMap = new Map<string, number>();
-  for (const row of brandCounts ?? []) {
-    const bid = row.brand_id as string;
-    brandCountMap.set(bid, (brandCountMap.get(bid) ?? 0) + 1);
-  }
-
-  const { data: brands } = await supabase
-    .from("brands")
-    .select("id, name, slug, logo_url")
-    .eq("is_active", true)
-    .order("name");
+  if (!user) redirect('/login');
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title="健康商城"
-        spacing="compact"
-        action={
-          <Link
-            href="/shop/cart"
-            aria-label="購物車"
-            className={HEADER_ACTION_ICON_CLASS}
-          >
-            <FiShoppingCart className="h-[18px] w-[18px]" aria-hidden />
-          </Link>
-        }
-      />
-
-      <ShopHomeClient
-        initialProducts={(catalog ?? []).map((p) => ({
-          ...(p as unknown as Omit<ShopProductRow, "score">),
-          score: scoreMap.get(p.id as string) ?? 0,
-        }))}
-        brands={(brands ?? []).map((b) => ({
-          ...b,
-          productCount: brandCountMap.get(b.id as string) ?? 0,
-        }))}
-        dietMethod={profile.diet_method}
-      />
+      <ShopPageHeader />
+      <Suspense fallback={<ShopHomeSkeleton />}>
+        <ShopCatalogBody />
+      </Suspense>
     </div>
   );
 }

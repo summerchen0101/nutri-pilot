@@ -23,6 +23,7 @@ import {
   DashboardRecommendedProductsDeferred,
 } from '@/app/(main)/dashboard/dashboard-shop-stream';
 import { getCachedAuthContext } from '@/lib/auth';
+import { getCachedUserProfileCoreRow } from '@/lib/user-profile';
 import { round1 } from '@/lib/food/nutrition';
 import {
   MILESTONE_LABELS,
@@ -44,22 +45,16 @@ export default async function DashboardPage() {
   const streakWindowStart = addCalendarDaysISO(today, -120);
 
   const [
-    { data: profile },
+    { data: profile, error: profileError },
     { data: latestVitalRows },
     { data: goal },
-    { data: foodRows },
-    { data: streakFoodRows },
+    { data: foodLogsStreakWindow },
     { data: weekVitalRows },
-    { data: weekFoodRows },
     { data: activityRowsToday },
     { data: todayVitalRow },
     hasUnreadAnnouncements,
   ] = await Promise.all([
-    supabase
-      .from('user_profiles')
-      .select('name, weight_kg, height_cm, bmi, diet_method')
-      .eq('user_id', user.id)
-      .single(),
+    getCachedUserProfileCoreRow(supabase, user.id),
     supabase
       .from('vital_logs')
       .select('weight_kg, date')
@@ -76,6 +71,7 @@ export default async function DashboardPage() {
       .from('food_logs')
       .select(
         `
+      date,
       meal_type,
       food_log_items (
         name,
@@ -83,18 +79,6 @@ export default async function DashboardPage() {
         carb_g,
         protein_g,
         fat_g
-      )
-    `,
-      )
-      .eq('user_id', user.id)
-      .eq('date', today),
-    supabase
-      .from('food_logs')
-      .select(
-        `
-      date,
-      food_log_items (
-        calories
       )
     `,
       )
@@ -109,19 +93,6 @@ export default async function DashboardPage() {
       .lte('date', today)
       .order('date', { ascending: true }),
     supabase
-      .from('food_logs')
-      .select(
-        `
-      date,
-      food_log_items (
-        calories
-      )
-    `,
-      )
-      .eq('user_id', user.id)
-      .gte('date', weekStart)
-      .lte('date', today),
-    supabase
       .from('activity_logs')
       .select('duration_minutes, calories_est, activity_type')
       .eq('user_id', user.id)
@@ -135,7 +106,14 @@ export default async function DashboardPage() {
     hasUnreadAnnouncementsForUser(supabase, user.id),
   ]);
 
-  if (!profile) redirect('/onboarding');
+  if (profileError || !profile) redirect('/onboarding');
+
+  const foodLogsCombined = foodLogsStreakWindow ?? [];
+  const foodRows = foodLogsCombined.filter((r) => r.date === today);
+  const streakFoodRows = foodLogsCombined;
+  const weekFoodRows = foodLogsCombined.filter(
+    (r) => r.date != null && r.date >= weekStart && r.date <= today,
+  );
 
   await syncUserMilestones(supabase, user.id);
 
