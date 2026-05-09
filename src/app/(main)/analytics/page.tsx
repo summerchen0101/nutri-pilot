@@ -9,14 +9,11 @@ import {
   iterateISODatesInclusive,
   todayLocalISODate,
 } from '@/lib/onboarding/date';
-import { createClient } from '@/lib/supabase/server';
+import { getCachedAuthContext } from '@/lib/auth';
 import type { Json } from '@/types/supabase';
 
 export default async function AnalyticsPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCachedAuthContext();
 
   if (!user) redirect('/login');
 

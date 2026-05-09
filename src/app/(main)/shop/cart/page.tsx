@@ -4,13 +4,10 @@ import { redirect } from 'next/navigation';
 import { CartView } from '@/app/(main)/shop/cart/cart-view';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
-import { createClient } from '@/lib/supabase/server';
+import { getCachedAuthContext } from '@/lib/auth';
 
 export default async function ShopCartPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getCachedAuthContext();
 
   if (!user) redirect('/login');
 

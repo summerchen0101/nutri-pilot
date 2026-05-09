@@ -5,13 +5,10 @@ import { History } from "lucide-react";
 import { GuardLabelClient } from "@/app/(main)/guard/guard-label-client";
 import { HEADER_ACTION_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
 import { PageHeader } from "@/components/layout/page-header";
-import { createClient } from "@/lib/supabase/server";
+import { getCachedAuthContext } from '@/lib/auth';
 
 export default async function GuardPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getCachedAuthContext();
 
   if (!user) redirect("/login");
 

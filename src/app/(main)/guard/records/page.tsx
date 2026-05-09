@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { MAX_LABEL_GUARD_SAVED_REPORTS } from "@/lib/food/label-guard-saved";
 import { safetyScoreTextClass } from "@/lib/food/label-guard-report";
-import { createClient } from "@/lib/supabase/server";
+import { getCachedAuthContext } from "@/lib/auth";
 import type { Json } from "@/types/supabase";
 
 function formatDateLabel(value: string | null): string {
@@ -37,10 +37,7 @@ function extractSafetyScore(reportJson: Json): number | null {
 }
 
 export default async function GuardRecordsPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCachedAuthContext();
 
   if (!user) redirect("/login");
 

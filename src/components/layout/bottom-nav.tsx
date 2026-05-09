@@ -42,15 +42,17 @@ export function BottomNav() {
               href={href}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex min-h-[44px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-medium transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-1 focus-visible:ring-offset-primary',
+                'flex min-h-[44px] touch-manipulation cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-medium transition-colors duration-150 ease-out active:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-1 focus-visible:ring-offset-primary',
                 active ? 'bg-white/20 text-white' : 'text-white/70',
               )}
             >
-              <Icon
-                className={cn('shrink-0', active ? 'h-5 w-5' : 'h-[18px] w-[18px]')}
-                strokeWidth={active ? 2.25 : 2}
-                aria-hidden
-              />
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden>
+                <Icon
+                  className="h-[18px] w-[18px]"
+                  strokeWidth={active ? 2.25 : 2}
+                  aria-hidden
+                />
+              </span>
               {label}
             </Link>
           );

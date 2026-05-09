@@ -4,7 +4,7 @@ import {
   SettingsView,
   type SettingsInitialData,
 } from '@/app/(main)/settings/settings-view';
-import { createClient } from '@/lib/supabase/server';
+import { getCachedAuthContext } from '@/lib/auth';
 
 function toDayCount(createdAt: string | null | undefined): number {
   if (!createdAt) return 1;
@@ -17,10 +17,7 @@ function toDayCount(createdAt: string | null | undefined): number {
 }
 
 export default async function SettingsPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCachedAuthContext();
 
   if (!user) redirect('/login');
 

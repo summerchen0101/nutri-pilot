@@ -4,7 +4,7 @@ import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import { GuardSavedRecordDetailClient } from '@/app/(main)/guard/records/guard-saved-record-detail-client';
 import { parseLabelGuardReportJson } from '@/lib/food/label-guard-report';
-import { createClient } from '@/lib/supabase/server';
+import { getCachedAuthContext } from '@/lib/auth';
 
 const SIGNED_URL_TTL_SEC = 3600;
 
@@ -27,10 +27,7 @@ type PageProps = {
 
 export default async function GuardSavedRecordDetailPage({ params }: PageProps) {
   const { id } = params;
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCachedAuthContext();
 
   if (!user) redirect('/login');
 

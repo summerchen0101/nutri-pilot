@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import type { ReactNode } from "react";
 import {
   BarChart3,
   Dumbbell,
@@ -184,25 +185,16 @@ export type DashboardHomeProps = {
   weeklyWeight: { label: string; kg: number | null }[];
   weeklyKcal: { label: string; kcal: number }[];
   insightBullets: string[];
-  recommendProducts: {
-    id: string;
-    name: string;
-    imageUrl: string | null;
-    price: number;
-    reason: string;
-  }[];
+  /** Suspense 串流：為你推薦區塊 */
+  recommendSlot?: ReactNode;
   promoBanner: {
     title: string;
     description: string;
     ctaLabel: string;
     href: string;
   };
-  popularBrands: {
-    id: string;
-    name: string;
-    slug: string;
-    logoUrl: string | null;
-  }[];
+  /** Suspense 串流：本週人氣品牌 */
+  popularBrandsSlot?: ReactNode;
   hasUnreadAnnouncements: boolean;
   /** 最近解鎖的里程碑（已依時間倒序截斷） */
   milestoneChips: { key: string; label: string }[];
@@ -341,7 +333,7 @@ function InsightCard({ bullets }: { bullets: string[] }) {
   );
 }
 
-function RecommendationRail({
+export function RecommendationRail({
   products,
 }: {
   products: {
@@ -424,7 +416,7 @@ function PromoBanner({
   );
 }
 
-function WeeklyPopularBrandsRail({
+export function WeeklyPopularBrandsRail({
   brands,
 }: {
   brands: {
@@ -473,6 +465,38 @@ function WeeklyPopularBrandsRail({
   );
 }
 
+export function DashboardRecommendationSkeleton() {
+  return (
+    <SectionCard>
+      <div className="h-5 w-24 animate-pulse rounded bg-muted" />
+      <div className="mt-3 flex gap-2.5 overflow-hidden pb-1">
+        {[0, 1, 2].map((k) => (
+          <div
+            key={k}
+            className="h-[212px] w-[146px] shrink-0 animate-pulse rounded-xl bg-muted/70"
+          />
+        ))}
+      </div>
+    </SectionCard>
+  );
+}
+
+export function DashboardBrandsSkeleton() {
+  return (
+    <SectionCard>
+      <div className="h-5 w-24 animate-pulse rounded bg-muted" />
+      <div className="mt-3 flex gap-2.5">
+        {[0, 1, 2, 3, 4].map((k) => (
+          <div
+            key={k}
+            className="h-[72px] w-[72px] shrink-0 animate-pulse rounded-xl bg-muted/70"
+          />
+        ))}
+      </div>
+    </SectionCard>
+  );
+}
+
 export function DashboardHome({
   dateLabel,
   todayIsoDate,
@@ -491,9 +515,9 @@ export function DashboardHome({
   weeklyWeight,
   weeklyKcal,
   insightBullets,
-  recommendProducts,
+  recommendSlot,
   promoBanner,
-  popularBrands,
+  popularBrandsSlot,
   hasUnreadAnnouncements,
   milestoneChips,
   waterMlToday,
@@ -826,9 +850,7 @@ export function DashboardHome({
         </SectionCard>
       ) : null}
 
-      {recommendProducts.length > 0 ? (
-        <RecommendationRail products={recommendProducts} />
-      ) : null}
+      {recommendSlot ?? null}
 
       <PromoBanner
         title={promoBanner.title}
@@ -837,9 +859,7 @@ export function DashboardHome({
         href={promoBanner.href}
       />
 
-      {popularBrands.length > 0 ? (
-        <WeeklyPopularBrandsRail brands={popularBrands} />
-      ) : null}
+      {popularBrandsSlot ?? null}
 
       {open
         ? createPortal(

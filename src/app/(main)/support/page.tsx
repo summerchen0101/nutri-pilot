@@ -3,13 +3,10 @@ import { redirect } from 'next/navigation';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import { SectionCard } from '@/components/ui/section-card';
-import { createClient } from '@/lib/supabase/server';
+import { getCachedAuthContext } from '@/lib/auth';
 
 export default async function SupportPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getCachedAuthContext();
 
   if (!user) redirect('/login');
 

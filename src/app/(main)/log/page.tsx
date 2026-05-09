@@ -11,7 +11,7 @@ import {
 import { PageHeader } from '@/components/layout/page-header';
 import { SectionCard } from '@/components/ui/section-card';
 import { todayLocalISODate } from '@/lib/onboarding/date';
-import { createClient } from '@/lib/supabase/server';
+import { getCachedAuthContext } from '@/lib/auth';
 
 function isoDateOk(s: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -45,10 +45,7 @@ export default async function LogPage({
     tab?: string;
   };
 }) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCachedAuthContext();
 
   if (!user) redirect('/login');
 

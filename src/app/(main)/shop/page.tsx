@@ -11,13 +11,10 @@ import {
   DIET_METHOD_OPTIONS,
   DIET_TYPE_OPTIONS,
 } from "@/lib/onboarding/constants";
-import { createClient } from "@/lib/supabase/server";
+import { getCachedAuthContext } from "@/lib/auth";
 
 export default async function ShopPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCachedAuthContext();
 
   if (!user) redirect("/login");
 

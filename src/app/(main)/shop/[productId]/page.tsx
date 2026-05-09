@@ -7,17 +7,14 @@ import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import { SHOP_CATEGORY_LABEL } from '@/lib/shop/constants';
 import { generateFitReasons } from '@/lib/shop/fit-reasons';
-import { createClient } from '@/lib/supabase/server';
+import { getCachedAuthContext } from '@/lib/auth';
 
 interface PageProps {
   params: { productId: string };
 }
 
 export default async function ShopProductPage({ params }: PageProps) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getCachedAuthContext();
 
   if (!user) redirect('/login');
 
