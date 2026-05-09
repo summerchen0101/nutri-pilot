@@ -13,13 +13,13 @@ interface EmptyStateProps {
 export function EmptyState({ message, actionLabel, actionHref, action }: EmptyStateProps) {
   return (
     <SectionCard className="p-6 text-center">
-      <p className="text-[13px] text-muted-foreground">{message}</p>
+      <p className="text-body text-muted-foreground">{message}</p>
       {action ? (
         <div className="mt-4">{action}</div>
       ) : actionHref && actionLabel ? (
         <Link
           href={actionHref}
-          className="mt-4 inline-flex items-center justify-center rounded-[10px] border-[1.5px] border-primary px-4 py-2 text-[13px] font-medium text-primary transition-colors hover:bg-primary-light"
+          className="mt-4 inline-flex items-center justify-center rounded-[10px] border-[1.5px] border-primary px-[18px] py-[9px] text-body font-medium text-primary transition-colors duration-150 ease-out hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           {actionLabel}
         </Link>

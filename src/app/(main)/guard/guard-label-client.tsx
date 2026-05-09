@@ -480,10 +480,10 @@ export function GuardLabelClient() {
             </Button>
 
             {saveError && !saveEditorOpen ? (
-              <p className="text-[12px] text-destructive">{saveError}</p>
+              <p className="text-caption text-destructive">{saveError}</p>
             ) : null}
             {saveHint ? (
-              <p className="text-[12px] text-primary">{saveHint}</p>
+              <p className="text-caption text-primary">{saveHint}</p>
             ) : null}
           </>
         ) : null}

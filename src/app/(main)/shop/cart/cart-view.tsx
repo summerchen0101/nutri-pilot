@@ -164,7 +164,7 @@ export function CartView() {
         >
           {mode === 'payment' ? '預估總計（單次）' : '預估每期（訂閱）'}
         </SectionHeading>
-        <p className="text-[20px] font-medium tabular-nums">
+        <p className="text-heading-page tabular-nums text-foreground">
           NT${' '}
           {mode === 'payment' ?
             totalPay.toFixed(0)

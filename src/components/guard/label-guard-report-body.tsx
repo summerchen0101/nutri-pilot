@@ -71,7 +71,7 @@ export function LabelGuardReportBody({
                 return (
                   <span
                     key={`${kw}-${i}`}
-                    className="rounded-full bg-muted px-2.5 py-1 text-left text-[12px] text-muted-foreground ring-1 ring-border"
+                    className="rounded-full bg-muted px-2.5 py-1 text-left text-caption text-muted-foreground ring-1 ring-border"
                     aria-label={`${kw}（一般性參考）`}>
                     {kw}
                   </span>
@@ -82,7 +82,7 @@ export function LabelGuardReportBody({
                 <button
                   key={`${kw}-${i}`}
                   type="button"
-                  className="rounded-full bg-[#FFF4E5] px-2.5 py-1 text-left text-[12px] text-[#C57A12] ring-1 ring-[#EF9F27]/45 transition-colors active:bg-[#FFF8ED]"
+                  className="rounded-full bg-[#FFF4E5] px-2.5 py-1 text-left text-caption text-[#C57A12] ring-1 ring-[#EF9F27]/45 transition-colors active:bg-[#FFF8ED]"
                   aria-label={`${kw} 說明`}
                   onClick={() => {
                     const { title, body } = resolveAlertKeywordExplanation(kw);
@@ -139,7 +139,7 @@ export function LabelGuardReportBody({
                     {tierLabelZh(r.tier)}
                   </span>
                   {r.plain_language ? (
-                    <p className="mt-1 text-[12px] leading-snug text-muted-foreground">
+                    <p className="mt-1 text-caption leading-snug text-muted-foreground">
                       {r.plain_language}
                     </p>
                   ) : null}
@@ -160,7 +160,7 @@ export function LabelGuardReportBody({
                 <li key={row.category_key}>
                   <button
                     type="button"
-                    className="w-full rounded-md border-[0.5px] border-[#EF9F27]/45 bg-[#FFF4E5] px-2 py-1.5 text-left text-[12px] text-[#B45309] transition-colors active:bg-[#FFF8ED]"
+                    className="w-full rounded-md border-[0.5px] border-[#EF9F27]/45 bg-[#FFF4E5] px-2 py-1.5 text-left text-caption text-[#B45309] transition-colors active:bg-[#FFF8ED]"
                     onClick={() => {
                       onOpenDetail(
                         TW_ALLERGEN_LABEL_ZH[row.category_key],
@@ -177,7 +177,7 @@ export function LabelGuardReportBody({
               ))}
           </ul>
         ) : (
-          <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
+          <p className="mt-2 text-caption leading-snug text-muted-foreground">
             本次未偵測到須標示之過敏原類別（依影像可讀文字推估，非完整標示認證）。
           </p>
         )}

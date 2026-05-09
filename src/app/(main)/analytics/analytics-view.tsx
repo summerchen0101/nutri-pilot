@@ -145,13 +145,13 @@ function scrollToTop() {
 }
 
 const analyticsQuickNavButtonClass = cn(
-  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-[#4C956C] bg-transparent px-2 text-[12px] font-medium text-[#4C956C]',
+  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-[#4C956C] bg-transparent px-2 text-caption font-medium text-[#4C956C]',
   'hover:bg-[#4C956C]/10 hover:text-[#3d7a56]',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C]/25',
 );
 
 const analyticsQuickAiNavButtonClass = cn(
-  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] px-2 text-[12px] font-medium text-[#378ADD]',
+  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] px-2 text-caption font-medium text-[#378ADD]',
   'hover:border-[#378ADD]/70 hover:bg-[#D6EAF9] hover:text-[#2B6CB0]',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#378ADD]/25',
 );
@@ -362,7 +362,6 @@ export function AnalyticsView({
       <PageHeader
         leading={<HeaderBackButton />}
         title="數據分析"
-        description="查看體重、飲食熱量、營養素達成率與運動紀錄的變化。"
         spacing="compact"
       />
 

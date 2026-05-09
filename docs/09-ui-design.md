@@ -111,7 +111,7 @@ Tailwind：`primary` / `primary-dark` / `primary-light` / `primary-foreground`�
 
 | 用途 | Size | Weight | 範例 |
 |------|------|--------|------|
-| 頁面標題 | 20px | 500 | 今日概覽、健康商城 |
+| 頁面標題（螢幕頂主標） | 24px | 500 | 今日概覽、健康商城、設定 |
 | 區塊標題 | 15px | 500 | 今日餐食、為什麼適合你 |
 | 卡片小標 | 13px | 500 | 早餐、體重 |
 | 內文 | 13px | 400 | 描述、食物名稱 |
@@ -119,6 +119,23 @@ Tailwind：`primary` / `primary-dark` / `primary-light` / `primary-foreground`�
 | 超小標 | 10px | 400 | nav 標籤、角標 |
 | 數字大值 | 20px | 500 | 熱量、體重數字 |
 | 數字單位 | 13px | 400 | kg、kcal（跟大數字並排縮小）|
+
+### Tailwind 語意 class（`tailwind.config.ts`）
+
+新稿與重構時**優先使用下列 class**，避免散落 `text-[13px]`、`text-sm` 等；數值與上表一致。
+
+| 用途 | Tailwind class | 備註 |
+|------|----------------|------|
+| 頁面標題 | `text-heading-screen` | 或元件 `PageHeading` |
+| 區塊標題 | `text-heading-section` | 或元件 `SectionHeading` |
+| 卡片小標 | `text-heading-card` | `CardTitle` 預設已套用 |
+| 內文 | `text-body` | 字重繼承 `body` 的 `font-normal`；按鈕／強調可外加 `font-medium` |
+| 輔助文字 | `text-caption` | `CardDescription` 預設已套用 |
+| 超小標 | `text-micro` | nav 標籤、角標 |
+
+**頂部列標題區**（`PageHeader`）：僅顯示主標與可選 `meta`（如商品品牌名一行）；不提供頁面說明副文；登入／Onboarding 頂標與 `PageHeading` 同級時使用 `text-heading-screen`。
+
+**數字大值 + 單位**：以 `text-heading-page`（20px／500）搭 `span.text-body` 等形式組合，與頁面主標字級分離。
 
 ---
 
@@ -194,6 +211,8 @@ padding: 5px 12px;
 font-size: 11px;
 border-radius: 8px;
 ```
+
+**實作**：優先使用 `@/components/ui/button` 的 `Button`：`size="default"` 對應上列主要尺寸（含 padding 9px 18px）；`size="sm"` 對應 Small variant。
 
 ### 輸入框
 

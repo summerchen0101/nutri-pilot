@@ -1,64 +1,86 @@
-import type { Config } from 'tailwindcss';
+import type { Config } from "tailwindcss";
 
 const config: Config = {
+  safelist: [
+    {
+      pattern:
+        /^text-(heading-screen|heading-page|heading-section|heading-card|body|caption|micro)$/,
+    },
+  ],
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
+      fontSize: {
+        /** 螢幕頂主標（PageHeading）— docs/09-ui-design.md */
+        "heading-screen": ["22px", { lineHeight: "1.2", fontWeight: "500" }],
+        /** 數字大值等 — docs/09-ui-design.md */
+        "heading-page": ["20px", { lineHeight: "1.25", fontWeight: "500" }],
+        /** 區塊標題 */
+        "heading-section": ["15px", { lineHeight: "1.3", fontWeight: "500" }],
+        /** 卡片小標 */
+        "heading-card": ["13px", { lineHeight: "1.35", fontWeight: "500" }],
+        /** 內文（字重預設繼承 body font-normal，按鈕等另加 font-medium） */
+        body: ["13px", { lineHeight: "1.45" }],
+        /** 輔助文字 */
+        caption: ["12px", { lineHeight: "1.4" }],
+        /** nav 標籤、角標 */
+        micro: ["11px", { lineHeight: "1.35" }],
+      },
       ringColor: {
-        DEFAULT: '#4C956C',
+        DEFAULT: "#4C956C",
       },
       colors: {
         neutral: {
           bg: {
-            primary: 'var(--color-background-primary)',
-            secondary: 'var(--color-background-secondary)',
-            tertiary: 'var(--color-background-tertiary)',
+            primary: "var(--color-background-primary)",
+            secondary: "var(--color-background-secondary)",
+            tertiary: "var(--color-background-tertiary)",
           },
           text: {
-            primary: 'var(--color-text-primary)',
-            secondary: 'var(--color-text-secondary)',
-            tertiary: 'var(--color-text-tertiary)',
+            primary: "var(--color-text-primary)",
+            secondary: "var(--color-text-secondary)",
+            tertiary: "var(--color-text-tertiary)",
           },
           border: {
-            secondary: 'var(--color-border-secondary)',
-            tertiary: 'var(--color-border-tertiary)',
+            secondary: "var(--color-border-secondary)",
+            tertiary: "var(--color-border-tertiary)",
           },
         },
-        border: 'hsl(var(--border))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        border: "hsl(var(--border))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
         primary: {
-          DEFAULT: 'var(--primary)',
-          dark: 'var(--primary-dark)',
-          light: 'var(--primary-light)',
-          foreground: 'var(--primary-text)',
+          DEFAULT: "var(--primary)",
+          dark: "var(--primary-dark)",
+          light: "var(--primary-light)",
+          foreground: "var(--primary-text)",
         },
-        'shadow-grey': {
-          DEFAULT: 'var(--shadow-grey)',
-          hover: 'var(--shadow-grey-hover)',
+        "shadow-grey": {
+          DEFAULT: "var(--shadow-grey)",
+          hover: "var(--shadow-grey-hover)",
         },
         surface: {
-          secondary: 'var(--surface-secondary)',
+          secondary: "var(--surface-secondary)",
         },
       },
     },

@@ -46,7 +46,7 @@ export function GuardSavedRecordDetailClient({
               className="shrink-0"
             />
           </h1>
-          <p className="mt-0.5 text-[12px] text-muted-foreground">儲存時間：{createdAtLabel}</p>
+          <p className="mt-0.5 text-caption text-muted-foreground">儲存時間：{createdAtLabel}</p>
         </div>
 
         <div className="overflow-hidden rounded-xl border-[0.5px] border-border !bg-white">

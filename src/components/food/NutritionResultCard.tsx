@@ -63,7 +63,7 @@ function MacroCell({
       {editing ?
         <Input
           autoFocus
-          className="h-10 border-[0.5px] text-xl font-medium tabular-nums"
+          className="h-10 border-[0.5px] !text-heading-page tabular-nums"
           style={{ color: valueColor }}
           value={draft}
           inputMode="decimal"
@@ -86,13 +86,13 @@ function MacroCell({
           onClick={() => setEditing(true)}
         >
           <div
-            className="tabular-nums text-xl font-medium"
+            className="tabular-nums text-heading-page"
             style={{ color: valueColor }}
           >
             {displayValue}
           </div>
-          <div className="text-[11px] font-normal text-muted-foreground">{unit}</div>
-          <div className="mt-0.5 text-[11px] text-muted-foreground">
+          <div className="text-caption font-normal text-muted-foreground">{unit}</div>
+          <div className="mt-0.5 text-caption text-muted-foreground">
             {labelZh}
             {labelEn ?
               <span className="opacity-70"> {labelEn}</span>
@@ -364,7 +364,7 @@ export function NutritionResultCard({
             </button>
           )}
           {displayResult.quantity_description ?
-            <p className="mt-0.5 text-[11px] font-normal text-neutral-text-tertiary">
+            <p className="mt-0.5 text-caption font-normal text-neutral-text-tertiary">
               {displayResult.quantity_description}
             </p>
           : null}
@@ -392,7 +392,7 @@ export function NutritionResultCard({
           type="button"
           onClick={() => void handleReanalyze()}
           disabled={isReanalyzing}
-          className="ml-2 flex items-center gap-1 whitespace-nowrap text-[11px] font-medium text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
+          className="ml-2 flex items-center gap-1 whitespace-nowrap text-caption font-medium text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isReanalyzing ?
             <>
@@ -446,7 +446,7 @@ export function NutritionResultCard({
       </div>
 
       {showSecondary ?
-        <p className="text-[11px] font-normal leading-snug text-neutral-text-tertiary">
+        <p className="text-caption font-normal leading-snug text-neutral-text-tertiary">
           {displayResult.fiber_g != null && displayResult.fiber_g > 0 ?
             <>纖維 {Math.round(displayResult.fiber_g)}g</>
           : null}

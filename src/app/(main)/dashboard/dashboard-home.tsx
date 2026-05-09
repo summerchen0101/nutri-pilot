@@ -119,7 +119,7 @@ function CalorieRingBlock({
               </p>
             ) : (
               <>
-                <p className="text-[20px] font-medium leading-tight text-foreground">
+                <p className="text-heading-page leading-tight text-foreground">
                   {Math.round(todayKcal)}
                 </p>
                 <p className="text-[9px] text-muted-foreground">kcal</p>
@@ -649,7 +649,7 @@ export function DashboardHome({
           onClick={openWeightDialog}
           className="flex min-h-[112px] flex-col rounded-[10px] border-[0.5px] border-border bg-card p-2.5 text-left transition-colors hover:bg-muted">
           <p className="text-[15px] font-medium text-foreground">體重</p>
-          <p className="mt-1 tabular-nums text-[20px] font-medium leading-tight text-foreground">
+          <p className="mt-1 tabular-nums text-heading-page leading-tight text-foreground">
             {latestWeightKg != null ? (
               <>
                 {latestWeightKg}
@@ -703,7 +703,7 @@ export function DashboardHome({
           href="/log?tab=activity"
           className="flex min-h-[112px] flex-col rounded-[10px] border-[0.5px] border-border bg-card p-2.5 text-left transition-colors hover:bg-muted">
           <p className="text-[15px] font-medium text-foreground">運動消耗</p>
-          <p className="mt-1 tabular-nums text-[20px] font-medium leading-tight text-primary">
+          <p className="mt-1 tabular-nums text-heading-page leading-tight text-primary">
             {activityKcalEstToday > 0 ? (
               <>
                 −{activityKcalEstToday}
@@ -853,7 +853,7 @@ export function DashboardHome({
             {milestoneChips.map((m) => (
               <span
                 key={m.key}
-                className="inline-flex items-center rounded-full bg-primary-light px-3 py-1.5 text-[12px] font-medium text-primary-foreground">
+                className="inline-flex items-center rounded-full bg-primary-light px-3 py-1.5 text-caption font-medium text-primary-foreground">
                 {m.label}
               </span>
             ))}

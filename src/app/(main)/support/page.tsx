@@ -15,7 +15,6 @@ export default async function SupportPage() {
       <PageHeader
         leading={<HeaderBackButton />}
         title="客服"
-        description="若有問題請透過下列方式聯絡（詳細管道將於之後更新）。"
         spacing="compact"
       />
 

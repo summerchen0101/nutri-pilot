@@ -24,7 +24,7 @@ export function SectionHeading({
   return (
     <Tag
       className={cn(
-        'flex items-center gap-2 text-[15px] font-medium',
+        'flex items-center gap-2 text-heading-section',
         tone === 'primary' ? 'text-primary' : 'text-foreground',
         className,
       )}

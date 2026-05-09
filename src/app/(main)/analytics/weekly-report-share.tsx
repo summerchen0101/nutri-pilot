@@ -72,8 +72,8 @@ export function WeeklyReportShare(props: {
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-[11px] font-medium text-[#378ADD]">分享週報卡</p>
-        <p className="mt-1 text-[11px] text-muted-foreground">
+        <p className="text-caption font-medium text-[#378ADD]">分享週報卡</p>
+        <p className="mt-1 text-caption text-muted-foreground">
           將下方卡片存成圖片分享給親友（非醫療建議）。
         </p>
       </div>
@@ -81,19 +81,19 @@ export function WeeklyReportShare(props: {
       <div
         ref={cardRef}
         className="rounded-xl border-[0.5px] border-border bg-card p-4 shadow-sm">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        <p className="text-caption uppercase tracking-wide text-muted-foreground">
           Weekly snapshot
         </p>
-        <p className="mt-1 text-[18px] font-semibold text-foreground">
+        <p className="mt-1 text-[18px] font-medium text-foreground">
           本週 · {props.rangeLabel}
         </p>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-lg bg-secondary px-3 py-2.5">
-            <p className="text-[10px] text-muted-foreground">平均熱量（有紀錄日）</p>
-            <p className="mt-0.5 tabular-nums text-[17px] font-medium text-foreground">
+            <p className="text-micro text-muted-foreground">平均熱量（有紀錄日）</p>
+            <p className="mt-0.5 tabular-nums text-heading-page text-foreground">
               {props.avgKcal > 0 ? props.avgKcal : '—'}
               {props.avgKcal > 0 ? (
-                <span className="text-[12px] font-normal text-muted-foreground">
+                <span className="text-caption font-normal text-muted-foreground">
                   {' '}
                   kcal
                 </span>
@@ -101,20 +101,20 @@ export function WeeklyReportShare(props: {
             </p>
           </div>
           <div className="rounded-lg bg-secondary px-3 py-2.5">
-            <p className="text-[10px] text-muted-foreground">體重</p>
-            <p className="mt-0.5 text-[13px] font-medium leading-snug text-foreground">
+            <p className="text-micro text-muted-foreground">體重</p>
+            <p className="mt-0.5 text-body font-medium leading-snug text-foreground">
               {props.weightSummaryLine}
             </p>
           </div>
           <div className="rounded-lg bg-secondary px-3 py-2.5">
-            <p className="text-[10px] text-muted-foreground">運動時間</p>
-            <p className="mt-0.5 text-[13px] font-medium leading-snug text-foreground">
+            <p className="text-micro text-muted-foreground">運動時間</p>
+            <p className="mt-0.5 text-body font-medium leading-snug text-foreground">
               {props.activityMinutesLine}
             </p>
           </div>
           <div className="rounded-lg bg-secondary px-3 py-2.5">
-            <p className="text-[10px] text-muted-foreground">估計消耗</p>
-            <p className="mt-0.5 text-[13px] font-medium leading-snug text-foreground">
+            <p className="text-micro text-muted-foreground">估計消耗</p>
+            <p className="mt-0.5 text-body font-medium leading-snug text-foreground">
               {props.activityKcalLine}
             </p>
           </div>
@@ -123,12 +123,12 @@ export function WeeklyReportShare(props: {
           {previewBullets.map((line, idx) => (
             <li
               key={`${idx}-${line.slice(0, 8)}`}
-              className="text-[12px] leading-relaxed text-foreground">
+              className="text-body leading-relaxed text-foreground">
               · {line}
             </li>
           ))}
         </ul>
-        <p className="mt-4 text-[10px] leading-snug text-muted-foreground">
+        <p className="mt-4 text-micro leading-snug text-muted-foreground">
           僅供參考，非醫療建議。
         </p>
       </div>
@@ -141,7 +141,7 @@ export function WeeklyReportShare(props: {
         {busy ? '產生圖片中…' : '分享或下載週報圖'}
       </Button>
       {err ? (
-        <p className="text-center text-[12px] text-destructive">{err}</p>
+        <p className="text-center text-caption text-destructive">{err}</p>
       ) : null}
     </div>
   );

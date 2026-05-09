@@ -7,10 +7,6 @@ import { ShopHomeClient } from './shop-home-client';
 import { ensureShopScores } from "@/app/(main)/shop/actions";
 import { HEADER_ACTION_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
 import { PageHeader } from "@/components/layout/page-header";
-import {
-  DIET_METHOD_OPTIONS,
-  DIET_TYPE_OPTIONS,
-} from "@/lib/onboarding/constants";
 import { getCachedAuthContext } from "@/lib/auth";
 
 export default async function ShopPage() {
@@ -83,22 +79,10 @@ export default async function ShopPage() {
     .eq("is_active", true)
     .order("name");
 
-  const dietTypeLabel =
-    DIET_TYPE_OPTIONS.find((o) => o.value === profile.diet_type)?.label ??
-    profile.diet_type;
-  const dietMethodLabel =
-    DIET_METHOD_OPTIONS.find((o) => o.value === profile.diet_method)?.label ??
-    profile.diet_method;
-
-  const allergenLabels = profile.allergens ?? [];
-
   return (
     <div className="space-y-4">
       <PageHeader
         title="健康商城"
-        description={`偏好：${dietMethodLabel} · 飲食習慣：${dietTypeLabel} · 過敏原：${
-          allergenLabels.length ? allergenLabels.join('、') : '無'
-        }`}
         spacing="compact"
         action={
           <Link

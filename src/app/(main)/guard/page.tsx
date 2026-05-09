@@ -16,7 +16,6 @@ export default async function GuardPage() {
     <div className="space-y-3">
       <PageHeader
         title="食品安全守衛"
-        description="從成分與營養標示快速留意食安與過敏風險，協助判斷是否適合你與家人（辨識僅供參考）。"
         spacing="compact"
         action={
           <Link

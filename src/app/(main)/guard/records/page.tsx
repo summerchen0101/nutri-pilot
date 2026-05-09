@@ -49,7 +49,7 @@ export default async function GuardRecordsPage() {
 
   const count = records?.length ?? 0;
   const quotaLine = (
-    <p className="text-[12px] text-muted-foreground">
+    <p className="text-caption text-muted-foreground">
       尚可紀錄數：{count}/{MAX_LABEL_GUARD_SAVED_REPORTS}
     </p>
   );
@@ -60,7 +60,6 @@ export default async function GuardRecordsPage() {
         <PageHeader
           leading={<HeaderBackButton />}
           title="食品安全分析紀錄"
-          description="查看你儲存過的食品安全守衛分析結果。"
           spacing="compact"
         />
         {quotaLine}
@@ -80,7 +79,6 @@ export default async function GuardRecordsPage() {
       <PageHeader
         leading={<HeaderBackButton />}
         title="食品安全分析紀錄"
-        description="查看你儲存過的食品安全守衛分析結果。"
         spacing="compact"
       />
       {quotaLine}
@@ -120,7 +118,7 @@ export default async function GuardRecordsPage() {
                           initialName={record.name}
                         />
                       </div>
-                      <p className="text-[12px] leading-normal text-muted-foreground">
+                      <p className="text-caption leading-normal text-muted-foreground">
                         儲存時間：{formatDateLabel(record.created_at)}
                       </p>
                       <p className="text-[13px] leading-normal text-muted-foreground">

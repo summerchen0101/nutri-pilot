@@ -18,7 +18,7 @@ export function ProfileSummaryCard({
   return (
     <SectionCard className="bg-neutral-bg-primary">
       <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-light text-[20px] font-medium text-primary">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-light text-heading-page text-primary">
           {avatarChar}
         </div>
         <div className="min-w-0 flex-1">

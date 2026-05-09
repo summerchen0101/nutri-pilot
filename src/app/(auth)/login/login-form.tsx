@@ -9,7 +9,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { createClient } from '@/lib/supabase/client';
@@ -49,7 +48,7 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md border-slate-200 shadow-md">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-xl">登入 Nutri Guard</CardTitle>
+        <h2 className="text-heading-screen text-foreground">登入 Nutri Guard</h2>
         <CardDescription>
           輸入電子郵件，我們會寄送 Magic Link 登入連結。
         </CardDescription>
@@ -57,7 +56,7 @@ export function LoginForm() {
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium text-slate-700">
+            <label htmlFor="email" className="text-body font-medium text-slate-700">
               Email
             </label>
             <Input
@@ -74,7 +73,7 @@ export function LoginForm() {
           </div>
           {message ? (
             <p
-              className={`text-sm ${status === 'error' ? 'text-red-600' : 'text-slate-600'}`}
+              className={`text-body ${status === 'error' ? 'text-red-600' : 'text-slate-600'}`}
               role="status"
             >
               {message}

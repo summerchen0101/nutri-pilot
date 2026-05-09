@@ -101,7 +101,7 @@ export function ProductDetailClient({ product }: Props) {
       <SectionHeading icon={ShoppingBag}>規格與購買</SectionHeading>
 
       <div className="mt-3">
-        <span className="text-[11px] text-muted-foreground">規格</span>
+        <span className="text-caption text-muted-foreground">規格</span>
         <div className="mt-1 flex flex-wrap gap-2">
           {product.variants.map((v) => (
             <button
@@ -109,7 +109,7 @@ export function ProductDetailClient({ product }: Props) {
               type="button"
               onClick={() => setVariantId(v.id)}
               className={cn(
-                'rounded-[10px] border px-3 py-2 text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
+                'rounded-[10px] border px-3 py-2 text-body transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
                 v.id === variant?.id ?
                   'border-primary bg-primary-light font-medium text-primary-foreground'
                 : 'border-[0.5px] border-border bg-background text-foreground hover:border-primary/40',
@@ -122,21 +122,21 @@ export function ProductDetailClient({ product }: Props) {
       </div>
 
       <div className="mt-4">
-        <span className="text-[11px] text-muted-foreground">數量</span>
+        <span className="text-caption text-muted-foreground">數量</span>
         <div className="mt-1 flex items-center gap-3">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
+            className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-heading-section focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
           >
             −
           </button>
-          <span className="min-w-[2rem] text-center text-[15px] font-medium tabular-nums">
+          <span className="min-w-[2rem] text-center text-heading-section tabular-nums">
             {qty}
           </span>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
+            className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-heading-section focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
             onClick={() => setQty((q) => q + 1)}
           >
             +
@@ -149,7 +149,7 @@ export function ProductDetailClient({ product }: Props) {
           type="button"
           onClick={() => setMode('payment')}
           className={cn(
-            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
+            'flex-1 rounded-[10px] py-2.5 text-body font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
             mode === 'payment' ?
               'bg-shadow-grey text-white'
             : 'border-[0.5px] border-border bg-secondary text-muted-foreground',
@@ -162,7 +162,7 @@ export function ProductDetailClient({ product }: Props) {
           onClick={() => setMode('subscription')}
           disabled={!canSubscribe}
           className={cn(
-            'flex-1 rounded-[10px] py-2.5 text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
+            'flex-1 rounded-[10px] py-2.5 text-body font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
             mode === 'subscription' ?
               'bg-shadow-grey text-white'
             : 'border-[0.5px] border-border bg-secondary text-muted-foreground',
@@ -175,9 +175,9 @@ export function ProductDetailClient({ product }: Props) {
 
       {mode === 'subscription' && canSubscribe ?
         <div className="mt-4">
-          <span className="text-[11px] text-muted-foreground">寄送頻率</span>
+          <span className="text-caption text-muted-foreground">寄送頻率</span>
           <select
-            className="mt-1 flex h-10 w-full rounded-[10px] border-[0.5px] border-border bg-card px-3 text-[13px] text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none"
+            className="mt-1 flex h-10 w-full rounded-[10px] border-[0.5px] border-border bg-card px-3 text-body text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none"
             value={frequency}
             onChange={(e) =>
               setFrequency(e.target.value as typeof frequency)
@@ -191,24 +191,24 @@ export function ProductDetailClient({ product }: Props) {
       : null}
 
       <div className="mt-4 rounded-[10px] bg-secondary/50 px-3 py-2.5">
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-caption text-muted-foreground">
           {mode === 'payment' ? '單次價格' : '訂閱每期'}
         </p>
-        <p className="text-[20px] font-medium tabular-nums text-foreground">
+        <p className="text-heading-page text-foreground tabular-nums">
           NT${' '}
           {mode === 'payment' ?
             (unitPayment * qty).toFixed(0)
           : (unitSub * qty).toFixed(0)}
         </p>
         {mode === 'subscription' && displaySub && variant ?
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
+          <p className="mt-0.5 text-caption text-muted-foreground">
             單買參考 NT$ {(unitPayment * qty).toFixed(0)}
           </p>
         : null}
       </div>
 
       {err ?
-        <p className="mt-3 text-[13px] text-destructive">{err}</p>
+        <p className="mt-3 text-body text-destructive">{err}</p>
       : null}
 
       <div className="mt-4 flex flex-col gap-2">

@@ -28,7 +28,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { createClient } from '@/lib/supabase/client';
@@ -386,7 +385,7 @@ export function OnboardingWizard({
   return (
     <Card className="border-slate-200 shadow-md">
       <CardHeader>
-        <p className="text-sm font-medium text-slate-500">
+        <p className="text-body font-medium text-slate-500">
           步驟 {step} / {TOTAL_STEPS}
         </p>
         <div className="mt-2 flex gap-1.5">
@@ -402,14 +401,14 @@ export function OnboardingWizard({
             />
           ))}
         </div>
-        <CardTitle className="text-xl">建立你的飲控檔案</CardTitle>
+        <h2 className="text-heading-screen text-foreground">建立你的飲控檔案</h2>
         <CardDescription>
           依序填寫，每一步都會儲存到雲端，之後可在設定中修改。
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {error ? (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-body text-red-700">
             {error}
           </p>
         ) : null}
@@ -417,7 +416,7 @@ export function OnboardingWizard({
         {step === 1 ? (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
+              <label className="text-body font-medium text-slate-700">
                 姓名
               </label>
               <Input
@@ -427,7 +426,7 @@ export function OnboardingWizard({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
+              <label className="text-body font-medium text-slate-700">
                 性別
               </label>
               <select
@@ -443,7 +442,7 @@ export function OnboardingWizard({
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
+              <label className="text-body font-medium text-slate-700">
                 生日
               </label>
               <Input
@@ -454,7 +453,7 @@ export function OnboardingWizard({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
+              <label className="text-body font-medium text-slate-700">
                 活動量
               </label>
               <select
@@ -476,7 +475,7 @@ export function OnboardingWizard({
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-body font-medium text-slate-700">
                   身高（cm）
                 </label>
                 <Input
@@ -487,7 +486,7 @@ export function OnboardingWizard({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-body font-medium text-slate-700">
                   體重（kg）
                 </label>
                 <Input
@@ -499,13 +498,13 @@ export function OnboardingWizard({
               </div>
             </div>
             {computed ? (
-              <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-body text-slate-700">
                 <p>BMI：{computed.bmi}</p>
                 <p>BMR：{computed.bmr} kcal／日</p>
                 <p>TDEE（估算）：{computed.tdee} kcal／日</p>
               </div>
             ) : (
-              <p className="text-sm text-slate-500">
+              <p className="text-body text-slate-500">
                 請輸入身高、體重並確認步驟 1 的生日與活動量。
               </p>
             )}
@@ -515,7 +514,7 @@ export function OnboardingWizard({
         {step === 3 ? (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
+              <label className="text-body font-medium text-slate-700">
                 飲食習慣
               </label>
               <select
@@ -531,7 +530,7 @@ export function OnboardingWizard({
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
+              <label className="text-body font-medium text-slate-700">
                 飲食法（影響商城推薦）
               </label>
               <div className="grid gap-2">
@@ -556,7 +555,7 @@ export function OnboardingWizard({
               </p>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
+              <label className="text-body font-medium text-slate-700">
                 忌食食材（標籤）
               </label>
               <div className="flex items-center gap-2">
@@ -599,7 +598,7 @@ export function OnboardingWizard({
               </div>
             </div>
             <div className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">
+              <span className="text-body font-medium text-slate-700">
                 過敏原（可複選）
               </span>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -631,7 +630,7 @@ export function OnboardingWizard({
         {step === 4 ? (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">
+              <label className="text-body font-medium text-slate-700">
                 目標類型
               </label>
               <select
@@ -648,7 +647,7 @@ export function OnboardingWizard({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-body font-medium text-slate-700">
                   目標體重（kg）
                 </label>
                 <Input
@@ -659,7 +658,7 @@ export function OnboardingWizard({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-body font-medium text-slate-700">
                   每週體重變化（kg／週）
                   {goalType === 'maintain' ? (
                     <span className="font-normal text-slate-500">
@@ -677,12 +676,12 @@ export function OnboardingWizard({
               </div>
             </div>
             {step4Preview ? (
-              <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-body text-slate-700">
                 <p>每日熱量目標（估算）：{step4Preview.dailyCal} kcal</p>
                 <p>預計達標日：{step4Preview.targetDateLabel}</p>
               </div>
             ) : (
-              <p className="text-sm text-slate-500">
+              <p className="text-body text-slate-500">
                 完成步驟 2 後可預覽熱量與達標日。
               </p>
             )}

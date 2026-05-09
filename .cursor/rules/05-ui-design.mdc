@@ -21,15 +21,27 @@ Primary CTA（Shadow Grey）：`#1E212B`／hover `#2A2F3D` — **僅**主要操�
 
 ## 字體
 
+**語意 class（優先）**：`text-heading-screen`（螢幕頂主標／`PageHeading`）、`text-heading-page`（數字大值）、`text-heading-section`（區塊）、`text-heading-card`（卡片小標）、`text-body`（內文）、`text-caption`（輔助）、`text-micro`（nav／角標）。對應元件：`PageHeading`、`SectionHeading`、`CardTitle`／`CardDescription` 已內建。
+
+px 階層（與 `tailwind.config.ts` 對齊）：
+
 ```
-頁面標題  20px / 500
-區塊標題  15px / 500
-內文      13px / 400
-輔助文字  11px / 400
-nav 標籤  10px / 400
-數字大值  20px / 500，單位縮為 13px / 400
+螢幕頂主標  24px / 500  → text-heading-screen（PageHeading、登入／Onboarding 頂標）
+數字大值    20px / 500  → text-heading-page
+區塊標題    15px / 500  → text-heading-section
+卡片小標    13px / 500  → text-heading-card
+內文        13px / 400  → text-body（字重繼承 body）
+輔助文字    11px / 400  → text-caption
+nav 標籤    10px / 400  → text-micro
+數字大值單位              text-body
 最粗只到 font-weight: 500，不用 600 / 700
 ```
+
+**PageHeader**：僅主標與可選 `meta`，無頁面說明副文。
+
+**禁止**：未在規格表的任意字級（例如 `12px`、`text-xs`／`text-sm` 代替上列語意）；新稿請改為 `text-caption` 或 `text-body`。
+
+**按鈕**：使用 `Button` 元件；`size="default"`（13px、padding 9px 18px、圓角 10px）、`size="sm"`（11px、小按鈕）。
 
 ## 邊框
 
@@ -54,10 +66,11 @@ modal / sheet   border-radius: 16px
 ## 常用元件 Tailwind class 對照
 
 ```
-主按鈕：    bg-[#1E212B] text-white hover:bg-[#2A2F3D] rounded-[10px] px-4 py-2 text-[13px] font-medium
-次要按鈕：  border border-[#4C956C] text-[#4C956C] hover:bg-[#E8F5EE] rounded-[10px] px-4 py-2 text-[13px]
+主按鈕：    使用 <Button variant="default" size="default" />（實作為 shadow-grey、text-body font-medium、px-[18px] py-[9px]）
+小按鈕：    <Button size="sm" />
+次要按鈕：  <Button variant="outline" />
 卡片：      bg-background border border-[0.5px] border-border rounded-xl p-4
-成功 pill： bg-[#E8F5EE] text-[#2D6B4A] rounded-full px-2.5 py-0.5 text-[11px] font-medium
+成功 pill： bg-[#E8F5EE] text-[#2D6B4A] rounded-full px-2.5 py-0.5 text-caption font-medium
 bottom nav active： bg-[#E8F5EE] text-[#4C956C]
 AI 卡：     bg-[#E6F1FB] border border-[#B5D4F4] rounded-xl p-3.5
 指標格：    bg-secondary rounded-[10px] p-3 cursor-pointer

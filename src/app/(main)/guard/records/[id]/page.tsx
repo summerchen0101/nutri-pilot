@@ -108,7 +108,6 @@ export default async function GuardSavedRecordDetailPage({ params }: PageProps) 
       <PageHeader
         leading={<HeaderBackButton />}
         title="食品安全分析紀錄"
-        description="檢視儲存時的相片與分析結果。"
         spacing="compact"
       />
       <GuardSavedRecordDetailClient

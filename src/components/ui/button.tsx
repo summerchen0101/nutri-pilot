@@ -5,6 +5,7 @@ import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils/cn';
 
 export type ButtonVariant = 'default' | 'outline' | 'ghost' | 'destructive';
+export type ButtonSize = 'default' | 'sm';
 
 const variantClass: Record<ButtonVariant, string> = {
   default:
@@ -17,13 +18,26 @@ const variantClass: Record<ButtonVariant, string> = {
     'bg-[#E55A3C] text-white hover:opacity-95 focus-visible:ring-[#E55A3C]/25',
 };
 
+const sizeClass: Record<ButtonSize, string> = {
+  default: 'rounded-[10px] px-[18px] py-[9px] text-body font-medium',
+  sm: 'rounded-lg px-3 py-[5px] text-caption font-medium',
+};
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  size?: ButtonSize;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(
-    { className, variant = 'default', type = 'button', disabled, ...props },
+    {
+      className,
+      variant = 'default',
+      size = 'default',
+      type = 'button',
+      disabled,
+      ...props
+    },
     ref,
   ) {
     return (
@@ -32,9 +46,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type={type}
         disabled={disabled}
         className={cn(
-          'inline-flex items-center justify-center rounded-[10px] px-4 py-2 text-[13px] font-medium transition-colors duration-150 ease-out',
+          'inline-flex items-center justify-center transition-colors duration-150 ease-out',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           'disabled:pointer-events-none disabled:opacity-50',
+          sizeClass[size],
           variantClass[variant],
           className,
         )}

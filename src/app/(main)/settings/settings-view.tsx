@@ -246,7 +246,6 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
     <div className="space-y-3 pb-4">
       <PageHeader
         title="設定"
-        description="管理個人資料、目標與飲食偏好。"
         action={
           <button
             type="button"

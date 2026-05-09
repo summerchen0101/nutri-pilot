@@ -127,7 +127,6 @@ export default async function LogPage({
     <div className="space-y-3">
       <PageHeader
         title="每日紀錄"
-        description="飲食與運動紀錄。"
         spacing="compact"
       />
 

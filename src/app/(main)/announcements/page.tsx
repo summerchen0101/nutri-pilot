@@ -43,7 +43,6 @@ export default async function AnnouncementsPage() {
       <PageHeader
         leading={<HeaderBackButton />}
         title="公告"
-        description="最新消息與維護通知。"
         spacing="compact"
       />
 

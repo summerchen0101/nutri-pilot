@@ -33,7 +33,7 @@ export function CardTitle({
   return (
     <h3
       className={cn(
-        'text-[15px] font-medium leading-none tracking-tight text-foreground',
+        'text-heading-card leading-none tracking-tight text-foreground',
         className,
       )}
       {...props}
@@ -46,7 +46,7 @@ export function CardDescription({
   ...props
 }: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn('text-[11px] text-muted-foreground', className)} {...props} />
+    <p className={cn('text-caption text-muted-foreground', className)} {...props} />
   );
 }
 

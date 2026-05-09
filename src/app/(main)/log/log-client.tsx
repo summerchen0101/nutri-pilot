@@ -882,7 +882,7 @@ export function LogClient({
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] text-muted-foreground">今日已攝取</p>
-            <p className="tabular-nums text-[20px] font-medium leading-tight text-foreground">
+            <p className="tabular-nums text-heading-page leading-tight text-foreground">
               {Math.round(todayTotal)}
               <span className="text-[13px] font-normal text-muted-foreground"> kcal</span>
             </p>

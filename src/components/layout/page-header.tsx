@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 
+import { PageHeading } from '@/components/ui/page-heading';
 import { cn } from '@/lib/utils/cn';
 
 interface PageHeaderProps {
   leading?: ReactNode;
   title: string;
-  description?: string;
   meta?: ReactNode;
   action?: ReactNode;
   spacing?: 'compact' | 'default';
@@ -15,7 +15,6 @@ interface PageHeaderProps {
 export function PageHeader({
   leading,
   title,
-  description,
   meta,
   action,
   spacing = 'default',
@@ -32,12 +31,7 @@ export function PageHeader({
       <div className="flex min-w-0 items-start gap-2.5">
         {leading ? <div className="shrink-0 pt-0.5">{leading}</div> : null}
         <div className="min-w-0 space-y-1">
-          <h1 className="text-[20px] font-medium text-foreground">{title}</h1>
-          {description ? (
-            <p className="line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
-              {description}
-            </p>
-          ) : null}
+          <PageHeading>{title}</PageHeading>
           {meta ? <div className="pt-0.5">{meta}</div> : null}
         </div>
       </div>
