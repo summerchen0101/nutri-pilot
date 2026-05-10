@@ -21,6 +21,9 @@ export interface CartLine {
 
 interface CartState {
   lines: CartLine[];
+  isCartPanelOpen: boolean;
+  openCartPanel: () => void;
+  closeCartPanel: () => void;
   addLine: (line: Omit<CartLine, 'qty'> & { qty?: number }) => void;
   setQty: (variantId: string, qty: number) => void;
   removeLine: (variantId: string) => void;
@@ -31,6 +34,9 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       lines: [],
+      isCartPanelOpen: false,
+      openCartPanel: () => set({ isCartPanelOpen: true }),
+      closeCartPanel: () => set({ isCartPanelOpen: false }),
       addLine: (line) => {
         const qty = line.qty ?? 1;
         const existing = get().lines.find((l) => l.variantId === line.variantId);
@@ -76,7 +82,10 @@ export const useCartStore = create<CartState>()(
         set({ lines: get().lines.filter((l) => l.variantId !== variantId) }),
       clear: () => set({ lines: [] }),
     }),
-    { name: 'nutri-guard-shop-cart' },
+    {
+      name: 'nutri-guard-shop-cart',
+      partialize: (state) => ({ lines: state.lines }),
+    },
   ),
 );
 

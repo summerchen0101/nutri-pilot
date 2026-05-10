@@ -23,6 +23,7 @@ export function CartView() {
   const setQty = useCartStore((s) => s.setQty);
   const removeLine = useCartStore((s) => s.removeLine);
   const clear = useCartStore((s) => s.clear);
+  const closeCartPanel = useCartStore((s) => s.closeCartPanel);
 
   const [mode, setMode] = useState<"payment" | "subscription">("payment");
   const [frequency, setFrequency] = useState<"weekly" | "biweekly" | "monthly">(
@@ -75,6 +76,7 @@ export function CartView() {
         message="購物車是空的"
         actionHref="/shop"
         actionLabel="前往商城"
+        onActionNavigate={closeCartPanel}
       />
     );
   }

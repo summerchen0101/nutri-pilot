@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import { ShoppingBag } from 'lucide-react';
 
@@ -30,8 +29,8 @@ interface Props {
 }
 
 export function ProductDetailClient({ product }: Props) {
-  const router = useRouter();
   const addLine = useCartStore((s) => s.addLine);
+  const openCartPanel = useCartStore((s) => s.openCartPanel);
   const [variantId, setVariantId] = useState(product.variants[0]?.id ?? '');
   const [qty, setQty] = useState(1);
   const [mode, setMode] = useState<'payment' | 'subscription'>('payment');
@@ -70,7 +69,7 @@ export function ProductDetailClient({ product }: Props) {
       stripePriceId: variant.stripe_price_id,
       stripeSubPriceId: variant.stripe_sub_price_id,
     });
-    router.push('/shop/cart');
+    openCartPanel();
   }
 
   function checkoutNow() {
