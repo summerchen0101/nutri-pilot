@@ -270,44 +270,46 @@ CREATE TABLE product_variants (
   label       TEXT NOT NULL,           -- '35g 隨手包'
   weight_g    NUMERIC(7,1) NOT NULL,
   price       NUMERIC(8,2) NOT NULL,
-  sub_price   NUMERIC(8,2),            -- 訂閱價（通常有折扣）
-  stock       INT DEFAULT 0,
-  stripe_price_id     TEXT,            -- 一次性購買的 Stripe Price ID
-  stripe_sub_price_id TEXT             -- 訂閱的 Stripe Price ID
+  sub_price   NUMERIC(8,2),            -- 訂閱價（展示或未來定期方案用）
+  stock       INT DEFAULT 0
 );
 
--- 訂單
+-- 訂單（migration `020_shop_newebpay`：id 改 UUID，見下列欄位）
 CREATE TABLE orders (
-  id                TEXT PRIMARY KEY,  -- Stripe Payment Intent ID
-  user_id           UUID NOT NULL REFERENCES auth.users(id),
-  status            TEXT NOT NULL DEFAULT 'pending'
-                    CHECK (status IN ('pending', 'paid', 'shipped', 'delivered', 'cancelled')),
-  total             NUMERIC(10,2) NOT NULL,
-  stripe_session_id TEXT,
-  created_at        TIMESTAMPTZ DEFAULT NOW()
+  id                         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                    UUID NOT NULL REFERENCES auth.users(id),
+  status                     TEXT NOT NULL DEFAULT 'pending'
+                             CHECK (status IN ('pending', 'paid', 'shipped', 'delivered', 'cancelled')),
+  total                      NUMERIC(10,2) NOT NULL,
+  merchant_order_no          TEXT,
+  payment_gateway            TEXT NOT NULL DEFAULT 'newebpay',
+  gateway_trade_no           TEXT,
+  gateway_session_ref        TEXT,
+  legacy_stripe_payment_intent_id TEXT,
+  created_at                 TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 訂單項目
 CREATE TABLE order_items (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id    TEXT NOT NULL REFERENCES orders(id),
+  order_id    UUID NOT NULL REFERENCES orders(id),
   variant_id  UUID NOT NULL REFERENCES product_variants(id),
   qty         INT NOT NULL,
   unit_price  NUMERIC(8,2) NOT NULL
 );
 
--- 訂閱（使用 Stripe Billing，這裡只存同步狀態）
+-- 訂閱（外部定期方案；第一階段可無列）
 CREATE TABLE subscriptions (
-  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id               UUID NOT NULL REFERENCES auth.users(id),
-  stripe_subscription_id TEXT UNIQUE NOT NULL,   -- 主鍵在 Stripe 那邊
-  stripe_customer_id    TEXT NOT NULL,
-  status                TEXT NOT NULL DEFAULT 'active'
-                        CHECK (status IN ('active', 'paused', 'cancelled', 'past_due')),
-  frequency             TEXT NOT NULL CHECK (frequency IN ('weekly', 'biweekly', 'monthly')),
-  next_ship_at          TIMESTAMPTZ,
-  created_at            TIMESTAMPTZ DEFAULT NOW(),
-  updated_at            TIMESTAMPTZ DEFAULT NOW()
+  id                         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                    UUID NOT NULL REFERENCES auth.users(id),
+  external_subscription_id   TEXT UNIQUE,
+  external_customer_id       TEXT,
+  status                     TEXT NOT NULL DEFAULT 'active'
+                             CHECK (status IN ('active', 'paused', 'cancelled', 'past_due')),
+  frequency                  TEXT NOT NULL CHECK (frequency IN ('weekly', 'biweekly', 'monthly')),
+  next_ship_at               TIMESTAMPTZ,
+  created_at                 TIMESTAMPTZ DEFAULT NOW(),
+  updated_at                 TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 訂閱項目
@@ -315,7 +317,7 @@ CREATE TABLE subscription_items (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   subscription_id     UUID NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
   variant_id          UUID NOT NULL REFERENCES product_variants(id),
-  stripe_item_id      TEXT,           -- Stripe Subscription Item ID
+  external_item_id    TEXT,
   qty                 INT NOT NULL
 );
 

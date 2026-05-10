@@ -16,8 +16,8 @@
 
 Supabase Edge Functions（後端邏輯）
   └── AI Worker（QStash callback）
-  └── Stripe Checkout 建立
-  └── Stripe Webhook 處理
+  └── 藍新 MPG 建單（`create-newebpay-payment`）
+  └── 藍新背景通知（`newebpay-notify`）
   └── 推薦分數重算
   └── 週報 cron（pg_cron 觸發）
 ```
@@ -63,46 +63,37 @@ Supabase Edge Functions（後端邏輯）
 
 ---
 
-### 金流相關
+### 金流相關（藍新 MPG）
 
 | Function 名稱 | 觸發方式 | 說明 |
 |--------------|---------|------|
-| `create-checkout` | 前端直接呼叫 | 建立 Stripe Checkout Session |
-| `stripe-webhook` | Stripe 打過來 | 處理付款成功、訂閱更新等事件 |
-| `manage-subscription` | 前端直接呼叫 | 暫停 / 取消 / 修改訂閱頻率 |
+| `create-newebpay-payment` | 前端經 Server Action（使用者 JWT）| 建立 `pending` 訂單與明細、回傳 `paymentUrl` + `formFields`（POST 至 MPG） |
+| `newebpay-notify` | 藍新伺服器 POST | 驗證 `TradeSha`、解密 `TradeInfo`，付款成功時將訂單改為 `paid` |
 
-**`create-checkout` 輸入格式**：
+**`create-newebpay-payment` 輸入**（JSON）：
 ```json
 {
-  "items": [
-    { "variantId": "uuid", "quantity": 2 }
-  ],
-  "mode": "payment",
-  "frequency": "monthly"
+  "items": [{ "variantId": "uuid", "qty": 2 }]
 }
 ```
 
-**`create-checkout` 輸出**：
+**`create-newebpay-payment` 輸出**：
 ```json
 {
-  "url": "https://checkout.stripe.com/..."
+  "paymentUrl": "https://ccore.newebpay.com/MPG/mpg_gateway",
+  "formFields": {
+    "MerchantID": "...",
+    "TradeInfo": "...",
+    "TradeSha": "...",
+    "Version": "2.3"
+  },
+  "merchantOrderNo": "..."
 }
 ```
 
-**`stripe-webhook` 處理的事件**：
-- `checkout.session.completed` → 寫訂單
-- `customer.subscription.created` → 寫訂閱
-- `customer.subscription.updated` → 更新訂閱狀態
-- `customer.subscription.deleted` → 標記訂閱取消
+**`newebpay-notify`**：Content-Type `application/x-www-form-urlencoded`；外層 `Status=SUCCESS` 且內層解密後 `TradeStatus=1` 視為付款成功。必須回應**純文字** `OK`。
 
-**`manage-subscription` 輸入格式**：
-```json
-{
-  "subscriptionId": "uuid",
-  "action": "pause" | "cancel" | "update_frequency",
-  "frequency": "weekly" | "biweekly" | "monthly"
-}
-```
+訂閱管理（暫停／取消／改頻率）之 Edge Function 已移除；改接藍新定期定額時另議。
 
 ---
 
@@ -236,10 +227,10 @@ USING (auth.uid()::text = (storage.foldername(name))[1]);
 
 ## Webhook 端點安全
 
-**Stripe Webhook**（必須驗簽）：
+**藍新 NotifyURL**（必須驗證 `TradeSha`、解密 `TradeInfo`；失敗回 400，不更新 DB）：
 ```typescript
-const event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-// 驗失敗 → 回 400，不執行任何 DB 操作
+// HashKey=${key}&${TradeInfo}&HashIV=${iv} → SHA256 → 大寫 hex，與請求 TradeSha 比對（timing-safe）
+// TradeInfo 為 AES-256-CBC hex，解密後取得 MerchantOrderNo、Amt、TradeStatus 等
 ```
 
 **QStash Callback**（必須驗簽）：

@@ -3,8 +3,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type CheckoutMode = 'payment' | 'subscription';
-
 export interface CartLine {
   variantId: string;
   productId: string;
@@ -13,10 +11,6 @@ export interface CartLine {
   qty: number;
   /** 單次售價（元） */
   unitPrice: number;
-  /** 訂閱單價（元），無則不可訂閱 */
-  subPrice: number | null;
-  stripePriceId: string | null;
-  stripeSubPriceId: string | null;
 }
 
 interface CartState {
@@ -60,9 +54,6 @@ export const useCartStore = create<CartState>()(
               variantLabel: line.variantLabel,
               qty,
               unitPrice: line.unitPrice,
-              subPrice: line.subPrice,
-              stripePriceId: line.stripePriceId,
-              stripeSubPriceId: line.stripeSubPriceId,
             },
           ],
         });
@@ -83,7 +74,7 @@ export const useCartStore = create<CartState>()(
       clear: () => set({ lines: [] }),
     }),
     {
-      name: 'nutri-guard-shop-cart',
+      name: 'nutri-guard-shop-cart-v2',
       partialize: (state) => ({ lines: state.lines }),
     },
   ),
@@ -91,11 +82,4 @@ export const useCartStore = create<CartState>()(
 
 export function cartTotalPayment(lines: CartLine[]): number {
   return lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
-}
-
-export function cartTotalSubscription(lines: CartLine[]): number {
-  return lines.reduce((s, l) => {
-    const p = l.subPrice ?? l.unitPrice;
-    return s + p * l.qty;
-  }, 0);
 }

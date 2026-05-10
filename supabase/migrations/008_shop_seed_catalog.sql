@@ -1,4 +1,4 @@
--- Phase 4 商城測試資料：品牌、商品、規格（stripe_price_id / stripe_sub_price_id 請於 Stripe Dashboard 建立 Price 後回填）
+-- Phase 4 商城測試資料：品牌、商品、規格（結帳定價使用 price / sub_price；見 020_shop_newebpay 移除 Stripe Price 欄位）
 -- 若已存在相同 slug，略過插入。
 
 INSERT INTO brands (id, name, slug, description, logo_url, country, is_active)

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Receipt } from "lucide-react";
@@ -10,12 +9,8 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { SegmentedTabs } from "@/components/ui/segmented-tabs";
-import {
-  cartTotalPayment,
-  cartTotalSubscription,
-  useCartStore,
-} from "@/lib/shop/cart-store";
+import { cartTotalPayment, useCartStore } from "@/lib/shop/cart-store";
+import { submitNewebpayMpgForm } from "@/lib/shop/submit-newebpay-mpg-form";
 
 export function CartView() {
   const router = useRouter();
@@ -25,19 +20,8 @@ export function CartView() {
   const clear = useCartStore((s) => s.clear);
   const closeCartPanel = useCartStore((s) => s.closeCartPanel);
 
-  const [mode, setMode] = useState<"payment" | "subscription">("payment");
-  const [frequency, setFrequency] = useState<"weekly" | "biweekly" | "monthly">(
-    "monthly",
-  );
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
-
-  const subscribable = lines.every(
-    (l) =>
-      l.subPrice != null &&
-      l.subPrice > 0 &&
-      (l.stripeSubPriceId?.length ?? 0) > 0,
-  );
 
   const itemsPayload = lines.map((l) => ({
     variantId: l.variantId,
@@ -47,25 +31,15 @@ export function CartView() {
   function checkout() {
     setErr(null);
     if (!lines.length) return;
-    if (mode === "subscription") {
-      if (!subscribable) {
-        setErr("購物車內商品需皆支援訂閱（含 Stripe 訂閱價）才可合併訂閱結帳");
-        return;
-      }
-    }
 
     startTransition(async () => {
-      const res = await startCheckout({
-        mode,
-        items: itemsPayload,
-        frequency: mode === "subscription" ? frequency : undefined,
-      });
+      const res = await startCheckout({ items: itemsPayload });
       if (res.error) {
         setErr(res.error);
         return;
       }
-      if (res.url) {
-        window.location.href = res.url;
+      if (res.paymentUrl && res.formFields) {
+        submitNewebpayMpgForm(res.paymentUrl, res.formFields);
       }
     });
   }
@@ -82,7 +56,6 @@ export function CartView() {
   }
 
   const totalPay = cartTotalPayment(lines);
-  const totalSub = cartTotalSubscription(lines);
 
   return (
     <div className="space-y-4">
@@ -133,39 +106,15 @@ export function CartView() {
         ))}
       </ul>
 
-      <SegmentedTabs
-        value={mode}
-        ariaLabel="結帳模式"
-        onChange={setMode}
-        options={[
-          { id: "payment", label: "單次結帳" },
-          { id: "subscription", label: "訂閱結帳", disabled: !subscribable },
-        ]}
-      />
-
-      {mode === "subscription" && subscribable ? (
-        <div>
-          <span className="text-[11px] text-muted-foreground">寄送頻率</span>
-          <select
-            className="mt-1 flex h-11 w-full items-center rounded-[10px] border-hairline border-border bg-card px-3 text-[13px] focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none"
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value as typeof frequency)}>
-            <option value="weekly">每週</option>
-            <option value="biweekly">每兩週</option>
-            <option value="monthly">每月</option>
-          </select>
-        </div>
-      ) : null}
-
       <SectionCard className="bg-secondary/40 px-4 py-3">
         <SectionHeading
           icon={Receipt}
           className="text-[11px] font-normal normal-case text-muted-foreground"
           iconClassName="h-3.5 w-3.5">
-          {mode === "payment" ? "預估總計（單次）" : "預估每期（訂閱）"}
+          預估總計
         </SectionHeading>
         <p className="text-heading-page tabular-nums text-foreground">
-          NT$ {mode === "payment" ? totalPay.toFixed(0) : totalSub.toFixed(0)}
+          NT$ {totalPay.toFixed(0)}
         </p>
       </SectionCard>
 
@@ -177,7 +126,7 @@ export function CartView() {
           className="w-full"
           disabled={pending}
           onClick={checkout}>
-          {pending ? "處理中…" : "前往 Stripe 結帳"}
+          {pending ? "處理中…" : "前往藍新付款"}
         </Button>
         <Button
           type="button"
@@ -190,6 +139,9 @@ export function CartView() {
           清空購物車
         </Button>
       </div>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">
+        訂閱／定期方案改接藍新前暫停，目前僅提供單次結帳。
+      </p>
     </div>
   );
 }

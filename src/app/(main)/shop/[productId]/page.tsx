@@ -51,7 +51,7 @@ export default async function ShopProductPage({ params }: PageProps) {
       `
       *,
       brand:brands ( id, name, slug, description, logo_url ),
-      variants:product_variants ( id, label, weight_g, price, sub_price, stock, stripe_price_id, stripe_sub_price_id )
+      variants:product_variants ( id, label, weight_g, price, sub_price, stock )
     `,
     )
     .eq("id", params.productId)
@@ -150,8 +150,6 @@ export default async function ShopProductPage({ params }: PageProps) {
             price: number;
             sub_price: number | null;
             stock: number | null;
-            stripe_price_id: string | null;
-            stripe_sub_price_id: string | null;
           }>,
         }}
       />

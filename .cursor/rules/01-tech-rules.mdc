@@ -10,7 +10,7 @@ alwaysApply: true
 - Next.js 14 App Router + TypeScript strict + Tailwind CSS
 - Supabase（DB + Auth + Storage + Edge Functions）
 - Upstash QStash（AI 重型任務 Queue）
-- Stripe + Stripe Billing（金流 + 訂閱）
+- 藍新金流 MPG（一次付清優先；訂閱／定期扣款後續擴充）
 - Zustand（client 狀態）、SWR（資料同步）、Recharts（圖表）
 
 ## 絕對禁止

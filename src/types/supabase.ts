@@ -543,25 +543,37 @@ export type Database = {
       orders: {
         Row: {
           created_at: string | null
+          gateway_session_ref: string | null
+          gateway_trade_no: string | null
           id: string
+          legacy_stripe_payment_intent_id: string | null
+          merchant_order_no: string | null
+          payment_gateway: string
           status: string
-          stripe_session_id: string | null
           total: number
           user_id: string
         }
         Insert: {
           created_at?: string | null
-          id: string
+          gateway_session_ref?: string | null
+          gateway_trade_no?: string | null
+          id?: string
+          legacy_stripe_payment_intent_id?: string | null
+          merchant_order_no?: string | null
+          payment_gateway?: string
           status?: string
-          stripe_session_id?: string | null
           total: number
           user_id: string
         }
         Update: {
           created_at?: string | null
+          gateway_session_ref?: string | null
+          gateway_trade_no?: string | null
           id?: string
+          legacy_stripe_payment_intent_id?: string | null
+          merchant_order_no?: string | null
+          payment_gateway?: string
           status?: string
-          stripe_session_id?: string | null
           total?: number
           user_id?: string
         }
@@ -574,8 +586,6 @@ export type Database = {
           price: number
           product_id: string
           stock: number | null
-          stripe_price_id: string | null
-          stripe_sub_price_id: string | null
           sub_price: number | null
           weight_g: number
         }
@@ -585,8 +595,6 @@ export type Database = {
           price: number
           product_id: string
           stock?: number | null
-          stripe_price_id?: string | null
-          stripe_sub_price_id?: string | null
           sub_price?: number | null
           weight_g: number
         }
@@ -596,8 +604,6 @@ export type Database = {
           price?: number
           product_id?: string
           stock?: number | null
-          stripe_price_id?: string | null
-          stripe_sub_price_id?: string | null
           sub_price?: number | null
           weight_g?: number
         }
@@ -699,23 +705,23 @@ export type Database = {
       }
       subscription_items: {
         Row: {
+          external_item_id: string | null
           id: string
           qty: number
-          stripe_item_id: string | null
           subscription_id: string
           variant_id: string
         }
         Insert: {
+          external_item_id?: string | null
           id?: string
           qty: number
-          stripe_item_id?: string | null
           subscription_id: string
           variant_id: string
         }
         Update: {
+          external_item_id?: string | null
           id?: string
           qty?: number
-          stripe_item_id?: string | null
           subscription_id?: string
           variant_id?: string
         }
@@ -739,34 +745,34 @@ export type Database = {
       subscriptions: {
         Row: {
           created_at: string | null
+          external_customer_id: string | null
+          external_subscription_id: string | null
           frequency: string
           id: string
           next_ship_at: string | null
           status: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
           updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
+          external_customer_id?: string | null
+          external_subscription_id?: string | null
           frequency: string
           id?: string
           next_ship_at?: string | null
           status?: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
           updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
+          external_customer_id?: string | null
+          external_subscription_id?: string | null
           frequency?: string
           id?: string
           next_ship_at?: string | null
           status?: string
-          stripe_customer_id?: string
-          stripe_subscription_id?: string
           updated_at?: string | null
           user_id?: string
         }

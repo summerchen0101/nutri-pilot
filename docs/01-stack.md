@@ -17,7 +17,7 @@ AI Queue     Upstash QStash（重型 AI 任務非同步處理）
 狀態管理      Zustand
 資料同步      SWR
 圖表         Recharts
-金流         Stripe（一次性購買 + Stripe Billing 訂閱）
+金流         藍新金流 MPG（一次性付清優先；訂閱／定期扣款後續擴充）
 部署         Vercel（前端）+ Supabase（後端）
 ```
 
@@ -153,7 +153,8 @@ useEffect(() => {
     /ai-menu-generate    ← AI 菜單 Queue Worker
     /ai-photo-analyze    ← 拍照辨識 Queue Worker
     /ai-weekly-insight   ← 週報 cron Worker
-    /stripe-webhook      ← Stripe 金流 Webhook
+    /create-newebpay-payment ← 藍新 MPG 建單（幕前交易參數）
+    /newebpay-notify         ← 藍新 NotifyURL（驗簽、入庫 orders）
 
 /types
   supabase.ts            ← 自動產生，不要手動改
@@ -212,10 +213,11 @@ QSTASH_TOKEN=
 QSTASH_CURRENT_SIGNING_KEY=     # 驗證 QStash callback 合法性
 QSTASH_NEXT_SIGNING_KEY=
 
-# Stripe
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+# 藍新金流（Edge Secrets：`NEWEBPAY_MERCHANT_ID`、`NEWEBPAY_HASH_KEY`、`NEWEBPAY_HASH_IV`、`NEWEBPAY_ENV`）
+NEWEBPAY_MERCHANT_ID=
+NEWEBPAY_HASH_KEY=
+NEWEBPAY_HASH_IV=
+NEWEBPAY_ENV=test
 ```
 
 ---
@@ -231,5 +233,5 @@ Supabase（DB + Auth + Storage + Edge Functions）
     ↓ 重型 AI 任務
 Upstash QStash → Supabase Edge Function Worker → Claude API
     ↓ 金流
-Stripe → Supabase Edge Function Webhook
+藍新金流 → Supabase Edge Function `newebpay-notify`
 ```

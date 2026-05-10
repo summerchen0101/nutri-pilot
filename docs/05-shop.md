@@ -160,114 +160,25 @@ export function generateFitReasons(
 
 ---
 
-## Stripe 金流整合
+## 藍新金流（MPG）整合
 
-### 一次性購買流程
+### 一次性購買流程（幕前交易）
 
-```typescript
-// supabase/functions/create-checkout/index.ts
-Deno.serve(async (req) => {
-  const { variantIds, quantities, userId } = await req.json()
+1. 前端呼叫 Edge `create-newebpay-payment`（攜帶使用者 JWT），請求 body：`{ items: [{ variantId, qty }] }`。
+2. Edge 依 `product_variants.price` 與庫存驗證後，建立 `orders`（`status=pending`）、`order_items`，並產生唯一 `merchant_order_no`（對應藍新 `MerchantOrderNo`，≤30 字）。
+3. 以 `NEWEBPAY_HASH_KEY` / `NEWEBPAY_HASH_IV` 加密交易參數為 `TradeInfo`，計算 `TradeSha`，回傳 `paymentUrl`（測試：`https://ccore.newebpay.com/MPG/mpg_gateway`）與表單欄位；瀏覽器 **POST** 至藍新。
+4. `ReturnURL` 指向 Next 之 `/shop/payment-return`，再導向 `/shop/success`（僅使用者體驗；**入帳以 Notify 為準**）。
+5. `NotifyURL` 指向 Edge `newebpay-notify`：驗簽、解密後若 `TradeStatus=1`，將訂單更新為 `paid` 並寫入 `gateway_trade_no`（交易編號）。
 
-  const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!)
+### 訂閱／定期扣款
 
-  // 從 DB 取得 variant 資料
-  const variants = await getVariants(variantIds)
+第一階段**不實作**：商城前端僅單次結帳；`subscriptions` 表保留，`external_subscription_id`／`external_customer_id` 可為 NULL，待藍新定期定額方案定案後再接。
 
-  // 建立 Stripe Checkout Session
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    mode: 'payment',
-    line_items: variants.map((v, i) => ({
-      price: v.stripe_price_id,
-      quantity: quantities[i]
-    })),
-    success_url: `${Deno.env.get('APP_URL')}/shop/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${Deno.env.get('APP_URL')}/shop`,
-    metadata: { user_id: userId }
-  })
+### 環境變數（Edge Secrets）
 
-  return Response.json({ url: session.url })
-})
-```
-
-### 訂閱購買流程
-
-```typescript
-// 訂閱改用 Stripe Billing，mode: 'subscription'
-const session = await stripe.checkout.sessions.create({
-  mode: 'subscription',
-  line_items: [{ price: variant.stripe_sub_price_id, quantity }],
-  subscription_data: {
-    metadata: { user_id: userId, frequency }
-  },
-  // ...
-})
-```
-
-### Webhook 處理
-
-```typescript
-// supabase/functions/stripe-webhook/index.ts
-Deno.serve(async (req) => {
-  const signature = req.headers.get('stripe-signature')!
-  const body = await req.text()
-
-  // 驗簽（最重要，不能跳過）
-  let event: Stripe.Event
-  try {
-    event = stripe.webhooks.constructEvent(
-      body, signature, Deno.env.get('STRIPE_WEBHOOK_SECRET')!
-    )
-  } catch {
-    return new Response('Webhook signature verification failed', { status: 400 })
-  }
-
-  switch (event.type) {
-    case 'checkout.session.completed':
-      await handleCheckoutComplete(event.data.object as Stripe.Checkout.Session)
-      break
-
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated':
-      await handleSubscriptionUpdate(event.data.object as Stripe.Subscription)
-      break
-
-    case 'customer.subscription.deleted':
-      await handleSubscriptionCancel(event.data.object as Stripe.Subscription)
-      break
-  }
-
-  return new Response('ok')
-})
-
-async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
-  if (session.mode === 'payment') {
-    // 寫入 orders + order_items
-    await supabase.from('orders').insert({
-      id: session.payment_intent as string,
-      user_id: session.metadata!.user_id,
-      status: 'paid',
-      total: session.amount_total! / 100,
-      stripe_session_id: session.id
-    })
-    // 寫 order_items（從 session.line_items 取得）
-  }
-}
-
-async function handleSubscriptionUpdate(sub: Stripe.Subscription) {
-  await supabase.from('subscriptions').upsert({
-    stripe_subscription_id: sub.id,
-    user_id: sub.metadata.user_id,
-    stripe_customer_id: sub.customer as string,
-    status: sub.status === 'active' ? 'active'
-          : sub.status === 'paused' ? 'paused'
-          : 'cancelled',
-    next_ship_at: new Date(sub.current_period_end * 1000).toISOString(),
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'stripe_subscription_id' })
-}
-```
+- `NEWEBPAY_MERCHANT_ID`、`NEWEBPAY_HASH_KEY`、`NEWEBPAY_HASH_IV`
+- `NEWEBPAY_ENV`：`test`（預設）或 `production`（MPG 網址切換）
+- `APP_URL` / `NEXT_PUBLIC_APP_URL`：ReturnURL 組字用
 
 ---
 

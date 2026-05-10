@@ -16,11 +16,8 @@ verify_jwt = false
 [functions.recalculate-scores]
 verify_jwt = false
 
-[functions.create-checkout]
+[functions.create-newebpay-payment]
 verify_jwt = false
 
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.manage-subscription]
+[functions.newebpay-notify]
 verify_jwt = false

@@ -199,7 +199,7 @@ export function calcRecommendScore(
 - [x] 建立測試品牌（migration `008_shop_seed_catalog.sql`，可改由 Studio 微調）
 - [x] 建立測試商品（15 個，覆蓋不同 diet_tags）
 - [x] 建立 ProductVariant（每個商品至少 1 個規格）
-- [ ] 在 Stripe 建立對應的 Product + Price（一次性 + 訂閱），並回填 `product_variants.stripe_price_id`／`stripe_sub_price_id`
+- [x] 結帳定價以 `product_variants.price` 為準（無需第三方 Price ID）
 
 ### P4-2 商城首頁 `/shop`
 
@@ -214,25 +214,22 @@ export function calcRecommendScore(
 - [x] 商品圖 + 基本資訊 + 品牌標籤
 - [x] 「為什麼適合你」區塊（用 `generateFitReasons()` 函數）
 - [x] 規格選擇 + 數量選擇
-- [x] 購買方式切換（單次 / 訂閱）
-- [x] 訂閱頻率選擇（每週 / 每兩週 / 每月）
-- [x] 加入購物車 / 立即訂閱按鈕
+- [x] 單次購買與結帳（藍新 MPG）；訂閱僅作參考展示，結帳未開放
+- [x] 加入購物車 / 立即結帳按鈕
 - [x] 完整營養標示表格
 - [x] 成分與產地 + 認證標籤
 - [x] 品牌故事卡 + 查看全系列
 
-### P4-4 購物車 + 結帳（Stripe）
+### P4-4 購物車 + 結帳（藍新 MPG）
 
 - [x] 購物車（Zustand 管理，不存 DB，結帳時才送出）
-- [x] Stripe Checkout Session 建立（Edge Function）
-- [x] 成功頁（Stripe redirect 後）
-- [x] Stripe Webhook 接收（Edge Function `stripe-webhook`）
-  - 實作以 `checkout.session.completed`（單次）→ 寫入 `orders` + `order_items`（見 `/docs/changes/2026-04-20-phase4-shop-stripe.md`）
-  - `customer.subscription.created`／`updated` → 寫入／更新 `subscriptions` + `subscription_items`
+- [x] 藍新 MPG 建單（Edge `create-newebpay-payment`）→ 瀏覽器 POST 至藍新
+- [x] ReturnURL（`/shop/payment-return`）→ 成功頁
+- [x] NotifyURL（Edge `newebpay-notify`）→ `TradeStatus=1` 時將 `pending` 訂單改為 `paid`
+- [ ] 訂閱／定期扣款（改接藍新後擴充）
 
-### P4-5 訂閱管理
+### P4-5 訂閱管理（暫緩）
 
-- [x] 個人設定內的「我的訂閱」區塊
-- [x] 顯示訂閱商品、下次寄送日、金額
-- [x] 暫停 / 取消訂閱（呼叫 Stripe API → Webhook 同步回 DB）
-- [x] 修改頻率（同上）
+- [ ] 個人設定內「我的訂閱」仍可依舊 DB 顯示歷史資料
+- [ ] 暫停 / 取消 / 改頻率（待藍新定期定額與 Edge 實作）
+- [x] 舊有 Stripe 同步邏輯已移除（改藍新後再實作訂閱）

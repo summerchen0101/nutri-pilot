@@ -261,8 +261,7 @@ function addToCart(variantId: string) {
   trackEvent(productId, 'add_to_cart')
 }
 
-// 4. 購買完成（在 Stripe Webhook Edge Function 裡記錄）
-// stripe-webhook → checkout.session.completed → 寫 order_items 同時寫 product_events
+// 4. 購買完成（在 `newebpay-notify`：TradeStatus=1 入庫後可寫 product_events）
 ```
 
 ---
@@ -415,8 +414,7 @@ const { data: products } = await supabase
 - 售價
 - 訂閱價（選填）
 - 庫存數量
-- Stripe Price ID（一次性）
-- Stripe Price ID（訂閱用）
+- ~~Stripe Price ID~~（已移除；定價以 `price`／`sub_price` 為準）
 
 ```typescript
 // 儲存邏輯（transaction-like：先存商品再存規格）
@@ -463,13 +461,13 @@ const { data: orders } = await supabase
   .order('created_at', { ascending: false })
 ```
 
-欄位：訂單編號（Stripe PI ID 前 8 碼）、用戶 Email、商品摘要、金額、狀態、建立時間、操作
+欄位：訂單編號（UUID 或 `merchant_order_no`）、用戶 Email、商品摘要、金額、狀態、建立時間、操作
 
 ### 出貨狀態更新
 
 ```typescript
-// 狀態流：pending → paid → shipped → delivered
-// 只有 shipped 這步需要手動操作（其他由 Stripe Webhook 自動更新）
+// 狀態流：pending → paid（藍新 Notify）→ shipped → delivered
+// 只有 shipped 這步需要手動操作（paid 由 `newebpay-notify` 更新）
 
 async function updateShipStatus(orderId: string, status: 'shipped' | 'delivered') {
   await supabase
@@ -480,26 +478,17 @@ async function updateShipStatus(orderId: string, status: 'shipped' | 'delivered'
 }
 ```
 
-### 退款（呼叫 Stripe）
+### 退款（藍新／後台人工）
+
+實際退款請依藍新商戶後台或客服流程；下列為規格占位（尚未實作 Edge）：
 
 ```typescript
-// 只有 super_admin 可執行
-async function refundOrder(orderId: string, amount?: number) {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/refund-order`,
-    {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ orderId, amount }) // amount 為 null 時全額退
-    }
-  )
+// 未來：super_admin 觸發 → 呼叫藍新退款 API 或標記訂單
+async function refundOrder(orderId: /* uuid */, amount?: number) {
+  // 1. 驗證呼叫者是 super_admin
+  // 2. 以 gateway_trade_no / merchant_order_no 向藍新申請退款（依官方文件）
+  // 3. 更新 orders.status（例如新增 'refunded' 或沿用 cancelled，視商業規則）
 }
-
-// Edge Function：refund-order
-// 1. 驗證呼叫者是 super_admin
-// 2. 查 orders.id（就是 Stripe Payment Intent ID）
-// 3. stripe.refunds.create({ payment_intent: orderId, amount })
-// 4. 更新 orders.status = 'refunded'
 ```
 
 ---

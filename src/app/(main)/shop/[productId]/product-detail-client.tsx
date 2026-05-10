@@ -7,6 +7,7 @@ import { startCheckout } from '@/app/(main)/shop/actions';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/shop/cart-store';
+import { submitNewebpayMpgForm } from '@/lib/shop/submit-newebpay-mpg-form';
 import { cn } from '@/lib/utils/cn';
 
 interface VariantRow {
@@ -16,8 +17,6 @@ interface VariantRow {
   price: number;
   sub_price: number | null;
   stock: number | null;
-  stripe_price_id: string | null;
-  stripe_sub_price_id: string | null;
 }
 
 interface Props {
@@ -33,10 +32,6 @@ export function ProductDetailClient({ product }: Props) {
   const openCartPanel = useCartStore((s) => s.openCartPanel);
   const [variantId, setVariantId] = useState(product.variants[0]?.id ?? '');
   const [qty, setQty] = useState(1);
-  const [mode, setMode] = useState<'payment' | 'subscription'>('payment');
-  const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>(
-    'monthly',
-  );
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
 
@@ -45,19 +40,13 @@ export function ProductDetailClient({ product }: Props) {
     [product.variants, variantId],
   );
 
-  const displaySub = variant?.sub_price != null && variant.sub_price > 0;
-  const canSubscribe = displaySub && (variant?.stripe_sub_price_id?.length ?? 0) > 0;
-
   const unitPayment = variant ? Number(variant.price) : 0;
-  const unitSub = variant && displaySub ? Number(variant.sub_price) : unitPayment;
+  const displaySub =
+    variant?.sub_price != null && Number(variant.sub_price) > 0;
 
   function addToCart() {
     if (!variant) return;
     setErr(null);
-    if (mode === 'subscription' && !canSubscribe) {
-      setErr('此規格尚未開放訂閱或缺少訂閱價');
-      return;
-    }
     addLine({
       variantId: variant.id,
       productId: product.id,
@@ -65,9 +54,6 @@ export function ProductDetailClient({ product }: Props) {
       variantLabel: variant.label,
       qty,
       unitPrice: unitPayment,
-      subPrice: variant.sub_price != null ? Number(variant.sub_price) : null,
-      stripePriceId: variant.stripe_price_id,
-      stripeSubPriceId: variant.stripe_sub_price_id,
     });
     openCartPanel();
   }
@@ -75,22 +61,16 @@ export function ProductDetailClient({ product }: Props) {
   function checkoutNow() {
     if (!variant) return;
     setErr(null);
-    if (mode === 'subscription' && !canSubscribe) {
-      setErr('此規格尚未開放訂閱或缺少訂閱價');
-      return;
-    }
     startTransition(async () => {
       const res = await startCheckout({
-        mode,
         items: [{ variantId: variant.id, qty }],
-        frequency: mode === 'subscription' ? frequency : undefined,
       });
       if (res.error) {
         setErr(res.error);
         return;
       }
-      if (res.url) {
-        window.location.href = res.url;
+      if (res.paymentUrl && res.formFields) {
+        submitNewebpayMpgForm(res.paymentUrl, res.formFields);
       }
     });
   }
@@ -143,65 +123,14 @@ export function ProductDetailClient({ product }: Props) {
         </div>
       </div>
 
-      <div className="mt-4 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setMode('payment')}
-          className={cn(
-            'flex-1 rounded-[10px] py-2.5 text-body font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
-            mode === 'payment' ?
-              'bg-shadow-grey text-white'
-            : 'border-hairline border-border bg-secondary text-muted-foreground',
-          )}
-        >
-          單次購買
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('subscription')}
-          disabled={!canSubscribe}
-          className={cn(
-            'flex-1 rounded-[10px] py-2.5 text-body font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
-            mode === 'subscription' ?
-              'bg-shadow-grey text-white'
-            : 'border-hairline border-border bg-secondary text-muted-foreground',
-            !canSubscribe ? 'opacity-40' : '',
-          )}
-        >
-          訂閱
-        </button>
-      </div>
-
-      {mode === 'subscription' && canSubscribe ?
-        <div className="mt-4">
-          <span className="text-caption text-muted-foreground">寄送頻率</span>
-          <select
-            className="mt-1 flex h-11 w-full items-center rounded-[10px] border-hairline border-border bg-card px-3 text-body text-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none"
-            value={frequency}
-            onChange={(e) =>
-              setFrequency(e.target.value as typeof frequency)
-            }
-          >
-            <option value="weekly">每週</option>
-            <option value="biweekly">每兩週</option>
-            <option value="monthly">每月</option>
-          </select>
-        </div>
-      : null}
-
       <div className="mt-4 rounded-[10px] bg-secondary/50 px-3 py-2.5">
-        <p className="text-caption text-muted-foreground">
-          {mode === 'payment' ? '單次價格' : '訂閱每期'}
-        </p>
+        <p className="text-caption text-muted-foreground">單次價格</p>
         <p className="text-heading-page text-foreground tabular-nums">
-          NT${' '}
-          {mode === 'payment' ?
-            (unitPayment * qty).toFixed(0)
-          : (unitSub * qty).toFixed(0)}
+          NT$ {(unitPayment * qty).toFixed(0)}
         </p>
-        {mode === 'subscription' && displaySub && variant ?
-          <p className="mt-0.5 text-caption text-muted-foreground">
-            單買參考 NT$ {(unitPayment * qty).toFixed(0)}
+        {displaySub && variant ?
+          <p className="mt-1 text-caption text-muted-foreground">
+            訂閱／定期價 NT$ {(Number(variant.sub_price) * qty).toFixed(0)}（改接藍新後開放）
           </p>
         : null}
       </div>
@@ -220,7 +149,7 @@ export function ProductDetailClient({ product }: Props) {
           disabled={pending}
           onClick={checkoutNow}
         >
-          {pending ? '開啟結帳…' : mode === 'subscription' ? '立即訂閱' : '立即結帳'}
+          {pending ? '開啟結帳…' : '立即結帳（藍新金流）'}
         </Button>
       </div>
     </section>

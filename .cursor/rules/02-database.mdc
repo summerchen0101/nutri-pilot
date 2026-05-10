@@ -30,7 +30,7 @@ if (error) throw error
 
 - user_id、diet_method、avoid_foods、allergen_free、diet_tags
 - daily_cal_target、carb_pct、protein_pct、fat_pct
-- stripe_subscription_id、stripe_price_id
+- external_subscription_id、product_variants 定價以 `price`／`sub_price`
 
 ## RLS
 
