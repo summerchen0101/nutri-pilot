@@ -923,6 +923,7 @@ export type Database = {
           date: string
           id: string
           logged_at: string | null
+          sleep_hours: number | null
           user_id: string
           water_ml: number | null
           weight_kg: number | null
@@ -931,6 +932,7 @@ export type Database = {
           date: string
           id?: string
           logged_at?: string | null
+          sleep_hours?: number | null
           user_id: string
           water_ml?: number | null
           weight_kg?: number | null
@@ -939,6 +941,7 @@ export type Database = {
           date?: string
           id?: string
           logged_at?: string | null
+          sleep_hours?: number | null
           user_id?: string
           water_ml?: number | null
           weight_kg?: number | null

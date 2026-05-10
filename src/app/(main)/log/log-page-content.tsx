@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import type { ActivityLogRow } from '@/app/(main)/log/activity-log-section';
+import type { LogVitalSnapshot } from '@/app/(main)/log/_components/log-vitals-card';
 import {
   LogClient,
   type FoodLogSnapshot,
@@ -9,6 +10,7 @@ import {
 } from '@/app/(main)/log/log-client';
 import { todayLocalISODate } from '@/lib/onboarding/date';
 import { getCachedAuthContext } from '@/lib/auth';
+import { getCachedUserProfileCoreRow } from '@/lib/user-profile';
 
 function isoDateOk(s: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -29,7 +31,7 @@ function parseMealType(
 }
 
 function parseSectionTab(raw: string | undefined): LogSectionTab {
-  if (raw === 'activity' || raw === 'food') return raw;
+  if (raw === 'activity' || raw === 'food' || raw === 'body') return raw;
   return 'food';
 }
 
@@ -90,8 +92,16 @@ export async function LogPageContent({
 
   const activeDate = dateParam ?? todayLocalISODate();
 
-  const [{ data: goal }, { data: rows }, { data: activityRows }] =
-    await Promise.all([
+  const todayIso = todayLocalISODate();
+  const isLogToday = activeDate === todayIso;
+
+  const [
+    { data: goal },
+    { data: rows },
+    { data: activityRows },
+    { data: profileRow },
+    { data: vitalRow, error: vitalErr },
+  ] = await Promise.all([
       supabase
         .from('user_goals')
         .select('daily_cal_target')
@@ -132,7 +142,18 @@ export async function LogPageContent({
         .eq('user_id', user.id)
         .eq('logged_date', activeDate)
         .order('created_at', { ascending: false }),
+      getCachedUserProfileCoreRow(supabase, user.id),
+      supabase
+        .from('vital_logs')
+        .select('weight_kg, water_ml, sleep_hours')
+        .eq('user_id', user.id)
+        .eq('date', activeDate)
+        .maybeSingle(),
     ]);
+
+  if (vitalErr) {
+    throw new Error(vitalErr.message);
+  }
 
   const initialLogs: FoodLogSnapshot[] = (rows ?? []).map((row) => ({
     id: row.id,
@@ -154,6 +175,24 @@ export async function LogPageContent({
     }),
   );
 
+  const initialHeightCm =
+    profileRow?.height_cm != null && Number.isFinite(Number(profileRow.height_cm))
+      ? Number(profileRow.height_cm)
+      : 170;
+
+  const initialVital: LogVitalSnapshot = {
+    weightKg:
+      vitalRow?.weight_kg != null ? Number(vitalRow.weight_kg) : null,
+    waterMl:
+      vitalRow?.water_ml != null
+        ? Math.round(Number(vitalRow.water_ml))
+        : 0,
+    sleepHours:
+      vitalRow?.sleep_hours != null
+        ? Number(vitalRow.sleep_hours)
+        : null,
+  };
+
   return (
     <LogClient
       date={activeDate}
@@ -162,6 +201,9 @@ export async function LogPageContent({
       initialMealTab={initialMealTab}
       sectionTab={sectionTab}
       initialActivities={initialActivities}
+      initialHeightCm={initialHeightCm}
+      initialVital={initialVital}
+      isLogToday={isLogToday}
     />
   );
 }

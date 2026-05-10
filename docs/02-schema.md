@@ -178,9 +178,12 @@ CREATE TABLE vital_logs (
   date        DATE NOT NULL,
   weight_kg   NUMERIC(5,1),
   water_ml    INT,
+  sleep_hours NUMERIC(4,1),
   logged_at   TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, date)
 );
+
+**註**：若資料庫僅執行過 `001_init.sql`，需另套用 `019_vital_logs_sleep_hours.sql` 才會有 `sleep_hours` 欄位。
 
 -- 食品營養快取（Open Food Facts / 衛福部 / USDA / AI 估算等；migration 002 建立、004 擴充）
 CREATE TABLE food_cache (

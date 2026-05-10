@@ -15,8 +15,13 @@ import {
   FiCamera,
   FiCoffee,
   FiTrash2,
+  FiUser,
 } from 'react-icons/fi';
 
+import {
+  LogVitalsCard,
+  type LogVitalSnapshot,
+} from '@/app/(main)/log/_components/log-vitals-card';
 import {
   AddFoodManualAiPanel,
   type StagedFoodItemForPlan,
@@ -28,6 +33,10 @@ import {
   listFrequentFoodLogItemsAction,
   type FrequentFoodItemSnapshot,
 } from '@/app/(main)/log/actions';
+import {
+  ActivityLogSection,
+  type ActivityLogRow,
+} from '@/app/(main)/log/activity-log-section';
 import { NutritionResultCard } from '@/components/food/NutritionResultCard';
 import { Button } from '@/components/ui/button';
 import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
@@ -39,10 +48,6 @@ import {
 } from '@/components/ui/card';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { Input } from '@/components/ui/input';
-import {
-  ActivityLogSection,
-  type ActivityLogRow,
-} from '@/app/(main)/log/activity-log-section';
 import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
 import { invokeAiPhotoRequestFromBrowser } from '@/lib/food/invoke-photo-request';
 import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
@@ -261,7 +266,7 @@ function patchLogItemInLogs(
   }));
 }
 
-export type LogSectionTab = 'food' | 'activity';
+export type LogSectionTab = 'food' | 'activity' | 'body';
 
 interface LogClientProps {
   date: string;
@@ -270,9 +275,12 @@ interface LogClientProps {
   /** URL `meal_type`，無預填時用來選預設餐次 Tab */
   initialMealTab?: MealType | null;
   prefillFromMeal?: PlanPrefillPayload | null;
-  /** URL `tab`：飲食 / 運動 */
+  /** URL `tab`：飲食 / 運動 / 身體與習慣 */
   sectionTab?: LogSectionTab;
   initialActivities?: ActivityLogRow[];
+  initialHeightCm: number;
+  initialVital: LogVitalSnapshot;
+  isLogToday: boolean;
 }
 
 type PlanItemShape = PlanPrefillPayload['items'][number];
@@ -360,6 +368,7 @@ function LogSectionTabs({
     >
       {tabBtn('food', '飲食', FiCoffee)}
       {tabBtn('activity', '運動', FiActivity)}
+      {tabBtn('body', '身體與習慣', FiUser)}
     </div>
   );
 }
@@ -372,6 +381,9 @@ export function LogClient({
   prefillFromMeal = null,
   sectionTab = 'food',
   initialActivities = [],
+  initialHeightCm,
+  initialVital,
+  isLogToday,
 }: LogClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -881,27 +893,45 @@ export function LogClient({
         <LogSectionTabs date={date} active={sectionTab} />
       ) : null}
 
-      <div className="rounded-xl bg-card px-4 py-3">
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] text-muted-foreground">今日已攝取</p>
-            <p className="tabular-nums text-heading-page leading-tight text-foreground">
-              {Math.round(todayTotal)}
-              <span className="text-[13px] font-normal text-muted-foreground"> kcal</span>
-            </p>
-          </div>
-          <div className="text-right">
-            {dailyCalTarget != null ? (
-              <p className="text-[11px] text-muted-foreground">
-                目標 {Math.round(Number(dailyCalTarget))} kcal
+      {!prefillFromMeal && sectionTab === 'body' ? (
+        <LogVitalsCard
+          dateIso={date}
+          isToday={isLogToday}
+          initialHeightCm={initialHeightCm}
+          initialVital={initialVital}
+        />
+      ) : null}
+
+      {!prefillFromMeal && sectionTab === 'food' ? (
+        <div className="rounded-xl bg-card px-4 py-3">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] text-muted-foreground">今日已攝取</p>
+              <p className="tabular-nums text-heading-page leading-tight text-foreground">
+                {Math.round(todayTotal)}
+                <span className="text-[13px] font-normal text-muted-foreground">
+                  {' '}
+                  kcal
+                </span>
               </p>
-            ) : (
-              <p className="text-[11px] text-muted-foreground">尚未設定熱量目標</p>
-            )}
-            <p className="mt-0.5 text-[11px] text-muted-foreground">{date}</p>
+            </div>
+            <div className="text-right">
+              {dailyCalTarget != null ? (
+                <p className="text-[11px] text-muted-foreground">
+                  目標 {Math.round(Number(dailyCalTarget))} kcal
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  尚未設定熱量目標
+                </p>
+              )}
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {date}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       {prefillFromMeal ? (
         <div className="space-y-4">

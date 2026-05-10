@@ -71,20 +71,21 @@ export default async function DashboardPage() {
 
 ---
 
-## `/log`（每日紀錄：飲食 / 運動）
+## `/log`（每日紀錄：飲食 / 運動 / 身體與習慣）
 
 ### 元件區塊
 
 | 區塊 | 說明 |
 |------|------|
-| 主分頁 | URL `?tab=food`（預設）/ `activity`；`?date=` 仍用於當日篩選 |
+| 主分頁 | URL `?tab=food`（預設）/ `activity` / `body`（身體與習慣）；`?date=` 仍用於當日篩選 |
+| 身體與習慣 | **`tab=body` 時顯示**，雙卡版面：**身體**（身高、體重）、**水分與睡眠**（飲水格、睡眠時數）。依 `?date=` 讀寫 `vital_logs`（`weight_kg`、`water_ml`、`sleep_hours`）；身高 `user_profiles.height_cm`（與設定頁共用）。補登過去日期的體重僅寫入該日 `vital_logs`；今日體重與儀表板「記錄體重」相同會同步代謝與目標熱量。飲水目標 ml 目前為固定常數（與儀表板一致） |
 | 餐次 Tab | 僅在飲食分頁：早餐 / 午餐 / 晚餐 / 點心 |
 | 輸入方式切換 | 手動（搜尋＋AI）/ 拍照餐點 |
 | 搜尋輸入 | Open Food Facts 搜尋 + 結果列表 + 份量調整 + 加入 |
 | 拍照餐點 | 上傳 `food-photos` → `ai-photo-request` → `ai-photo-analyze` → 確認營養卡 |
 | 運動分頁 | 手寫入 `activity_logs`；當日列表、刪除；類型與分鐘、估熱與備註（選填） |
 | 今日記錄列表 | 飲食分頁下依餐次分組，可刪除 |
-| 熱量加總 | 今日四餐總熱量 vs 目標（同一路徑顯示） |
+| 熱量加總 | 僅 **飲食分頁**顯示：今日四餐總熱量 vs 目標 |
 
 ---
 

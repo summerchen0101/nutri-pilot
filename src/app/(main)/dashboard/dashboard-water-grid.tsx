@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
-import { ArrowUpRight } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { ArrowUpRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useTransition, type ReactNode } from 'react';
 
-import { setWaterMlForTodayAction } from "@/app/(main)/dashboard/actions";
-import { cn } from "@/lib/utils/cn";
+import { setWaterMlForTodayAction } from '@/app/(main)/dashboard/actions';
+import { setWaterMlForDateAction } from '@/app/(main)/log/vitals-actions';
+import { cn } from '@/lib/utils/cn';
 
 const CUP_ML = 250;
 const GRID_CELLS = 12;
@@ -26,6 +27,8 @@ type Props = {
   waterTargetMl?: number;
   /** 底部 +250 ml／+500 ml */
   showQuickAdds?: boolean;
+  /** 指定 `vital_logs.date`；未設定時沿用今日（儀表板） */
+  forDateIso?: string;
 };
 
 function formatMl(n: number): string {
@@ -37,6 +40,7 @@ export function DashboardWaterGrid({
   embedded = false,
   waterTargetMl,
   showQuickAdds = false,
+  forDateIso,
 }: Props) {
   const router = useRouter();
   const [waterMl, setWaterMl] = useState(initialWaterMl);
@@ -53,7 +57,9 @@ export function DashboardWaterGrid({
 
   function applyTarget(targetMl: number) {
     startTransition(async () => {
-      const res = await setWaterMlForTodayAction(targetMl);
+      const res = forDateIso
+        ? await setWaterMlForDateAction(forDateIso, targetMl)
+        : await setWaterMlForTodayAction(targetMl);
       if (res.error) return;
       setWaterMl(targetMl);
       router.refresh();
@@ -76,8 +82,8 @@ export function DashboardWaterGrid({
   return (
     <div
       className={cn(
-        "flex flex-col gap-1.5",
-        embedded ? "w-full" : "w-[84px] shrink-0",
+        'flex flex-col gap-1.5',
+        embedded ? 'w-full' : 'w-[84px] shrink-0',
       )}>
       {showHeader ? (
         <div className="mb-0.5 flex items-start justify-between gap-2">
@@ -97,7 +103,7 @@ export function DashboardWaterGrid({
         </div>
       )}
       <div
-        className={cn("grid grid-cols-12 gap-1")}
+        className={cn('grid grid-cols-12 gap-1')}
         role="group"
         aria-label="今日喝水量，點格子設定杯數">
         {Array.from({ length: GRID_CELLS }, (_, i) => {
