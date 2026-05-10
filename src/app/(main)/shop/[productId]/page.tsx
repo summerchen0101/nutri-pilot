@@ -109,11 +109,6 @@ export default async function ShopProductPage({ params }: PageProps) {
             <p className="text-caption text-muted-foreground">{brand.name}</p>
           ) : undefined
         }
-        action={
-          <Link href="/shop" className="text-[13px] font-medium text-primary">
-            返回商城
-          </Link>
-        }
       />
 
       <section className="overflow-hidden rounded-xl border-[0.5px] border-border bg-card">
