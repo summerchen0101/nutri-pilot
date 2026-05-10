@@ -1341,7 +1341,7 @@ export function LogClient({
                                   }}
                                 >
                                   <span
-                                    className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#4C956C]"
+                                    className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary"
                                     aria-hidden
                                   />
                                   <div className="min-w-0 flex-1">

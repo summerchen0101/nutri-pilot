@@ -20,6 +20,7 @@ import {
   calcTargetDate,
   calcTDEE,
 } from '@/lib/calculations';
+import { cn } from '@/lib/utils/cn';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -392,10 +393,12 @@ export function OnboardingWizard({
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
             <span
               key={i}
-              className="h-1.5 rounded-full transition-all duration-150"
+              className={cn(
+                'h-1.5 rounded-full transition-all duration-150',
+                i + 1 <= step ? 'bg-primary' : 'bg-[#E8E9ED]',
+              )}
               style={{
                 width: i + 1 === step ? 18 : 10,
-                backgroundColor: i + 1 <= step ? '#4C956C' : '#E8E9ED',
               }}
               aria-hidden
             />
@@ -586,7 +589,7 @@ export function OnboardingWizard({
                   type="button"
                   onClick={addAvoidTag}
                   disabled={!avoidInput.trim()}
-                  className="shrink-0 whitespace-nowrap rounded-[10px] bg-[#4C956C] px-4 py-2.5 text-[13px] font-medium text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="shrink-0 whitespace-nowrap rounded-[10px] bg-primary px-4 py-2.5 text-[13px] font-medium text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   新增
                 </button>
@@ -621,7 +624,7 @@ export function OnboardingWizard({
                     <div
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] border-hairline outline-none ring-0 transition-colors ${
                         allergens.includes(o.value)
-                          ? 'border-[#4C956C] bg-[#4C956C]'
+                          ? 'border-primary bg-primary'
                           : 'border-[#E8E9ED] bg-white'
                       }`}
                     >

@@ -302,7 +302,7 @@ function WeeklyTrendCard({
                 className="flex min-w-0 flex-1 flex-col items-center gap-1">
                 <div className="h-10 w-full overflow-hidden rounded-[4px] bg-muted">
                   <div
-                    className="w-full rounded-[4px] bg-[#4C956C]"
+                    className="w-full rounded-[4px] bg-primary"
                     style={{
                       height: `${Math.max(8, (row.kcal / maxKcal) * 100)}%`,
                     }}
