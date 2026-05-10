@@ -32,9 +32,9 @@ import { createClient } from '@/lib/supabase/client';
 import { ALLERGEN_OPTIONS, DIET_METHOD_OPTIONS, GOAL_TYPE_OPTIONS } from '@/lib/onboarding/constants';
 
 import {
-  saveBodyMetrics,
   saveDietPreferences,
   saveGoals,
+  saveHeightCm,
   saveProfileName,
   saveTracksGlycemicConcern,
 } from '@/app/(main)/settings/actions';
@@ -85,8 +85,6 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
   const [heightCm, setHeightCm] = useState(initial.heightCm > 0 ? String(initial.heightCm) : '');
   const [weightKg, setWeightKg] = useState(initial.weightKg > 0 ? String(initial.weightKg) : '');
   const [heightDraft, setHeightDraft] = useState(initial.heightCm > 0 ? String(initial.heightCm) : '');
-  const [weightDraft, setWeightDraft] = useState(initial.weightKg > 0 ? String(initial.weightKg) : '');
-
   const [goalType, setGoalType] = useState(initial.goal.type);
   const [targetW, setTargetW] = useState(String(initial.goal.targetWeightKg));
   const [weeklyRate, setWeeklyRate] = useState(initial.goal.type === 'maintain' ? '0' : String(initial.goal.weeklyRateKg));
@@ -157,7 +155,6 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
 
   function openBodySheet() {
     setHeightDraft(heightCm);
-    setWeightDraft(weightKg);
     setErrBody(null);
     setActiveSheet('bodyMetrics');
   }
@@ -176,18 +173,16 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
     });
   }
 
-  function applyBodyDraft() {
+  function applyHeightDraft() {
     setErrBody(null);
     startTransition(async () => {
       const nextHeight = Number.parseFloat(heightDraft.replace(',', '.'));
-      const nextWeight = Number.parseFloat(weightDraft.replace(',', '.'));
-      const result = await saveBodyMetrics(nextHeight, nextWeight);
+      const result = await saveHeightCm(nextHeight);
       if (result.error) {
         setErrBody(result.error);
         return;
       }
       setHeightCm(heightDraft);
-      setWeightKg(weightDraft);
       setActiveSheet(null);
       refresh();
     });
@@ -245,7 +240,7 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
   return (
     <div className="space-y-3 pb-4">
       <PageHeader
-        title="設定"
+        title="我的"
         action={
           <button
             type="button"
@@ -365,13 +360,11 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
       <EditBodyMetricsSheet
         open={activeSheet === 'bodyMetrics'}
         heightValue={heightDraft}
-        weightValue={weightDraft}
         error={errBody}
         pending={pending}
         onClose={() => setActiveSheet(null)}
         onHeightChange={setHeightDraft}
-        onWeightChange={setWeightDraft}
-        onSave={applyBodyDraft}
+        onSave={applyHeightDraft}
       />
 
       <EditAllergenSheet

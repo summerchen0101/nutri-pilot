@@ -93,31 +93,33 @@ export function EditNameSheet({ open, value, error, pending, onClose, onChange, 
 
 interface BodyMetricsSheetProps extends BaseSheetProps {
   heightValue: string;
-  weightValue: string;
   error?: string | null;
   onHeightChange: (next: string) => void;
-  onWeightChange: (next: string) => void;
   onSave: () => void;
 }
 
 export function EditBodyMetricsSheet({
   open,
   heightValue,
-  weightValue,
   error,
   pending,
   onClose,
   onHeightChange,
-  onWeightChange,
   onSave,
 }: BodyMetricsSheetProps) {
   return (
-    <BottomSheetShell open={open} title="編輯身體數據" onClose={onClose}>
+    <BottomSheetShell open={open} title="編輯身高" onClose={onClose}>
       <div className="space-y-2 pb-3">
-        <div className="grid grid-cols-2 gap-2">
-          <Input value={heightValue} inputMode="decimal" onChange={(event) => onHeightChange(event.target.value)} placeholder="身高 cm" className="text-[13px]" />
-          <Input value={weightValue} inputMode="decimal" onChange={(event) => onWeightChange(event.target.value)} placeholder="體重 kg" className="text-[13px]" />
-        </div>
+        <Input
+          value={heightValue}
+          inputMode="decimal"
+          onChange={(event) => onHeightChange(event.target.value)}
+          placeholder="身高 cm"
+          className="text-[13px]"
+        />
+        <p className="text-[11px] text-neutral-text-tertiary">
+          體重請至「紀錄」頁的體重卡設定。
+        </p>
         {error ? <p className="text-[11px] text-destructive">{error}</p> : null}
       </div>
       <button

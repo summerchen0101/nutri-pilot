@@ -10,7 +10,6 @@ import {
 } from '@/app/(main)/log/log-client';
 import { todayLocalISODate } from '@/lib/onboarding/date';
 import { getCachedAuthContext } from '@/lib/auth';
-import { getCachedUserProfileCoreRow } from '@/lib/user-profile';
 
 function isoDateOk(s: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -95,13 +94,8 @@ export async function LogPageContent({
   const todayIso = todayLocalISODate();
   const isLogToday = activeDate === todayIso;
 
-  const [
-    { data: goal },
-    { data: rows },
-    { data: activityRows },
-    { data: profileRow },
-    { data: vitalRow, error: vitalErr },
-  ] = await Promise.all([
+  const [{ data: goal }, { data: rows }, { data: activityRows }, { data: vitalRow, error: vitalErr }] =
+    await Promise.all([
       supabase
         .from('user_goals')
         .select('daily_cal_target')
@@ -142,7 +136,6 @@ export async function LogPageContent({
         .eq('user_id', user.id)
         .eq('logged_date', activeDate)
         .order('created_at', { ascending: false }),
-      getCachedUserProfileCoreRow(supabase, user.id),
       supabase
         .from('vital_logs')
         .select('weight_kg, water_ml, sleep_hours')
@@ -175,10 +168,7 @@ export async function LogPageContent({
     }),
   );
 
-  const initialHeightCm =
-    profileRow?.height_cm != null && Number.isFinite(Number(profileRow.height_cm))
-      ? Number(profileRow.height_cm)
-      : 170;
+
 
   const initialVital: LogVitalSnapshot = {
     weightKg:
@@ -201,7 +191,6 @@ export async function LogPageContent({
       initialMealTab={initialMealTab}
       sectionTab={sectionTab}
       initialActivities={initialActivities}
-      initialHeightCm={initialHeightCm}
       initialVital={initialVital}
       isLogToday={isLogToday}
     />

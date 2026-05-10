@@ -275,10 +275,9 @@ interface LogClientProps {
   /** URL `meal_type`，無預填時用來選預設餐次 Tab */
   initialMealTab?: MealType | null;
   prefillFromMeal?: PlanPrefillPayload | null;
-  /** URL `tab`：飲食 / 運動 / 身體與習慣 */
+  /** URL `tab`：飲食 / 運動 / 體重與習慣 */
   sectionTab?: LogSectionTab;
   initialActivities?: ActivityLogRow[];
-  initialHeightCm: number;
   initialVital: LogVitalSnapshot;
   isLogToday: boolean;
 }
@@ -357,7 +356,7 @@ function LogSectionTabs({
     <div className="flex w-full gap-2" role="tablist" aria-label="紀錄類別">
       {tabBtn("food", "飲食", FiCoffee)}
       {tabBtn("activity", "運動", FiActivity)}
-      {tabBtn("body", "身體與習慣", FiUser)}
+      {tabBtn("body", "體重與習慣", FiUser)}
     </div>
   );
 }
@@ -370,7 +369,6 @@ export function LogClient({
   prefillFromMeal = null,
   sectionTab = "food",
   initialActivities = [],
-  initialHeightCm,
   initialVital,
   isLogToday,
 }: LogClientProps) {
@@ -880,7 +878,6 @@ export function LogClient({
         <LogVitalsCard
           dateIso={date}
           isToday={isLogToday}
-          initialHeightCm={initialHeightCm}
           initialVital={initialVital}
         />
       ) : null}

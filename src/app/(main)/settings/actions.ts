@@ -9,7 +9,6 @@ import {
   calcTargetDate,
   calcTDEE,
 } from '@/lib/calculations';
-import { todayLocalISODate } from '@/lib/onboarding/date';
 import { triggerRecalculateScores } from '@/lib/settings/trigger-recalculate-scores';
 import { createClient } from '@/lib/supabase/server';
 import type { TablesUpdate } from '@/types/supabase';
@@ -80,18 +79,13 @@ export async function saveProfileName(
   return {};
 }
 
-export async function saveBodyMetrics(
+/** 僅更新身高；體重以 `user_profiles`／紀錄頁為準，不寫入 `vital_logs`。 */
+export async function saveHeightCm(
   heightCmRaw: number,
-  weightKgRaw: number,
 ): Promise<{ error?: string }> {
   const heightCm = round1(heightCmRaw);
-  const weightKg = round1(weightKgRaw);
-
   if (!Number.isFinite(heightCm) || heightCm < 80 || heightCm > 250) {
     return { error: '請輸入合理的身高（80–250 cm）' };
-  }
-  if (!Number.isFinite(weightKg) || weightKg < 15 || weightKg > 400) {
-    return { error: '請輸入合理的體重（15–400 kg）' };
   }
 
   const supabase = createClient();
@@ -102,12 +96,19 @@ export async function saveBodyMetrics(
 
   const { data: profile, error: profileErr } = await supabase
     .from('user_profiles')
-    .select('gender, birth_date, activity_level')
+    .select('gender, birth_date, activity_level, weight_kg')
     .eq('user_id', user.id)
     .single();
 
   if (profileErr || !profile) {
     return { error: profileErr?.message ?? '無法讀取個人資料' };
+  }
+
+  const weightKg = round1(Number(profile.weight_kg));
+  if (!Number.isFinite(weightKg) || weightKg < 15 || weightKg > 400) {
+    return {
+      error: '請先在「紀錄」頁的體重卡填寫體重後，再調整身高',
+    };
   }
 
   const bd = profile.birth_date
@@ -121,22 +122,8 @@ export async function saveBodyMetrics(
   const bmr = round1(calcBMR(profile.gender, bd, heightCm, weightKg));
   const tdee = round1(calcTDEE(bmr, profile.activity_level));
 
-  const date = todayLocalISODate();
-
-  const { error: vitalErr } = await supabase.from('vital_logs').upsert(
-    {
-      user_id: user.id,
-      date,
-      weight_kg: weightKg,
-    },
-    { onConflict: 'user_id,date' },
-  );
-
-  if (vitalErr) return { error: vitalErr.message };
-
   const profilePatch: TablesUpdate<'user_profiles'> = {
     height_cm: heightCm,
-    weight_kg: weightKg,
     bmi,
     bmr,
     tdee,
@@ -224,7 +211,7 @@ export async function saveGoals(payload: {
 
   const weightNow = Number(profile.weight_kg);
   if (!Number.isFinite(weightNow) || weightNow <= 0) {
-    return { error: '請先在身體數據中填寫體重' };
+    return { error: '請先在「紀錄」頁填寫體重' };
   }
 
   const h = Number(profile.height_cm);

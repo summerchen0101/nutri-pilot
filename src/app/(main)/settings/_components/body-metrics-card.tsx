@@ -32,7 +32,7 @@ export function BodyMetricsCard({
         <SectionHeading icon={Ruler}>身體數據</SectionHeading>
         <button
           type="button"
-          aria-label="編輯身體數據"
+          aria-label="編輯身高"
           className={SECTION_HEADING_ACTION_ICON_CLASS}
           onClick={onEdit}>
           <Pencil className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden />

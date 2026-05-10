@@ -7,11 +7,9 @@ import { useEffect, useState, useTransition, type CSSProperties } from "react";
 import { DashboardWaterGrid } from "@/app/(main)/dashboard/dashboard-water-grid";
 import {
   logWeightForDateAction,
-  saveHeightCmFromLogAction,
   setSleepHoursForDateAction,
 } from "@/app/(main)/log/vitals-actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/cn";
 
 /** 與儀表板首頁預設飲水目標一致（待 Schema 個人化後替換） */
@@ -22,18 +20,16 @@ const SLEEP_SCALE_LABEL_HOURS = [0, 6, 12, 18, 24] as const;
 /** 0–24 每小時一個細刻度 */
 const SLEEP_HOUR_TICK_COUNT = 25;
 
-/** 身高／體重精確輸入旁加減按鈕步進 */
+/** 體重加減按鈕步進（無紀錄時首次按「加」自此 kg 開始） */
 const BODY_INPUT_STEP = 0.5;
-const HEIGHT_CM_MIN = 80;
-const HEIGHT_CM_MAX = 250;
 const WEIGHT_KG_MIN = 15;
 const WEIGHT_KG_MAX = 400;
+const WEIGHT_EMPTY_SEED_KG = 60;
 
 /** 無外框圖示按鈕：與設定頁筆形圖示接近的線寬與尺寸 */
-const BODY_STEPPER_ICON_CLASS =
-  'h-[18px] w-[18px] shrink-0';
+const BODY_STEPPER_ICON_CLASS = "h-[18px] w-[18px] shrink-0";
 const BODY_STEPPER_BTN_CLASS =
-  'inline-flex size-10 shrink-0 items-center justify-center rounded-[10px] text-foreground transition-colors hover:bg-muted disabled:opacity-60 disabled:cursor-not-allowed';
+  "inline-flex size-10 shrink-0 items-center justify-center rounded-[10px] text-foreground transition-colors hover:bg-muted disabled:opacity-60 disabled:cursor-not-allowed";
 
 function roundToHalfStep(n: number): number {
   return Math.round(n * 2) / 2;
@@ -47,12 +43,6 @@ function clampHalfStep(n: number, min: number, max: number): number {
 function formatBodyDraft(n: number): string {
   const r = roundToHalfStep(n);
   return r % 1 === 0 ? String(r) : r.toFixed(1);
-}
-
-function parseHeightCmDraft(draft: string, fallbackCm: number): number {
-  const n = Number(draft);
-  if (Number.isFinite(n)) return n;
-  return fallbackCm;
 }
 
 function parseWeightKgDraft(
@@ -80,7 +70,6 @@ export interface LogVitalSnapshot {
 export interface LogVitalsCardProps {
   dateIso: string;
   isToday: boolean;
-  initialHeightCm: number;
   initialVital: LogVitalSnapshot;
 }
 
@@ -98,24 +87,18 @@ const RANGE_STEP_KEYS = new Set([
 export function LogVitalsCard({
   dateIso,
   isToday,
-  initialHeightCm,
   initialVital,
 }: LogVitalsCardProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const [heightDraft, setHeightDraft] = useState(String(initialHeightCm));
   const [weightDraft, setWeightDraft] = useState(
     initialVital.weightKg != null ? String(initialVital.weightKg) : "",
   );
   const [sleepHoursLocal, setSleepHoursLocal] = useState(
     initialVital.sleepHours != null ? Number(initialVital.sleepHours) : 0,
   );
-
-  useEffect(() => {
-    setHeightDraft(String(initialHeightCm));
-  }, [initialHeightCm]);
 
   useEffect(() => {
     setWeightDraft(
@@ -142,6 +125,11 @@ export function LogVitalsCard({
     runAction(() => setSleepHoursForDateAction(dateIso, hours));
   }
 
+  const weightKgForAdjust = parseWeightKgDraft(
+    weightDraft,
+    initialVital.weightKg,
+  );
+
   return (
     <div className="space-y-2.5">
       {actionError ? (
@@ -149,193 +137,117 @@ export function LogVitalsCard({
       ) : null}
 
       <div className="rounded-xl bg-card px-4 py-3">
-        <h2 className="mb-1 text-[15px] font-medium text-foreground">身體</h2>
+        <h2 className="mb-1 text-[15px] font-medium text-foreground">體重</h2>
         <p className="mb-3 text-caption text-muted-foreground">
-          調整身高或體重後，請點「更新身高」或「更新體重」才會儲存。
+          需點「更新體重」儲存（身高請至「我的」頁面調整）
         </p>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-[11px] text-muted-foreground">
-              身高（與設定頁共用，單位 cm）
-            </label>
-            <div className="mt-1 flex flex-wrap items-end gap-2">
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  className={BODY_STEPPER_BTN_CLASS}
-                  aria-label={`身高減 ${BODY_INPUT_STEP} cm`}
-                  disabled={pending}
-                  onClick={() => {
-                    const base = parseHeightCmDraft(heightDraft, initialHeightCm);
-                    setHeightDraft(
-                      formatBodyDraft(
-                        clampHalfStep(
-                          base - BODY_INPUT_STEP,
-                          HEIGHT_CM_MIN,
-                          HEIGHT_CM_MAX,
-                        ),
-                      ),
-                    );
-                  }}>
-                  <Minus
-                    className={BODY_STEPPER_ICON_CLASS}
-                    strokeWidth={1.8}
-                    aria-hidden
-                  />
-                </button>
-                <Input
-                  type="number"
-                  min={HEIGHT_CM_MIN}
-                  max={HEIGHT_CM_MAX}
-                  step={BODY_INPUT_STEP}
-                  inputMode="decimal"
-                  className="max-w-[132px] tabular-nums"
-                  value={heightDraft}
-                  disabled={pending}
-                  onChange={(e) => setHeightDraft(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className={BODY_STEPPER_BTN_CLASS}
-                  aria-label={`身高加 ${BODY_INPUT_STEP} cm`}
-                  disabled={pending}
-                  onClick={() => {
-                    const base = parseHeightCmDraft(heightDraft, initialHeightCm);
-                    setHeightDraft(
-                      formatBodyDraft(
-                        clampHalfStep(
-                          base + BODY_INPUT_STEP,
-                          HEIGHT_CM_MIN,
-                          HEIGHT_CM_MAX,
-                        ),
-                      ),
-                    );
-                  }}>
-                  <Plus
-                    className={BODY_STEPPER_ICON_CLASS}
-                    strokeWidth={1.8}
-                    aria-hidden
-                  />
-                </button>
-              </div>
-              <Button
+        <div>
+          {!isToday ? (
+            <p className="mb-2 text-[11px] text-muted-foreground">
+              僅寫入此日紀錄，不更新個人檔案目前體重
+            </p>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              <button
                 type="button"
-                size="sm"
-                variant="outline"
-                disabled={pending}
-                onClick={() =>
-                  runAction(() =>
-                    saveHeightCmFromLogAction(Number(heightDraft)),
-                  )
-                }>
-                更新身高
-              </Button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] text-muted-foreground">
-              體重（kg）
-            </label>
-            {!isToday ? (
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                僅寫入此日紀錄，不更新個人檔案目前體重
+                className={BODY_STEPPER_BTN_CLASS}
+                aria-label={`體重減 ${BODY_INPUT_STEP} kg`}
+                disabled={pending || weightKgForAdjust === null}
+                onClick={() => {
+                  const base = parseWeightKgDraft(
+                    weightDraft,
+                    initialVital.weightKg,
+                  );
+                  if (base === null) return;
+                  setWeightDraft(
+                    formatBodyDraft(
+                      clampHalfStep(
+                        base - BODY_INPUT_STEP,
+                        WEIGHT_KG_MIN,
+                        WEIGHT_KG_MAX,
+                      ),
+                    ),
+                  );
+                }}>
+                <Minus
+                  className={BODY_STEPPER_ICON_CLASS}
+                  strokeWidth={1.8}
+                  aria-hidden
+                />
+              </button>
+              <p
+                aria-live="polite"
+                className="flex min-h-10 min-w-[5.25rem] max-w-[8.25rem] items-center justify-center rounded-[10px] border-hairline border-transparent bg-muted/50 px-2 tabular-nums text-heading-page text-foreground">
+                {weightKgForAdjust != null ? (
+                  <>
+                    {formatBodyDraft(weightKgForAdjust)}
+                    <span className="ml-0.5 text-body font-normal text-muted-foreground">
+                      kg
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-body font-normal text-muted-foreground">
+                    —
+                  </span>
+                )}
               </p>
-            ) : null}
-            <div className="mt-1 flex flex-wrap items-end gap-2">
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  className={BODY_STEPPER_BTN_CLASS}
-                  aria-label={`體重減 ${BODY_INPUT_STEP} kg`}
-                  disabled={
-                    pending ||
-                    parseWeightKgDraft(
-                      weightDraft,
-                      initialVital.weightKg,
-                    ) === null
-                  }
-                  onClick={() => {
-                    const base = parseWeightKgDraft(
-                      weightDraft,
-                      initialVital.weightKg,
-                    );
-                    if (base === null) return;
-                    setWeightDraft(
-                      formatBodyDraft(
-                        clampHalfStep(
-                          base - BODY_INPUT_STEP,
-                          WEIGHT_KG_MIN,
-                          WEIGHT_KG_MAX,
-                        ),
-                      ),
-                    );
-                  }}>
-                  <Minus
-                    className={BODY_STEPPER_ICON_CLASS}
-                    strokeWidth={1.8}
-                    aria-hidden
-                  />
-                </button>
-                <Input
-                  type="number"
-                  min={WEIGHT_KG_MIN}
-                  max={WEIGHT_KG_MAX}
-                  step={BODY_INPUT_STEP}
-                  inputMode="decimal"
-                  className="max-w-[132px] tabular-nums"
-                  value={weightDraft}
-                  disabled={pending}
-                  onChange={(e) => setWeightDraft(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className={BODY_STEPPER_BTN_CLASS}
-                  aria-label={`體重加 ${BODY_INPUT_STEP} kg`}
-                  disabled={
-                    pending ||
-                    parseWeightKgDraft(
-                      weightDraft,
-                      initialVital.weightKg,
-                    ) === null
-                  }
-                  onClick={() => {
-                    const base = parseWeightKgDraft(
-                      weightDraft,
-                      initialVital.weightKg,
-                    );
-                    if (base === null) return;
-                    setWeightDraft(
-                      formatBodyDraft(
-                        clampHalfStep(
-                          base + BODY_INPUT_STEP,
-                          WEIGHT_KG_MIN,
-                          WEIGHT_KG_MAX,
-                        ),
-                      ),
-                    );
-                  }}>
-                  <Plus
-                    className={BODY_STEPPER_ICON_CLASS}
-                    strokeWidth={1.8}
-                    aria-hidden
-                  />
-                </button>
-              </div>
-              <Button
+              <button
                 type="button"
-                size="sm"
-                variant="outline"
+                className={BODY_STEPPER_BTN_CLASS}
+                aria-label={`體重加 ${BODY_INPUT_STEP} kg`}
                 disabled={pending}
-                onClick={() =>
-                  runAction(() =>
-                    logWeightForDateAction(dateIso, Number(weightDraft)),
-                  )
-                }>
-                更新體重
-              </Button>
+                onClick={() => {
+                  const base = parseWeightKgDraft(
+                    weightDraft,
+                    initialVital.weightKg,
+                  );
+                  const start =
+                    base ??
+                    clampHalfStep(
+                      WEIGHT_EMPTY_SEED_KG,
+                      WEIGHT_KG_MIN,
+                      WEIGHT_KG_MAX,
+                    );
+                  if (base === null) {
+                    setWeightDraft(
+                      formatBodyDraft(
+                        clampHalfStep(start, WEIGHT_KG_MIN, WEIGHT_KG_MAX),
+                      ),
+                    );
+                    return;
+                  }
+                  setWeightDraft(
+                    formatBodyDraft(
+                      clampHalfStep(
+                        base + BODY_INPUT_STEP,
+                        WEIGHT_KG_MIN,
+                        WEIGHT_KG_MAX,
+                      ),
+                    ),
+                  );
+                }}>
+                <Plus
+                  className={BODY_STEPPER_ICON_CLASS}
+                  strokeWidth={1.8}
+                  aria-hidden
+                />
+              </button>
             </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={pending || weightKgForAdjust === null}
+              onClick={() => {
+                if (weightKgForAdjust === null) return;
+                runAction(() =>
+                  logWeightForDateAction(dateIso, weightKgForAdjust),
+                );
+              }}>
+              更新體重
+            </Button>
           </div>
         </div>
       </div>
