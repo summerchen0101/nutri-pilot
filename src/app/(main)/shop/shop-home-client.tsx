@@ -47,7 +47,6 @@ export interface ShopProductRow {
     id: string;
     label: string;
     price: number;
-    sub_price: number | null;
     stock: number | null;
   }>;
 }

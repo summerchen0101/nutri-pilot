@@ -1,28 +1,33 @@
-'use client';
+"use client";
 
-import { useMemo, useState, useTransition } from 'react';
-import { ShoppingBag } from 'lucide-react';
+import { useMemo, useState, useTransition } from "react";
+import { ShoppingBag } from "lucide-react";
 
-import { startCheckout } from '@/app/(main)/shop/actions';
-import { SectionHeading } from '@/components/ui/section-heading';
-import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/lib/shop/cart-store';
-import { submitNewebpayMpgForm } from '@/lib/shop/submit-newebpay-mpg-form';
-import { cn } from '@/lib/utils/cn';
+import { startCheckout } from "@/app/(main)/shop/actions";
+import { Button } from "@/components/ui/button";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { useCartStore } from "@/lib/shop/cart-store";
+import { submitNewebpayMpgForm } from "@/lib/shop/submit-newebpay-mpg-form";
 
 interface VariantRow {
   id: string;
   label: string;
   weight_g: number;
   price: number;
-  sub_price: number | null;
   stock: number | null;
 }
+
+/** 與紀錄頁（飲食輸入方式等）一致的黑底藥丸選取 */
+const variantPillPrimary =
+  "min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-transparent";
+const variantPillInactive =
+  "min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground";
 
 interface Props {
   product: {
     id: string;
     name: string;
+    imageUrl: string | null;
     variants: VariantRow[];
   };
 }
@@ -30,19 +35,18 @@ interface Props {
 export function ProductDetailClient({ product }: Props) {
   const addLine = useCartStore((s) => s.addLine);
   const openCartPanel = useCartStore((s) => s.openCartPanel);
-  const [variantId, setVariantId] = useState(product.variants[0]?.id ?? '');
+  const [variantId, setVariantId] = useState(product.variants[0]?.id ?? "");
   const [qty, setQty] = useState(1);
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
 
   const variant = useMemo(
-    () => product.variants.find((v) => v.id === variantId) ?? product.variants[0],
+    () =>
+      product.variants.find((v) => v.id === variantId) ?? product.variants[0],
     [product.variants, variantId],
   );
 
   const unitPayment = variant ? Number(variant.price) : 0;
-  const displaySub =
-    variant?.sub_price != null && Number(variant.sub_price) > 0;
 
   function addToCart() {
     if (!variant) return;
@@ -54,6 +58,7 @@ export function ProductDetailClient({ product }: Props) {
       variantLabel: variant.label,
       qty,
       unitPrice: unitPayment,
+      imageUrl: product.imageUrl,
     });
     openCartPanel();
   }
@@ -81,21 +86,23 @@ export function ProductDetailClient({ product }: Props) {
 
       <div className="mt-3">
         <span className="text-caption text-muted-foreground">規格</span>
-        <div className="mt-1 flex flex-wrap gap-2">
+        <div
+          className="mt-1.5 flex flex-wrap gap-2"
+          role="radiogroup"
+          aria-label="商品規格">
           {product.variants.map((v) => (
-            <button
+            <Button
               key={v.id}
               type="button"
-              onClick={() => setVariantId(v.id)}
-              className={cn(
-                'rounded-[10px] border px-3 py-2 text-body transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
-                v.id === variant?.id ?
-                  'border-primary bg-primary font-medium text-white'
-                : 'border-hairline border-border bg-background text-foreground hover:border-primary/40',
-              )}
-            >
+              role="radio"
+              aria-checked={v.id === variant?.id}
+              variant={v.id === variant?.id ? "default" : "ghost"}
+              className={
+                v.id === variant?.id ? variantPillPrimary : variantPillInactive
+              }
+              onClick={() => setVariantId(v.id)}>
               {v.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -106,8 +113,7 @@ export function ProductDetailClient({ product }: Props) {
           <button
             type="button"
             className="flex h-11 w-11 items-center justify-center rounded-[10px] border-hairline border-border text-heading-section focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
-            onClick={() => setQty((q) => Math.max(1, q - 1))}
-          >
+            onClick={() => setQty((q) => Math.max(1, q - 1))}>
             −
           </button>
           <span className="min-w-[2rem] text-center text-heading-section tabular-nums">
@@ -116,40 +122,35 @@ export function ProductDetailClient({ product }: Props) {
           <button
             type="button"
             className="flex h-11 w-11 items-center justify-center rounded-[10px] border-hairline border-border text-heading-section focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
-            onClick={() => setQty((q) => q + 1)}
-          >
+            onClick={() => setQty((q) => q + 1)}>
             +
           </button>
         </div>
       </div>
 
-      <div className="mt-4 rounded-[10px] bg-secondary/50 px-3 py-2.5">
+      <div className="-mx-4 mt-4 bg-secondary/50 px-4 py-2.5">
         <p className="text-caption text-muted-foreground">單次價格</p>
         <p className="text-heading-page text-foreground tabular-nums">
           NT$ {(unitPayment * qty).toFixed(0)}
         </p>
-        {displaySub && variant ?
-          <p className="mt-1 text-caption text-muted-foreground">
-            訂閱／定期價 NT$ {(Number(variant.sub_price) * qty).toFixed(0)}（改接藍新後開放）
-          </p>
-        : null}
       </div>
 
-      {err ?
-        <p className="mt-3 text-body text-destructive">{err}</p>
-      : null}
+      {err ? <p className="mt-3 text-body text-destructive">{err}</p> : null}
 
-      <div className="mt-4 flex flex-col gap-2">
-        <Button type="button" variant="outline" className="w-full" onClick={addToCart}>
+      <div className="mt-4 flex flex-row gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="min-w-0 flex-1"
+          onClick={addToCart}>
           加入購物車
         </Button>
         <Button
           type="button"
-          className="w-full"
+          className="min-w-0 flex-1 bg-[#4C956C] text-white hover:bg-[#3A7A56] focus-visible:ring-[#4C956C]/25"
           disabled={pending}
-          onClick={checkoutNow}
-        >
-          {pending ? '開啟結帳…' : '立即結帳（藍新金流）'}
+          onClick={checkoutNow}>
+          {pending ? "處理中…" : "立即結帳"}
         </Button>
       </div>
     </section>

@@ -9,7 +9,6 @@ import {
   Info,
   Leaf,
   MapPin,
-  Package,
   Sparkles,
   Store,
 } from "lucide-react";
@@ -51,7 +50,7 @@ export default async function ShopProductPage({ params }: PageProps) {
       `
       *,
       brand:brands ( id, name, slug, description, logo_url ),
-      variants:product_variants ( id, label, weight_g, price, sub_price, stock )
+      variants:product_variants ( id, label, weight_g, price, stock )
     `,
     )
     .eq("id", params.productId)
@@ -130,9 +129,6 @@ export default async function ShopProductPage({ params }: PageProps) {
             categoryLabel={categoryLabel}
             dietTags={product.diet_tags}
           />
-          <SectionHeading icon={Package} as="h2" className="leading-snug">
-            商品資訊
-          </SectionHeading>
           <p className="text-[13px] leading-relaxed text-muted-foreground">
             {truncateProductIntro(product.description)}
           </p>
@@ -143,12 +139,12 @@ export default async function ShopProductPage({ params }: PageProps) {
         product={{
           id: product.id as string,
           name: product.name as string,
+          imageUrl: (product.image_url as string | null) ?? null,
           variants: (product.variants ?? []) as Array<{
             id: string;
             label: string;
             weight_g: number;
             price: number;
-            sub_price: number | null;
             stock: number | null;
           }>,
         }}

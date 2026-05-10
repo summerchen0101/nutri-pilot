@@ -11,6 +11,8 @@ export interface CartLine {
   qty: number;
   /** 單次售價（元） */
   unitPrice: number;
+  /** 對應 `products.image_url`；舊版 localStorage 資料可能無此欄 */
+  imageUrl?: string | null;
 }
 
 interface CartState {
@@ -38,7 +40,11 @@ export const useCartStore = create<CartState>()(
           set({
             lines: get().lines.map((l) =>
               l.variantId === line.variantId ?
-                { ...l, qty: l.qty + qty }
+                {
+                  ...l,
+                  qty: l.qty + qty,
+                  imageUrl: line.imageUrl ?? l.imageUrl,
+                }
               : l,
             ),
           });
@@ -54,6 +60,7 @@ export const useCartStore = create<CartState>()(
               variantLabel: line.variantLabel,
               qty,
               unitPrice: line.unitPrice,
+              imageUrl: line.imageUrl ?? null,
             },
           ],
         });

@@ -9,7 +9,6 @@ const ROLE_ACCESS: Record<string, string[]> = {
   '/admin/products': ['super_admin', 'editor'],
   '/admin/brands': ['super_admin', 'editor'],
   '/admin/orders': ['super_admin', 'cs'],
-  '/admin/subscriptions': ['super_admin', 'cs'],
   '/admin/users': ['super_admin', 'cs'],
   '/admin/settings': ['super_admin'],
 };

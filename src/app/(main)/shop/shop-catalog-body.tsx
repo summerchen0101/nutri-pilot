@@ -47,7 +47,7 @@ export async function ShopCatalogBody() {
       cert_tags,
       avg_rating,
       brand:brands ( id, name, slug, logo_url ),
-      variants:product_variants ( id, label, price, sub_price, stock )
+      variants:product_variants ( id, label, price, stock )
     `,
       )
       .eq('is_active', true),

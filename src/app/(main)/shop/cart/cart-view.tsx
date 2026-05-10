@@ -1,18 +1,22 @@
 "use client";
 
+import { Package, X } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Receipt } from "lucide-react";
 
 import { startCheckout } from "@/app/(main)/shop/actions";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { SectionCard } from "@/components/ui/section-card";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { cartTotalPayment, useCartStore } from "@/lib/shop/cart-store";
 import { submitNewebpayMpgForm } from "@/lib/shop/submit-newebpay-mpg-form";
 
-export function CartView() {
+export interface CartViewProps {
+  /** `panel`：側欄内列表捲動，預估總計與按鈕固定於底部 */
+  layout?: "page" | "panel";
+}
+
+export function CartView({ layout = "page" }: CartViewProps) {
   const router = useRouter();
   const lines = useCartStore((s) => s.lines);
   const setQty = useCartStore((s) => s.setQty);
@@ -45,7 +49,7 @@ export function CartView() {
   }
 
   if (lines.length === 0) {
-    return (
+    const empty = (
       <EmptyState
         message="購物車是空的"
         actionHref="/shop"
@@ -53,95 +57,146 @@ export function CartView() {
         onActionNavigate={closeCartPanel}
       />
     );
+    if (layout === "panel") {
+      return (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto hide-scrollbar [-webkit-overflow-scrolling:touch]">
+            {empty}
+          </div>
+        </div>
+      );
+    }
+    return empty;
   }
 
   const totalPay = cartTotalPayment(lines);
 
-  return (
+  const lineList = (
+    <ul>
+      {lines.map((line) => (
+        <li
+          key={line.variantId}
+          className="border-b-hairline border-border py-4">
+          <div className="flex gap-3">
+            <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg bg-muted">
+              {line.imageUrl ? (
+                <Image
+                  src={line.imageUrl}
+                  alt=""
+                  width={72}
+                  height={72}
+                  className="h-full w-full object-cover"
+                  sizes="72px"
+                />
+              ) : (
+                <div
+                  className="flex h-full w-full items-center justify-center text-muted-foreground"
+                  aria-hidden>
+                  <Package className="h-7 w-7" />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex justify-between gap-2">
+                <div className="min-w-0 pr-1">
+                  <p className="text-heading-section leading-snug text-foreground">
+                    {line.productName}
+                  </p>
+                  <p className="mt-0.5 text-micro text-muted-foreground">
+                    {line.variantLabel}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border-hairline border-border bg-transparent text-foreground transition-colors hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                  aria-label={`移除 ${line.productName}`}
+                  onClick={() => removeLine(line.variantId)}>
+                  <X className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-hairline border-border text-heading-card leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                    onClick={() => setQty(line.variantId, line.qty - 1)}>
+                    −
+                  </button>
+                  <span className="min-w-[1.5rem] text-center text-heading-section tabular-nums text-foreground">
+                    {line.qty}
+                  </span>
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-hairline border-border text-heading-card leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                    onClick={() => setQty(line.variantId, line.qty + 1)}>
+                    +
+                  </button>
+                </div>
+                <p className="text-heading-section tabular-nums text-foreground">
+                  NT$ {(line.unitPrice * line.qty).toFixed(0)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+
+  const checkoutFooter = (
     <div className="space-y-4">
-      <ul className="space-y-3">
-        {lines.map((line) => (
-          <li
-            key={line.variantId}
-            className="rounded-xl bg-card p-4">
-            <div className="flex justify-between gap-3">
-              <div>
-                <p className="text-[13px] font-medium leading-snug text-foreground">
-                  {line.productName}
-                </p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  {line.variantLabel}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="shrink-0 text-[11px] font-medium text-[#E55A3C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
-                onClick={() => removeLine(line.variantId)}>
-                移除
-              </button>
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-[10px] border-hairline border-border text-[15px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
-                  onClick={() => setQty(line.variantId, line.qty - 1)}>
-                  −
-                </button>
-                <span className="min-w-[1.5rem] text-center text-[13px] tabular-nums">
-                  {line.qty}
-                </span>
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-[10px] border-hairline border-border text-[15px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
-                  onClick={() => setQty(line.variantId, line.qty + 1)}>
-                  +
-                </button>
-              </div>
-              <p className="text-[13px] font-medium tabular-nums text-foreground">
-                NT$ {(line.unitPrice * line.qty).toFixed(0)}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <div className="rounded-xl border-hairline border-primary px-4 py-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-caption text-muted-foreground">預估總計</span>
+          <span className="text-heading-section tabular-nums text-primary">
+            NT$ {totalPay.toFixed(0)}
+          </span>
+        </div>
+      </div>
 
-      <SectionCard className="bg-secondary/40 px-4 py-3">
-        <SectionHeading
-          icon={Receipt}
-          className="text-[11px] font-normal normal-case text-muted-foreground"
-          iconClassName="h-3.5 w-3.5">
-          預估總計
-        </SectionHeading>
-        <p className="text-heading-page tabular-nums text-foreground">
-          NT$ {totalPay.toFixed(0)}
-        </p>
-      </SectionCard>
+      {err ? <p className="text-body text-[#E24B4A]">{err}</p> : null}
 
-      {err ? <p className="text-[13px] text-[#E24B4A]">{err}</p> : null}
-
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-row gap-3">
         <Button
           type="button"
-          className="w-full"
-          disabled={pending}
-          onClick={checkout}>
-          {pending ? "處理中…" : "前往藍新付款"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
+          variant="ghost"
+          className="min-w-0 flex-1"
           onClick={() => {
             clear();
             router.refresh();
           }}>
           清空購物車
         </Button>
+        <Button
+          type="button"
+          className="min-w-0 flex-1 bg-[#4C956C] text-white hover:bg-[#3A7A56] focus-visible:ring-[#4C956C]/25"
+          disabled={pending}
+          onClick={checkout}>
+          {pending ? "處理中…" : "前往藍新付款"}
+        </Button>
       </div>
-      <p className="text-[11px] leading-relaxed text-muted-foreground">
-        訂閱／定期方案改接藍新前暫停，目前僅提供單次結帳。
-      </p>
+    </div>
+  );
+
+  if (layout === "panel") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto hide-scrollbar [-webkit-overflow-scrolling:touch]">
+          {lineList}
+        </div>
+        <div className="shrink-0 bg-[var(--color-background-primary)] pt-4">
+          {checkoutFooter}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-[calc(100dvh-8rem)] flex-col">
+      <div className="min-h-0 flex-1">{lineList}</div>
+      <div className="shrink-0 bg-[var(--color-background-primary)] pt-4">
+        {checkoutFooter}
+      </div>
     </div>
   );
 }

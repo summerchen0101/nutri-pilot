@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { Minus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -35,19 +35,19 @@ export function ShopCartPanel(): ReactNode {
           open ? 'translate-x-0' : 'translate-x-full',
         )}
       >
-        <div className="flex shrink-0 items-center justify-between border-b-hairline border-border px-4 py-3 pr-3">
-          <h2 className="text-heading-page text-foreground">購物車</h2>
+        <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
+          <h2 className="text-heading-page text-primary">購物車</h2>
           <button
             type="button"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-primary transition-colors hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-transparent text-[#4C956C] transition-colors hover:bg-secondary hover:text-[#3A7A56] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background-primary)]"
             aria-label="關閉購物車"
             onClick={closeCartPanel}
           >
-            <X className="h-[18px] w-[18px]" aria-hidden />
+            <Minus className="h-[18px] w-[18px]" aria-hidden />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <CartView />
+        <div className="flex min-h-0 flex-1 flex-col px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <CartView layout="panel" />
         </div>
       </aside>
     </div>
