@@ -26,6 +26,8 @@ interface PageProps {
   params: { productId: string };
 }
 
+const MAX_PRODUCT_INTRO_CHARS = 80;
+
 export default async function ShopProductPage({ params }: PageProps) {
   const { supabase, user } = await getCachedAuthContext();
 
@@ -114,7 +116,7 @@ export default async function ShopProductPage({ params }: PageProps) {
         }
       />
 
-      <div className="overflow-hidden rounded-xl border-[0.5px] border-border bg-card">
+      <section className="overflow-hidden rounded-xl border-[0.5px] border-border bg-card">
         <div className="relative aspect-[4/3] w-full bg-muted">
           {product.image_url ? (
             <Image
@@ -128,7 +130,7 @@ export default async function ShopProductPage({ params }: PageProps) {
             />
           ) : null}
         </div>
-        <div className="space-y-2 p-4">
+        <div className="space-y-3 p-4">
           <BadgeRow
             categoryLabel={categoryLabel}
             dietTags={product.diet_tags}
@@ -136,8 +138,11 @@ export default async function ShopProductPage({ params }: PageProps) {
           <SectionHeading icon={Package} as="h2" className="leading-snug">
             商品資訊
           </SectionHeading>
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            {truncateProductIntro(product.description)}
+          </p>
         </div>
-      </div>
+      </section>
 
       <ProductDetailClient
         product={{
@@ -156,70 +161,66 @@ export default async function ShopProductPage({ params }: PageProps) {
         }}
       />
 
-      <section className="overflow-hidden rounded-xl bg-primary p-px">
-        <div className="rounded-[calc(0.75rem-1px)] bg-primary-light p-4">
-          <SectionHeading icon={Sparkles}>為什麼適合你</SectionHeading>
-          <ul className="mt-3 space-y-2">
-            {fitReasons.map((r, i) => (
-              <li
-                key={i}
-                className="flex gap-2 text-[13px] leading-relaxed text-foreground">
-                <FitReasonTypeIcon type={r.type} />
-                <span
-                  className={cnReason(
-                    r.type,
-                    "min-w-0 flex-1",
-                  )}>
-                  {r.text}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <section className="rounded-xl bg-primary-light p-4">
+        <SectionHeading icon={Sparkles}>為什麼適合你</SectionHeading>
+        <ul className="mt-3 space-y-2">
+          {fitReasons.map((r, i) => (
+            <li
+              key={i}
+              className="flex gap-2 text-[13px] leading-relaxed text-foreground">
+              <FitReasonTypeIcon type={r.type} />
+              <span
+                className={cnReason(
+                  r.type,
+                  "min-w-0 flex-1",
+                )}>
+                {r.text}
+              </span>
+            </li>
+          ))}
+        </ul>
       </section>
 
-      <section>
+      <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
         <SectionHeading icon={Apple}>營養標示（每份）</SectionHeading>
-        <div className="mt-2 overflow-hidden rounded-xl border-[0.5px] border-border">
-          <table className="w-full text-[13px]">
-            <tbody>
-              <tr className="border-b border-border bg-secondary/40">
-                <th className="px-3 py-2 text-left font-medium">熱量</th>
-                <td className="px-3 py-2">{Number(product.calories)} kcal</td>
-              </tr>
+        <table className="mt-2 w-full text-[13px]">
+          <tbody>
+            <tr className="border-b border-border">
+              <th className="px-3 py-2 text-left font-medium">熱量</th>
+              <td className="px-3 py-2">{Number(product.calories)} kcal</td>
+            </tr>
+            <tr className="border-b border-border">
+              <th className="px-3 py-2 text-left font-medium">碳水化合物</th>
+              <td className="px-3 py-2">{Number(product.carb_g)} g</td>
+            </tr>
+            <tr className="border-b border-border">
+              <th className="px-3 py-2 text-left font-medium">蛋白質</th>
+              <td className="px-3 py-2">{Number(product.protein_g)} g</td>
+            </tr>
+            <tr className="border-b border-border">
+              <th className="px-3 py-2 text-left font-medium">脂肪</th>
+              <td className="px-3 py-2">{Number(product.fat_g)} g</td>
+            </tr>
+            {product.fiber_g != null ? (
               <tr className="border-b border-border">
-                <th className="px-3 py-2 text-left font-medium">碳水化合物</th>
-                <td className="px-3 py-2">{Number(product.carb_g)} g</td>
+                <th className="px-3 py-2 text-left font-medium">膳食纖維</th>
+                <td className="px-3 py-2">{Number(product.fiber_g)} g</td>
               </tr>
-              <tr className="border-b border-border bg-secondary/40">
-                <th className="px-3 py-2 text-left font-medium">蛋白質</th>
-                <td className="px-3 py-2">{Number(product.protein_g)} g</td>
-              </tr>
+            ) : null}
+            {product.sugar_g != null ? (
               <tr className="border-b border-border">
-                <th className="px-3 py-2 text-left font-medium">脂肪</th>
-                <td className="px-3 py-2">{Number(product.fat_g)} g</td>
+                <th className="px-3 py-2 text-left font-medium">糖</th>
+                <td className="px-3 py-2">{Number(product.sugar_g)} g</td>
               </tr>
-              {product.fiber_g != null ? (
-                <tr className="border-b border-border bg-secondary/40">
-                  <th className="px-3 py-2 text-left font-medium">膳食纖維</th>
-                  <td className="px-3 py-2">{Number(product.fiber_g)} g</td>
-                </tr>
-              ) : null}
-              {product.sugar_g != null ? (
-                <tr className="border-b border-border">
-                  <th className="px-3 py-2 text-left font-medium">糖</th>
-                  <td className="px-3 py-2">{Number(product.sugar_g)} g</td>
-                </tr>
-              ) : null}
-              {product.sodium_mg != null ? (
-                <tr className="bg-secondary/40">
-                  <th className="px-3 py-2 text-left font-medium">鈉</th>
-                  <td className="px-3 py-2">{Number(product.sodium_mg)} mg</td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+            ) : null}
+            {product.sodium_mg != null ? (
+              <tr>
+                <th className="px-3 py-2 text-left font-medium">鈉</th>
+                <td className="px-3 py-2">{Number(product.sodium_mg)} mg</td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
         <p className="mt-1 text-[11px] text-muted-foreground">
           份量基準：{Number(product.serving_size_g)} g
         </p>
@@ -308,6 +309,14 @@ export default async function ShopProductPage({ params }: PageProps) {
       ) : null}
     </div>
   );
+}
+
+function truncateProductIntro(description: string | null): string {
+  const trimmed = (description ?? '').trim();
+  if (trimmed.length === 0) return '尚無商品簡介';
+  const chars = Array.from(trimmed);
+  if (chars.length <= MAX_PRODUCT_INTRO_CHARS) return trimmed;
+  return `${chars.slice(0, MAX_PRODUCT_INTRO_CHARS).join('')}…`;
 }
 
 function BadgeRow({
