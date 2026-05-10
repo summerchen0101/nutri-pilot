@@ -111,7 +111,7 @@
    * 寫在 globals 可確保規則一定進編譯後的 CSS（避免少數環境下 JIT 產物未含自訂 fontSize）。
    */
   .text-heading-screen {
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1.2;
     font-weight: 500;
   }

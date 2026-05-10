@@ -1,14 +1,14 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-import { PageHeading } from '@/components/ui/page-heading';
-import { cn } from '@/lib/utils/cn';
+import { PageHeading } from "@/components/ui/page-heading";
+import { cn } from "@/lib/utils/cn";
 
 interface PageHeaderProps {
   leading?: ReactNode;
   title: string;
   meta?: ReactNode;
   action?: ReactNode;
-  spacing?: 'compact' | 'default';
+  spacing?: "compact" | "default";
   className?: string;
 }
 
@@ -17,21 +17,22 @@ export function PageHeader({
   title,
   meta,
   action,
-  spacing = 'default',
+  spacing = "default",
   className,
 }: PageHeaderProps) {
   return (
     <header
       className={cn(
-        'flex items-start justify-between gap-3',
-        spacing === 'default' ? 'pb-1' : '',
+        "flex items-center justify-between gap-3",
+        spacing === "default" ? "pb-1" : "",
         className,
-      )}
-    >
-      <div className="flex min-w-0 items-start gap-2.5">
-        {leading ? <div className="shrink-0 pt-0.5">{leading}</div> : null}
+      )}>
+      <div className="flex min-w-0 items-center gap-2.5">
+        {leading ? <div className="shrink-0">{leading}</div> : null}
         <div className="min-w-0 space-y-1">
-          <PageHeading>{title}</PageHeading>
+          <div className="flex min-h-9 items-center">
+            <PageHeading>{title}</PageHeading>
+          </div>
           {meta ? <div className="pt-0.5">{meta}</div> : null}
         </div>
       </div>
