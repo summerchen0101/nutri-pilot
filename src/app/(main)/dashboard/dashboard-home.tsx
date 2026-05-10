@@ -327,7 +327,7 @@ function WeeklyTrendCard({
 
 function InsightCard({ bullets }: { bullets: string[] }) {
   return (
-    <section className="rounded-xl border-hairline border-primary/20 bg-primary-light p-4">
+    <section className="rounded-xl bg-primary-light p-4">
       <SectionHeading icon={Lightbulb} tone="primary">
         今日建議
       </SectionHeading>
@@ -412,7 +412,7 @@ function PromoBanner({
   href: string;
 }) {
   return (
-    <section className="rounded-xl border-hairline border-primary/20 bg-primary-light p-4">
+    <section className="rounded-xl bg-primary-light p-4">
       <div className="min-w-0">
         <SectionHeading icon={Megaphone} tone="primary">
           {title}

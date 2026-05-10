@@ -156,7 +156,7 @@ export default async function ShopProductPage({ params }: PageProps) {
         }}
       />
 
-      <section className="rounded-xl border-hairline border-primary/20 bg-primary-light p-4">
+      <section className="rounded-xl bg-primary-light p-4">
         <SectionHeading icon={Sparkles}>為什麼適合你</SectionHeading>
         <ul className="mt-3 space-y-2">
           {fitReasons.map((r, i) => (

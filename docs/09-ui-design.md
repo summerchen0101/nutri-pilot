@@ -176,6 +176,7 @@ Tailwind：`primary` / `primary-dark` / `primary-light` / `primary-foreground`�
 - hover 狀態：`0.5px solid var(--color-border-secondary)`（同上）
 - 主色強調：`1.5px solid #4C956C`（規格選擇 active 等）
 - 輸入框 focus：`0.5px solid #4C956C` + `box-shadow: 0 0 0 2px rgba(76,149,108,.12)`
+- **主色淡底資訊區塊**（Tailwind：`bg-primary-light`，儀表建議／紀錄／商城說明等大面積區塊）：**不使用邊框**；以圓角與內距與頁面區隔即可。
 
 ---
 

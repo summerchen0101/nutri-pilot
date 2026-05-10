@@ -70,6 +70,7 @@ modal / sheet   border-radius: 16px
 小按鈕：    <Button size="sm" />
 次要按鈕：  <Button variant="outline" />
 卡片：      bg-background border-hairline border-border rounded-xl p-4
+主色淡底區塊： bg-primary-light rounded-xl p-*（無邊框）
 成功 pill： bg-[#E8F5EE] text-[#2D6B4A] rounded-full px-2.5 py-0.5 text-caption font-medium
 bottom nav active： bg-[#E8F5EE] text-[#4C956C]
 AI 卡：     bg-[#E6F1FB] border-hairline border-[#B5D4F4] rounded-xl p-3.5

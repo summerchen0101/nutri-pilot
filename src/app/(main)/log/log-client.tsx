@@ -902,7 +902,7 @@ export function LogClient({
 
       {prefillFromMeal ? (
         <div className="space-y-4">
-          <div className="rounded-xl border-hairline border-primary/20 bg-primary-light p-3.5">
+          <div className="rounded-xl bg-primary-light p-3.5">
             <p className="text-[13px] leading-snug text-foreground">
               從計畫帶入：
               {MEAL_LABEL[prefillFromMeal.mealType]}
