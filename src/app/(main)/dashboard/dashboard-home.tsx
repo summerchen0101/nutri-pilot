@@ -82,7 +82,11 @@ function CalorieRingBlock({
     cap > 0 ? Math.min(100, (v / cap) * 100) : 0;
 
   return (
-    <div className="rounded-xl bg-card px-3 py-2">
+    <Link
+      href="/log"
+      aria-label="前往飲食紀錄"
+      title="飲食紀錄"
+      className="block rounded-xl bg-card px-3 py-2 text-left transition-colors hover:bg-muted">
       <div className="flex items-center gap-3">
         <div className="relative h-[120px] w-[120px] shrink-0">
           <svg
@@ -164,7 +168,7 @@ function CalorieRingBlock({
           ))}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 

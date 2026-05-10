@@ -8,8 +8,9 @@ import {
   type LogItemSnapshot,
   type LogSectionTab,
 } from '@/app/(main)/log/log-client';
-import { todayLocalISODate } from '@/lib/onboarding/date';
 import { getCachedAuthContext } from '@/lib/auth';
+import { todayLocalISODate } from '@/lib/onboarding/date';
+import { getCachedUserProfileCoreRow } from '@/lib/user-profile/cached-core-profile';
 
 function isoDateOk(s: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -94,18 +95,24 @@ export async function LogPageContent({
   const todayIso = todayLocalISODate();
   const isLogToday = activeDate === todayIso;
 
-  const [{ data: goal }, { data: rows }, { data: activityRows }, { data: vitalRow, error: vitalErr }] =
-    await Promise.all([
-      supabase
-        .from('user_goals')
-        .select('daily_cal_target')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle(),
-      supabase
-        .from('food_logs')
-        .select(
-          `
+  const [
+    { data: goal },
+    { data: rows },
+    { data: activityRows },
+    { data: vitalRow, error: vitalErr },
+    { data: profile, error: profileErr },
+    { data: priorWeightRow, error: priorWeightErr },
+  ] = await Promise.all([
+    supabase
+      .from('user_goals')
+      .select('daily_cal_target')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle(),
+    supabase
+      .from('food_logs')
+      .select(
+        `
       id,
       meal_type,
       method,
@@ -124,28 +131,44 @@ export async function LogPageContent({
         is_verified
       )
     `,
-        )
-        .eq('user_id', user.id)
-        .eq('date', activeDate)
-        .order('logged_at', { ascending: false }),
-      supabase
-        .from('activity_logs')
-        .select(
-          'id, logged_date, activity_type, duration_minutes, calories_est, notes',
-        )
-        .eq('user_id', user.id)
-        .eq('logged_date', activeDate)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('vital_logs')
-        .select('weight_kg, water_ml, sleep_hours')
-        .eq('user_id', user.id)
-        .eq('date', activeDate)
-        .maybeSingle(),
-    ]);
+      )
+      .eq('user_id', user.id)
+      .eq('date', activeDate)
+      .order('logged_at', { ascending: false }),
+    supabase
+      .from('activity_logs')
+      .select(
+        'id, logged_date, activity_type, duration_minutes, calories_est, notes',
+      )
+      .eq('user_id', user.id)
+      .eq('logged_date', activeDate)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('vital_logs')
+      .select('weight_kg, water_ml, sleep_hours')
+      .eq('user_id', user.id)
+      .eq('date', activeDate)
+      .maybeSingle(),
+    getCachedUserProfileCoreRow(supabase, user.id),
+    supabase
+      .from('vital_logs')
+      .select('weight_kg')
+      .eq('user_id', user.id)
+      .lt('date', activeDate)
+      .not('weight_kg', 'is', null)
+      .order('date', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   if (vitalErr) {
     throw new Error(vitalErr.message);
+  }
+  if (profileErr) {
+    throw new Error(profileErr.message);
+  }
+  if (priorWeightErr) {
+    throw new Error(priorWeightErr.message);
   }
 
   const initialLogs: FoodLogSnapshot[] = (rows ?? []).map((row) => ({
@@ -170,9 +193,24 @@ export async function LogPageContent({
 
 
 
+  const loggedWeightKg =
+    vitalRow?.weight_kg != null ? Number(vitalRow.weight_kg) : null;
+
+  let weightPrefillKg: number | null = null;
+  if (loggedWeightKg == null) {
+    if (priorWeightRow?.weight_kg != null) {
+      weightPrefillKg = Number(priorWeightRow.weight_kg);
+    } else if (profile?.weight_kg != null) {
+      const w = Number(profile.weight_kg);
+      if (Number.isFinite(w)) {
+        weightPrefillKg = w;
+      }
+    }
+  }
+
   const initialVital: LogVitalSnapshot = {
-    weightKg:
-      vitalRow?.weight_kg != null ? Number(vitalRow.weight_kg) : null,
+    weightKg: loggedWeightKg,
+    weightPrefillKg,
     waterMl:
       vitalRow?.water_ml != null
         ? Math.round(Number(vitalRow.water_ml))

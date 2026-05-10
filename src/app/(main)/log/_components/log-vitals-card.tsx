@@ -49,7 +49,11 @@ function parseWeightKgDraft(
   draft: string,
   fallbackKg: number | null,
 ): number | null {
-  const n = Number(draft);
+  const trimmed = draft.trim();
+  if (trimmed === "") {
+    return fallbackKg != null ? fallbackKg : null;
+  }
+  const n = Number(trimmed);
   if (Number.isFinite(n)) return n;
   if (fallbackKg != null) return fallbackKg;
   return null;
@@ -62,9 +66,18 @@ function formatSleepHoursLabel(h: number): string {
 }
 
 export interface LogVitalSnapshot {
+  /** 該日 `vital_logs` 已儲存的體重；無紀錄時為 null */
   weightKg: number | null;
+  /**
+   * 當 `weightKg` 為 null 時用於輸入預填：先前最近一次紀錄或個人檔案目前體重（未寫入該日 DB）
+   */
+  weightPrefillKg: number | null;
   waterMl: number;
   sleepHours: number | null;
+}
+
+function weightAdjustFallbackKg(v: LogVitalSnapshot): number | null {
+  return v.weightKg ?? v.weightPrefillKg ?? null;
 }
 
 export interface LogVitalsCardProps {
@@ -93,8 +106,12 @@ export function LogVitalsCard({
   const [pending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const [weightDraft, setWeightDraft] = useState(
-    initialVital.weightKg != null ? String(initialVital.weightKg) : "",
+  const [weightDraft, setWeightDraft] = useState(() =>
+    initialVital.weightKg != null
+      ? String(initialVital.weightKg)
+      : initialVital.weightPrefillKg != null
+        ? String(initialVital.weightPrefillKg)
+        : "",
   );
   const [sleepHoursLocal, setSleepHoursLocal] = useState(
     initialVital.sleepHours != null ? Number(initialVital.sleepHours) : 0,
@@ -102,12 +119,20 @@ export function LogVitalsCard({
 
   useEffect(() => {
     setWeightDraft(
-      initialVital.weightKg != null ? String(initialVital.weightKg) : "",
+      initialVital.weightKg != null
+        ? String(initialVital.weightKg)
+        : initialVital.weightPrefillKg != null
+          ? String(initialVital.weightPrefillKg)
+          : "",
     );
     setSleepHoursLocal(
       initialVital.sleepHours != null ? Number(initialVital.sleepHours) : 0,
     );
-  }, [initialVital.weightKg, initialVital.sleepHours]);
+  }, [
+    initialVital.weightKg,
+    initialVital.weightPrefillKg,
+    initialVital.sleepHours,
+  ]);
 
   function runAction(fn: () => Promise<{ error?: string }>) {
     setActionError(null);
@@ -125,10 +150,8 @@ export function LogVitalsCard({
     runAction(() => setSleepHoursForDateAction(dateIso, hours));
   }
 
-  const weightKgForAdjust = parseWeightKgDraft(
-    weightDraft,
-    initialVital.weightKg,
-  );
+  const weightFallbackKg = weightAdjustFallbackKg(initialVital);
+  const weightKgForAdjust = parseWeightKgDraft(weightDraft, weightFallbackKg);
 
   return (
     <div className="space-y-2.5">
@@ -156,10 +179,7 @@ export function LogVitalsCard({
                 aria-label={`體重減 ${BODY_INPUT_STEP} kg`}
                 disabled={pending || weightKgForAdjust === null}
                 onClick={() => {
-                  const base = parseWeightKgDraft(
-                    weightDraft,
-                    initialVital.weightKg,
-                  );
+                  const base = parseWeightKgDraft(weightDraft, weightFallbackKg);
                   if (base === null) return;
                   setWeightDraft(
                     formatBodyDraft(
@@ -199,17 +219,14 @@ export function LogVitalsCard({
                 aria-label={`體重加 ${BODY_INPUT_STEP} kg`}
                 disabled={pending}
                 onClick={() => {
-                  const base = parseWeightKgDraft(
-                    weightDraft,
-                    initialVital.weightKg,
-                  );
+                  const base = parseWeightKgDraft(weightDraft, weightFallbackKg);
+                  const seedKg =
+                    weightFallbackKg != null
+                      ? weightFallbackKg
+                      : WEIGHT_EMPTY_SEED_KG;
                   const start =
                     base ??
-                    clampHalfStep(
-                      WEIGHT_EMPTY_SEED_KG,
-                      WEIGHT_KG_MIN,
-                      WEIGHT_KG_MAX,
-                    );
+                    clampHalfStep(seedKg, WEIGHT_KG_MIN, WEIGHT_KG_MAX);
                   if (base === null) {
                     setWeightDraft(
                       formatBodyDraft(

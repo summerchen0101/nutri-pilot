@@ -1,4 +1,7 @@
 import type { Metadata, Viewport } from 'next';
+
+import { ScrollToTopOnPathname } from '@/components/layout/scroll-to-top-on-pathname';
+
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -21,6 +24,7 @@ export default function RootLayout({
   return (
     <html lang="zh-Hant" suppressHydrationWarning>
       <body className="min-h-screen antialiased" suppressHydrationWarning>
+        <ScrollToTopOnPathname />
         {children}
       </body>
     </html>
