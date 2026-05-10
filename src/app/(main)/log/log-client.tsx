@@ -337,9 +337,11 @@ function LogSectionTabs({
     <button
       key={tab}
       type="button"
+      role="tab"
+      aria-selected={active === tab}
       onClick={() => go(tab)}
       className={cn(
-        'flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] px-2 py-2 text-[13px] font-medium transition-colors',
+        'flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 py-2 text-[13px] font-medium transition-colors',
         active === tab
           ? 'bg-primary text-white'
           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
@@ -352,8 +354,9 @@ function LogSectionTabs({
 
   return (
     <div
-      className="flex gap-1 rounded-xl border-hairline border-border bg-card p-1"
+      className="flex w-full gap-2"
       role="tablist"
+      aria-label="紀錄類別"
     >
       {tabBtn('food', '飲食', FiCoffee)}
       {tabBtn('activity', '運動', FiActivity)}
@@ -868,9 +871,9 @@ export function LogClient({
         jobStatus !== 'error'));
 
   const mealPillPrimary =
-    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-hairline border-transparent';
+    'min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-transparent';
   const mealPillInactive =
-    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-hairline border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
+    'min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
 
   return (
     <div className="space-y-2.5">
@@ -1180,7 +1183,7 @@ export function LogClient({
                 type="button"
                 variant="outline"
                 className={cn(
-                  'h-10 shrink-0 rounded-full border-hairline px-4 py-0 text-[13px] font-medium',
+                  'min-h-9 h-9 shrink-0 rounded-full border-hairline px-4 py-0 text-[13px] font-medium',
                 )}
                 onClick={() => setFrequentOpen(true)}
               >
@@ -1387,7 +1390,7 @@ export function LogClient({
                           </div>
                           <button
                             type="button"
-                            className="shrink-0 self-stretch border-l-hairline border-border px-3 py-3 text-muted-foreground transition-colors hover:text-destructive"
+                            className="shrink-0 self-stretch px-3 py-3 text-muted-foreground transition-colors hover:text-destructive"
                             aria-label="刪除此筆紀錄"
                             onClick={(e) => {
                               e.stopPropagation();
