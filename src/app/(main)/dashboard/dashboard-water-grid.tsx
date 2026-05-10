@@ -192,7 +192,7 @@ export function DashboardWaterGrid({
               disabled={pending}
               onClick={() => onCellClick(i)}
               className={cn(
-                "aspect-square rounded-md border-[0.5px] border-border transition-colors",
+                "aspect-square rounded-md border-[0.5px] border-transparent transition-colors",
                 fullClass ?? "bg-card-opaque",
                 isPartial ? partialBorder : null,
               )}

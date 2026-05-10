@@ -59,7 +59,7 @@ function MacroCell({
   }, [displayValue, editing]);
 
   return (
-    <div className="relative rounded-[10px] border-[0.5px] border-border bg-[var(--color-background-secondary)] p-3">
+    <div className="relative rounded-[10px] bg-[var(--color-background-secondary)] p-3">
       {editing ? (
         <Input
           autoFocus
@@ -309,7 +309,7 @@ export function NutritionResultCard({
 
   const outerClass = embedded
     ? "mt-0 space-y-3"
-    : "mt-3 space-y-3 rounded-xl border-[0.5px] border-[var(--color-border-tertiary)] bg-card p-4";
+    : "mt-3 space-y-3 rounded-xl bg-card p-4";
 
   const busy = editMode ? editBusy : confirmBusy;
 

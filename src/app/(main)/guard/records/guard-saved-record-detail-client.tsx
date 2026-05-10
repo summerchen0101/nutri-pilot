@@ -37,7 +37,7 @@ export function GuardSavedRecordDetailClient({
   return (
     <>
       <div className="space-y-3">
-        <div className="rounded-xl border-[0.5px] border-border bg-card px-4 py-3">
+        <div className="rounded-xl bg-card px-4 py-3">
           <h1 className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0 text-[17px] font-semibold text-foreground">
             <span className="min-w-0 break-words">{name}</span>
             <GuardSavedRecordRenameButton
@@ -49,7 +49,7 @@ export function GuardSavedRecordDetailClient({
           <p className="mt-0.5 text-caption text-muted-foreground">儲存時間：{createdAtLabel}</p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border-[0.5px] border-border bg-card">
+        <div className="overflow-hidden rounded-xl bg-card">
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

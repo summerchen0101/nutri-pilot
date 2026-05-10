@@ -19,7 +19,7 @@ export default async function ShopSuccessPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-4">
       <PageHeader leading={<HeaderBackButton />} title="付款處理完成" />
-      <div className="rounded-xl border-[0.5px] border-border bg-card p-6 text-center">
+      <div className="rounded-xl bg-card p-6 text-center">
       <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
         感謝你的購買。若為訂閱方案，狀態會在幾秒內同步至「設定 → 我的訂閱」。
       </p>

@@ -91,7 +91,7 @@ export default async function GuardRecordsPage() {
             </p>
             <Link
               href="/guard"
-              className="inline-flex items-center rounded-full border-[0.5px] border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:bg-muted">
+              className="inline-flex items-center rounded-full bg-card px-3 py-1.5 text-[11px] font-medium text-foreground transition-colors hover:bg-muted">
               回守衛建立第一筆
             </Link>
           </CardContent>

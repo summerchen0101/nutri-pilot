@@ -88,7 +88,7 @@ export function CartView() {
         {lines.map((line) => (
           <li
             key={line.variantId}
-            className="rounded-xl border-[0.5px] border-border bg-card p-4">
+            className="rounded-xl bg-card p-4">
             <div className="flex justify-between gap-3">
               <div>
                 <p className="text-[13px] font-medium leading-snug text-foreground">

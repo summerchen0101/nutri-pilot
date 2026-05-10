@@ -13,7 +13,7 @@ export function MetricTile({ label, value, hint, className }: MetricTileProps) {
   return (
     <div
       className={cn(
-        "flex h-full min-w-0 flex-col rounded-[10px] border-[0.5px] border-border bg-card p-3",
+        "flex h-full min-w-0 flex-col rounded-[10px] bg-card p-3",
         className,
       )}>
       <p className="text-caption text-muted-foreground">{label}</p>

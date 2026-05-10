@@ -57,8 +57,8 @@
     --color-text-primary: #1e212b;
     --color-text-secondary: #4a4f63;
     --color-text-tertiary: #9298a8;
-    --color-border-tertiary: #e8e9ed;
-    --color-border-secondary: #d5d7de;
+    --color-border-tertiary: #dde0e6;
+    --color-border-secondary: #c8ccd5;
 
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
@@ -74,13 +74,13 @@
     --primary-light-panel: 146 39% 93.5% / var(--app-tint-surface-opacity);
     /* Steel blue-50 / blue-300 邊 — docs/09-ui-design.md */
     --steel-panel: 207 85% 94% / var(--app-tint-surface-opacity);
-    --steel-border: 210 72% 78% / 0.55;
+    --steel-border: 210 72% 76% / 0.62;
     --steel-panel-hover: 207 82% 91% / var(--app-tint-surface-opacity);
     --steel-text: #185fa5;
     --steel-accent: #378add;
     --muted: 96 11% 97% / var(--app-tint-surface-opacity);
     --muted-foreground: 215 16% 47%;
-    --border: 214 32% 91%;
+    --border: 214 28% 70%;
     --secondary: 96 11% 97% / var(--app-tint-surface-opacity);
     --secondary-foreground: 222 47% 11%;
     --destructive: 6 78% 57%;

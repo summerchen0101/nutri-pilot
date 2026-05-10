@@ -1,35 +1,38 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
-import { FiCamera } from 'react-icons/fi';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ShieldCheck } from "lucide-react";
+import { FiCamera } from "react-icons/fi";
 
-import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
-import { invokeLabelGuardRequestFromBrowser } from '@/lib/food/invoke-label-guard-request';
-import { LabelGuardReportBody } from '@/components/guard/label-guard-report-body';
+import { compressImageForUpload } from "@/lib/food/compress-image-for-upload";
+import { invokeLabelGuardRequestFromBrowser } from "@/lib/food/invoke-label-guard-request";
+import { LabelGuardReportBody } from "@/components/guard/label-guard-report-body";
 import {
   MAX_LABEL_GUARD_SAVED_NAME_LENGTH,
   MAX_LABEL_GUARD_SAVED_REPORTS,
-} from '@/lib/food/label-guard-saved';
-import { parseLabelGuardReportJson, type LabelGuardReport } from '@/lib/food/label-guard-report';
-import { createClient } from '@/lib/supabase/client';
-import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
-import type { Json } from '@/types/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from "@/lib/food/label-guard-saved";
+import {
+  parseLabelGuardReportJson,
+  type LabelGuardReport,
+} from "@/lib/food/label-guard-report";
+import { createClient } from "@/lib/supabase/client";
+import { BottomSheetShell } from "@/components/ui/bottom-sheet-shell";
+import type { Json } from "@/types/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-} from '@/components/ui/card';
-import { SectionHeading } from '@/components/ui/section-heading';
+} from "@/components/ui/card";
+import { SectionHeading } from "@/components/ui/section-heading";
 
 function getTodayYmd(): string {
   const d = new Date();
   const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -49,16 +52,16 @@ function applyGuardJobUpdate(
     setReportError: (s: string | null) => void;
   },
 ) {
-  const st = row.status ?? '';
+  const st = row.status ?? "";
   setters.setJobStatus(st);
-  if (st === 'ready') {
+  if (st === "ready") {
     const parsed = parseLabelGuardReportJson(row.result_json ?? null);
     setters.setReport(parsed);
-    setters.setReportError(parsed ? null : '無法解析分析結果');
+    setters.setReportError(parsed ? null : "無法解析分析結果");
     return;
   }
-  if (st === 'error') {
-    setters.setReportError(row.error_message ?? '分析失敗');
+  if (st === "error") {
+    setters.setReportError(row.error_message ?? "分析失敗");
     setters.setReport(null);
   }
 }
@@ -74,10 +77,10 @@ export function GuardLabelClient() {
   const [reportError, setReportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [detailTitle, setDetailTitle] = useState('');
-  const [detailBody, setDetailBody] = useState('');
+  const [detailTitle, setDetailTitle] = useState("");
+  const [detailBody, setDetailBody] = useState("");
   const [saveEditorOpen, setSaveEditorOpen] = useState(false);
-  const [savedName, setSavedName] = useState('');
+  const [savedName, setSavedName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveHint, setSaveHint] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -113,11 +116,11 @@ export function GuardLabelClient() {
     const channel = supabase
       .channel(`label-guard-job-${activeJobId}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'label_guard_jobs',
+          event: "UPDATE",
+          schema: "public",
+          table: "label_guard_jobs",
           filter: `id=eq.${activeJobId}`,
         },
         (payload) => {
@@ -148,16 +151,16 @@ export function GuardLabelClient() {
 
     async function pollOnce(): Promise<boolean> {
       const { data: row } = await supabase
-        .from('label_guard_jobs')
-        .select('status,result_json,error_message')
-        .eq('id', activeJobId)
+        .from("label_guard_jobs")
+        .select("status,result_json,error_message")
+        .eq("id", activeJobId)
         .maybeSingle();
 
       if (cancelled || !row) return false;
 
-      const st = row.status ?? '';
+      const st = row.status ?? "";
       applyUpdate(row);
-      return st === 'ready' || st === 'error';
+      return st === "ready" || st === "error";
     }
 
     let iv: number | undefined;
@@ -195,7 +198,7 @@ export function GuardLabelClient() {
     setReportError(null);
     setReport(null);
     setSaveEditorOpen(false);
-    setSavedName('');
+    setSavedName("");
     setSaveHint(null);
     setSaveError(null);
     setHint(null);
@@ -212,7 +215,7 @@ export function GuardLabelClient() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setReportError('未登入');
+      setReportError("未登入");
       return;
     }
 
@@ -222,34 +225,34 @@ export function GuardLabelClient() {
       uploadFile = await compressImageForUpload(file);
     } catch (e) {
       setBusy(false);
-      setReportError(e instanceof Error ? e.message : '圖片處理失敗');
+      setReportError(e instanceof Error ? e.message : "圖片處理失敗");
       return;
     }
 
     const ext =
-      uploadFile.name.split('.').pop()?.toLowerCase() ??
-      (uploadFile.type === 'image/png'
-        ? 'png'
-        : uploadFile.type === 'image/webp'
-          ? 'webp'
-          : 'jpg');
-    const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext)
-      ? ext === 'jpeg'
-        ? 'jpg'
+      uploadFile.name.split(".").pop()?.toLowerCase() ??
+      (uploadFile.type === "image/png"
+        ? "png"
+        : uploadFile.type === "image/webp"
+          ? "webp"
+          : "jpg");
+    const safeExt = ["jpg", "jpeg", "png", "webp"].includes(ext)
+      ? ext === "jpeg"
+        ? "jpg"
         : ext
-      : 'jpg';
+      : "jpg";
 
     const path = `${user.id}/label/${Date.now()}.${safeExt}`;
     const mime =
       uploadFile.type ||
-      (safeExt === 'png'
-        ? 'image/png'
-        : safeExt === 'webp'
-          ? 'image/webp'
-          : 'image/jpeg');
+      (safeExt === "png"
+        ? "image/png"
+        : safeExt === "webp"
+          ? "image/webp"
+          : "image/jpeg");
 
     const { error: upErr } = await supabase.storage
-      .from('label-guard-photos')
+      .from("label-guard-photos")
       .upload(path, uploadFile, {
         contentType: mime,
         upsert: false,
@@ -272,13 +275,13 @@ export function GuardLabelClient() {
     if (inv.hint) setHint(inv.hint);
     const jid = inv.jobId ?? null;
     setActiveJobId(jid);
-    setJobStatus('pending');
+    setJobStatus("pending");
 
     if (jid) {
       const { data: row } = await supabase
-        .from('label_guard_jobs')
-        .select('status,result_json,error_message')
-        .eq('id', jid)
+        .from("label_guard_jobs")
+        .select("status,result_json,error_message")
+        .eq("id", jid)
         .maybeSingle();
 
       if (row) applyUpdate(row);
@@ -291,8 +294,8 @@ export function GuardLabelClient() {
     (busy ||
       (!!activeJobId &&
         jobStatus !== null &&
-        jobStatus !== 'ready' &&
-        jobStatus !== 'error'));
+        jobStatus !== "ready" &&
+        jobStatus !== "error"));
 
   function openDetailSheet(title: string, body: string) {
     setDetailTitle(title);
@@ -312,7 +315,7 @@ export function GuardLabelClient() {
     if (!report) return;
     const name = savedName.trim();
     if (!name) {
-      setSaveError('請輸入名稱');
+      setSaveError("請輸入名稱");
       return;
     }
     if (name.length > MAX_LABEL_GUARD_SAVED_NAME_LENGTH) {
@@ -332,14 +335,14 @@ export function GuardLabelClient() {
 
     if (userErr || !user) {
       setSaving(false);
-      setSaveError('未登入');
+      setSaveError("未登入");
       return;
     }
 
     const { count, error: countErr } = await supabase
-      .from('label_guard_saved_reports')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id);
+      .from("label_guard_saved_reports")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
 
     if (countErr) {
       setSaving(false);
@@ -349,12 +352,12 @@ export function GuardLabelClient() {
 
     if ((count ?? 0) >= MAX_LABEL_GUARD_SAVED_REPORTS) {
       setSaving(false);
-      setSaveError('最多 5 筆，請先刪除舊紀錄');
+      setSaveError("最多 5 筆，請先刪除舊紀錄");
       return;
     }
 
     const { error: insertErr } = await supabase
-      .from('label_guard_saved_reports')
+      .from("label_guard_saved_reports")
       .insert({
         user_id: user.id,
         job_id: activeJobId,
@@ -369,169 +372,168 @@ export function GuardLabelClient() {
     }
 
     setSaveEditorOpen(false);
-    setSaveHint('已儲存到個人紀錄');
+    setSaveHint("已儲存到個人紀錄");
   }
 
   return (
     <>
-    <Card className="min-w-0 overflow-hidden">
-      <CardHeader className="pb-2">
-        <SectionHeading
-          icon={ShieldCheck}
-          as="h3"
-          className="leading-none tracking-tight"
-        >
-          食品標示與食安分析
-        </SectionHeading>
-        <CardDescription>
-          拍攝成分與營養標示，由食品安全守衛產生分級警示與族群提示（辨識僅供參考）。
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="rounded-lg border-[0.5px] border-orange-600/40 bg-orange-50 px-3 py-2 text-[11px] leading-snug text-orange-700">
-          本服務非醫療診斷；嬰幼兒、慢性病或過敏請以產品標示與醫師建議為準。
-        </p>
+      <Card className="min-w-0 overflow-hidden">
+        <CardHeader className="pb-2">
+          <SectionHeading
+            icon={ShieldCheck}
+            as="h3"
+            className="leading-none tracking-tight">
+            食品標示與食安分析
+          </SectionHeading>
+          <CardDescription>
+            拍攝成分與營養標示，由食品安全守衛產生分級警示與族群提示（辨識僅供參考）。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="rounded-lg border-[0.5px] border-orange-600/40 bg-orange-50 px-3 py-2 text-[11px] leading-snug text-orange-700">
+            本服務非醫療診斷；嬰幼兒、慢性病或過敏請以產品標示與醫師建議為準。
+          </p>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0] ?? null;
-            e.target.value = '';
-            void onFile(f);
-          }}
-        />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              e.target.value = "";
+              void onFile(f);
+            }}
+          />
 
-        {!previewUrl ? (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-white/25 bg-primary py-8 text-white transition-colors active:bg-primary-dark">
-            <FiCamera className="h-8 w-8 shrink-0 text-white" aria-hidden />
-            <span className="text-[13px] font-medium text-white">
-              拍攝或選擇相片
-            </span>
-          </button>
-        ) : (
-          <div className="relative w-full overflow-hidden rounded-xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={previewUrl}
-              alt="標籤預覽"
-              className="max-h-56 w-full object-contain"
-            />
+          {!previewUrl ? (
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="absolute right-2 top-2 rounded-full bg-[#1E212B]/70 px-3 py-1 text-[11px] text-white">
-              重新選擇
+              className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-white/25 bg-primary py-8 text-white transition-colors active:bg-primary-dark">
+              <FiCamera className="h-8 w-8 shrink-0 text-white" aria-hidden />
+              <span className="text-[13px] font-medium text-white">
+                拍攝或選擇相片
+              </span>
             </button>
-          </div>
-        )}
+          ) : (
+            <div className="relative w-full overflow-hidden rounded-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewUrl}
+                alt="標籤預覽"
+                className="max-h-56 w-full object-contain"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute right-2 top-2 rounded-full bg-[#1E212B]/70 px-3 py-1 text-[11px] text-white">
+                重新選擇
+              </button>
+            </div>
+          )}
 
-        {busy ? (
-          <p className="text-[13px] text-muted-foreground">上傳並排入分析…</p>
-        ) : null}
-        {hint ? <p className="text-[11px] text-amber-600">{hint}</p> : null}
+          {busy ? (
+            <p className="text-[13px] text-muted-foreground">上傳並排入分析…</p>
+          ) : null}
+          {hint ? <p className="text-[11px] text-amber-600">{hint}</p> : null}
 
-        {waiting ? (
-          <div className="space-y-2 rounded-xl border-[0.5px] border-border bg-card p-4">
-            <div className="animate-pulse h-4 w-1/3 rounded-full bg-muted" />
-            <p className="text-center text-[11px] text-muted-foreground">
-              AI 分析標示中…
-            </p>
-          </div>
-        ) : null}
+          {waiting ? (
+            <div className="space-y-2 rounded-xl bg-card p-4">
+              <div className="animate-pulse h-4 w-1/3 rounded-full bg-muted" />
+              <p className="text-center text-[11px] text-muted-foreground">
+                AI 分析標示中…
+              </p>
+            </div>
+          ) : null}
 
-        {reportError ? (
-          <p className="text-[13px] text-destructive">{reportError}</p>
-        ) : null}
+          {reportError ? (
+            <p className="text-[13px] text-destructive">{reportError}</p>
+          ) : null}
 
-        {report ? (
-          <>
-            <LabelGuardReportBody
-              report={report}
-              onOpenDetail={(title, body) => openDetailSheet(title, body)}
-            />
+          {report ? (
+            <>
+              <LabelGuardReportBody
+                report={report}
+                onOpenDetail={(title, body) => openDetailSheet(title, body)}
+              />
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full border-[0.5px]"
-              onClick={() => {
-                clearPreview();
-                setReport(null);
-                setActiveJobId(null);
-                setJobStatus(null);
-                setReportError(null);
-              }}>
-              清除並重新拍攝
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-[0.5px]"
+                onClick={() => {
+                  clearPreview();
+                  setReport(null);
+                  setActiveJobId(null);
+                  setJobStatus(null);
+                  setReportError(null);
+                }}>
+                清除並重新拍攝
+              </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full border-[0.5px]"
-              onClick={openSaveEditor}>
-              儲存到個人紀錄
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-[0.5px]"
+                onClick={openSaveEditor}>
+                儲存到個人紀錄
+              </Button>
 
-            {saveError && !saveEditorOpen ? (
-              <p className="text-caption text-destructive">{saveError}</p>
-            ) : null}
-            {saveHint ? (
-              <p className="text-caption text-primary">{saveHint}</p>
-            ) : null}
-          </>
-        ) : null}
-      </CardContent>
-    </Card>
+              {saveError && !saveEditorOpen ? (
+                <p className="text-caption text-destructive">{saveError}</p>
+              ) : null}
+              {saveHint ? (
+                <p className="text-caption text-primary">{saveHint}</p>
+              ) : null}
+            </>
+          ) : null}
+        </CardContent>
+      </Card>
 
-    <BottomSheetShell
-      open={detailOpen}
-      title={detailTitle}
-      onClose={() => setDetailOpen(false)}>
-      <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-foreground">
-        {detailBody}
-      </p>
-    </BottomSheetShell>
-
-    <BottomSheetShell
-      open={saveEditorOpen}
-      title="儲存到個人紀錄"
-      onClose={() => setSaveEditorOpen(false)}>
-      <div className="space-y-2 pb-3">
-        <label
-          htmlFor="saved-report-name"
-          className="text-[11px] font-medium text-muted-foreground">
-          紀錄名稱（可修改）
-        </label>
-        <Input
-          id="saved-report-name"
-          value={savedName}
-          maxLength={MAX_LABEL_GUARD_SAVED_NAME_LENGTH}
-          onChange={(e) => setSavedName(e.target.value)}
-          className="text-[13px]"
-          placeholder="輸入紀錄名稱"
-        />
-        <p className="text-[11px] text-muted-foreground">
-          {savedName.trim().length}/{MAX_LABEL_GUARD_SAVED_NAME_LENGTH}
+      <BottomSheetShell
+        open={detailOpen}
+        title={detailTitle}
+        onClose={() => setDetailOpen(false)}>
+        <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-foreground">
+          {detailBody}
         </p>
-        {saveError ? (
-          <p className="text-[11px] text-destructive">{saveError}</p>
-        ) : null}
-      </div>
-      <button
-        type="button"
-        disabled={saving}
-        className="flex min-h-11 w-full items-center justify-center rounded-[10px] bg-shadow-grey py-[11px] text-[13px] font-medium text-white disabled:opacity-60"
-        onClick={() => void saveToPersonalRecord()}>
-        {saving ? '儲存中…' : '儲存'}
-      </button>
-    </BottomSheetShell>
+      </BottomSheetShell>
+
+      <BottomSheetShell
+        open={saveEditorOpen}
+        title="儲存到個人紀錄"
+        onClose={() => setSaveEditorOpen(false)}>
+        <div className="space-y-2 pb-3">
+          <label
+            htmlFor="saved-report-name"
+            className="text-[11px] font-medium text-muted-foreground">
+            紀錄名稱（可修改）
+          </label>
+          <Input
+            id="saved-report-name"
+            value={savedName}
+            maxLength={MAX_LABEL_GUARD_SAVED_NAME_LENGTH}
+            onChange={(e) => setSavedName(e.target.value)}
+            className="text-[13px]"
+            placeholder="輸入紀錄名稱"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            {savedName.trim().length}/{MAX_LABEL_GUARD_SAVED_NAME_LENGTH}
+          </p>
+          {saveError ? (
+            <p className="text-[11px] text-destructive">{saveError}</p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          disabled={saving}
+          className="flex min-h-11 w-full items-center justify-center rounded-[10px] bg-shadow-grey py-[11px] text-[13px] font-medium text-white disabled:opacity-60"
+          onClick={() => void saveToPersonalRecord()}>
+          {saving ? "儲存中…" : "儲存"}
+        </button>
+      </BottomSheetShell>
     </>
   );
 }

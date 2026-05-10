@@ -383,7 +383,7 @@ export function OnboardingWizard({
   }
 
   return (
-    <Card className="border-slate-200 shadow-md">
+    <Card className="shadow-md">
       <CardHeader>
         <p className="text-body font-medium text-slate-500">
           步驟 {step} / {TOTAL_STEPS}

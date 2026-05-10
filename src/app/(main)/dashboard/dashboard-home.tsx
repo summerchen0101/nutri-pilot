@@ -85,7 +85,7 @@ function CalorieRingBlock({
     cap > 0 ? Math.min(100, (v / cap) * 100) : 0;
 
   return (
-    <div className="rounded-xl border-[0.5px] border-border bg-card px-3 py-2">
+    <div className="rounded-xl bg-card px-3 py-2">
       <div className="flex items-center gap-3">
         <div className="relative h-[120px] w-[120px] shrink-0">
           <svg
@@ -266,7 +266,7 @@ function WeeklyTrendCard({
     <SectionCard>
       <SectionHeading icon={TrendingUp}>本週趨勢</SectionHeading>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <div className="rounded-[10px] border-[0.5px] border-border bg-secondary/40 p-3">
+        <div className="rounded-[10px] bg-secondary/40 p-3">
           <p className="text-[11px] text-muted-foreground">體重（7 日）</p>
           <div className="mt-2 h-14">
             {weightPoints ? (
@@ -290,7 +290,7 @@ function WeeklyTrendCard({
               : "—"}
           </p>
         </div>
-        <div className="rounded-[10px] border-[0.5px] border-border bg-secondary/40 p-3">
+        <div className="rounded-[10px] bg-secondary/40 p-3">
           <p className="text-[11px] text-muted-foreground">熱量（7 日）</p>
           <div className="mt-2 flex h-14 items-end gap-1">
             {weeklyKcal.map((row) => (
@@ -366,7 +366,7 @@ export function RecommendationRail({
           <Link
             key={product.id}
             href={`/shop/${product.id}`}
-            className="flex w-[146px] shrink-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-border bg-card">
+            className="flex w-[146px] shrink-0 flex-col overflow-hidden rounded-xl bg-card">
             <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
               {product.imageUrl ? (
                 <Image
@@ -450,7 +450,7 @@ export function WeeklyPopularBrandsRail({
           <Link
             key={brand.id}
             href={`/shop?brand=${encodeURIComponent(brand.slug)}`}
-            className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border-[0.5px] border-border bg-card p-2 transition-colors hover:bg-muted"
+            className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-card p-2 transition-colors hover:bg-muted"
             aria-label={brand.name}>
             <div className="relative h-11 w-11 overflow-hidden rounded-full bg-secondary">
               {brand.logoUrl ? (
@@ -567,7 +567,7 @@ export function DashboardHome({
   }
 
   const quickActionClass =
-    "flex h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border-[0.5px] border-border bg-card px-1 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
+    "flex h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border-[0.5px] border-transparent bg-card px-1 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
 
   const quickIconClass = "h-[18px] w-[18px] shrink-0 text-primary";
 
@@ -647,7 +647,7 @@ export function DashboardHome({
         <button
           type="button"
           onClick={openWeightDialog}
-          className="flex min-h-[112px] flex-col rounded-[10px] border-[0.5px] border-border bg-card p-2.5 text-left transition-colors hover:bg-muted">
+          className="flex min-h-[112px] flex-col rounded-[10px] bg-card p-2.5 text-left transition-colors hover:bg-muted">
           <p className="text-[15px] font-medium text-foreground">體重</p>
           <p className="mt-1 tabular-nums text-heading-page leading-tight text-foreground">
             {latestWeightKg != null ? (
@@ -701,7 +701,7 @@ export function DashboardHome({
 
         <Link
           href="/log?tab=activity"
-          className="flex min-h-[112px] flex-col rounded-[10px] border-[0.5px] border-border bg-card p-2.5 text-left transition-colors hover:bg-muted">
+          className="flex min-h-[112px] flex-col rounded-[10px] bg-card p-2.5 text-left transition-colors hover:bg-muted">
           <p className="text-[15px] font-medium text-foreground">運動消耗</p>
           <p className="mt-1 tabular-nums text-heading-page leading-tight text-primary">
             {activityKcalEstToday > 0 ? (
@@ -731,7 +731,7 @@ export function DashboardHome({
         </Link>
       </div>
 
-      <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+      <section className="rounded-xl bg-card p-4">
         <DashboardWaterGrid
           initialWaterMl={waterMlToday}
           embedded
@@ -882,7 +882,7 @@ export function DashboardHome({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="weight-dialog-title"
-                className="w-full max-w-sm rounded-2xl border-[0.5px] border-border bg-card p-5"
+                className="w-full max-w-sm rounded-2xl bg-card p-5"
                 onClick={(e) => e.stopPropagation()}>
                 <h2
                   id="weight-dialog-title"

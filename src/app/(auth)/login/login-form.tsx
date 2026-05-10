@@ -46,7 +46,7 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md border-slate-200 shadow-md">
+    <Card className="w-full max-w-md shadow-md">
       <CardHeader className="space-y-1">
         <h2 className="text-heading-screen text-foreground">登入 Nutri Guard</h2>
         <CardDescription>

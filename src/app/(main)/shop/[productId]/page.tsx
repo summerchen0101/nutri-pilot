@@ -111,7 +111,7 @@ export default async function ShopProductPage({ params }: PageProps) {
         }
       />
 
-      <section className="overflow-hidden rounded-xl border-[0.5px] border-border bg-card">
+      <section className="overflow-hidden rounded-xl bg-card">
         <div className="relative aspect-[4/3] w-full bg-muted">
           {product.image_url ? (
             <Image
@@ -164,11 +164,7 @@ export default async function ShopProductPage({ params }: PageProps) {
               key={i}
               className="flex gap-2 text-[13px] leading-relaxed text-foreground">
               <FitReasonTypeIcon type={r.type} />
-              <span
-                className={cnReason(
-                  r.type,
-                  "min-w-0 flex-1",
-                )}>
+              <span className={cnReason(r.type, "min-w-0 flex-1")}>
                 {r.text}
               </span>
             </li>
@@ -176,7 +172,7 @@ export default async function ShopProductPage({ params }: PageProps) {
         </ul>
       </section>
 
-      <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+      <section className="rounded-xl bg-card p-4">
         <SectionHeading icon={Apple}>營養標示（每份）</SectionHeading>
         <table className="mt-2 w-full text-[13px]">
           <tbody>
@@ -221,7 +217,7 @@ export default async function ShopProductPage({ params }: PageProps) {
         </p>
       </section>
 
-      <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+      <section className="rounded-xl bg-card p-4">
         <SectionHeading icon={Leaf}>成分與產地</SectionHeading>
         <p className="mt-2 text-[13px] leading-relaxed text-foreground">
           {product.ingredients ?? "—"}
@@ -231,9 +227,7 @@ export default async function ShopProductPage({ params }: PageProps) {
             className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
             aria-hidden
           />
-          <span>
-            產地：{product.origin ?? "—"}
-          </span>
+          <span>產地：{product.origin ?? "—"}</span>
         </p>
         {(product.cert_tags ?? []).length > 0 ? (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -249,7 +243,7 @@ export default async function ShopProductPage({ params }: PageProps) {
       </section>
 
       {brand?.description ? (
-        <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+        <section className="rounded-xl bg-card p-4">
           <SectionHeading icon={BookOpen}>品牌故事</SectionHeading>
           <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
             {brand.description}
@@ -275,7 +269,7 @@ export default async function ShopProductPage({ params }: PageProps) {
                 <Link
                   key={sp.id}
                   href={`/shop/${sp.id}`}
-                  className="flex w-36 shrink-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-border bg-card">
+                  className="flex w-36 shrink-0 flex-col overflow-hidden rounded-xl bg-card">
                   <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
                     {sp.image_url ? (
                       <Image
@@ -307,11 +301,11 @@ export default async function ShopProductPage({ params }: PageProps) {
 }
 
 function truncateProductIntro(description: string | null): string {
-  const trimmed = (description ?? '').trim();
-  if (trimmed.length === 0) return '尚無商品簡介';
+  const trimmed = (description ?? "").trim();
+  if (trimmed.length === 0) return "尚無商品簡介";
   const chars = Array.from(trimmed);
   if (chars.length <= MAX_PRODUCT_INTRO_CHARS) return trimmed;
-  return `${chars.slice(0, MAX_PRODUCT_INTRO_CHARS).join('')}…`;
+  return `${chars.slice(0, MAX_PRODUCT_INTRO_CHARS).join("")}…`;
 }
 
 function BadgeRow({
@@ -348,8 +342,7 @@ function FitReasonTypeIcon({
 }: {
   type: "positive" | "info" | "caution";
 }) {
-  const className =
-    "mt-0.5 h-4 w-4 shrink-0 text-muted-foreground";
+  const className = "mt-0.5 h-4 w-4 shrink-0 text-muted-foreground";
   if (type === "positive") {
     return <CircleCheck className={className} aria-hidden />;
   }

@@ -97,7 +97,7 @@ export function ProductDetailClient({ product }: Props) {
   }
 
   return (
-    <section className="rounded-xl border-[0.5px] border-border bg-card p-4">
+    <section className="rounded-xl bg-card p-4">
       <SectionHeading icon={ShoppingBag}>規格與購買</SectionHeading>
 
       <div className="mt-3">

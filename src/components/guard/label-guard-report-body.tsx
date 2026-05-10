@@ -42,7 +42,7 @@ export function LabelGuardReportBody({
   return (
     <div
       className={cn(
-        'space-y-4 rounded-xl border-[0.5px] border-border bg-card p-4',
+        'space-y-4 rounded-xl bg-card p-4',
         className,
       )}>
       <p className="text-[11px] font-medium text-muted-foreground">
@@ -103,7 +103,7 @@ export function LabelGuardReportBody({
             {report.audience_advice.map((a, i) => (
               <li
                 key={`${a.segment}-${i}`}
-                className="rounded-lg border-[0.5px] border-border bg-card px-3 py-2 text-[13px]">
+                className="rounded-lg bg-card px-3 py-2 text-[13px]">
                 <span className="font-medium text-foreground">
                   {audienceSegmentLabelZh(a.segment)}：
                 </span>
@@ -122,7 +122,7 @@ export function LabelGuardReportBody({
               <li key={`${r.name}-${i}`}>
                 <button
                   type="button"
-                  className="w-full rounded-lg border-[0.5px] border-border bg-card px-2.5 py-2 text-left text-[13px] transition-colors active:bg-secondary"
+                  className="w-full rounded-lg bg-card px-2.5 py-2 text-left text-[13px] transition-colors active:bg-secondary"
                   onClick={() => {
                     const { title, body } = resolveRiskItemExplanation(
                       r.name,

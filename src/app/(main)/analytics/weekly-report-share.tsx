@@ -80,7 +80,7 @@ export function WeeklyReportShare(props: {
 
       <div
         ref={cardRef}
-        className="rounded-xl border-[0.5px] border-border bg-card p-4 shadow-sm">
+        className="rounded-xl bg-card p-4 shadow-sm">
         <p className="text-caption uppercase tracking-wide text-muted-foreground">
           Weekly snapshot
         </p>

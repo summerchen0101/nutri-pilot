@@ -878,7 +878,7 @@ export function LogClient({
         <LogSectionTabs date={date} active={sectionTab} />
       ) : null}
 
-      <div className="rounded-xl border-[0.5px] border-border bg-card px-4 py-3">
+      <div className="rounded-xl bg-card px-4 py-3">
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] text-muted-foreground">今日已攝取</p>
@@ -922,7 +922,7 @@ export function LogClient({
               {prefillDraft.map((it, idx) => (
                 <li
                   key={`prefill-${idx}`}
-                  className="flex items-start gap-2 rounded-xl border-[0.5px] border-border bg-card p-3"
+                  className="flex items-start gap-2 rounded-xl bg-card p-3"
                 >
                   <div className="min-w-0 flex-1 space-y-2">
                     <label className="block text-[11px] text-muted-foreground">
@@ -1005,7 +1005,7 @@ export function LogClient({
                   {extraDraftLines.map((line, idx) => (
                     <li
                       key={`extra-${idx}`}
-                      className="flex items-start gap-2 rounded-xl border-[0.5px] border-border bg-card p-3"
+                      className="flex items-start gap-2 rounded-xl bg-card p-3"
                     >
                       <div className="min-w-0 flex-1 space-y-2">
                         <p className="text-[13px] font-medium text-foreground">
@@ -1077,7 +1077,7 @@ export function LogClient({
             </Button>
 
             {showExtraSearch ? (
-              <div className="space-y-3 rounded-xl border-[0.5px] border-border bg-card p-4">
+              <div className="space-y-3 rounded-xl bg-card p-4">
                 <p className="text-[13px] text-muted-foreground">
                   餐次：{MEAL_LABEL[prefillFromMeal.mealType]}
                 </p>
@@ -1257,7 +1257,7 @@ export function LogClient({
               : null}
 
               {photoWaitingAnalysis ?
-                <div className="space-y-3 rounded-xl border-[0.5px] border-neutral-border-tertiary bg-card p-4">
+                <div className="space-y-3 rounded-xl bg-card p-4">
                   <div className="animate-pulse space-y-2">
                     <div className="h-4 w-1/3 rounded-full bg-neutral-border-tertiary" />
                     <div className="h-3 w-1/2 rounded-full bg-neutral-border-tertiary" />
@@ -1318,7 +1318,7 @@ export function LogClient({
                   <ul className="mt-2 space-y-2.5">
                     {mealLogs.map((log) => (
                       <li key={log.id}>
-                        <div className="flex overflow-hidden rounded-xl border-[0.5px] border-border bg-card">
+                        <div className="flex overflow-hidden rounded-xl bg-card">
                           <div className="min-w-0 flex-1 divide-y-[0.5px] divide-border">
                             {(log.food_log_items ?? []).map((it) => (
                               <div key={it.id} className="flex flex-col">
@@ -1428,7 +1428,7 @@ export function LogClient({
                 <button
                   key={row.snapshot.id}
                   type="button"
-                  className="w-full rounded-xl border-[0.5px] border-border bg-card px-3 py-3 text-left transition-colors hover:bg-muted/40"
+                  className="w-full rounded-xl bg-card px-3 py-3 text-left transition-colors hover:bg-muted/40"
                   onClick={() => pickFrequentItem(row)}
                 >
                   <div className="flex items-start justify-between gap-2">

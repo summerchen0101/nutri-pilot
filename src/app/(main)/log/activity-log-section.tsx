@@ -256,7 +256,7 @@ export function ActivityLogSection({
             {rows.map((r) => (
               <li
                 key={r.id}
-                className="flex items-center gap-3 rounded-xl border-[0.5px] border-border bg-card px-3 py-2.5">
+                className="flex items-center gap-3 rounded-xl bg-card px-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-foreground">
                     {ACTIVITY_TYPE_LABEL[r.activity_type as ActivityType] ??
