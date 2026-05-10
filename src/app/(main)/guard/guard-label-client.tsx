@@ -409,9 +409,9 @@ export function GuardLabelClient() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-primary/30 bg-primary-light py-8 transition-colors active:bg-secondary">
-            <FiCamera className="h-8 w-8 text-primary-foreground" aria-hidden />
-            <span className="text-[13px] font-medium text-primary-foreground">
+            className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-white/25 bg-primary py-8 text-white transition-colors active:bg-primary-dark">
+            <FiCamera className="h-8 w-8 shrink-0 text-white" aria-hidden />
+            <span className="text-[13px] font-medium text-white">
               拍攝或選擇相片
             </span>
           </button>

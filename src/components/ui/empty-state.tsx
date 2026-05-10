@@ -19,7 +19,7 @@ export function EmptyState({ message, actionLabel, actionHref, action }: EmptySt
       ) : actionHref && actionLabel ? (
         <Link
           href={actionHref}
-          className="mt-4 inline-flex min-h-11 items-center justify-center rounded-[10px] border-[1.5px] border-primary px-[18px] py-[11px] text-body font-medium text-primary transition-colors duration-150 ease-out hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="mt-4 inline-flex min-h-11 items-center justify-center rounded-[10px] border-[1.5px] border-primary px-[18px] py-[11px] text-body font-medium text-primary transition-colors duration-150 ease-out hover:bg-primary hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           {actionLabel}
         </Link>

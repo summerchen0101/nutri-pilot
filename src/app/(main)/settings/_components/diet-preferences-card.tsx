@@ -55,7 +55,7 @@ export function DietPreferencesCard({
         >
           <span
             className={[
-              'absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-card shadow transition-transform',
+              'absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-neutral-bg-primary shadow transition-transform',
               tracksGlycemicConcern ? 'translate-x-[18px]' : 'translate-x-0',
             ].join(' ')}
           />

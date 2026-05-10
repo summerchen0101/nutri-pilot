@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   ChevronUp,
   Dumbbell,
@@ -11,7 +11,7 @@ import {
   Target,
   UtensilsCrossed,
   type LucideIcon,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -27,28 +27,28 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from 'recharts';
+} from "recharts";
 
-import { HeaderBackButton } from '@/components/layout/header-back-button';
-import { PageHeader } from '@/components/layout/page-header';
-import { EmptyState } from '@/components/ui/empty-state';
-import { SectionCard } from '@/components/ui/section-card';
-import { SectionHeading } from '@/components/ui/section-heading';
-import { SegmentedTabs } from '@/components/ui/segmented-tabs';
+import { HeaderBackButton } from "@/components/layout/header-back-button";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SectionCard } from "@/components/ui/section-card";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 
-import { WeeklyReportShare } from '@/app/(main)/analytics/weekly-report-share';
-import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
+import { WeeklyReportShare } from "@/app/(main)/analytics/weekly-report-share";
+import { activityTypeLabelZh } from "@/lib/activity/activity-type-labels";
 import {
   addCalendarDaysISO,
   iterateISODatesInclusive,
-} from '@/lib/onboarding/date';
-import { cn } from '@/lib/utils/cn';
+} from "@/lib/onboarding/date";
+import { cn } from "@/lib/utils/cn";
 
-export type AnalyticsPeriod = 'week' | 'month' | 'all';
+export type AnalyticsPeriod = "week" | "month" | "all";
 
 export type WeeklyInsightPayload = {
   createdAt: string;
-  items: { type: 'positive' | 'warning' | 'info'; text: string }[];
+  items: { type: "positive" | "warning" | "info"; text: string }[];
 };
 
 export type ActivityByDateEntry = {
@@ -117,17 +117,17 @@ function macroTargetsFromGoal(
 }
 
 function shortTickLabel(iso: string): string {
-  const [, m, d] = iso.split('-').map(Number);
+  const [, m, d] = iso.split("-").map(Number);
   return `${m}/${d}`;
 }
 
 function formatCreatedAt(iso: string): string {
   try {
-    return new Intl.DateTimeFormat('zh-Hant', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Intl.DateTimeFormat("zh-Hant", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(new Date(iso));
   } catch {
     return iso;
@@ -135,37 +135,38 @@ function formatCreatedAt(iso: string): string {
 }
 
 function scrollToChart(id: string) {
-  const el = typeof document !== 'undefined' ? document.getElementById(id) : null;
-  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const el =
+    typeof document !== "undefined" ? document.getElementById(id) : null;
+  el?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function scrollToTop() {
-  if (typeof window === 'undefined') return;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (typeof window === "undefined") return;
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 const analyticsQuickNavButtonClass = cn(
-  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-primary bg-transparent px-2 text-caption font-medium text-primary',
-  'hover:bg-primary/10 hover:text-primary-dark',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
+  "inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-primary bg-transparent px-2 text-caption font-medium text-primary",
+  "hover:bg-primary/10 hover:text-primary-dark",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
 );
 
 const analyticsQuickAiNavButtonClass = cn(
-  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-steel-border bg-steel-panel px-2 text-caption font-medium text-steel-accent',
-  'hover:border-steel-accent/70 hover:bg-steel-hover hover:text-steel-foreground',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-steel-accent/25',
+  "inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-steel-border bg-steel-panel px-2 text-caption font-medium text-steel-accent",
+  "hover:border-steel-accent/70 hover:bg-steel-hover hover:text-steel-foreground",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-steel-accent/25",
 );
 
 const analyticsFloatingNavButtonClass = cn(
-  'flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-primary border-r-0 bg-card pl-2.5 pr-0 text-primary shadow-md',
-  'hover:bg-primary/10 hover:text-primary-dark',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2',
+  "flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-primary border-r-0 bg-card pl-2.5 pr-0 text-primary shadow-md",
+  "hover:bg-primary/10 hover:text-primary-dark",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2",
 );
 
 const analyticsFloatingAiNavButtonClass = cn(
-  'flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-steel-border border-r-0 bg-steel-panel pl-2.5 pr-0 text-steel-accent shadow-md',
-  'hover:border-steel-accent/70 hover:bg-steel-hover hover:text-steel-foreground',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-steel-accent/25 focus-visible:ring-offset-2',
+  "flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-steel-border border-r-0 bg-steel-panel pl-2.5 pr-0 text-steel-accent shadow-md",
+  "hover:border-steel-accent/70 hover:bg-steel-hover hover:text-steel-foreground",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-steel-accent/25 focus-visible:ring-offset-2",
 );
 
 type AnalyticsMainChartNav = {
@@ -179,45 +180,41 @@ type AnalyticsMainChartNav = {
 
 const ANALYTICS_MAIN_CHARTS: AnalyticsMainChartNav[] = [
   {
-    chartId: 'analytics-chart-weight',
-    ariaLabel: '捲動至：體重趨勢',
-    shortLabel: '體重',
-    heading: '體重趨勢',
-    subtitle: '單位 · kg',
+    chartId: "analytics-chart-weight",
+    ariaLabel: "捲動至：體重趨勢",
+    shortLabel: "體重",
+    heading: "體重趨勢",
+    subtitle: "單位 · kg",
     Icon: Scale,
   },
   {
-    chartId: 'analytics-chart-calories',
-    ariaLabel: '捲動至：每日熱量',
-    shortLabel: '熱量',
-    heading: '每日熱量',
-    subtitle: '依紀錄加總 · kcal',
+    chartId: "analytics-chart-calories",
+    ariaLabel: "捲動至：每日熱量",
+    shortLabel: "熱量",
+    heading: "每日熱量",
+    subtitle: "依紀錄加總 · kcal",
     Icon: UtensilsCrossed,
   },
   {
-    chartId: 'analytics-chart-activity',
-    ariaLabel: '捲動至：每日運動時間',
-    shortLabel: '運動',
-    heading: '每日運動時間',
-    subtitle: '依紀錄加總 · 分鐘',
+    chartId: "analytics-chart-activity",
+    ariaLabel: "捲動至：每日運動時間",
+    shortLabel: "運動",
+    heading: "每日運動時間",
+    subtitle: "依紀錄加總 · 分鐘",
     Icon: Dumbbell,
   },
   {
-    chartId: 'analytics-chart-nutrients',
-    ariaLabel: '捲動至：營養素達成率',
-    shortLabel: '營養素',
-    heading: '營養素達成率',
-    subtitle: '區間內總量 ÷（每日目標 × 天數），100% 為剛好達標',
+    chartId: "analytics-chart-nutrients",
+    ariaLabel: "捲動至：營養素達成率",
+    shortLabel: "營養素",
+    heading: "營養素達成率",
+    subtitle: "區間內總量 ÷（每日目標 × 天數），100% 為剛好達標",
     Icon: Target,
   },
 ];
 
-const [
-  chartWeight,
-  chartCalories,
-  chartActivityMinutes,
-  chartNutrients,
-] = ANALYTICS_MAIN_CHARTS;
+const [chartWeight, chartCalories, chartActivityMinutes, chartNutrients] =
+  ANALYTICS_MAIN_CHARTS;
 
 export function AnalyticsView({
   todayIso,
@@ -231,7 +228,7 @@ export function AnalyticsView({
   weeklyInsight,
   weekShareSummary,
 }: AnalyticsViewProps) {
-  const [period, setPeriod] = useState<AnalyticsPeriod>('week');
+  const [period, setPeriod] = useState<AnalyticsPeriod>("week");
 
   const { start, end } = useMemo(
     () => periodBounds(period, planStartIso, todayIso),
@@ -271,7 +268,7 @@ export function AnalyticsView({
     const byType: Record<string, number> = {};
     for (const ev of activityEvents) {
       if (ev.logged_date < start || ev.logged_date > end) continue;
-      const t = ev.activity_type || 'other';
+      const t = ev.activity_type || "other";
       byType[t] = (byType[t] ?? 0) + (Number(ev.duration_minutes) || 0);
     }
     return Object.entries(byType)
@@ -370,9 +367,9 @@ export function AnalyticsView({
         ariaLabel="資料區間"
         onChange={setPeriod}
         options={[
-          { id: 'week', label: '本週' },
-          { id: 'month', label: '本月' },
-          { id: 'all', label: '全程' },
+          { id: "week", label: "本週" },
+          { id: "month", label: "本月" },
+          { id: "all", label: "全程" },
         ]}
       />
 
@@ -384,7 +381,7 @@ export function AnalyticsView({
           type="button"
           className={analyticsQuickAiNavButtonClass}
           aria-label="捲動至：AI 週報洞察"
-          onClick={() => scrollToChart('analytics-weekly-insight')}>
+          onClick={() => scrollToChart("analytics-weekly-insight")}>
           <Sparkles
             className="h-3 w-3 shrink-0"
             strokeWidth={1.8}
@@ -392,21 +389,23 @@ export function AnalyticsView({
           />
           AI 洞察
         </button>
-        {ANALYTICS_MAIN_CHARTS.map(({ chartId, ariaLabel, shortLabel, Icon }) => (
-          <button
-            key={chartId}
-            type="button"
-            className={analyticsQuickNavButtonClass}
-            aria-label={ariaLabel}
-            onClick={() => scrollToChart(chartId)}>
-            <Icon
-              className="h-3 w-3 shrink-0"
-              strokeWidth={1.8}
-              aria-hidden
-            />
-            {shortLabel}
-          </button>
-        ))}
+        {ANALYTICS_MAIN_CHARTS.map(
+          ({ chartId, ariaLabel, shortLabel, Icon }) => (
+            <button
+              key={chartId}
+              type="button"
+              className={analyticsQuickNavButtonClass}
+              aria-label={ariaLabel}
+              onClick={() => scrollToChart(chartId)}>
+              <Icon
+                className="h-3 w-3 shrink-0"
+                strokeWidth={1.8}
+                aria-hidden
+              />
+              {shortLabel}
+            </button>
+          ),
+        )}
       </nav>
 
       <nav
@@ -416,7 +415,7 @@ export function AnalyticsView({
           type="button"
           className={analyticsFloatingAiNavButtonClass}
           aria-label="捲動至：AI 週報洞察"
-          onClick={() => scrollToChart('analytics-weekly-insight')}>
+          onClick={() => scrollToChart("analytics-weekly-insight")}>
           <Sparkles className="h-5 w-5" strokeWidth={1.8} aria-hidden />
         </button>
         {ANALYTICS_MAIN_CHARTS.map(({ chartId, ariaLabel, Icon }) => (
@@ -439,8 +438,12 @@ export function AnalyticsView({
       </nav>
 
       <SectionCard id={chartWeight.chartId} className="scroll-mt-3">
-        <SectionHeading icon={chartWeight.Icon}>{chartWeight.heading}</SectionHeading>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">{chartWeight.subtitle}</p>
+        <SectionHeading icon={chartWeight.Icon}>
+          {chartWeight.heading}
+        </SectionHeading>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          {chartWeight.subtitle}
+        </p>
         <div className="mt-3 h-[200px] w-full">
           {weightRows.length === 0 ? (
             <div className="h-full">
@@ -452,26 +455,26 @@ export function AnalyticsView({
                 <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                   interval={xAxisInterval}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                   width={40}
                   axisLine={false}
                   tickLine={false}
-                  domain={['auto', 'auto']}
+                  domain={["auto", "auto"]}
                 />
                 <Tooltip
-                  cursor={{ stroke: '#4C956C', strokeWidth: 1 }}
+                  cursor={{ stroke: "#4C956C", strokeWidth: 1 }}
                   contentStyle={{
                     fontSize: 11,
                     borderRadius: 10,
-                    border: '0.5px solid hsl(var(--border))',
+                    border: "0.5px solid hsl(var(--border))",
                   }}
-                  formatter={(v) => [`${v ?? '—'} kg`, '體重']}
+                  formatter={(v) => [`${v ?? "—"} kg`, "體重"]}
                   labelFormatter={(label) => String(label)}
                 />
                 <Line
@@ -489,7 +492,9 @@ export function AnalyticsView({
       </SectionCard>
 
       <SectionCard id={chartCalories.chartId} className="scroll-mt-3">
-        <SectionHeading icon={chartCalories.Icon}>{chartCalories.heading}</SectionHeading>
+        <SectionHeading icon={chartCalories.Icon}>
+          {chartCalories.heading}
+        </SectionHeading>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
           {chartCalories.subtitle}
         </p>
@@ -499,25 +504,25 @@ export function AnalyticsView({
               <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                 interval={xAxisInterval}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                 width={40}
                 axisLine={false}
                 tickLine={false}
-                domain={[0, 'auto']}
+                domain={[0, "auto"]}
               />
               <Tooltip
                 contentStyle={{
                   fontSize: 11,
                   borderRadius: 10,
-                  border: '0.5px solid hsl(var(--border))',
+                  border: "0.5px solid hsl(var(--border))",
                 }}
-                formatter={(v) => [`${v ?? '—'} kcal`, '熱量']}
+                formatter={(v) => [`${v ?? "—"} kcal`, "熱量"]}
               />
               <Bar
                 dataKey="kcal"
@@ -548,25 +553,25 @@ export function AnalyticsView({
                 <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                   interval={xAxisInterval}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                   width={40}
                   axisLine={false}
                   tickLine={false}
-                  domain={[0, 'auto']}
+                  domain={[0, "auto"]}
                 />
                 <Tooltip
                   contentStyle={{
                     fontSize: 11,
                     borderRadius: 10,
-                    border: '0.5px solid hsl(var(--border))',
+                    border: "0.5px solid hsl(var(--border))",
                   }}
-                  formatter={(v) => [`${v ?? '—'} 分鐘`, '運動']}
+                  formatter={(v) => [`${v ?? "—"} 分鐘`, "運動"]}
                 />
                 <Bar
                   dataKey="minutes"
@@ -596,25 +601,25 @@ export function AnalyticsView({
                 <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                   interval={xAxisInterval}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                   width={40}
                   axisLine={false}
                   tickLine={false}
-                  domain={[0, 'auto']}
+                  domain={[0, "auto"]}
                 />
                 <Tooltip
                   contentStyle={{
                     fontSize: 11,
                     borderRadius: 10,
-                    border: '0.5px solid hsl(var(--border))',
+                    border: "0.5px solid hsl(var(--border))",
                   }}
-                  formatter={(v) => [`${v ?? '—'} kcal`, '估消耗']}
+                  formatter={(v) => [`${v ?? "—"} kcal`, "估消耗"]}
                 />
                 <Bar
                   dataKey="kcal"
@@ -647,7 +652,7 @@ export function AnalyticsView({
                 <CartesianGrid stroke="hsl(var(--border))" horizontal />
                 <XAxis
                   type="number"
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                   axisLine={false}
                   tickLine={false}
                 />
@@ -655,7 +660,7 @@ export function AnalyticsView({
                   type="category"
                   dataKey="label"
                   width={88}
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                   axisLine={false}
                   tickLine={false}
                 />
@@ -663,9 +668,9 @@ export function AnalyticsView({
                   contentStyle={{
                     fontSize: 11,
                     borderRadius: 10,
-                    border: '0.5px solid hsl(var(--border))',
+                    border: "0.5px solid hsl(var(--border))",
                   }}
-                  formatter={(v) => [`${v ?? '—'} 分鐘`, '時間']}
+                  formatter={(v) => [`${v ?? "—"} 分鐘`, "時間"]}
                 />
                 <Bar
                   dataKey="minutes"
@@ -680,7 +685,9 @@ export function AnalyticsView({
       </SectionCard>
 
       <SectionCard id={chartNutrients.chartId} className="scroll-mt-3">
-        <SectionHeading icon={chartNutrients.Icon}>{chartNutrients.heading}</SectionHeading>
+        <SectionHeading icon={chartNutrients.Icon}>
+          {chartNutrients.heading}
+        </SectionHeading>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
           {chartNutrients.subtitle}
         </p>
@@ -695,7 +702,7 @@ export function AnalyticsView({
                 <PolarGrid stroke="hsl(var(--border))" />
                 <PolarAngleAxis
                   dataKey="nutrient"
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                 />
                 <PolarRadiusAxis
                   angle={90}
@@ -714,9 +721,9 @@ export function AnalyticsView({
                   contentStyle={{
                     fontSize: 11,
                     borderRadius: 10,
-                    border: '0.5px solid hsl(var(--border))',
+                    border: "0.5px solid hsl(var(--border))",
                   }}
-                  formatter={(v) => [`${v ?? '—'}%`, '達成率']}
+                  formatter={(v) => [`${v ?? "—"}%`, "達成率"]}
                 />
               </RadarChart>
             </ResponsiveContainer>
@@ -734,7 +741,9 @@ export function AnalyticsView({
               strokeWidth={1.8}
               aria-hidden
             />
-            <p className="text-[15px] font-medium text-foreground">AI 週報洞察</p>
+            <p className="text-[15px] font-medium text-foreground">
+              AI 週報洞察
+            </p>
           </div>
           {!weeklyInsight?.items?.length ? (
             <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">

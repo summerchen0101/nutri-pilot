@@ -116,7 +116,7 @@ export function DashboardWaterGrid({
 
           const cellStartMl = filledFull * CUP_ML;
           let partialBorder =
-            "relative overflow-hidden border-steel-accent/30 bg-muted/60";
+            "relative overflow-hidden border-steel-accent/30 bg-card-opaque";
           let partialInner: ReactNode = null;
           if (isPartial) {
             if (!useGoalSplit) {
@@ -143,7 +143,7 @@ export function DashboardWaterGrid({
               );
             } else if (cellStartMl >= goalMl) {
               partialBorder =
-                "relative overflow-hidden border-steel-accent/25 bg-muted/60";
+                "relative overflow-hidden border-steel-accent/25 bg-card-opaque";
               partialInner = (
                 <span
                   className={cn(
@@ -158,7 +158,7 @@ export function DashboardWaterGrid({
               const blueWidthPct = ((goalMl - cellStartMl) / CUP_ML) * 100;
               const lightWidthPct = ((waterMl - goalMl) / CUP_ML) * 100;
               partialBorder =
-                "relative overflow-hidden border-steel-accent/25 bg-muted/60";
+                "relative overflow-hidden border-steel-accent/25 bg-card-opaque";
               partialInner = (
                 <>
                   <span
@@ -193,7 +193,7 @@ export function DashboardWaterGrid({
               onClick={() => onCellClick(i)}
               className={cn(
                 "aspect-square rounded-md border-[0.5px] border-border transition-colors",
-                fullClass ?? "bg-muted/60",
+                fullClass ?? "bg-card-opaque",
                 isPartial ? partialBorder : null,
               )}
               aria-label={`設為約 ${(i + 1) * CUP_ML} ml`}>
@@ -213,7 +213,7 @@ export function DashboardWaterGrid({
             type="button"
             disabled={pending}
             onClick={() => applyTarget(waterMl + 250)}
-            className="inline-flex items-center justify-center gap-1 rounded-[10px] border-[0.5px] border-border bg-secondary px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60">
+            className="inline-flex items-center justify-center gap-1 rounded-[10px] border-[0.5px] border-neutral-border-secondary bg-secondary px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60">
             + 250 ml
             <ArrowUpRight
               className="h-3.5 w-3.5 shrink-0 opacity-70"
@@ -224,7 +224,7 @@ export function DashboardWaterGrid({
             type="button"
             disabled={pending}
             onClick={() => applyTarget(waterMl + 500)}
-            className="inline-flex items-center justify-center gap-1 rounded-[10px] border-[0.5px] border-border bg-secondary px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60">
+            className="inline-flex items-center justify-center gap-1 rounded-[10px] border-[0.5px] border-neutral-border-secondary bg-secondary px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60">
             + 500 ml
             <ArrowUpRight
               className="h-3.5 w-3.5 shrink-0 opacity-70"

@@ -24,7 +24,7 @@ function tierBadgeClass(tier: RiskTier): string {
       return 'bg-[#FFF4E5] text-[#C57A12]';
     case 'low':
     default:
-      return 'bg-primary-light text-primary-foreground';
+      return 'bg-primary text-white';
   }
 }
 

@@ -1,22 +1,27 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
-import { Dumbbell } from 'lucide-react';
-import { FiTrash2 } from 'react-icons/fi';
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import { Dumbbell } from "lucide-react";
+import { FiTrash2 } from "react-icons/fi";
 
 import {
   type ActivityType,
   deleteActivityLogAction,
   insertActivityLogAction,
-} from '@/app/(main)/log/activity-actions';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { SectionHeading } from '@/components/ui/section-heading';
-import { ACTIVITY_TYPE_LABEL } from '@/lib/activity/activity-type-labels';
-import { KCAL_PER_MINUTE } from '@/lib/activity/kcal-per-minute';
-import { cn } from '@/lib/utils/cn';
+} from "@/app/(main)/log/activity-actions";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { ACTIVITY_TYPE_LABEL } from "@/lib/activity/activity-type-labels";
+import { KCAL_PER_MINUTE } from "@/lib/activity/kcal-per-minute";
+import { cn } from "@/lib/utils/cn";
 
 export type ActivityLogRow = {
   id: string;
@@ -29,22 +34,22 @@ export type ActivityLogRow = {
 
 const ACTIVITY_GROUPS: { label: string; types: readonly ActivityType[] }[] = [
   {
-    label: '有氧與心肺',
+    label: "有氧與心肺",
     types: [
-      'walk',
-      'run',
-      'cycling',
-      'swimming',
-      'cardio',
-      'hiit',
-      'jump_rope',
-      'dance',
+      "walk",
+      "run",
+      "cycling",
+      "swimming",
+      "cardio",
+      "hiit",
+      "jump_rope",
+      "dance",
     ],
   },
-  { label: '球類', types: ['basketball', 'tennis', 'badminton'] },
-  { label: '肌力', types: ['strength'] },
-  { label: '瑜珈與伸展', types: ['yoga', 'pilates', 'stretching'] },
-  { label: '其他', types: ['other'] },
+  { label: "球類", types: ["basketball", "tennis", "badminton"] },
+  { label: "肌力", types: ["strength"] },
+  { label: "瑜珈與伸展", types: ["yoga", "pilates", "stretching"] },
+  { label: "其他", types: ["other"] },
 ];
 
 const QUICK_DURATION_MINUTES = [15, 30, 45, 60, 90] as const;
@@ -59,21 +64,21 @@ export function ActivityLogSection({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [activityType, setActivityType] = useState<ActivityType>('walk');
-  const [minutes, setMinutes] = useState('');
-  const [calEst, setCalEst] = useState('');
-  const [notes, setNotes] = useState('');
+  const [activityType, setActivityType] = useState<ActivityType>("walk");
+  const [minutes, setMinutes] = useState("");
+  const [calEst, setCalEst] = useState("");
+  const [notes, setNotes] = useState("");
 
-  const parsedMinutes = Number(minutes.replace(',', '.'));
+  const parsedMinutes = Number(minutes.replace(",", "."));
   const minutesOk =
     Number.isFinite(parsedMinutes) &&
     parsedMinutes >= 1 &&
     parsedMinutes <= 1440;
 
   useEffect(() => {
-    const m = Number(minutes.replace(',', '.'));
+    const m = Number(minutes.replace(",", "."));
     if (!Number.isFinite(m) || m < 1 || m > 1440) {
-      setCalEst('');
+      setCalEst("");
       return;
     }
     const rate = KCAL_PER_MINUTE[activityType];
@@ -88,17 +93,17 @@ export function ActivityLogSection({
       const res = await insertActivityLogAction({
         loggedDate: date,
         activityType,
-        durationMinutes: Number(minutes.replace(',', '.')),
-        caloriesEst: calEst.trim() ? Number(calEst.replace(',', '.')) : null,
+        durationMinutes: Number(minutes.replace(",", ".")),
+        caloriesEst: calEst.trim() ? Number(calEst.replace(",", ".")) : null,
         notes: notes.trim() || null,
       });
       if (res.error) {
         setError(res.error);
         return;
       }
-      setMinutes('');
-      setCalEst('');
-      setNotes('');
+      setMinutes("");
+      setCalEst("");
+      setNotes("");
       router.refresh();
     });
   }
@@ -116,9 +121,9 @@ export function ActivityLogSection({
   }
 
   const mealPillPrimary =
-    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-transparent';
+    "h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-transparent";
   const mealPillInactive =
-    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
+    "h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground";
 
   return (
     <div className="space-y-3">
@@ -127,8 +132,7 @@ export function ActivityLogSection({
           <SectionHeading
             icon={Dumbbell}
             as="h3"
-            className="leading-none tracking-tight"
-          >
+            className="leading-none tracking-tight">
             新增運動
           </SectionHeading>
           <CardDescription>
@@ -142,22 +146,18 @@ export function ActivityLogSection({
           <div className="space-y-2">
             <label
               htmlFor="activity-type-select"
-              className="text-[11px] font-medium text-muted-foreground"
-            >
+              className="text-[11px] font-medium text-muted-foreground">
               類型
             </label>
             <select
               id="activity-type-select"
               className={cn(
-                'mt-1 flex h-11 w-full items-center rounded-[10px] border-[0.5px] border-border bg-card px-3 py-2 text-[13px] text-foreground',
-                'focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none',
-                'disabled:cursor-not-allowed disabled:opacity-50',
+                "mt-1 flex h-11 w-full items-center rounded-[10px] border-[0.5px] border-border bg-card px-3 py-2 text-[13px] text-foreground",
+                "focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none",
+                "disabled:cursor-not-allowed disabled:opacity-50",
               )}
               value={activityType}
-              onChange={(e) =>
-                setActivityType(e.target.value as ActivityType)
-              }
-            >
+              onChange={(e) => setActivityType(e.target.value as ActivityType)}>
               {ACTIVITY_GROUPS.map((g) => (
                 <optgroup key={g.label} label={g.label}>
                   {g.types.map((t) => (
@@ -180,12 +180,9 @@ export function ActivityLogSection({
                   <Button
                     key={m}
                     type="button"
-                    variant={selected ? 'default' : 'ghost'}
-                    className={
-                      selected ? mealPillPrimary : mealPillInactive
-                    }
-                    onClick={() => setMinutes(String(m))}
-                  >
+                    variant={selected ? "default" : "ghost"}
+                    className={selected ? mealPillPrimary : mealPillInactive}
+                    onClick={() => setMinutes(String(m))}>
                     {m}
                   </Button>
                 );
@@ -218,7 +215,9 @@ export function ActivityLogSection({
             </p>
           </div>
           <div>
-            <label className="text-[11px] text-muted-foreground">備註（選填）</label>
+            <label className="text-[11px] text-muted-foreground">
+              備註（選填）
+            </label>
             <Input
               className="mt-1"
               value={notes}
@@ -231,9 +230,8 @@ export function ActivityLogSection({
             type="button"
             className="w-full bg-primary text-white hover:bg-primary-dark focus-visible:ring-primary/25"
             disabled={pending || !minutesOk}
-            onClick={() => void onSubmit()}
-          >
-            {pending ? '儲存中…' : '加入紀錄'}
+            onClick={() => void onSubmit()}>
+            {pending ? "儲存中…" : "加入紀錄"}
           </Button>
         </CardContent>
       </Card>
@@ -244,10 +242,10 @@ export function ActivityLogSection({
             {date} 的運動
           </h2>
           <p className="text-[11px] text-muted-foreground">
-            合計{' '}
+            合計{" "}
             <span className="tabular-nums font-medium text-foreground">
               {dayTotalMin}
-            </span>{' '}
+            </span>{" "}
             分鐘
           </p>
         </div>
@@ -258,8 +256,7 @@ export function ActivityLogSection({
             {rows.map((r) => (
               <li
                 key={r.id}
-                className="flex items-center gap-3 rounded-xl border-[0.5px] border-border bg-card px-3 py-2.5"
-              >
+                className="flex items-center gap-3 rounded-xl border-[0.5px] border-border bg-card px-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-foreground">
                     {ACTIVITY_TYPE_LABEL[r.activity_type as ActivityType] ??
@@ -284,11 +281,10 @@ export function ActivityLogSection({
                   aria-label="刪除"
                   disabled={pending}
                   className={cn(
-                    'shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:text-destructive',
-                    pending && 'opacity-50',
+                    "shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:text-destructive",
+                    pending && "opacity-50",
                   )}
-                  onClick={() => void onDelete(r.id)}
-                >
+                  onClick={() => void onDelete(r.id)}>
                   <FiTrash2 className="h-4 w-4" />
                 </button>
               </li>

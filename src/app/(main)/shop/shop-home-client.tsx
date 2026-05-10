@@ -142,7 +142,7 @@ export function ShopHomeClient({
               className={cn(
                 'flex h-[60px] min-w-[60px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-1 text-[11px] font-medium transition-colors',
                 category === key ?
-                  'bg-primary-light text-primary-foreground'
+                  'bg-primary text-white'
                 : 'border-[0.5px] border-border bg-card text-muted-foreground hover:border-primary/40',
               )}
             >
@@ -208,7 +208,7 @@ export function ShopHomeClient({
                     />
                   : null}
                   {p.score > 0 ?
-                    <span className="absolute left-2 top-2 rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                    <span className="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-white">
                       推薦 {p.score.toFixed(0)}
                     </span>
                   : null}

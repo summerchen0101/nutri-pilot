@@ -43,7 +43,7 @@ export function GoalSettingsCard({
         label="每日熱量目標"
         value={dailyCalTargetText}
         trailing={
-          <span className="rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-medium text-primary-foreground">
+          <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-medium text-white">
             自動
           </span>
         }

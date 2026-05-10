@@ -25,7 +25,7 @@ export function ProfileSummaryCard({
           <div className="truncate text-[15px] font-medium text-foreground">{name}</div>
           <div className="mt-0.5 truncate text-[13px] text-neutral-text-tertiary">{email}</div>
           <div className="mt-1.5 flex gap-2">
-            <span className="rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-medium text-primary-foreground">
+            <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-medium text-white">
               Free 會員
             </span>
             <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-neutral-text-secondary">

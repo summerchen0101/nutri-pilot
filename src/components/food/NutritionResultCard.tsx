@@ -1,26 +1,26 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FiEdit2, FiLoader, FiRotateCw } from 'react-icons/fi';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FiEdit2, FiLoader, FiRotateCw } from "react-icons/fi";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { ManualFoodAnalysisResult } from "@/lib/food/manual-food-analysis-result";
 
-type MacroKey = 'calories' | 'protein_g' | 'carb_g' | 'fat_g';
+type MacroKey = "calories" | "protein_g" | "carb_g" | "fat_g";
 
-const MACRO_CAL = 'var(--primary)';
-const MACRO_CARB = '#378ADD';
-const MACRO_PROTEIN = 'var(--primary)';
-const MACRO_FAT = '#EF9F27';
+const MACRO_CAL = "var(--primary)";
+const MACRO_CARB = "#378ADD";
+const MACRO_PROTEIN = "var(--primary)";
+const MACRO_FAT = "#EF9F27";
 
 function normalizeAnalysisPayload(
   raw: ManualFoodAnalysisResult,
 ): ManualFoodAnalysisResult {
   return {
-    name: String(raw.name ?? '').trim() || '未命名',
+    name: String(raw.name ?? "").trim() || "未命名",
     quantity_g: Math.round(Number(raw.quantity_g) || 0),
-    quantity_description: String(raw.quantity_description ?? '').trim(),
+    quantity_description: String(raw.quantity_description ?? "").trim(),
     calories: Math.round(Number(raw.calories) || 0),
     protein_g: Math.round(Number(raw.protein_g) || 0),
     carb_g: Math.round(Number(raw.carb_g) || 0),
@@ -60,7 +60,7 @@ function MacroCell({
 
   return (
     <div className="relative rounded-[10px] border-[0.5px] border-border bg-[var(--color-background-secondary)] p-3">
-      {editing ?
+      {editing ? (
         <Input
           autoFocus
           className="border-[0.5px] !text-heading-page tabular-nums"
@@ -73,30 +73,28 @@ function MacroCell({
             setEditing(false);
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+            if (e.key === "Enter") {
               onCommit(draft);
               setEditing(false);
             }
           }}
         />
-      : (
+      ) : (
         <button
           type="button"
           className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
-          onClick={() => setEditing(true)}
-        >
+          onClick={() => setEditing(true)}>
           <div
             className="tabular-nums text-heading-page"
-            style={{ color: valueColor }}
-          >
+            style={{ color: valueColor }}>
             {displayValue}
           </div>
-          <div className="text-caption font-normal text-muted-foreground">{unit}</div>
+          <div className="text-caption font-normal text-muted-foreground">
+            {unit}
+          </div>
           <div className="mt-0.5 text-caption text-muted-foreground">
             {labelZh}
-            {labelEn ?
-              <span className="opacity-70"> {labelEn}</span>
-            : null}
+            {labelEn ? <span className="opacity-70"> {labelEn}</span> : null}
           </div>
         </button>
       )}
@@ -135,23 +133,24 @@ export function NutritionResultCard({
   editBusy,
   embedded = false,
 }: NutritionResultCardProps) {
-  const [originalResult, setOriginalResult] = useState<ManualFoodAnalysisResult>(
-    () => normalizeAnalysisPayload(resultProp),
-  );
+  const [originalResult, setOriginalResult] =
+    useState<ManualFoodAnalysisResult>(() =>
+      normalizeAnalysisPayload(resultProp),
+    );
   const [displayResult, setDisplayResult] = useState<ManualFoodAnalysisResult>(
     () => normalizeAnalysisPayload(resultProp),
   );
   const [quantity, setQuantity] = useState(() => {
-    const q = Math.round(Number(normalizeAnalysisPayload(resultProp).quantity_g));
+    const q = Math.round(
+      Number(normalizeAnalysisPayload(resultProp).quantity_g),
+    );
     return q > 0 ? q : 1;
   });
 
-  const [manual, setManual] = useState<Partial<Record<MacroKey, boolean>>>(
+  const [manual, setManual] = useState<Partial<Record<MacroKey, boolean>>>({});
+  const [override, setOverride] = useState<Partial<Record<MacroKey, number>>>(
     {},
   );
-  const [override, setOverride] = useState<
-    Partial<Record<MacroKey, number>>
-  >({});
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [displayName, setDisplayName] = useState(
@@ -174,11 +173,7 @@ export function NutritionResultCard({
 
   const handleQuantityChange = useCallback(
     (newQuantity: number) => {
-      if (
-        !Number.isFinite(newQuantity) ||
-        newQuantity < 1 ||
-        !originalResult
-      ) {
+      if (!Number.isFinite(newQuantity) || newQuantity < 1 || !originalResult) {
         return;
       }
       const denom =
@@ -210,7 +205,7 @@ export function NutritionResultCard({
   );
 
   const displayMac = useMemo(() => {
-    const keys: MacroKey[] = ['calories', 'protein_g', 'carb_g', 'fat_g'];
+    const keys: MacroKey[] = ["calories", "protein_g", "carb_g", "fat_g"];
     const out = {
       calories: displayResult.calories,
       protein_g: displayResult.protein_g,
@@ -226,7 +221,7 @@ export function NutritionResultCard({
   }, [displayResult, manual, override]);
 
   const commitMacro = useCallback((key: MacroKey, raw: string) => {
-    const n = Math.round(parseFloat(raw.replace(',', '.')));
+    const n = Math.round(parseFloat(raw.replace(",", ".")));
     if (!Number.isFinite(n) || n < 0) {
       setManual((m) => ({ ...m, [key]: false }));
       setOverride((o) => {
@@ -254,9 +249,9 @@ export function NutritionResultCard({
 
     setIsReanalyzing(true);
     try {
-      const res = await fetch('/api/ai/analyze-food', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/ai/analyze-food", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: nameResolved,
           quantity,
@@ -267,8 +262,8 @@ export function NutritionResultCard({
       const payload = (await res.json()) as
         | ManualFoodAnalysisResult
         | { error?: string };
-      if ('error' in payload && payload.error) return;
-      if (!('calories' in payload)) return;
+      if ("error" in payload && payload.error) return;
+      if (!("calories" in payload)) return;
       const next = normalizeAnalysisPayload({
         ...payload,
         name: payload.name?.trim() || nameResolved,
@@ -280,7 +275,7 @@ export function NutritionResultCard({
       setManual({});
       setOverride({});
     } catch (error) {
-      console.error('重新分析失敗', error);
+      console.error("重新分析失敗", error);
     } finally {
       setIsReanalyzing(false);
     }
@@ -312,15 +307,15 @@ export function NutritionResultCard({
     (displayResult.sodium_mg != null && displayResult.sodium_mg > 0);
   const nameWasChanged = displayName !== originalResult.name;
 
-  const outerClass = embedded ?
-      'mt-0 space-y-3'
-    : 'mt-3 space-y-3 rounded-xl border-[0.5px] border-[var(--color-border-tertiary)] bg-card p-4';
+  const outerClass = embedded
+    ? "mt-0 space-y-3"
+    : "mt-3 space-y-3 rounded-xl border-[0.5px] border-[var(--color-border-tertiary)] bg-card p-4";
 
   const busy = editMode ? editBusy : confirmBusy;
 
   return (
     <div className={outerClass}>
-      {previewImageUrl ?
+      {previewImageUrl ? (
         <div className="h-48 w-full overflow-hidden rounded-lg bg-secondary">
           {/* eslint-disable-next-line @next/next/no-img-element -- blob / external meal photos */}
           <img
@@ -329,11 +324,11 @@ export function NutritionResultCard({
             className="h-full w-full object-cover"
           />
         </div>
-      : null}
+      ) : null}
 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          {isEditingName ?
+          {isEditingName ? (
             <input
               autoFocus
               type="text"
@@ -341,19 +336,18 @@ export function NutritionResultCard({
               onChange={(e) => setDisplayName(e.target.value)}
               onBlur={() => finishEditingName()}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   e.preventDefault();
                   finishEditingName();
                 }
               }}
               className="w-full rounded-none border-0 border-b border-primary bg-transparent pb-0.5 text-[15px] font-medium text-foreground outline-none focus:border-0 focus:border-b focus:border-primary focus:[box-shadow:none!important] focus-visible:outline-none"
             />
-          : (
+          ) : (
             <button
               type="button"
               onClick={() => setIsEditingName(true)}
-              className="flex max-w-full items-start gap-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
-            >
+              className="flex max-w-full items-start gap-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1">
               <span className="min-w-0 break-words text-[15px] font-medium leading-snug text-foreground">
                 {displayName}
               </span>
@@ -363,16 +357,18 @@ export function NutritionResultCard({
               />
             </button>
           )}
-          {displayResult.quantity_description ?
+          {displayResult.quantity_description ? (
             <p className="mt-0.5 text-caption font-normal text-neutral-text-tertiary">
               {displayResult.quantity_description}
             </p>
-          : null}
+          ) : null}
         </div>
       </div>
 
       <div className="mb-3 flex items-center gap-2 border-b-[0.5px] border-neutral-border-tertiary py-2">
-        <span className="flex-1 text-[13px] text-neutral-text-secondary">實際份量</span>
+        <span className="flex-1 text-[13px] text-neutral-text-secondary">
+          實際份量
+        </span>
         <input
           type="number"
           min={1}
@@ -380,7 +376,7 @@ export function NutritionResultCard({
           value={quantity}
           onChange={(e) => {
             const raw = e.target.value;
-            if (raw === '') return;
+            if (raw === "") return;
             const v = Number(raw);
             if (!Number.isFinite(v)) return;
             handleQuantityChange(Math.max(1, Math.floor(v)));
@@ -392,22 +388,22 @@ export function NutritionResultCard({
           type="button"
           onClick={() => void handleReanalyze()}
           disabled={isReanalyzing}
-          className="ml-2 flex items-center gap-1 whitespace-nowrap text-caption font-medium text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {isReanalyzing ?
+          className="ml-2 flex items-center gap-1 whitespace-nowrap text-caption font-medium text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40">
+          {isReanalyzing ? (
             <>
               <FiLoader className="h-3 w-3 animate-spin" aria-hidden />
               分析中
             </>
-          : <>
+          ) : (
+            <>
               <FiRotateCw className="h-3 w-3" aria-hidden />
               重新分析
             </>
-          }
+          )}
         </button>
-        {nameWasChanged ?
+        {nameWasChanged ? (
           <span className="ml-1 text-[10px] text-amber-600">名稱已修改</span>
-        : null}
+        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-2.5">
@@ -417,7 +413,7 @@ export function NutritionResultCard({
           unit="kcal"
           valueColor={MACRO_CAL}
           displayValue={String(displayMac.calories)}
-          onCommit={(v) => commitMacro('calories', v)}
+          onCommit={(v) => commitMacro("calories", v)}
         />
         <MacroCell
           labelZh="蛋白質"
@@ -425,7 +421,7 @@ export function NutritionResultCard({
           unit="g"
           valueColor={MACRO_PROTEIN}
           displayValue={String(displayMac.protein_g)}
-          onCommit={(v) => commitMacro('protein_g', v)}
+          onCommit={(v) => commitMacro("protein_g", v)}
         />
         <MacroCell
           labelZh="碳水"
@@ -433,7 +429,7 @@ export function NutritionResultCard({
           unit="g"
           valueColor={MACRO_CARB}
           displayValue={String(displayMac.carb_g)}
-          onCommit={(v) => commitMacro('carb_g', v)}
+          onCommit={(v) => commitMacro("carb_g", v)}
         />
         <MacroCell
           labelZh="脂肪"
@@ -441,36 +437,35 @@ export function NutritionResultCard({
           unit="g"
           valueColor={MACRO_FAT}
           displayValue={String(displayMac.fat_g)}
-          onCommit={(v) => commitMacro('fat_g', v)}
+          onCommit={(v) => commitMacro("fat_g", v)}
         />
       </div>
 
-      {showSecondary ?
+      {showSecondary ? (
         <p className="text-caption font-normal leading-snug text-neutral-text-tertiary">
-          {displayResult.fiber_g != null && displayResult.fiber_g > 0 ?
+          {displayResult.fiber_g != null && displayResult.fiber_g > 0 ? (
             <>纖維 {Math.round(displayResult.fiber_g)}g</>
-          : null}
+          ) : null}
           {displayResult.fiber_g != null &&
           displayResult.fiber_g > 0 &&
           displayResult.sodium_mg != null &&
-          displayResult.sodium_mg > 0 ?
+          displayResult.sodium_mg > 0 ? (
             <>　</>
-          : null}
-          {displayResult.sodium_mg != null && displayResult.sodium_mg > 0 ?
+          ) : null}
+          {displayResult.sodium_mg != null && displayResult.sodium_mg > 0 ? (
             <>鈉 {Math.round(displayResult.sodium_mg)}mg</>
-          : null}
+          ) : null}
         </p>
-      : null}
+      ) : null}
 
-      {editMode ?
+      {editMode ? (
         <div className="flex gap-2 pt-1">
           <Button
             type="button"
             variant="ghost"
             className="flex-1 border-[0.5px]"
             disabled={busy}
-            onClick={() => onCancel?.()}
-          >
+            onClick={() => onCancel?.()}>
             取消
           </Button>
           <Button
@@ -478,20 +473,18 @@ export function NutritionResultCard({
             variant="default"
             className="flex-1"
             disabled={busy}
-            onClick={() => handleConfirm()}
-          >
-            {busy ? '儲存中…' : '儲存修改'}
+            onClick={() => handleConfirm()}>
+            {busy ? "儲存中…" : "儲存修改"}
           </Button>
         </div>
-      : (
+      ) : (
         <div className="flex gap-2 pt-1">
           <Button
             type="button"
             variant="outline"
             className="min-w-0 shrink-0 basis-[34%] rounded-[10px] text-[13px] font-medium"
             disabled={busy}
-            onClick={() => onReselect?.()}
-          >
+            onClick={() => onReselect?.()}>
             重選
           </Button>
           <Button
@@ -499,13 +492,12 @@ export function NutritionResultCard({
             variant="default"
             className="min-w-0 flex-1 rounded-[10px] text-[13px] font-medium"
             disabled={busy}
-            onClick={() => handleConfirm()}
-          >
-            {busy ?
-              '加入中…'
-            : stagingOnly ?
-              '加入清單'
-            : `加入${mealLabelZh ?? ''}`}
+            onClick={() => handleConfirm()}>
+            {busy
+              ? "加入中…"
+              : stagingOnly
+                ? "加入清單"
+                : `加入${mealLabelZh ?? ""}`}
           </Button>
         </div>
       )}

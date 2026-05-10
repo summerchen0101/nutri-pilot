@@ -18,7 +18,7 @@ const variantClass: Record<BadgeVariant, string> = {
   outline:
     'border-[0.5px] border-border bg-transparent text-foreground',
   success:
-    'border-[0.5px] border-transparent bg-primary-light font-medium text-primary-foreground',
+    'border-[0.5px] border-transparent bg-primary font-medium text-white',
   info: 'border-[0.5px] border-transparent bg-steel-panel font-medium text-steel-foreground',
   warning:
     'border-[0.5px] border-transparent bg-[#FDF0D5] font-medium text-[#854F0B]',

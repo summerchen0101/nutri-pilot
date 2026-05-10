@@ -111,7 +111,7 @@ export function ProductDetailClient({ product }: Props) {
               className={cn(
                 'rounded-[10px] border px-3 py-2 text-body transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
                 v.id === variant?.id ?
-                  'border-primary bg-primary-light font-medium text-primary-foreground'
+                  'border-primary bg-primary font-medium text-white'
                 : 'border-[0.5px] border-border bg-background text-foreground hover:border-primary/40',
               )}
             >

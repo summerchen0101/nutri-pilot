@@ -541,15 +541,22 @@ export function OnboardingWizard({
                     onClick={() => setDietMethod(o.value)}
                     className={`rounded-[10px] border-[0.5px] p-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
                       dietMethod === o.value
-                        ? 'border-primary bg-primary-light'
+                        ? 'border-primary bg-primary text-white'
                         : 'border-border bg-background hover:border-primary'
                     }`}
                   >
                     <p
-                      className={`text-[13px] font-medium ${dietMethod === o.value ? 'text-primary-foreground' : 'text-foreground'}`}>
+                      className={`text-[13px] font-medium ${dietMethod === o.value ? 'text-white' : 'text-foreground'}`}>
                       {o.label}
                     </p>
-                    <p className="mt-1 text-[11px] text-[#9298A8]">{o.desc}</p>
+                    <p
+                      className={
+                        dietMethod === o.value ?
+                          'mt-1 text-[11px] text-white/75'
+                        : 'mt-1 text-[11px] text-[#9298A8]'
+                      }>
+                      {o.desc}
+                    </p>
                   </button>
                 ))}
               </div>

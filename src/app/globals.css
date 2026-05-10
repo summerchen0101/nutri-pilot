@@ -65,6 +65,8 @@
     /* 叠在底圖上的卡片白底不透明度（與 --app-bg-photo-opacity 一併目視微調） */
     --app-card-surface-opacity: 0.4;
     --card: 0 0% 100% / var(--app-card-surface-opacity);
+    /* 需完全不透出底圖時（例：飲水格底）— 與 card 同色、不透明 */
+    --card-opaque: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     /* 淡灰綠、綠意、Steel Blue 區塊與 hsl(var(--muted)) 等共用（可與白卡分開調） */
     --app-tint-surface-opacity: 0.4;
@@ -179,5 +181,13 @@
   .text-micro {
     font-size: 11px;
     line-height: 1.35;
+  }
+
+  /*
+   * 不透明白底：與 tailwind.config.ts `colors.card.opaque`、`:root --card-opaque` 同步。
+   * 寫在此處可在原始碼搜尋 `.bg-card-opaque`，並與語意字級一樣確保進最終 CSS。
+   */
+  .bg-card-opaque {
+    background-color: hsl(var(--card-opaque));
   }
 }

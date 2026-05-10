@@ -60,6 +60,7 @@ const config: Config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          opaque: "hsl(var(--card-opaque))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",

@@ -43,7 +43,7 @@ export function OptionSelectSheet({
               type="button"
               className={[
                 'flex min-h-11 w-full items-center rounded-[10px] border px-3 text-left text-[13px]',
-                active ? 'border-primary bg-primary-light text-primary-foreground' : 'border-neutral-border-tertiary text-foreground',
+                active ? 'border-primary bg-primary text-white' : 'border-neutral-border-tertiary text-foreground',
               ].join(' ')}
               onClick={() => onSelect(option.value)}
             >
@@ -260,7 +260,7 @@ export function EditAllergenSheet({
               type="button"
               className={[
                 'flex min-h-11 w-full items-center rounded-[10px] border px-3 text-left text-[13px]',
-                checked ? 'border-primary bg-primary-light text-primary-foreground' : 'border-neutral-border-tertiary text-foreground',
+                checked ? 'border-primary bg-primary text-white' : 'border-neutral-border-tertiary text-foreground',
               ].join(' ')}
               onClick={() => onToggle(option.value)}
             >

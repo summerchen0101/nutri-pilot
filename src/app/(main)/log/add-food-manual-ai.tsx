@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 
-import { addFoodFromAiAnalysisAction } from '@/app/(main)/log/actions';
-import { NutritionResultCard } from '@/components/food/NutritionResultCard';
-import { cn } from '@/lib/utils/cn';
-import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
+import { addFoodFromAiAnalysisAction } from "@/app/(main)/log/actions";
+import { NutritionResultCard } from "@/components/food/NutritionResultCard";
+import { cn } from "@/lib/utils/cn";
+import type { ManualFoodAnalysisResult } from "@/lib/food/manual-food-analysis-result";
 
 export type StagedFoodItemForPlan = {
   name: string;
@@ -19,15 +19,15 @@ export type StagedFoodItemForPlan = {
   brand: string | null;
 };
 
-type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
 function normalizeAnalysisPayload(
   raw: ManualFoodAnalysisResult,
 ): ManualFoodAnalysisResult {
   return {
-    name: String(raw.name ?? '').trim() || '未命名',
+    name: String(raw.name ?? "").trim() || "未命名",
     quantity_g: Math.round(Number(raw.quantity_g) || 0),
-    quantity_description: String(raw.quantity_description ?? '').trim(),
+    quantity_description: String(raw.quantity_description ?? "").trim(),
     calories: Math.round(Number(raw.calories) || 0),
     protein_g: Math.round(Number(raw.protein_g) || 0),
     carb_g: Math.round(Number(raw.carb_g) || 0),
@@ -47,7 +47,7 @@ function Spinner({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        'inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent',
+        "inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent",
         className,
       )}
       aria-hidden
@@ -80,7 +80,7 @@ export function AddFoodManualAiPanel({
   onStagedItem,
   applyHistoryPrefill,
 }: AddFoodManualAiProps) {
-  const [rawInput, setRawInput] = useState('');
+  const [rawInput, setRawInput] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
@@ -94,7 +94,7 @@ export function AddFoodManualAiPanel({
 
   useEffect(() => {
     if (!applyHistoryPrefill || applyHistoryPrefill.version < 1) return;
-    setRawInput('');
+    setRawInput("");
     setAnalysisError(null);
     setAnalyzing(false);
     setResult(normalizeAnalysisPayload(applyHistoryPrefill.result));
@@ -103,7 +103,7 @@ export function AddFoodManualAiPanel({
   const runAnalyze = useCallback(async () => {
     const q = rawInput.trim();
     if (q.length < 1) {
-      setAnalysisError('請輸入食物描述');
+      setAnalysisError("請輸入食物描述");
       return;
     }
 
@@ -112,9 +112,9 @@ export function AddFoodManualAiPanel({
     setResult(null);
 
     try {
-      const res = await fetch('/api/ai/analyze-food', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/ai/analyze-food", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ input: q }),
       });
 
@@ -124,21 +124,21 @@ export function AddFoodManualAiPanel({
 
       if (!res.ok) {
         setAnalysisError(
-          typeof (payload as { error?: string }).error === 'string'
+          typeof (payload as { error?: string }).error === "string"
             ? (payload as { error: string }).error
-            : '分析失敗',
+            : "分析失敗",
         );
         return;
       }
 
-      if ('error' in payload && payload.error) {
+      if ("error" in payload && payload.error) {
         setAnalysisError(String(payload.error));
         return;
       }
 
       resetResult(payload as ManualFoodAnalysisResult);
     } catch {
-      setAnalysisError('無法連線分析服務');
+      setAnalysisError("無法連線分析服務");
     } finally {
       setAnalyzing(false);
     }
@@ -173,7 +173,7 @@ export function AddFoodManualAiPanel({
         brand: null,
       });
       setAddBusy(false);
-      setRawInput('');
+      setRawInput("");
       setResult(null);
       onCommitted();
       return;
@@ -185,7 +185,7 @@ export function AddFoodManualAiPanel({
       onError?.(err.error);
       return;
     }
-    setRawInput('');
+    setRawInput("");
     setResult(null);
     onCommitted();
   }
@@ -206,37 +206,38 @@ export function AddFoodManualAiPanel({
             onChange={(e) => setRawInput(e.target.value)}
             placeholder="輸入食物與份量，例如：4個雞塊、大杯珍珠奶茶"
             className={cn(
-              'min-h-11 min-w-0 flex-1 rounded-[10px] border-[0.5px] border-[#E8E9ED] bg-card px-3 py-2 text-[13px] font-normal text-foreground outline-none transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[var(--color-text-tertiary)] disabled:opacity-60',
-              'focus:border-[#4C956C] focus:shadow-[0_0_0_2px_rgba(76,149,108,0.12)]',
+              "min-h-11 min-w-0 flex-1 rounded-[10px] border-[0.5px] border-[#E8E9ED] bg-card px-3 py-2 text-[13px] font-normal text-foreground outline-none transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[var(--color-text-tertiary)] disabled:opacity-60",
+              "focus:border-[#4C956C] focus:shadow-[0_0_0_2px_rgba(76,149,108,0.12)]",
             )}
           />
           <button
             type="submit"
             disabled={analyzing}
             className={cn(
-              'inline-flex shrink-0 items-center justify-center gap-2 rounded-[10px] px-4 py-2 text-[13px] font-medium text-white transition-opacity duration-150',
-              'bg-[#4C956C] hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 disabled:opacity-60',
-            )}
-          >
-            {analyzing ?
+              "inline-flex shrink-0 items-center justify-center gap-2 rounded-[10px] px-4 py-2 text-[13px] font-medium text-white transition-opacity duration-150",
+              "bg-[#4C956C] hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 disabled:opacity-60",
+            )}>
+            {analyzing ? (
               <>
                 <Spinner />
                 <span className="sr-only">分析中</span>
               </>
-            : '分析'}
+            ) : (
+              "分析"
+            )}
           </button>
         </div>
       </form>
 
-      {analyzing ?
+      {analyzing ? (
         <p className="text-[11px] font-normal text-[#9298A8]">AI 分析中...</p>
-      : null}
+      ) : null}
 
-      {analysisError ?
+      {analysisError ? (
         <p className="text-[13px] text-destructive">{analysisError}</p>
-      : null}
+      ) : null}
 
-      {result ?
+      {result ? (
         <NutritionResultCard
           result={result}
           mealLabelZh={mealLabelZh}
@@ -245,12 +246,12 @@ export function AddFoodManualAiPanel({
           onConfirm={(edited) => void handleConfirm(edited)}
           onReselect={() => {
             setResult(null);
-            setRawInput('');
+            setRawInput("");
             setAnalysisError(null);
             setAnalyzing(false);
           }}
         />
-      : null}
+      ) : null}
     </div>
   );
 }

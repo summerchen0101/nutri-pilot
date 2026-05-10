@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
-import { Receipt } from 'lucide-react';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { Receipt } from "lucide-react";
 
-import { startCheckout } from '@/app/(main)/shop/actions';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
-import { SectionCard } from '@/components/ui/section-card';
-import { SectionHeading } from '@/components/ui/section-heading';
-import { SegmentedTabs } from '@/components/ui/segmented-tabs';
+import { startCheckout } from "@/app/(main)/shop/actions";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SectionCard } from "@/components/ui/section-card";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import {
   cartTotalPayment,
   cartTotalSubscription,
   useCartStore,
-} from '@/lib/shop/cart-store';
+} from "@/lib/shop/cart-store";
 
 export function CartView() {
   const router = useRouter();
@@ -24,9 +24,9 @@ export function CartView() {
   const removeLine = useCartStore((s) => s.removeLine);
   const clear = useCartStore((s) => s.clear);
 
-  const [mode, setMode] = useState<'payment' | 'subscription'>('payment');
-  const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>(
-    'monthly',
+  const [mode, setMode] = useState<"payment" | "subscription">("payment");
+  const [frequency, setFrequency] = useState<"weekly" | "biweekly" | "monthly">(
+    "monthly",
   );
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
@@ -46,9 +46,9 @@ export function CartView() {
   function checkout() {
     setErr(null);
     if (!lines.length) return;
-    if (mode === 'subscription') {
+    if (mode === "subscription") {
       if (!subscribable) {
-        setErr('購物車內商品需皆支援訂閱（含 Stripe 訂閱價）才可合併訂閱結帳');
+        setErr("購物車內商品需皆支援訂閱（含 Stripe 訂閱價）才可合併訂閱結帳");
         return;
       }
     }
@@ -57,7 +57,7 @@ export function CartView() {
       const res = await startCheckout({
         mode,
         items: itemsPayload,
-        frequency: mode === 'subscription' ? frequency : undefined,
+        frequency: mode === "subscription" ? frequency : undefined,
       });
       if (res.error) {
         setErr(res.error);
@@ -70,7 +70,13 @@ export function CartView() {
   }
 
   if (lines.length === 0) {
-    return <EmptyState message="購物車是空的" actionHref="/shop" actionLabel="前往商城" />;
+    return (
+      <EmptyState
+        message="購物車是空的"
+        actionHref="/shop"
+        actionLabel="前往商城"
+      />
+    );
   }
 
   const totalPay = cartTotalPayment(lines);
@@ -82,8 +88,7 @@ export function CartView() {
         {lines.map((line) => (
           <li
             key={line.variantId}
-            className="rounded-xl border-[0.5px] border-border bg-card p-4"
-          >
+            className="rounded-xl border-[0.5px] border-border bg-card p-4">
             <div className="flex justify-between gap-3">
               <div>
                 <p className="text-[13px] font-medium leading-snug text-foreground">
@@ -96,8 +101,7 @@ export function CartView() {
               <button
                 type="button"
                 className="shrink-0 text-[11px] font-medium text-[#E55A3C] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
-                onClick={() => removeLine(line.variantId)}
-              >
+                onClick={() => removeLine(line.variantId)}>
                 移除
               </button>
             </div>
@@ -106,8 +110,7 @@ export function CartView() {
                 <button
                   type="button"
                   className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
-                  onClick={() => setQty(line.variantId, line.qty - 1)}
-                >
+                  onClick={() => setQty(line.variantId, line.qty - 1)}>
                   −
                 </button>
                 <span className="min-w-[1.5rem] text-center text-[13px] tabular-nums">
@@ -116,8 +119,7 @@ export function CartView() {
                 <button
                   type="button"
                   className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
-                  onClick={() => setQty(line.variantId, line.qty + 1)}
-                >
+                  onClick={() => setQty(line.variantId, line.qty + 1)}>
                   +
                 </button>
               </div>
@@ -134,56 +136,46 @@ export function CartView() {
         ariaLabel="結帳模式"
         onChange={setMode}
         options={[
-          { id: 'payment', label: '單次結帳' },
-          { id: 'subscription', label: '訂閱結帳', disabled: !subscribable },
+          { id: "payment", label: "單次結帳" },
+          { id: "subscription", label: "訂閱結帳", disabled: !subscribable },
         ]}
       />
 
-      {mode === 'subscription' && subscribable ?
+      {mode === "subscription" && subscribable ? (
         <div>
           <span className="text-[11px] text-muted-foreground">寄送頻率</span>
           <select
             className="mt-1 flex h-11 w-full items-center rounded-[10px] border-[0.5px] border-border bg-card px-3 text-[13px] focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none"
             value={frequency}
-            onChange={(e) =>
-              setFrequency(e.target.value as typeof frequency)
-            }
-          >
+            onChange={(e) => setFrequency(e.target.value as typeof frequency)}>
             <option value="weekly">每週</option>
             <option value="biweekly">每兩週</option>
             <option value="monthly">每月</option>
           </select>
         </div>
-      : null}
+      ) : null}
 
       <SectionCard className="bg-secondary/40 px-4 py-3">
         <SectionHeading
           icon={Receipt}
           className="text-[11px] font-normal normal-case text-muted-foreground"
-          iconClassName="h-3.5 w-3.5"
-        >
-          {mode === 'payment' ? '預估總計（單次）' : '預估每期（訂閱）'}
+          iconClassName="h-3.5 w-3.5">
+          {mode === "payment" ? "預估總計（單次）" : "預估每期（訂閱）"}
         </SectionHeading>
         <p className="text-heading-page tabular-nums text-foreground">
-          NT${' '}
-          {mode === 'payment' ?
-            totalPay.toFixed(0)
-          : totalSub.toFixed(0)}
+          NT$ {mode === "payment" ? totalPay.toFixed(0) : totalSub.toFixed(0)}
         </p>
       </SectionCard>
 
-      {err ?
-        <p className="text-[13px] text-[#E24B4A]">{err}</p>
-      : null}
+      {err ? <p className="text-[13px] text-[#E24B4A]">{err}</p> : null}
 
       <div className="flex flex-col gap-2">
         <Button
           type="button"
           className="w-full"
           disabled={pending}
-          onClick={checkout}
-        >
-          {pending ? '處理中…' : '前往 Stripe 結帳'}
+          onClick={checkout}>
+          {pending ? "處理中…" : "前往 Stripe 結帳"}
         </Button>
         <Button
           type="button"
@@ -192,8 +184,7 @@ export function CartView() {
           onClick={() => {
             clear();
             router.refresh();
-          }}
-        >
+          }}>
           清空購物車
         </Button>
       </div>

@@ -419,7 +419,7 @@ function PromoBanner({
         </p>
         <Link
           href={href}
-          className="mt-2 inline-flex rounded-full border-[0.5px] border-primary bg-background px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary-light">
+          className="mt-2 inline-flex rounded-full border-[0.5px] border-primary bg-background px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary hover:text-white">
           {ctaLabel}
         </Link>
       </div>
@@ -612,7 +612,7 @@ export function DashboardHome({
 
       <section className="flex items-center justify-between gap-2">
         {streakDays >= 1 ? (
-          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary-light px-2.5 py-1 text-[11px] font-medium leading-none text-primary-foreground">
+          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium leading-none text-white">
             <FiAward className="h-3 w-3 shrink-0 opacity-90" aria-hidden />
             <span className="inline-flex items-center gap-0.5">
               <span>連續</span>
@@ -621,7 +621,7 @@ export function DashboardHome({
             </span>
           </span>
         ) : shouldShowNoAchievementLine(streakDays, milestoneChips) ? (
-          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary-light px-2.5 py-1 text-[11px] font-medium leading-none text-primary-foreground">
+          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium leading-none text-white">
             <FiAward className="h-3 w-3 shrink-0 opacity-90" aria-hidden />
             <span className="inline-flex items-center gap-0.5">
               尚未有達成紀錄
@@ -853,7 +853,7 @@ export function DashboardHome({
             {milestoneChips.map((m) => (
               <span
                 key={m.key}
-                className="inline-flex items-center rounded-full bg-primary-light px-3 py-1.5 text-caption font-medium text-primary-foreground">
+                className="inline-flex items-center rounded-full bg-primary px-3 py-1.5 text-caption font-medium text-white">
                 {m.label}
               </span>
             ))}

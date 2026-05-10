@@ -341,7 +341,7 @@ function LogSectionTabs({
       className={cn(
         'flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] px-2 py-2 text-[13px] font-medium transition-colors',
         active === tab
-          ? 'bg-primary-light text-primary-foreground'
+          ? 'bg-primary text-white'
           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
       )}
     >
@@ -1221,13 +1221,13 @@ export function LogClient({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-primary/30 bg-primary-light py-8 transition-colors active:bg-secondary"
+                  className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-white/25 bg-primary py-8 text-white transition-colors active:bg-primary-dark"
                 >
-                  <FiCamera className="h-8 w-8 text-primary-foreground" aria-hidden />
-                  <span className="text-[13px] font-medium text-primary-foreground">
+                  <FiCamera className="h-8 w-8 shrink-0 text-white" aria-hidden />
+                  <span className="text-[13px] font-medium text-white">
                     拍照或選擇相片
                   </span>
-                  <span className="text-[11px] text-neutral-text-tertiary">支援 JPG、PNG</span>
+                  <span className="text-[11px] text-white/70">支援 JPG、PNG</span>
                 </button>
               : photoPreviewUrl && !photoResult ?
                 <div className="relative w-full overflow-hidden rounded-xl">

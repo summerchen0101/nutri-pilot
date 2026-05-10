@@ -329,7 +329,7 @@ function BadgeRow({
       {(dietTags ?? []).slice(0, 3).map((t) => (
         <span
           key={t}
-          className="rounded-full bg-primary-light px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+          className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-medium text-white">
           {t}
         </span>
       ))}
