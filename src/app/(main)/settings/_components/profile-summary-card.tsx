@@ -1,3 +1,6 @@
+import { Pencil } from 'lucide-react';
+
+import { SECTION_HEADING_ACTION_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
 import { SectionCard } from '@/components/ui/section-card';
 
 interface ProfileSummaryCardProps {
@@ -35,10 +38,11 @@ export function ProfileSummaryCard({
         </div>
         <button
           type="button"
-          className="rounded-[8px] border border-primary px-3 py-1.5 text-[13px] text-primary"
+          aria-label="編輯姓名"
+          className={SECTION_HEADING_ACTION_ICON_CLASS}
           onClick={onEditName}
         >
-          編輯
+          <Pencil className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden />
         </button>
       </div>
     </SectionCard>

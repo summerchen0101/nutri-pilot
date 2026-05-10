@@ -1,5 +1,6 @@
-import { Ruler } from "lucide-react";
+import { Pencil, Ruler } from "lucide-react";
 
+import { SECTION_HEADING_ACTION_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
 import { MetricTile } from "@/components/ui/metric-tile";
 import { SectionCard } from "@/components/ui/section-card";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -31,9 +32,10 @@ export function BodyMetricsCard({
         <SectionHeading icon={Ruler}>身體數據</SectionHeading>
         <button
           type="button"
-          className="rounded-[8px] border border-primary px-3 py-1 text-[13px] text-primary"
+          aria-label="編輯身體數據"
+          className={SECTION_HEADING_ACTION_ICON_CLASS}
           onClick={onEdit}>
-          更新
+          <Pencil className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden />
         </button>
       </div>
       <div className="grid grid-cols-3 gap-2">

@@ -70,7 +70,7 @@
     /* 淡灰綠、綠意、Steel Blue 區塊與 hsl(var(--muted)) 等共用（可與白卡分開調） */
     --app-tint-surface-opacity: 0.4;
     /* 主色淡底 #E8F5EE — 面板用（與 --primary-light hex 對齊） */
-    --primary-light-panel: 146 39% 93.5% / var(--app-tint-surface-opacity);
+    --primary-light-panel: 146 39% 83% / var(--app-tint-surface-opacity);
     /* Steel blue-50 / blue-300 邊 — docs/09-ui-design.md */
     --steel-panel: 207 85% 94% / var(--app-tint-surface-opacity);
     --steel-border: 210 72% 76% / 0.62;

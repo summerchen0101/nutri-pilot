@@ -269,7 +269,7 @@ function WeeklyTrendCard({
     <SectionCard>
       <SectionHeading icon={TrendingUp}>本週趨勢</SectionHeading>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <div className="rounded-[10px] bg-secondary/40 p-3">
+        <div className="rounded-[10px] border-hairline border-border p-3">
           <p className="text-[11px] text-muted-foreground">體重（7 日）</p>
           <div className="mt-2 h-14">
             {weightPoints ? (
@@ -293,7 +293,7 @@ function WeeklyTrendCard({
               : "—"}
           </p>
         </div>
-        <div className="rounded-[10px] bg-secondary/40 p-3">
+        <div className="rounded-[10px] border-hairline border-border p-3">
           <p className="text-[11px] text-muted-foreground">熱量（7 日）</p>
           <div className="mt-2 flex h-14 items-end gap-1">
             {weeklyKcal.map((row) => (
