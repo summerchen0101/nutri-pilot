@@ -539,13 +539,16 @@ export function OnboardingWizard({
                     key={o.value}
                     type="button"
                     onClick={() => setDietMethod(o.value)}
-                    className={`rounded-[10px] border-[0.5px] p-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 ${
+                    className={`rounded-[10px] border-[0.5px] p-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
                       dietMethod === o.value
-                        ? 'border-[#4C956C] bg-[#E8F5EE]'
-                        : 'border-border bg-background hover:border-[#4C956C]'
+                        ? 'border-primary bg-primary-light'
+                        : 'border-border bg-background hover:border-primary'
                     }`}
                   >
-                    <p className="text-[13px] font-medium text-foreground">{o.label}</p>
+                    <p
+                      className={`text-[13px] font-medium ${dietMethod === o.value ? 'text-primary-foreground' : 'text-foreground'}`}>
+                      {o.label}
+                    </p>
                     <p className="mt-1 text-[11px] text-[#9298A8]">{o.desc}</p>
                   </button>
                 ))}

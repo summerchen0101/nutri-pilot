@@ -142,8 +142,8 @@ export function ShopHomeClient({
               className={cn(
                 'flex h-[60px] min-w-[60px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-1 text-[11px] font-medium transition-colors',
                 category === key ?
-                  'bg-[#E8F5EE] text-[#2D6B4A]'
-                : 'border-[0.5px] border-border bg-card text-muted-foreground hover:border-[#4C956C]/40',
+                  'bg-primary-light text-primary-foreground'
+                : 'border-[0.5px] border-border bg-card text-muted-foreground hover:border-primary/40',
               )}
             >
               <span className="flex h-5 w-5 items-center justify-center">
@@ -194,7 +194,7 @@ export function ShopHomeClient({
               <Link
                 key={p.id}
                 href={`/shop/${p.id}`}
-                className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-border bg-card transition-colors hover:border-[#4C956C]/50"
+                className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-border bg-card transition-colors hover:border-primary/50"
               >
                 <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
                   {p.image_url ?
@@ -208,7 +208,7 @@ export function ShopHomeClient({
                     />
                   : null}
                   {p.score > 0 ?
-                    <span className="absolute left-2 top-2 rounded-full bg-[#E8F5EE] px-2 py-0.5 text-[10px] font-medium text-[#2D6B4A]">
+                    <span className="absolute left-2 top-2 rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
                       推薦 {p.score.toFixed(0)}
                     </span>
                   : null}

@@ -11,12 +11,12 @@ const CUP_ML = 250;
 const GRID_CELLS = 12;
 const VISUAL_CAP_ML = CUP_ML * GRID_CELLS;
 
-/** 飲水進度填色（與主色區隔，沿用設計系統第三色） */
-const WATER_FILL_CLASS = "bg-[#378ADD] border-[#378ADD]/40";
-const WATER_PARTIAL_CLASS = "bg-[#378ADD]";
-/** 超過飲水目標後的格子／片段（第三色淺藍，與 AI 卡邊框同一系） */
-const WATER_OVER_GOAL_FILL_CLASS = "bg-[#B5D4F4] border-[#378ADD]/35";
-const WATER_OVER_GOAL_PARTIAL_CLASS = "bg-[#B5D4F4]";
+/** 飲水進度填色（第三色 Steel Blue，與 --steel-accent 對齊） */
+const WATER_FILL_CLASS = 'bg-steel-accent border-steel-accent/40';
+const WATER_PARTIAL_CLASS = 'bg-steel-accent';
+/** 超過飲水目標後（淺藍，與 --steel-border 對齊） */
+const WATER_OVER_GOAL_FILL_CLASS = 'bg-steel-border border-steel-accent/35';
+const WATER_OVER_GOAL_PARTIAL_CLASS = 'bg-steel-border';
 
 type Props = {
   initialWaterMl: number;
@@ -116,7 +116,7 @@ export function DashboardWaterGrid({
 
           const cellStartMl = filledFull * CUP_ML;
           let partialBorder =
-            "relative overflow-hidden border-[#378ADD]/30 bg-muted/60";
+            "relative overflow-hidden border-steel-accent/30 bg-muted/60";
           let partialInner: ReactNode = null;
           if (isPartial) {
             if (!useGoalSplit) {
@@ -143,7 +143,7 @@ export function DashboardWaterGrid({
               );
             } else if (cellStartMl >= goalMl) {
               partialBorder =
-                "relative overflow-hidden border-[#378ADD]/25 bg-muted/60";
+                "relative overflow-hidden border-steel-accent/25 bg-muted/60";
               partialInner = (
                 <span
                   className={cn(
@@ -158,7 +158,7 @@ export function DashboardWaterGrid({
               const blueWidthPct = ((goalMl - cellStartMl) / CUP_ML) * 100;
               const lightWidthPct = ((waterMl - goalMl) / CUP_ML) * 100;
               partialBorder =
-                "relative overflow-hidden border-[#378ADD]/25 bg-muted/60";
+                "relative overflow-hidden border-steel-accent/25 bg-muted/60";
               partialInner = (
                 <>
                   <span

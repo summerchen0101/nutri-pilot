@@ -11,7 +11,7 @@ const variantClass: Record<ButtonVariant, string> = {
   default:
     'bg-[#1E212B] text-white hover:bg-[#2A2F3D] focus-visible:ring-[#1E212B]/25',
   outline:
-    'border-[1.5px] border-[#4C956C] bg-transparent text-[#4C956C] hover:bg-[#E8F5EE] focus-visible:ring-[#4C956C]/20',
+    'border-[1.5px] border-primary bg-transparent text-primary hover:bg-primary-light focus-visible:ring-primary/20',
   ghost:
     'border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-[#4C956C]/15',
   destructive:

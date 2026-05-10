@@ -72,8 +72,15 @@ const config: Config = {
         primary: {
           DEFAULT: "var(--primary)",
           dark: "var(--primary-dark)",
-          light: "var(--primary-light)",
+          light: "hsl(var(--primary-light-panel))",
           foreground: "var(--primary-text)",
+        },
+        steel: {
+          panel: "hsl(var(--steel-panel))",
+          border: "hsl(var(--steel-border))",
+          foreground: "var(--steel-text)",
+          accent: "var(--steel-accent)",
+          hover: "hsl(var(--steel-panel-hover))",
         },
         "shadow-grey": {
           DEFAULT: "var(--shadow-grey)",

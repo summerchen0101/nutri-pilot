@@ -902,7 +902,7 @@ export function LogClient({
 
       {prefillFromMeal ? (
         <div className="space-y-4">
-          <div className="rounded-xl border-[0.5px] border-primary-light bg-primary-light p-3.5">
+          <div className="rounded-xl border-[0.5px] border-primary/20 bg-primary-light p-3.5">
             <p className="text-[13px] leading-snug text-foreground">
               從計畫帶入：
               {MEAL_LABEL[prefillFromMeal.mealType]}
@@ -1221,10 +1221,10 @@ export function LogClient({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-primary-light bg-primary-light py-8 transition-colors active:bg-secondary"
+                  className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-primary/30 bg-primary-light py-8 transition-colors active:bg-secondary"
                 >
-                  <FiCamera className="h-8 w-8 text-primary" aria-hidden />
-                  <span className="text-[13px] font-medium text-primary">
+                  <FiCamera className="h-8 w-8 text-primary-foreground" aria-hidden />
+                  <span className="text-[13px] font-medium text-primary-foreground">
                     拍照或選擇相片
                   </span>
                   <span className="text-[11px] text-neutral-text-tertiary">支援 JPG、PNG</span>

@@ -145,27 +145,27 @@ function scrollToTop() {
 }
 
 const analyticsQuickNavButtonClass = cn(
-  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-[#4C956C] bg-transparent px-2 text-caption font-medium text-[#4C956C]',
-  'hover:bg-[#4C956C]/10 hover:text-[#3d7a56]',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C]/25',
+  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-primary bg-transparent px-2 text-caption font-medium text-primary',
+  'hover:bg-primary/10 hover:text-primary-dark',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
 );
 
 const analyticsQuickAiNavButtonClass = cn(
-  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] px-2 text-caption font-medium text-[#378ADD]',
-  'hover:border-[#378ADD]/70 hover:bg-[#D6EAF9] hover:text-[#2B6CB0]',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#378ADD]/25',
+  'inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-steel-border bg-steel-panel px-2 text-caption font-medium text-steel-accent',
+  'hover:border-steel-accent/70 hover:bg-steel-hover hover:text-steel-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-steel-accent/25',
 );
 
 const analyticsFloatingNavButtonClass = cn(
-  'flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-[#4C956C] border-r-0 bg-card pl-2.5 pr-0 text-[#4C956C] shadow-md',
-  'hover:bg-[#4C956C]/10 hover:text-[#3d7a56]',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C]/25 focus-visible:ring-offset-2',
+  'flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-primary border-r-0 bg-card pl-2.5 pr-0 text-primary shadow-md',
+  'hover:bg-primary/10 hover:text-primary-dark',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2',
 );
 
 const analyticsFloatingAiNavButtonClass = cn(
-  'flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-[#B5D4F4] border-r-0 bg-[#E6F1FB] pl-2.5 pr-0 text-[#378ADD] shadow-md',
-  'hover:border-[#378ADD]/70 hover:bg-[#D6EAF9] hover:text-[#2B6CB0]',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#378ADD]/25 focus-visible:ring-offset-2',
+  'flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-steel-border border-r-0 bg-steel-panel pl-2.5 pr-0 text-steel-accent shadow-md',
+  'hover:border-steel-accent/70 hover:bg-steel-hover hover:text-steel-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-steel-accent/25 focus-visible:ring-offset-2',
 );
 
 type AnalyticsMainChartNav = {
@@ -726,11 +726,11 @@ export function AnalyticsView({
 
       <section
         id="analytics-weekly-insight"
-        className="scroll-mt-3 rounded-xl border-[0.5px] border-[#B5D4F4] bg-[#E6F1FB] p-3.5">
+        className="scroll-mt-3 rounded-xl border-[0.5px] border-steel-border bg-steel-panel p-3.5">
         <div>
           <div className="flex items-center gap-1.5">
             <Sparkles
-              className="h-4 w-4 shrink-0 text-[#378ADD]"
+              className="h-4 w-4 shrink-0 text-steel-accent"
               strokeWidth={1.8}
               aria-hidden
             />
@@ -760,9 +760,9 @@ export function AnalyticsView({
                     <span
                       className={cn(
                         "mt-1 h-1.5 w-1.5 shrink-0 rounded-full",
-                        row.type === "positive" && "bg-[#4C956C]",
+                        row.type === "positive" && "bg-primary",
                         row.type === "warning" && "bg-[#EF9F27]",
-                        row.type === "info" && "bg-[#378ADD]",
+                        row.type === "info" && "bg-steel-accent",
                       )}
                       aria-hidden
                     />
@@ -774,7 +774,7 @@ export function AnalyticsView({
           )}
         </div>
 
-        <div className="mt-4 border-t-[0.5px] border-[#B5D4F4]/60 pt-4">
+        <div className="mt-4 border-t-[0.5px] border-steel-border pt-4">
           <WeeklyReportShare
             rangeLabel={weekShareSummary.rangeLabel}
             avgKcal={weekShareSummary.avgKcal}
