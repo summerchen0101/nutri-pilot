@@ -51,6 +51,8 @@ const config: Config = {
           },
         },
         border: "hsl(var(--border))",
+        /** 儀表板卡路里圓環底軌 — 對應 globals `--calorie-ring-track` */
+        "calorie-ring-track": "hsl(var(--calorie-ring-track))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         muted: {

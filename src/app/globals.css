@@ -81,6 +81,8 @@
     --muted: 96 11% 97% / var(--app-tint-surface-opacity);
     --muted-foreground: 215 16% 47%;
     --border: 214 28% 70%;
+    /* 儀表板卡路里圓環底軌（SVG stroke）；與 --border 分開以便視覺微調 */
+    --calorie-ring-track: 214 28% 90%;
     --secondary: 96 11% 97% / var(--app-tint-surface-opacity);
     --secondary-foreground: 222 47% 11%;
     --destructive: 6 78% 57%;

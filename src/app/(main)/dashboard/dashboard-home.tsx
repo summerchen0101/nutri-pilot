@@ -100,7 +100,7 @@ function CalorieRingBlock({
               cy="50"
               r={ringR}
               fill="none"
-              className="stroke-border"
+              className="stroke-calorie-ring-track"
               strokeWidth="6"
             />
             <circle
