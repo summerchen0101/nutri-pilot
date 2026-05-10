@@ -886,7 +886,7 @@ export function DashboardHome({
                 onClick={(e) => e.stopPropagation()}>
                 <h2
                   id="weight-dialog-title"
-                  className="text-[15px] font-medium text-foreground">
+                  className="text-heading-page text-foreground">
                   記錄今日體重
                 </h2>
                 <p className="mt-1 text-[11px] text-muted-foreground">

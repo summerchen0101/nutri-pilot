@@ -127,6 +127,7 @@ Tailwind：`primary` / `primary-dark` / `primary-light` / `primary-foreground`�
 | 用途 | Tailwind class | 備註 |
 |------|----------------|------|
 | 頁面標題 | `text-heading-screen` | 或元件 `PageHeading` |
+| Bottom sheet／對話框標題 | `text-heading-page` | `BottomSheetShell`、少數 `role="dialog"` |
 | 區塊標題 | `text-heading-section` | 或元件 `SectionHeading` |
 | 卡片小標 | `text-heading-card` | `CardTitle` 預設已套用 |
 | 內文 | `text-body` | 字重繼承 `body` 的 `font-normal`；按鈕／強調可外加 `font-medium` |
@@ -232,6 +233,10 @@ border-color: #4C956C;
 box-shadow: 0 0 0 2px rgba(76,149,108,.12);
 outline: none;
 ```
+
+### Bottom sheet／Portal 對話框標題
+
+標題使用 **`text-heading-page`**（20px／字重 500，與 Tailwind 語意 class 一致）。實作：`BottomSheetShell` 之 `<h2>`、以及少量 `createPortal`＋`role="dialog"` 之標題（例如儀表板「記錄今日體重」）。
 
 ### 卡片
 

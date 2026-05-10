@@ -21,13 +21,13 @@ Primary CTA（Shadow Grey）：`#1E212B`／hover `#2A2F3D` — **僅**主要操�
 
 ## 字體
 
-**語意 class（優先）**：`text-heading-screen`（螢幕頂主標／`PageHeading`）、`text-heading-page`（數字大值）、`text-heading-section`（區塊）、`text-heading-card`（卡片小標）、`text-body`（內文）、`text-caption`（輔助）、`text-micro`（nav／角標）。對應元件：`PageHeading`、`SectionHeading`、`CardTitle`／`CardDescription` 已內建。
+**語意 class（優先）**：`text-heading-screen`（螢幕頂主標／`PageHeading`）、`text-heading-page`（數字大值；**Bottom Sheet／Portal 對話框標題**亦用此級）、`text-heading-section`（區塊）、`text-heading-card`（卡片小標）、`text-body`（內文）、`text-caption`（輔助）、`text-micro`（nav／角標）。對應元件：`PageHeading`、`SectionHeading`、`CardTitle`／`CardDescription` 已內建。
 
 px 階層（與 `tailwind.config.ts` 對齊）：
 
 ```
 螢幕頂主標  24px / 500  → text-heading-screen（PageHeading、登入／Onboarding 頂標）
-數字大值    20px / 500  → text-heading-page
+數字大值    20px / 500  → text-heading-page（sheet／dialog 標題同級）
 區塊標題    15px / 500  → text-heading-section
 卡片小標    13px / 500  → text-heading-card
 內文        13px / 400  → text-body（字重繼承 body）
@@ -74,6 +74,7 @@ modal / sheet   border-radius: 16px
 bottom nav active： bg-[#E8F5EE] text-[#4C956C]
 AI 卡：     bg-[#E6F1FB] border border-[#B5D4F4] rounded-xl p-3.5
 指標格：    bg-secondary rounded-[10px] p-3 cursor-pointer
+bottom sheet 標題： text-heading-page（`BottomSheetShell`）
 ```
 
 ## 禁止
