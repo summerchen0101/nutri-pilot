@@ -1,6 +1,6 @@
 export default function MainLoading() {
   return (
-    <div className="relative min-h-screen bg-surface-secondary">
+    <div className="relative min-h-screen">
       <div className="mx-auto max-w-sm px-4 pb-28 pt-5">
         <div className="space-y-4" aria-busy aria-label="載入中">
           <div className="h-8 w-40 animate-pulse rounded-lg bg-muted/80" />

@@ -314,7 +314,7 @@ export function NutritionResultCard({
 
   const outerClass = embedded ?
       'mt-0 space-y-3'
-    : 'mt-3 space-y-3 rounded-xl border-[0.5px] border-[var(--color-border-tertiary)] bg-[var(--color-background-primary)] p-4';
+    : 'mt-3 space-y-3 rounded-xl border-[0.5px] border-[var(--color-border-tertiary)] bg-card p-4';
 
   const busy = editMode ? editBusy : confirmBusy;
 

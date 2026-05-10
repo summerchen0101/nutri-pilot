@@ -63,7 +63,7 @@ export default async function GuardRecordsPage() {
           spacing="compact"
         />
         {quotaLine}
-        <Card className="min-w-0 overflow-hidden !bg-white">
+        <Card className="min-w-0 overflow-hidden">
           <CardContent className="py-6">
             <p className="text-[13px] text-destructive">
               讀取紀錄失敗：{error.message}
@@ -84,7 +84,7 @@ export default async function GuardRecordsPage() {
       {quotaLine}
 
       {!records || records.length === 0 ? (
-        <Card className="min-w-0 overflow-hidden !bg-white">
+        <Card className="min-w-0 overflow-hidden">
           <CardContent className="space-y-2 py-6">
             <p className="text-[13px] text-foreground">
               目前還沒有儲存的食品安全分析紀錄。
@@ -101,9 +101,7 @@ export default async function GuardRecordsPage() {
           {records.map((record) => {
             const score = extractSafetyScore(record.report_json);
             return (
-              <Card
-                key={record.id}
-                className="min-w-0 overflow-hidden !bg-white">
+              <Card key={record.id} className="min-w-0 overflow-hidden">
                 <div className="flex min-h-[44px] items-center gap-2 pr-2">
                   <Link
                     href={`/guard/records/${record.id}`}

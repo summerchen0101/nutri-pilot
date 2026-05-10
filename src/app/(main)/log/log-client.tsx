@@ -1362,7 +1362,7 @@ export function LogClient({
                                   }}
                                 >
                                   {expandedItemId === it.id ?
-                                    <div className="rounded-b-xl border-t border-border bg-[var(--color-background-primary)] p-4">
+                                    <div className="rounded-b-xl border-t border-border bg-card p-4">
                                       <NutritionResultCard
                                         key={`${it.id}-${it.calories}-${it.quantity_g}`}
                                         embedded

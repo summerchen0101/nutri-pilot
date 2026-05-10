@@ -26,7 +26,7 @@ export function BodyMetricsCard({
   onEdit,
 }: BodyMetricsCardProps) {
   return (
-    <SectionCard className="bg-neutral-bg-primary">
+    <SectionCard>
       <div className="mb-3 flex items-center justify-between gap-3">
         <SectionHeading icon={Ruler}>身體數據</SectionHeading>
         <button

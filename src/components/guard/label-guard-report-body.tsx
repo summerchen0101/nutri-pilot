@@ -42,7 +42,7 @@ export function LabelGuardReportBody({
   return (
     <div
       className={cn(
-        'space-y-4 rounded-xl border-[0.5px] border-border bg-secondary p-4',
+        'space-y-4 rounded-xl border-[0.5px] border-border bg-card p-4',
         className,
       )}>
       <p className="text-[11px] font-medium text-muted-foreground">

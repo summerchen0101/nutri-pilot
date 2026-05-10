@@ -27,7 +27,7 @@ export function MainAppShell({ children }: { children: ReactNode }) {
     : 'mx-auto max-w-sm px-4 pb-8 pt-5';
 
   return (
-    <div className="relative min-h-screen bg-surface-secondary">
+    <div className="relative min-h-screen">
       <div className={contentPaddingClass}>
         {children}
       </div>

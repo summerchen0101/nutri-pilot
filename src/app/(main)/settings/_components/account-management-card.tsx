@@ -16,7 +16,7 @@ export function AccountManagementCard({
   onDeleteAccount,
 }: AccountManagementCardProps) {
   return (
-    <SectionCard className="bg-neutral-bg-primary">
+    <SectionCard>
       <SectionHeading icon={UserCog} className="mb-1">
         帳號管理
       </SectionHeading>

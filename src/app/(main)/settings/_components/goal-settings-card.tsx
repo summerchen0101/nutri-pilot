@@ -32,7 +32,7 @@ export function GoalSettingsCard({
   onOpenGoalTargetDate,
 }: GoalSettingsCardProps) {
   return (
-    <SectionCard className="bg-neutral-bg-primary">
+    <SectionCard>
       <SectionHeading icon={Target} className="mb-1">
         飲控目標
       </SectionHeading>

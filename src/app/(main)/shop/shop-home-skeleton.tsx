@@ -14,7 +14,7 @@ export function ShopHomeSkeleton() {
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={`pd-${i}`}
-            className="space-y-2 rounded-xl border border-[0.5px] border-border bg-background p-3"
+            className="space-y-2 rounded-xl border border-[0.5px] border-border bg-card p-3"
           >
             <div className="aspect-square w-full animate-pulse rounded-lg bg-muted/70" />
             <div className="h-3 w-3/4 animate-pulse rounded bg-muted/80" />

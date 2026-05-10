@@ -26,7 +26,7 @@ export function DietPreferencesCard({
   onToggleGlycemic,
 }: DietPreferencesCardProps) {
   return (
-    <SectionCard className="bg-neutral-bg-primary">
+    <SectionCard>
       <SectionHeading icon={Carrot} className="mb-1">
         飲食偏好
       </SectionHeading>

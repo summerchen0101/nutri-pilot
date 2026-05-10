@@ -60,9 +60,11 @@
     --color-border-tertiary: #e8e9ed;
     --color-border-secondary: #d5d7de;
 
-    --background: 0 0% 98%;
+    --background: 0 0% 100%;
     --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
+    /* 叠在底圖上的卡片白底不透明度（與 --app-bg-photo-opacity 一併目視微調） */
+    --app-card-surface-opacity: 0.4;
+    --card: 0 0% 100% / var(--app-card-surface-opacity);
     --card-foreground: 222 47% 11%;
     --muted: 96 11% 97%;
     --muted-foreground: 215 16% 47%;
@@ -73,12 +75,30 @@
     --destructive-foreground: 0 0% 100%;
     /* focus ring ≈ Sea Green #4C956C */
     --ring: 146 32% 44%;
+    /* 全站底層裝飾圖可見度（1 = 不透明） */
+    --app-bg-photo-opacity: 0.3;
   }
 
   html {
     @apply antialiased;
+    position: relative;
+    min-height: 100%;
+    background-color: hsl(var(--background));
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  html::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: url("../imgs/bg.jpg");
+    background-position: left top;
+    background-repeat: no-repeat;
+    background-size: cover;
+    opacity: var(--app-bg-photo-opacity);
   }
 
   html::-webkit-scrollbar {
@@ -86,7 +106,9 @@
   }
 
   body {
-    @apply bg-background text-foreground font-normal;
+    @apply bg-transparent text-foreground font-normal;
+    position: relative;
+    z-index: 1;
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
