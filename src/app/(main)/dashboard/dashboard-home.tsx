@@ -24,7 +24,10 @@ import { createPortal } from "react-dom";
 
 import { logWeightAction } from "@/app/(main)/dashboard/actions";
 import { DashboardWaterGrid } from "@/app/(main)/dashboard/dashboard-water-grid";
-import { HEADER_ACTION_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
+import {
+  HEADER_ACTION_ICON_CLASS,
+  SECTION_HEADING_ACTION_ICON_CLASS,
+} from "@/components/layout/header-action-icon-styles";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -805,7 +808,7 @@ export function DashboardHome({
           <Link
             href={`/log?date=${encodeURIComponent(todayIsoDate)}&tab=food`}
             aria-label="新增餐點紀錄"
-            className={cn(HEADER_ACTION_ICON_CLASS)}>
+            className={SECTION_HEADING_ACTION_ICON_CLASS}>
             <PlusCircle
               className="h-[18px] w-[18px]"
               strokeWidth={1.8}
