@@ -39,7 +39,7 @@ export function SegmentedTabs<T extends string>({
           disabled={option.disabled}
           onClick={() => onChange(option.id)}
           className={cn(
-            'flex-1 rounded-lg py-2 text-[13px] font-medium transition-colors',
+            'flex-1 rounded-lg py-[11px] text-[13px] font-medium transition-colors',
             value === option.id
               ? 'bg-[#1E212B] text-white hover:bg-[#2A2F3D]'
               : 'text-muted-foreground hover:text-foreground',

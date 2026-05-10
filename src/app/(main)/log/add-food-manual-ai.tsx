@@ -206,7 +206,7 @@ export function AddFoodManualAiPanel({
             onChange={(e) => setRawInput(e.target.value)}
             placeholder="輸入食物與份量，例如：4個雞塊、大杯珍珠奶茶"
             className={cn(
-              'min-h-10 min-w-0 flex-1 rounded-[10px] border-[0.5px] border-[#E8E9ED] bg-[var(--color-background-primary)] px-3 py-2 text-[13px] font-normal text-foreground outline-none transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[var(--color-text-tertiary)] disabled:opacity-60',
+              'min-h-11 min-w-0 flex-1 rounded-[10px] border-[0.5px] border-[#E8E9ED] bg-[var(--color-background-primary)] px-3 py-2 text-[13px] font-normal text-foreground outline-none transition-[border-color,box-shadow] duration-150 ease-in-out placeholder:text-[var(--color-text-tertiary)] disabled:opacity-60',
               'focus:border-[#4C956C] focus:shadow-[0_0_0_2px_rgba(76,149,108,0.12)]',
             )}
           />

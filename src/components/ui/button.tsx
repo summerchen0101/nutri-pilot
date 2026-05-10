@@ -19,8 +19,9 @@ const variantClass: Record<ButtonVariant, string> = {
 };
 
 const sizeClass: Record<ButtonSize, string> = {
-  default: 'rounded-[10px] px-[18px] py-[9px] text-body font-medium',
-  sm: 'rounded-lg px-3 py-[5px] text-caption font-medium',
+  default:
+    'min-h-11 rounded-[10px] px-[18px] py-[11px] text-body font-medium',
+  sm: 'min-h-10 rounded-lg px-3 py-[7px] text-caption font-medium',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

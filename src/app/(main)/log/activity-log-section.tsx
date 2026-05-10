@@ -116,9 +116,9 @@ export function ActivityLogSection({
   }
 
   const mealPillPrimary =
-    'h-9 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-transparent';
+    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-transparent';
   const mealPillInactive =
-    'h-9 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
+    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
 
   return (
     <div className="space-y-3">
@@ -149,7 +149,7 @@ export function ActivityLogSection({
             <select
               id="activity-type-select"
               className={cn(
-                'mt-1 flex h-10 w-full rounded-[10px] border-[0.5px] border-border bg-card px-3 py-2 text-[13px] text-foreground',
+                'mt-1 flex h-11 w-full items-center rounded-[10px] border-[0.5px] border-border bg-card px-3 py-2 text-[13px] text-foreground',
                 'focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none',
                 'disabled:cursor-not-allowed disabled:opacity-50',
               )}

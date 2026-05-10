@@ -185,7 +185,8 @@ Tailwind：`primary` / `primary-dark` / `primary-light` / `primary-foreground`�
 /* Primary — 主要操作（加入購物車、確認、儲存）— Shadow Grey */
 background: #1E212B;
 color: #fff;
-padding: 9px 18px;
+padding: 11px 18px;
+min-height: 44px;
 border-radius: 10px;
 font-size: 13px;
 font-weight: 500;
@@ -207,17 +208,19 @@ background: #E55A3C;
 color: #fff;
 
 /* Small variant — 卡片內的小按鈕 */
-padding: 5px 12px;
+padding: 7px 12px;
+min-height: 40px;
 font-size: 11px;
 border-radius: 8px;
 ```
 
-**實作**：優先使用 `@/components/ui/button` 的 `Button`：`size="default"` 對應上列主要尺寸（含 padding 9px 18px）；`size="sm"` 對應 Small variant。
+**實作**：優先使用 `@/components/ui/button` 的 `Button`：`size="default"` 對應上列主要尺寸（含 padding 11px 18px、`min-height` 44px）；`size="sm"` 對應 Small variant。
 
 ### 輸入框
 
 ```css
-padding: 9px 12px;
+min-height: 44px;
+padding: 8px 12px;
 border-radius: 10px;
 border: 0.5px solid var(--color-border-secondary);
 background: var(--color-background-primary);

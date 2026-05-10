@@ -157,13 +157,13 @@ const analyticsQuickAiNavButtonClass = cn(
 );
 
 const analyticsFloatingNavButtonClass = cn(
-  'flex h-10 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-[#4C956C] border-r-0 bg-card pl-2.5 pr-0 text-[#4C956C] shadow-md',
+  'flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-[#4C956C] border-r-0 bg-card pl-2.5 pr-0 text-[#4C956C] shadow-md',
   'hover:bg-[#4C956C]/10 hover:text-[#3d7a56]',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C]/25 focus-visible:ring-offset-2',
 );
 
 const analyticsFloatingAiNavButtonClass = cn(
-  'flex h-10 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-[#B5D4F4] border-r-0 bg-[#E6F1FB] pl-2.5 pr-0 text-[#378ADD] shadow-md',
+  'flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-[#B5D4F4] border-r-0 bg-[#E6F1FB] pl-2.5 pr-0 text-[#378ADD] shadow-md',
   'hover:border-[#378ADD]/70 hover:bg-[#D6EAF9] hover:text-[#2B6CB0]',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#378ADD]/25 focus-visible:ring-offset-2',
 );

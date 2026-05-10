@@ -63,7 +63,7 @@ function MacroCell({
       {editing ?
         <Input
           autoFocus
-          className="h-10 border-[0.5px] !text-heading-page tabular-nums"
+          className="border-[0.5px] !text-heading-page tabular-nums"
           style={{ color: valueColor }}
           value={draft}
           inputMode="decimal"
@@ -467,7 +467,7 @@ export function NutritionResultCard({
           <Button
             type="button"
             variant="ghost"
-            className="h-10 min-h-10 flex-1 border-[0.5px]"
+            className="flex-1 border-[0.5px]"
             disabled={busy}
             onClick={() => onCancel?.()}
           >
@@ -476,7 +476,7 @@ export function NutritionResultCard({
           <Button
             type="button"
             variant="default"
-            className="h-10 min-h-10 flex-1"
+            className="flex-1"
             disabled={busy}
             onClick={() => handleConfirm()}
           >
@@ -488,7 +488,7 @@ export function NutritionResultCard({
           <Button
             type="button"
             variant="outline"
-            className="h-10 min-h-10 min-w-0 shrink-0 basis-[34%] rounded-[10px] text-[13px] font-medium"
+            className="min-w-0 shrink-0 basis-[34%] rounded-[10px] text-[13px] font-medium"
             disabled={busy}
             onClick={() => onReselect?.()}
           >
@@ -497,7 +497,7 @@ export function NutritionResultCard({
           <Button
             type="button"
             variant="default"
-            className="h-10 min-h-10 min-w-0 flex-1 rounded-[10px] text-[13px] font-medium"
+            className="min-w-0 flex-1 rounded-[10px] text-[13px] font-medium"
             disabled={busy}
             onClick={() => handleConfirm()}
           >

@@ -42,7 +42,7 @@ export function OptionSelectSheet({
               key={option.value}
               type="button"
               className={[
-                'w-full rounded-[10px] border px-3 py-2 text-left text-[13px]',
+                'flex min-h-11 w-full items-center rounded-[10px] border px-3 text-left text-[13px]',
                 active ? 'border-primary bg-primary-light text-primary-foreground' : 'border-neutral-border-tertiary text-foreground',
               ].join(' ')}
               onClick={() => onSelect(option.value)}
@@ -56,7 +56,7 @@ export function OptionSelectSheet({
       <button
         type="button"
         disabled={pending}
-        className="w-full rounded-[10px] bg-shadow-grey py-2 text-[13px] font-medium text-white disabled:opacity-60"
+        className="flex min-h-11 w-full items-center justify-center rounded-[10px] bg-shadow-grey py-[11px] text-[13px] font-medium text-white disabled:opacity-60"
         onClick={onSave}
       >
         儲存
@@ -82,7 +82,7 @@ export function EditNameSheet({ open, value, error, pending, onClose, onChange, 
       <button
         type="button"
         disabled={pending}
-        className="w-full rounded-[10px] bg-shadow-grey py-2 text-[13px] font-medium text-white disabled:opacity-60"
+        className="flex min-h-11 w-full items-center justify-center rounded-[10px] bg-shadow-grey py-[11px] text-[13px] font-medium text-white disabled:opacity-60"
         onClick={onSave}
       >
         儲存
@@ -123,7 +123,7 @@ export function EditBodyMetricsSheet({
       <button
         type="button"
         disabled={pending}
-        className="w-full rounded-[10px] bg-shadow-grey py-2 text-[13px] font-medium text-white disabled:opacity-60"
+        className="flex min-h-11 w-full items-center justify-center rounded-[10px] bg-shadow-grey py-[11px] text-[13px] font-medium text-white disabled:opacity-60"
         onClick={onSave}
       >
         儲存
@@ -173,7 +173,7 @@ export function GoalInputSheet({
       <button
         type="button"
         disabled={pending}
-        className="w-full rounded-[10px] bg-shadow-grey py-2 text-[13px] font-medium text-white disabled:opacity-60"
+        className="flex min-h-11 w-full items-center justify-center rounded-[10px] bg-shadow-grey py-[11px] text-[13px] font-medium text-white disabled:opacity-60"
         onClick={onSave}
       >
         儲存
@@ -201,12 +201,12 @@ export function GoalInfoSheet({
     <BottomSheetShell open={open} title={title} onClose={onClose}>
       <div className="space-y-2 pb-3">
         <p className="text-[11px] text-neutral-text-tertiary">{description}</p>
-        <div className="rounded-[10px] border border-neutral-border-tertiary px-3 py-2 text-[13px] text-foreground">
+        <div className="flex min-h-11 items-center rounded-[10px] border border-neutral-border-tertiary px-3 text-[13px] text-foreground">
           {valueText}
         </div>
         <button
           type="button"
-          className="w-full rounded-[10px] border border-primary py-2 text-[13px] text-primary"
+          className="flex min-h-11 w-full items-center justify-center rounded-[10px] border border-primary py-[11px] text-[13px] text-primary"
           onClick={onGoEdit}
         >
           編輯計算條件
@@ -214,7 +214,7 @@ export function GoalInfoSheet({
       </div>
       <button
         type="button"
-        className="w-full rounded-[10px] bg-shadow-grey py-2 text-[13px] font-medium text-white"
+        className="flex min-h-11 w-full items-center justify-center rounded-[10px] bg-shadow-grey py-[11px] text-[13px] font-medium text-white"
         onClick={onClose}
       >
         關閉
@@ -259,7 +259,7 @@ export function EditAllergenSheet({
               key={option.value}
               type="button"
               className={[
-                'w-full rounded-[10px] border px-3 py-2 text-left text-[13px]',
+                'flex min-h-11 w-full items-center rounded-[10px] border px-3 text-left text-[13px]',
                 checked ? 'border-primary bg-primary-light text-primary-foreground' : 'border-neutral-border-tertiary text-foreground',
               ].join(' ')}
               onClick={() => onToggle(option.value)}
@@ -283,7 +283,7 @@ export function EditAllergenSheet({
           />
           <button
             type="button"
-            className="h-10 shrink-0 whitespace-nowrap rounded-[10px] border border-primary px-3 text-[13px] text-primary"
+            className="h-11 shrink-0 whitespace-nowrap rounded-[10px] border border-primary px-3 text-[13px] text-primary"
             onClick={onAddAvoid}
           >
             新增
@@ -307,7 +307,7 @@ export function EditAllergenSheet({
       <button
         type="button"
         disabled={pending}
-        className="w-full rounded-[10px] bg-shadow-grey py-2 text-[13px] font-medium text-white disabled:opacity-60"
+        className="flex min-h-11 w-full items-center justify-center rounded-[10px] bg-shadow-grey py-[11px] text-[13px] font-medium text-white disabled:opacity-60"
         onClick={onSave}
       >
         儲存

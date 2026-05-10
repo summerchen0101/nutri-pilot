@@ -41,7 +41,7 @@ nav 標籤    10px / 400  → text-micro
 
 **禁止**：未在規格表的任意字級（例如 `12px`、`text-xs`／`text-sm` 代替上列語意）；新稿請改為 `text-caption` 或 `text-body`。
 
-**按鈕**：使用 `Button` 元件；`size="default"`（13px、padding 9px 18px、圓角 10px）、`size="sm"`（11px、小按鈕）。
+**按鈕**：使用 `Button` 元件；`size="default"`（13px、`min-height` 44px、padding 11px 18px、圓角 10px）、`size="sm"`（11px、`min-height` 40px、小按鈕）。
 
 ## 邊框
 
@@ -66,7 +66,7 @@ modal / sheet   border-radius: 16px
 ## 常用元件 Tailwind class 對照
 
 ```
-主按鈕：    使用 <Button variant="default" size="default" />（實作為 shadow-grey、text-body font-medium、px-[18px] py-[9px]）
+主按鈕：    使用 <Button variant="default" size="default" />（實作為 shadow-grey、text-body font-medium、px-[18px] py-[11px]、min-h-11）
 小按鈕：    <Button size="sm" />
 次要按鈕：  <Button variant="outline" />
 卡片：      bg-background border border-[0.5px] border-border rounded-xl p-4

@@ -53,7 +53,7 @@ function dateToISODateOnly(d: Date): string {
 }
 
 const selectClass =
-  'flex h-10 w-full rounded-[10px] border-[0.5px] border-[#E8E9ED] bg-white px-3 py-2 text-[13px] text-foreground focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none disabled:opacity-50';
+  'flex h-11 w-full items-center rounded-[10px] border-[0.5px] border-[#E8E9ED] bg-white px-3 py-2 text-[13px] text-foreground focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none disabled:opacity-50';
 
 interface OnboardingWizardProps {
   userId: string;

@@ -527,7 +527,7 @@ export function GuardLabelClient() {
       <button
         type="button"
         disabled={saving}
-        className="w-full rounded-[10px] bg-shadow-grey py-2 text-[13px] font-medium text-white disabled:opacity-60"
+        className="flex min-h-11 w-full items-center justify-center rounded-[10px] bg-shadow-grey py-[11px] text-[13px] font-medium text-white disabled:opacity-60"
         onClick={() => void saveToPersonalRecord()}>
         {saving ? '儲存中…' : '儲存'}
       </button>

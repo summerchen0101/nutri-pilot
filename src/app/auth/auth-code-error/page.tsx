@@ -20,7 +20,7 @@ export default function AuthCodeErrorPage() {
         <CardFooter className="justify-end border-t border-slate-100 pt-6">
           <Link
             href="/login"
-            className="inline-flex items-center justify-center rounded-[10px] bg-shadow-grey px-[18px] py-[9px] text-body font-medium text-white shadow-none transition-colors duration-150 ease-out hover:bg-shadow-grey-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C]/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="inline-flex min-h-11 items-center justify-center rounded-[10px] bg-shadow-grey px-[18px] py-[11px] text-body font-medium text-white shadow-none transition-colors duration-150 ease-out hover:bg-shadow-grey-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C]/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             返回登入
           </Link>

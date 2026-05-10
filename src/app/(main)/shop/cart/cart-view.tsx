@@ -105,7 +105,7 @@ export function CartView() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
+                  className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
                   onClick={() => setQty(line.variantId, line.qty - 1)}
                 >
                   −
@@ -115,7 +115,7 @@ export function CartView() {
                 </span>
                 <button
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
+                  className="flex h-10 w-10 items-center justify-center rounded-[10px] border-[0.5px] border-border text-[15px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
                   onClick={() => setQty(line.variantId, line.qty + 1)}
                 >
                   +
@@ -143,7 +143,7 @@ export function CartView() {
         <div>
           <span className="text-[11px] text-muted-foreground">寄送頻率</span>
           <select
-            className="mt-1 flex h-10 w-full rounded-[10px] border-[0.5px] border-border bg-card px-3 text-[13px] focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none"
+            className="mt-1 flex h-11 w-full items-center rounded-[10px] border-[0.5px] border-border bg-card px-3 text-[13px] focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none"
             value={frequency}
             onChange={(e) =>
               setFrequency(e.target.value as typeof frequency)

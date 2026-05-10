@@ -339,7 +339,7 @@ function LogSectionTabs({
       type="button"
       onClick={() => go(tab)}
       className={cn(
-        'flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[10px] px-2 py-2 text-[13px] font-medium transition-colors',
+        'flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] px-2 py-2 text-[13px] font-medium transition-colors',
         active === tab
           ? 'bg-primary-light text-primary-foreground'
           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
@@ -868,9 +868,9 @@ export function LogClient({
         jobStatus !== 'error'));
 
   const mealPillPrimary =
-    'h-9 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-transparent';
+    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-transparent';
   const mealPillInactive =
-    'h-9 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
+    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
 
   return (
     <div className="space-y-2.5">
@@ -1180,7 +1180,7 @@ export function LogClient({
                 type="button"
                 variant="outline"
                 className={cn(
-                  'h-9 shrink-0 rounded-full border-[0.5px] px-4 py-0 text-[13px] font-medium',
+                  'h-10 shrink-0 rounded-full border-[0.5px] px-4 py-0 text-[13px] font-medium',
                 )}
                 onClick={() => setFrequentOpen(true)}
               >
@@ -1428,7 +1428,7 @@ export function LogClient({
                 <button
                   key={row.snapshot.id}
                   type="button"
-                  className="w-full rounded-xl border-[0.5px] border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+                  className="w-full rounded-xl border-[0.5px] border-border bg-card px-3 py-3 text-left transition-colors hover:bg-muted/40"
                   onClick={() => pickFrequentItem(row)}
                 >
                   <div className="flex items-start justify-between gap-2">
