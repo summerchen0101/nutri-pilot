@@ -58,8 +58,7 @@
     --color-text-secondary: #4a4f63;
     --color-text-tertiary: #9298a8;
     --color-border-tertiary: #dde0e6;
-    --color-border-secondary: #c8ccd5;
-
+    --color-border-secondary: hsl(var(--border));
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
     /* 叠在底圖上的卡片白底不透明度（與 --app-bg-photo-opacity 一併目視微調） */
@@ -80,7 +79,7 @@
     --steel-accent: #378add;
     --muted: 96 11% 97% / var(--app-tint-surface-opacity);
     --muted-foreground: 215 16% 47%;
-    --border: 214 28% 70%;
+    --border: 214 28% 85%;
     /* 儀表板卡路里圓環底軌（SVG stroke）；與 --border 分開以便視覺微調 */
     --calorie-ring-track: 214 28% 90%;
     --secondary: 96 11% 97% / var(--app-tint-surface-opacity);
@@ -91,6 +90,11 @@
     --ring: 146 32% 44%;
     /* 全站底層裝飾圖可見度（1 = 不透明） */
     --app-bg-photo-opacity: 0.3;
+    /*
+     * 極細框 shorthand（例：Recharts Tooltip contentStyle）。
+     * pointer: coarse 時改為 1px — tailwind-hairline-plugin.ts `addBase`。
+     */
+    --hairline-border-shorthand: 0.5px solid hsl(var(--border));
   }
 
   html {

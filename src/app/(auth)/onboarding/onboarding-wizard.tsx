@@ -53,7 +53,7 @@ function dateToISODateOnly(d: Date): string {
 }
 
 const selectClass =
-  'flex h-11 w-full items-center rounded-[10px] border-[0.5px] border-[#E8E9ED] bg-white px-3 py-2 text-[13px] text-foreground focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none disabled:opacity-50';
+  'flex h-11 w-full items-center rounded-[10px] border-hairline border-[#E8E9ED] bg-white px-3 py-2 text-[13px] text-foreground focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none disabled:opacity-50';
 
 interface OnboardingWizardProps {
   userId: string;
@@ -539,7 +539,7 @@ export function OnboardingWizard({
                     key={o.value}
                     type="button"
                     onClick={() => setDietMethod(o.value)}
-                    className={`rounded-[10px] border-[0.5px] p-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
+                    className={`rounded-[10px] border-hairline p-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
                       dietMethod === o.value
                         ? 'border-primary bg-primary text-white'
                         : 'border-border bg-background hover:border-primary'
@@ -580,7 +580,7 @@ export function OnboardingWizard({
                       addAvoidTag();
                     }
                   }}
-                  className="flex-1 rounded-[10px] border-[0.5px] border-[#E8E9ED] bg-white px-3 py-2.5 text-[13px] focus:border-[#4C956C] focus:outline-none focus:ring-1 focus:ring-[#4C956C]/20"
+                  className="flex-1 rounded-[10px] border-hairline border-[#E8E9ED] bg-white px-3 py-2.5 text-[13px] focus:border-[#4C956C] focus:outline-none focus:ring-1 focus:ring-[#4C956C]/20"
                 />
                 <button
                   type="button"
@@ -619,7 +619,7 @@ export function OnboardingWizard({
                     onClick={() => toggleAllergen(o.value)}
                   >
                     <div
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] border-[0.5px] outline-none ring-0 transition-colors ${
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] border-hairline outline-none ring-0 transition-colors ${
                         allergens.includes(o.value)
                           ? 'border-[#4C956C] bg-[#4C956C]'
                           : 'border-[#E8E9ED] bg-white'

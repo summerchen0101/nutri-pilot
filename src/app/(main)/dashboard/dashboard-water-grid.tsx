@@ -192,7 +192,7 @@ export function DashboardWaterGrid({
               disabled={pending}
               onClick={() => onCellClick(i)}
               className={cn(
-                "aspect-square rounded-md border-[0.5px] border-transparent transition-colors",
+                "aspect-square rounded-md border-hairline border-transparent transition-colors",
                 fullClass ?? "bg-card-opaque",
                 isPartial ? partialBorder : null,
               )}
@@ -213,7 +213,7 @@ export function DashboardWaterGrid({
             type="button"
             disabled={pending}
             onClick={() => applyTarget(waterMl + 250)}
-            className="inline-flex items-center justify-center gap-1 rounded-[10px] border-[0.5px] border-neutral-border-secondary bg-secondary px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60">
+            className="inline-flex items-center justify-center gap-1 rounded-[10px] border-hairline border-neutral-border-secondary bg-secondary px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60">
             + 250 ml
             <ArrowUpRight
               className="h-3.5 w-3.5 shrink-0 opacity-70"
@@ -224,7 +224,7 @@ export function DashboardWaterGrid({
             type="button"
             disabled={pending}
             onClick={() => applyTarget(waterMl + 500)}
-            className="inline-flex items-center justify-center gap-1 rounded-[10px] border-[0.5px] border-neutral-border-secondary bg-secondary px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60">
+            className="inline-flex items-center justify-center gap-1 rounded-[10px] border-hairline border-neutral-border-secondary bg-secondary px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60">
             + 500 ml
             <ArrowUpRight
               className="h-3.5 w-3.5 shrink-0 opacity-70"

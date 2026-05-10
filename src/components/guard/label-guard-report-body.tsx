@@ -160,7 +160,7 @@ export function LabelGuardReportBody({
                 <li key={row.category_key}>
                   <button
                     type="button"
-                    className="w-full rounded-md border-[0.5px] border-[#EF9F27]/45 bg-[#FFF4E5] px-2 py-1.5 text-left text-caption text-[#B45309] transition-colors active:bg-[#FFF8ED]"
+                    className="w-full rounded-md border-hairline border-[#EF9F27]/45 bg-[#FFF4E5] px-2 py-1.5 text-left text-caption text-[#B45309] transition-colors active:bg-[#FFF8ED]"
                     onClick={() => {
                       onOpenDetail(
                         TW_ALLERGEN_LABEL_ZH[row.category_key],

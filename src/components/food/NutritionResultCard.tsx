@@ -63,7 +63,7 @@ function MacroCell({
       {editing ? (
         <Input
           autoFocus
-          className="border-[0.5px] !text-heading-page tabular-nums"
+          className="border-hairline !text-heading-page tabular-nums"
           style={{ color: valueColor }}
           value={draft}
           inputMode="decimal"
@@ -365,7 +365,7 @@ export function NutritionResultCard({
         </div>
       </div>
 
-      <div className="mb-3 flex items-center gap-2 border-b-[0.5px] border-neutral-border-tertiary py-2">
+      <div className="mb-3 flex items-center gap-2 border-b-hairline border-neutral-border-tertiary py-2">
         <span className="flex-1 text-[13px] text-neutral-text-secondary">
           實際份量
         </span>
@@ -381,7 +381,7 @@ export function NutritionResultCard({
             if (!Number.isFinite(v)) return;
             handleQuantityChange(Math.max(1, Math.floor(v)));
           }}
-          className="w-20 rounded-lg border-[0.5px] border-neutral-border-tertiary px-2 py-1 text-right text-[13px] font-medium outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-1 focus:ring-primary/20"
+          className="w-20 rounded-lg border-hairline border-neutral-border-tertiary px-2 py-1 text-right text-[13px] font-medium outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-1 focus:ring-primary/20"
         />
         <span className="text-[13px] text-neutral-text-tertiary">g</span>
         <button
@@ -463,7 +463,7 @@ export function NutritionResultCard({
           <Button
             type="button"
             variant="ghost"
-            className="flex-1 border-[0.5px]"
+            className="flex-1 border-hairline"
             disabled={busy}
             onClick={() => onCancel?.()}>
             取消

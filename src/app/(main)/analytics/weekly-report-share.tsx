@@ -119,7 +119,7 @@ export function WeeklyReportShare(props: {
             </p>
           </div>
         </div>
-        <ul className="mt-4 space-y-1.5 border-t-[0.5px] border-border pt-3">
+        <ul className="mt-4 space-y-1.5 border-t-hairline border-border pt-3">
           {previewBullets.map((line, idx) => (
             <li
               key={`${idx}-${line.slice(0, 8)}`}

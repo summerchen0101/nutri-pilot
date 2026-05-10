@@ -24,7 +24,7 @@ export function SettingsRow({
       type="button"
       onClick={onClick}
       className={[
-        'flex w-full appearance-none items-center justify-between border-0 border-b-[0.5px] bg-transparent py-3 text-left',
+        'flex w-full appearance-none items-center justify-between border-0 border-b-hairline bg-transparent py-3 text-left',
         withBorder ? 'border-border' : 'border-transparent',
       ].join(' ')}
     >

@@ -13,7 +13,7 @@ const variantClass: Record<ButtonVariant, string> = {
   outline:
     'border-[1.5px] border-primary bg-transparent text-primary hover:bg-primary hover:text-white focus-visible:ring-primary/20',
   ghost:
-    'border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-[#4C956C]/15',
+    'border-hairline border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-[#4C956C]/15',
   destructive:
     'bg-[#E55A3C] text-white hover:opacity-95 focus-visible:ring-[#E55A3C]/25',
 };

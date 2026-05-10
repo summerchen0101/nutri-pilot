@@ -390,7 +390,7 @@ export function GuardLabelClient() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="rounded-lg border-[0.5px] border-orange-600/40 bg-orange-50 px-3 py-2 text-[11px] leading-snug text-orange-700">
+          <p className="rounded-lg border-hairline border-orange-600/40 bg-orange-50 px-3 py-2 text-[11px] leading-snug text-orange-700">
             本服務非醫療診斷；嬰幼兒、慢性病或過敏請以產品標示與醫師建議為準。
           </p>
 
@@ -411,7 +411,7 @@ export function GuardLabelClient() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-primary bg-transparent py-8 text-primary transition-opacity active:opacity-90">
+              className="flex w-full flex-col items-center gap-2 rounded-xl border-hairline border-dashed border-primary bg-transparent py-8 text-primary transition-opacity active:opacity-90">
               <FiCamera className="h-8 w-8 shrink-0" aria-hidden />
               <span className="text-[13px] font-medium">拍攝或選擇相片</span>
             </button>
@@ -460,7 +460,7 @@ export function GuardLabelClient() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full border-[0.5px]"
+                className="w-full border-hairline"
                 onClick={() => {
                   clearPreview();
                   setReport(null);
@@ -474,7 +474,7 @@ export function GuardLabelClient() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full border-[0.5px]"
+                className="w-full border-hairline"
                 onClick={openSaveEditor}>
                 儲存到個人紀錄
               </Button>

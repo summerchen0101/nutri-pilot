@@ -45,9 +45,9 @@ nav 標籤    10px / 400  → text-micro
 
 ## 邊框
 
-所有邊框 `0.5px`，不用 `1px`。
+極細線：**`pointer: fine` → 0.5px；`pointer: coarse`（多數手機）→ 1px**，由 `tailwind-hairline-plugin.ts`（`border-hairline`、`border-*-hairline`、`divide-y-hairline`）處理，避免 WebKit 左側線不畫。Recharts 等 inline border 用 `var(--hairline-border-shorthand)`（coarse 寬度同由該 plugin `addBase`）。不在元件散落任意 `1px`。
 ```css
-卡片預設：  border: 0.5px solid var(--color-border-tertiary)
+卡片預設：  border: 0.5px solid var(--color-border-tertiary)（觸控裝置實際 1px 由全域規則）
 hover：     border-color: var(--color-border-secondary)
 主色強調：  border: 1.5px solid #4C956C
 input focus：border-color: #4C956C; box-shadow: 0 0 0 2px rgba(76,149,108,.12)
@@ -69,10 +69,10 @@ modal / sheet   border-radius: 16px
 主按鈕：    使用 <Button variant="default" size="default" />（實作為 shadow-grey、text-body font-medium、px-[18px] py-[11px]、min-h-11）
 小按鈕：    <Button size="sm" />
 次要按鈕：  <Button variant="outline" />
-卡片：      bg-background border border-[0.5px] border-border rounded-xl p-4
+卡片：      bg-background border-hairline border-border rounded-xl p-4
 成功 pill： bg-[#E8F5EE] text-[#2D6B4A] rounded-full px-2.5 py-0.5 text-caption font-medium
 bottom nav active： bg-[#E8F5EE] text-[#4C956C]
-AI 卡：     bg-[#E6F1FB] border border-[#B5D4F4] rounded-xl p-3.5
+AI 卡：     bg-[#E6F1FB] border-hairline border-[#B5D4F4] rounded-xl p-3.5
 指標格：    bg-secondary rounded-[10px] p-3 cursor-pointer
 bottom sheet 標題： text-heading-page（`BottomSheetShell`）
 ```

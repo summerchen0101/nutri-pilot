@@ -24,7 +24,7 @@ export function SegmentedTabs<T extends string>({
   return (
     <div
       className={cn(
-        'flex rounded-[10px] border-[0.5px] border-border bg-secondary/40 p-1',
+        'flex rounded-[10px] border-hairline border-border bg-secondary/40 p-1',
         className,
       )}
       role="tablist"

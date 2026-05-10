@@ -1,5 +1,7 @@
 import type { Config } from "tailwindcss";
 
+import { hairlineBorderPlugin } from "./tailwind-hairline-plugin";
+
 const config: Config = {
   safelist: [
     {
@@ -14,6 +16,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      /** 極細框 — coarse 時改 1px 見 tailwind-hairline-plugin.ts */
+      borderWidth: {
+        hairline: "0.5px",
+      },
       fontSize: {
         /** 螢幕頂主標（PageHeading）— docs/09-ui-design.md */
         "heading-screen": ["22px", { lineHeight: "1.2", fontWeight: "500" }],
@@ -95,7 +101,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [hairlineBorderPlugin],
 };
 
 export default config;

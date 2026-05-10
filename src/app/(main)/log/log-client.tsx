@@ -352,7 +352,7 @@ function LogSectionTabs({
 
   return (
     <div
-      className="flex gap-1 rounded-xl border-[0.5px] border-border bg-card p-1"
+      className="flex gap-1 rounded-xl border-hairline border-border bg-card p-1"
       role="tablist"
     >
       {tabBtn('food', '飲食', FiCoffee)}
@@ -868,9 +868,9 @@ export function LogClient({
         jobStatus !== 'error'));
 
   const mealPillPrimary =
-    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-transparent';
+    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-hairline border-transparent';
   const mealPillInactive =
-    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-[0.5px] border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
+    'h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-hairline border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
 
   return (
     <div className="space-y-2.5">
@@ -902,7 +902,7 @@ export function LogClient({
 
       {prefillFromMeal ? (
         <div className="space-y-4">
-          <div className="rounded-xl border-[0.5px] border-primary/20 bg-primary-light p-3.5">
+          <div className="rounded-xl border-hairline border-primary/20 bg-primary-light p-3.5">
             <p className="text-[13px] leading-snug text-foreground">
               從計畫帶入：
               {MEAL_LABEL[prefillFromMeal.mealType]}
@@ -1070,7 +1070,7 @@ export function LogClient({
             <Button
               type="button"
               variant="outline"
-              className="w-full border-[0.5px]"
+              className="w-full border-hairline"
               onClick={() => setShowExtraSearch((v) => !v)}
             >
               {showExtraSearch ? '收合' : '新增其他食物'}
@@ -1180,7 +1180,7 @@ export function LogClient({
                 type="button"
                 variant="outline"
                 className={cn(
-                  'h-10 shrink-0 rounded-full border-[0.5px] px-4 py-0 text-[13px] font-medium',
+                  'h-10 shrink-0 rounded-full border-hairline px-4 py-0 text-[13px] font-medium',
                 )}
                 onClick={() => setFrequentOpen(true)}
               >
@@ -1221,7 +1221,7 @@ export function LogClient({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center gap-2 rounded-xl border-[0.5px] border-dashed border-white/25 bg-primary py-8 text-white transition-colors active:bg-primary-dark"
+                  className="flex w-full flex-col items-center gap-2 rounded-xl border-hairline border-dashed border-white/25 bg-primary py-8 text-white transition-colors active:bg-primary-dark"
                 >
                   <FiCamera className="h-8 w-8 shrink-0 text-white" aria-hidden />
                   <span className="text-[13px] font-medium text-white">
@@ -1319,7 +1319,7 @@ export function LogClient({
                     {mealLogs.map((log) => (
                       <li key={log.id}>
                         <div className="flex overflow-hidden rounded-xl bg-card">
-                          <div className="min-w-0 flex-1 divide-y-[0.5px] divide-border">
+                          <div className="min-w-0 flex-1 divide-y-hairline divide-border">
                             {(log.food_log_items ?? []).map((it) => (
                               <div key={it.id} className="flex flex-col">
                                 <div
@@ -1387,7 +1387,7 @@ export function LogClient({
                           </div>
                           <button
                             type="button"
-                            className="shrink-0 self-stretch border-l-[0.5px] border-border px-3 py-3 text-muted-foreground transition-colors hover:text-destructive"
+                            className="shrink-0 self-stretch border-l-hairline border-border px-3 py-3 text-muted-foreground transition-colors hover:text-destructive"
                             aria-label="刪除此筆紀錄"
                             onClick={(e) => {
                               e.stopPropagation();

@@ -143,7 +143,7 @@ export function ShopHomeClient({
                 'flex h-[60px] min-w-[60px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-1 text-[11px] font-medium transition-colors',
                 category === key ?
                   'bg-primary text-white'
-                : 'border-[0.5px] border-transparent bg-card text-muted-foreground hover:border-primary/40',
+                : 'border-hairline border-transparent bg-card text-muted-foreground hover:border-primary/40',
               )}
             >
               <span className="flex h-5 w-5 items-center justify-center">
@@ -174,7 +174,7 @@ export function ShopHomeClient({
                 'rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors',
                 filters.includes(key) ?
                   'bg-[#1E212B] text-white'
-                : 'border-[0.5px] border-border bg-secondary text-muted-foreground',
+                : 'border-hairline border-border bg-secondary text-muted-foreground',
               )}
             >
               {label}
@@ -194,7 +194,7 @@ export function ShopHomeClient({
               <Link
                 key={p.id}
                 href={`/shop/${p.id}`}
-                className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border-[0.5px] border-transparent bg-card transition-colors hover:border-primary/50"
+                className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border-hairline border-transparent bg-card transition-colors hover:border-primary/50"
               >
                 <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
                   {p.image_url ?

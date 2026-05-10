@@ -327,7 +327,7 @@ function WeeklyTrendCard({
 
 function InsightCard({ bullets }: { bullets: string[] }) {
   return (
-    <section className="rounded-xl border-[0.5px] border-primary/20 bg-primary-light p-4">
+    <section className="rounded-xl border-hairline border-primary/20 bg-primary-light p-4">
       <SectionHeading icon={Lightbulb} tone="primary">
         今日建議
       </SectionHeading>
@@ -412,7 +412,7 @@ function PromoBanner({
   href: string;
 }) {
   return (
-    <section className="rounded-xl border-[0.5px] border-primary/20 bg-primary-light p-4">
+    <section className="rounded-xl border-hairline border-primary/20 bg-primary-light p-4">
       <div className="min-w-0">
         <SectionHeading icon={Megaphone} tone="primary">
           {title}
@@ -422,7 +422,7 @@ function PromoBanner({
         </p>
         <Link
           href={href}
-          className="mt-2 inline-flex rounded-full border-[0.5px] border-primary bg-background px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary hover:text-white">
+          className="mt-2 inline-flex rounded-full border-hairline border-primary bg-background px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary hover:text-white">
           {ctaLabel}
         </Link>
       </div>
@@ -570,7 +570,7 @@ export function DashboardHome({
   }
 
   const quickActionClass =
-    "flex h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border-[0.5px] border-transparent bg-card px-1 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
+    "flex h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border-hairline border-transparent bg-card px-1 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
 
   const quickIconClass = "h-[18px] w-[18px] shrink-0 text-primary";
 

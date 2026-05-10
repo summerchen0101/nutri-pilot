@@ -146,25 +146,25 @@ function scrollToTop() {
 }
 
 const analyticsQuickNavButtonClass = cn(
-  "inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-primary bg-transparent px-2 text-caption font-medium text-primary",
+  "inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-hairline border-primary bg-transparent px-2 text-caption font-medium text-primary",
   "hover:bg-primary/10 hover:text-primary-dark",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
 );
 
 const analyticsQuickAiNavButtonClass = cn(
-  "inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-[0.5px] border-steel-border bg-steel-panel px-2 text-caption font-medium text-steel-accent",
+  "inline-flex h-7 shrink-0 items-center gap-0.5 rounded-full border-hairline border-steel-border bg-steel-panel px-2 text-caption font-medium text-steel-accent",
   "hover:border-steel-accent/70 hover:bg-steel-hover hover:text-steel-foreground",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-steel-accent/25",
 );
 
 const analyticsFloatingNavButtonClass = cn(
-  "flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-primary border-r-0 bg-card pl-2.5 pr-0 text-primary shadow-md",
+  "flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-hairline border-primary border-r-0 bg-card pl-2.5 pr-0 text-primary shadow-md",
   "hover:bg-primary/10 hover:text-primary-dark",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2",
 );
 
 const analyticsFloatingAiNavButtonClass = cn(
-  "flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-[0.5px] border-steel-border border-r-0 bg-steel-panel pl-2.5 pr-0 text-steel-accent shadow-md",
+  "flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-l-full rounded-r-none border-hairline border-steel-border border-r-0 bg-steel-panel pl-2.5 pr-0 text-steel-accent shadow-md",
   "hover:border-steel-accent/70 hover:bg-steel-hover hover:text-steel-foreground",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-steel-accent/25 focus-visible:ring-offset-2",
 );
@@ -472,7 +472,7 @@ export function AnalyticsView({
                   contentStyle={{
                     fontSize: 11,
                     borderRadius: 10,
-                    border: "0.5px solid hsl(var(--border))",
+                    border: "var(--hairline-border-shorthand)",
                   }}
                   formatter={(v) => [`${v ?? "—"} kg`, "體重"]}
                   labelFormatter={(label) => String(label)}
@@ -520,7 +520,7 @@ export function AnalyticsView({
                 contentStyle={{
                   fontSize: 11,
                   borderRadius: 10,
-                  border: "0.5px solid hsl(var(--border))",
+                  border: "var(--hairline-border-shorthand)",
                 }}
                 formatter={(v) => [`${v ?? "—"} kcal`, "熱量"]}
               />
@@ -569,7 +569,7 @@ export function AnalyticsView({
                   contentStyle={{
                     fontSize: 11,
                     borderRadius: 10,
-                    border: "0.5px solid hsl(var(--border))",
+                    border: "var(--hairline-border-shorthand)",
                   }}
                   formatter={(v) => [`${v ?? "—"} 分鐘`, "運動"]}
                 />
@@ -617,7 +617,7 @@ export function AnalyticsView({
                   contentStyle={{
                     fontSize: 11,
                     borderRadius: 10,
-                    border: "0.5px solid hsl(var(--border))",
+                    border: "var(--hairline-border-shorthand)",
                   }}
                   formatter={(v) => [`${v ?? "—"} kcal`, "估消耗"]}
                 />
@@ -668,7 +668,7 @@ export function AnalyticsView({
                   contentStyle={{
                     fontSize: 11,
                     borderRadius: 10,
-                    border: "0.5px solid hsl(var(--border))",
+                    border: "var(--hairline-border-shorthand)",
                   }}
                   formatter={(v) => [`${v ?? "—"} 分鐘`, "時間"]}
                 />
@@ -721,7 +721,7 @@ export function AnalyticsView({
                   contentStyle={{
                     fontSize: 11,
                     borderRadius: 10,
-                    border: "0.5px solid hsl(var(--border))",
+                    border: "var(--hairline-border-shorthand)",
                   }}
                   formatter={(v) => [`${v ?? "—"}%`, "達成率"]}
                 />
@@ -733,7 +733,7 @@ export function AnalyticsView({
 
       <section
         id="analytics-weekly-insight"
-        className="scroll-mt-3 rounded-xl border-[0.5px] border-steel-border bg-steel-panel p-3.5">
+        className="scroll-mt-3 rounded-xl border-hairline border-steel-border bg-steel-panel p-3.5">
         <div>
           <div className="flex items-center gap-1.5">
             <Sparkles
@@ -783,7 +783,7 @@ export function AnalyticsView({
           )}
         </div>
 
-        <div className="mt-4 border-t-[0.5px] border-steel-border pt-4">
+        <div className="mt-4 border-t-hairline border-steel-border pt-4">
           <WeeklyReportShare
             rangeLabel={weekShareSummary.rangeLabel}
             avgKcal={weekShareSummary.avgKcal}

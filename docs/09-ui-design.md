@@ -14,7 +14,7 @@
 
 **視覺特徵**：
 - 大量留白，資訊密度適中不擁擠
-- 圓角柔和，邊框極細（0.5px）
+- 圓角柔和，邊框極細（指標裝置 0.5px；觸控裝置見「邊框原則」）
 - 數字用 medium weight 突出，單位用 regular 縮小
 - 動態輕柔，過渡 150–200ms ease
 
@@ -99,7 +99,7 @@ Tailwind：`primary` / `primary-dark` / `primary-light` / `primary-foreground`�
 --color-text-primary          /* 主文字 */
 --color-text-secondary        /* 次要文字 */
 --color-text-tertiary         /* 輔助文字、placeholder */
---color-border-tertiary       /* 預設邊框（0.5px）*/
+--color-border-tertiary       /* 預設邊框色（線寬：fine 0.5px／coarse 1px）*/
 --color-border-secondary      /* hover 邊框 */
 ```
 
@@ -170,9 +170,10 @@ Tailwind：`primary` / `primary-dark` / `primary-light` / `primary-foreground`�
 
 ## 邊框原則
 
-- **所有邊框 0.5px**，不用 1px
-- 卡片預設：`0.5px solid var(--color-border-tertiary)`
-- hover 狀態：`0.5px solid var(--color-border-secondary)`
+- **預設視覺為極細線**：實作上 **`pointer: fine`（滑鼠／觸控板）用 0.5px**；**`pointer: coarse`（多數手機／平板手指操作）用 1px**，避免 WebKit／iOS 上次像素捨入導致單側（常為左側）邊線不渲染。全站使用 Tailwind 語意 utilities：**`border-hairline`**、`border-t|b|l|r-hairline`、`divide-y-hairline`（寬度定義於 [`tailwind.config.ts`](../tailwind.config.ts) 之 `theme.extend.borderWidth.hairline`，coarse 行為見 [`tailwind-hairline-plugin.ts`](../tailwind-hairline-plugin.ts)）。
+- **不用任意在元件內硬寫 1px 取代 0.5px**；若為無法套用上述類別的 inline style（例如 Recharts `contentStyle`），請使用 CSS 變數 **`var(--hairline-border-shorthand)`**（預設於 [`src/app/globals.css`](../src/app/globals.css) `:root`；**`pointer: coarse`** 時改為 1px 由 **`tailwind-hairline-plugin.ts`** 之 `addBase` 設定）。
+- 卡片預設：`0.5px solid var(--color-border-tertiary)`（觸控裝置實際寬度見上）
+- hover 狀態：`0.5px solid var(--color-border-secondary)`（同上）
 - 主色強調：`1.5px solid #4C956C`（規格選擇 active 等）
 - 輸入框 focus：`0.5px solid #4C956C` + `box-shadow: 0 0 0 2px rgba(76,149,108,.12)`
 
@@ -418,7 +419,7 @@ transition: { delay: index * 0.04 }
 
 ## 禁止事項
 
-- ❌ 不用 1px 邊框（統一 0.5px）
+- ❌ 不在元件裡任意混用粗細邊框；極細線粗細由 **`globals.css` 的 fine／coarse** 規則統一（禁止僅為「加粗」而散落 `1px`）
 - ❌ 不用純黑 `#000000`（用 CSS 變數）
 - ❌ 不用 `font-weight: 700`（最粗用 500）
 - ❌ 不用 `font-size` 低於 10px
