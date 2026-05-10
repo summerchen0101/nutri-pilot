@@ -1,5 +1,6 @@
 "use client";
 
+import { Minus, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition, type CSSProperties } from "react";
 
@@ -20,6 +21,49 @@ const LOG_PAGE_WATER_TARGET_ML = 2000;
 const SLEEP_SCALE_LABEL_HOURS = [0, 6, 12, 18, 24] as const;
 /** 0–24 每小時一個細刻度 */
 const SLEEP_HOUR_TICK_COUNT = 25;
+
+/** 身高／體重精確輸入旁加減按鈕步進 */
+const BODY_INPUT_STEP = 0.5;
+const HEIGHT_CM_MIN = 80;
+const HEIGHT_CM_MAX = 250;
+const WEIGHT_KG_MIN = 15;
+const WEIGHT_KG_MAX = 400;
+
+/** 無外框圖示按鈕：與設定頁筆形圖示接近的線寬與尺寸 */
+const BODY_STEPPER_ICON_CLASS =
+  'h-[18px] w-[18px] shrink-0';
+const BODY_STEPPER_BTN_CLASS =
+  'inline-flex size-10 shrink-0 items-center justify-center rounded-[10px] text-foreground transition-colors hover:bg-muted disabled:opacity-60 disabled:cursor-not-allowed';
+
+function roundToHalfStep(n: number): number {
+  return Math.round(n * 2) / 2;
+}
+
+function clampHalfStep(n: number, min: number, max: number): number {
+  const stepped = roundToHalfStep(n);
+  return Math.min(max, Math.max(min, stepped));
+}
+
+function formatBodyDraft(n: number): string {
+  const r = roundToHalfStep(n);
+  return r % 1 === 0 ? String(r) : r.toFixed(1);
+}
+
+function parseHeightCmDraft(draft: string, fallbackCm: number): number {
+  const n = Number(draft);
+  if (Number.isFinite(n)) return n;
+  return fallbackCm;
+}
+
+function parseWeightKgDraft(
+  draft: string,
+  fallbackKg: number | null,
+): number | null {
+  const n = Number(draft);
+  if (Number.isFinite(n)) return n;
+  if (fallbackKg != null) return fallbackKg;
+  return null;
+}
 
 function formatSleepHoursLabel(h: number): string {
   if (!Number.isFinite(h) || h < 0) return "0 小時";
@@ -105,7 +149,10 @@ export function LogVitalsCard({
       ) : null}
 
       <div className="rounded-xl bg-card px-4 py-3">
-        <h2 className="mb-3 text-[15px] font-medium text-foreground">身體</h2>
+        <h2 className="mb-1 text-[15px] font-medium text-foreground">身體</h2>
+        <p className="mb-3 text-caption text-muted-foreground">
+          調整身高或體重後，請點「更新身高」或「更新體重」才會儲存。
+        </p>
 
         <div className="space-y-4">
           <div>
@@ -113,17 +160,65 @@ export function LogVitalsCard({
               身高（與設定頁共用，單位 cm）
             </label>
             <div className="mt-1 flex flex-wrap items-end gap-2">
-              <Input
-                type="number"
-                min={80}
-                max={250}
-                step={0.1}
-                inputMode="decimal"
-                className="max-w-[132px] tabular-nums"
-                value={heightDraft}
-                disabled={pending}
-                onChange={(e) => setHeightDraft(e.target.value)}
-              />
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  className={BODY_STEPPER_BTN_CLASS}
+                  aria-label={`身高減 ${BODY_INPUT_STEP} cm`}
+                  disabled={pending}
+                  onClick={() => {
+                    const base = parseHeightCmDraft(heightDraft, initialHeightCm);
+                    setHeightDraft(
+                      formatBodyDraft(
+                        clampHalfStep(
+                          base - BODY_INPUT_STEP,
+                          HEIGHT_CM_MIN,
+                          HEIGHT_CM_MAX,
+                        ),
+                      ),
+                    );
+                  }}>
+                  <Minus
+                    className={BODY_STEPPER_ICON_CLASS}
+                    strokeWidth={1.8}
+                    aria-hidden
+                  />
+                </button>
+                <Input
+                  type="number"
+                  min={HEIGHT_CM_MIN}
+                  max={HEIGHT_CM_MAX}
+                  step={BODY_INPUT_STEP}
+                  inputMode="decimal"
+                  className="max-w-[132px] tabular-nums"
+                  value={heightDraft}
+                  disabled={pending}
+                  onChange={(e) => setHeightDraft(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className={BODY_STEPPER_BTN_CLASS}
+                  aria-label={`身高加 ${BODY_INPUT_STEP} cm`}
+                  disabled={pending}
+                  onClick={() => {
+                    const base = parseHeightCmDraft(heightDraft, initialHeightCm);
+                    setHeightDraft(
+                      formatBodyDraft(
+                        clampHalfStep(
+                          base + BODY_INPUT_STEP,
+                          HEIGHT_CM_MIN,
+                          HEIGHT_CM_MAX,
+                        ),
+                      ),
+                    );
+                  }}>
+                  <Plus
+                    className={BODY_STEPPER_ICON_CLASS}
+                    strokeWidth={1.8}
+                    aria-hidden
+                  />
+                </button>
+              </div>
               <Button
                 type="button"
                 size="sm"
@@ -149,17 +244,85 @@ export function LogVitalsCard({
               </p>
             ) : null}
             <div className="mt-1 flex flex-wrap items-end gap-2">
-              <Input
-                type="number"
-                min={15}
-                max={400}
-                step={0.1}
-                inputMode="decimal"
-                className="max-w-[132px] tabular-nums"
-                value={weightDraft}
-                disabled={pending}
-                onChange={(e) => setWeightDraft(e.target.value)}
-              />
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  className={BODY_STEPPER_BTN_CLASS}
+                  aria-label={`體重減 ${BODY_INPUT_STEP} kg`}
+                  disabled={
+                    pending ||
+                    parseWeightKgDraft(
+                      weightDraft,
+                      initialVital.weightKg,
+                    ) === null
+                  }
+                  onClick={() => {
+                    const base = parseWeightKgDraft(
+                      weightDraft,
+                      initialVital.weightKg,
+                    );
+                    if (base === null) return;
+                    setWeightDraft(
+                      formatBodyDraft(
+                        clampHalfStep(
+                          base - BODY_INPUT_STEP,
+                          WEIGHT_KG_MIN,
+                          WEIGHT_KG_MAX,
+                        ),
+                      ),
+                    );
+                  }}>
+                  <Minus
+                    className={BODY_STEPPER_ICON_CLASS}
+                    strokeWidth={1.8}
+                    aria-hidden
+                  />
+                </button>
+                <Input
+                  type="number"
+                  min={WEIGHT_KG_MIN}
+                  max={WEIGHT_KG_MAX}
+                  step={BODY_INPUT_STEP}
+                  inputMode="decimal"
+                  className="max-w-[132px] tabular-nums"
+                  value={weightDraft}
+                  disabled={pending}
+                  onChange={(e) => setWeightDraft(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className={BODY_STEPPER_BTN_CLASS}
+                  aria-label={`體重加 ${BODY_INPUT_STEP} kg`}
+                  disabled={
+                    pending ||
+                    parseWeightKgDraft(
+                      weightDraft,
+                      initialVital.weightKg,
+                    ) === null
+                  }
+                  onClick={() => {
+                    const base = parseWeightKgDraft(
+                      weightDraft,
+                      initialVital.weightKg,
+                    );
+                    if (base === null) return;
+                    setWeightDraft(
+                      formatBodyDraft(
+                        clampHalfStep(
+                          base + BODY_INPUT_STEP,
+                          WEIGHT_KG_MIN,
+                          WEIGHT_KG_MAX,
+                        ),
+                      ),
+                    );
+                  }}>
+                  <Plus
+                    className={BODY_STEPPER_ICON_CLASS}
+                    strokeWidth={1.8}
+                    aria-hidden
+                  />
+                </button>
+              </div>
               <Button
                 type="button"
                 size="sm"

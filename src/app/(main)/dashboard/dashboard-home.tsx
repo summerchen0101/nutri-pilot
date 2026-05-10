@@ -2,8 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
 import type { ReactNode } from "react";
 import {
   BarChart3,
@@ -20,17 +18,13 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { FiAward, FiBell, FiHeadphones } from "react-icons/fi";
-import { createPortal } from "react-dom";
 
-import { logWeightAction } from "@/app/(main)/dashboard/actions";
 import { DashboardWaterGrid } from "@/app/(main)/dashboard/dashboard-water-grid";
 import {
   HEADER_ACTION_ICON_CLASS,
   SECTION_HEADING_ACTION_ICON_CLASS,
 } from "@/components/layout/header-action-icon-styles";
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { SectionCard } from "@/components/ui/section-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { macroTargetsFromKcal } from "@/lib/dashboard/macro-targets";
@@ -540,34 +534,7 @@ export function DashboardHome({
   activityKcalEstToday,
   activityTypesLabel,
 }: DashboardHomeProps) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [weightInput, setWeightInput] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-
-  function submit() {
-    setError(null);
-    const w = parseFloat(weightInput.replace(",", "."));
-    startTransition(async () => {
-      const res = await logWeightAction(w);
-      if (res.error) {
-        setError(res.error);
-        return;
-      }
-      setOpen(false);
-      setWeightInput("");
-      router.refresh();
-    });
-  }
-
-  function openWeightDialog() {
-    setOpen(true);
-    setError(null);
-    if (latestWeightKg != null) {
-      setWeightInput(String(latestWeightKg));
-    }
-  }
+  const logBodyHref = `/log?date=${encodeURIComponent(todayIsoDate)}&tab=body`;
 
   const quickActionClass =
     "flex h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border-hairline border-transparent bg-card px-1 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
@@ -647,9 +614,9 @@ export function DashboardHome({
       />
 
       <div className="grid grid-cols-2 items-stretch gap-2.5">
-        <button
-          type="button"
-          onClick={openWeightDialog}
+        <Link
+          href={logBodyHref}
+          aria-label="前往每日紀錄設定體重"
           className="flex min-h-[112px] flex-col rounded-[10px] bg-card p-2.5 text-left transition-colors hover:bg-muted">
           <p className="text-[15px] font-medium text-foreground">體重</p>
           <p className="mt-1 tabular-nums text-heading-page leading-tight text-foreground">
@@ -700,7 +667,7 @@ export function DashboardHome({
               ) : null}
             </p>
           ) : null}
-        </button>
+        </Link>
 
         <Link
           href="/log?tab=activity"
@@ -754,13 +721,13 @@ export function DashboardHome({
             />
             <span className="text-center leading-tight">飲食</span>
           </Link>
-          <button
-            type="button"
+          <Link
+            href={logBodyHref}
             className={cn(quickActionClass)}
-            onClick={openWeightDialog}>
+            title="記錄體重">
             <Scale className={quickIconClass} strokeWidth={1.8} aria-hidden />
             <span className="text-center leading-tight">體重</span>
-          </button>
+          </Link>
           <Link
             href="/log?tab=activity"
             className={cn(quickActionClass)}
@@ -874,62 +841,6 @@ export function DashboardHome({
       />
 
       {popularBrandsSlot ?? null}
-
-      {open
-        ? createPortal(
-            <div
-              className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/35 p-4 sm:items-center"
-              role="presentation"
-              onClick={() => !pending && setOpen(false)}>
-              <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="weight-dialog-title"
-                className="w-full max-w-sm rounded-2xl bg-card p-5"
-                onClick={(e) => e.stopPropagation()}>
-                <h2
-                  id="weight-dialog-title"
-                  className="text-heading-page text-foreground">
-                  記錄今日體重
-                </h2>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  將寫入今日紀錄並更新個人資料與熱量目標（如有）。
-                </p>
-                <div className="mt-4">
-                  <label htmlFor="weight-kg" className="sr-only">
-                    體重（公斤）
-                  </label>
-                  <Input
-                    id="weight-kg"
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="例如 65.5"
-                    value={weightInput}
-                    onChange={(e) => setWeightInput(e.target.value)}
-                    autoFocus
-                    disabled={pending}
-                  />
-                </div>
-                {error ? (
-                  <p className="mt-2 text-[11px] text-destructive">{error}</p>
-                ) : null}
-                <div className="mt-5 flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={pending}
-                    onClick={() => setOpen(false)}>
-                    取消
-                  </Button>
-                  <Button type="button" disabled={pending} onClick={submit}>
-                    {pending ? "儲存中…" : "儲存"}
-                  </Button>
-                </div>
-              </div>
-            </div>,
-            document.body,
-          )
-        : null}
     </div>
   );
 }

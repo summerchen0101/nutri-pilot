@@ -35,32 +35,32 @@
   }
 
   /* range 不使用 text input 的 focus 外框；避免 thumb／track 預設淺色細框 */
-  input[type='range'] {
+  input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
     background: transparent;
     height: 1.25rem;
   }
 
-  input[type='range']:focus {
+  input[type="range"]:focus {
     box-shadow: none !important;
     border: none !important;
   }
 
-  input[type='range']:focus-visible {
+  input[type="range"]:focus-visible {
     outline: 2px solid #4c956c;
     outline-offset: 2px;
     box-shadow: none !important;
   }
 
-  input[type='range']::-webkit-slider-runnable-track {
+  input[type="range"]::-webkit-slider-runnable-track {
     height: 0.5rem;
     border-radius: 0.25rem;
     border: none;
     background: hsl(var(--muted));
   }
 
-  input[type='range']::-webkit-slider-thumb {
+  input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 1.125rem;
@@ -72,14 +72,14 @@
     box-shadow: none;
   }
 
-  input[type='range']::-moz-range-track {
+  input[type="range"]::-moz-range-track {
     height: 0.5rem;
     border-radius: 0.25rem;
     border: none;
     background: hsl(var(--muted));
   }
 
-  input[type='range']::-moz-range-thumb {
+  input[type="range"]::-moz-range-thumb {
     width: 1.125rem;
     height: 1.125rem;
     border: none;
@@ -91,7 +91,7 @@
   /**
    * 睡眠時數滑桿：左側已選段主綠、右側淡灰軌道；由 --log-sleep-fill-pct 控制（見元件 inline style）
    */
-  input[type='range'].log-sleep-range::-webkit-slider-runnable-track {
+  input[type="range"].log-sleep-range::-webkit-slider-runnable-track {
     height: 0.5rem;
     border-radius: 0.25rem;
     border: none;
@@ -104,26 +104,26 @@
     );
   }
 
-  input[type='range'].log-sleep-range::-webkit-slider-thumb {
+  input[type="range"].log-sleep-range::-webkit-slider-thumb {
     border: 1.5px solid hsl(var(--border));
     background: hsl(var(--card-opaque));
     box-shadow: none;
   }
 
-  input[type='range'].log-sleep-range::-moz-range-track {
+  input[type="range"].log-sleep-range::-moz-range-track {
     height: 0.5rem;
     border-radius: 0.25rem;
     border: none;
     background: hsl(var(--border));
   }
 
-  input[type='range'].log-sleep-range::-moz-range-progress {
+  input[type="range"].log-sleep-range::-moz-range-progress {
     height: 0.5rem;
     border-radius: 0.25rem;
     background: var(--primary);
   }
 
-  input[type='range'].log-sleep-range::-moz-range-thumb {
+  input[type="range"].log-sleep-range::-moz-range-thumb {
     border: 1.5px solid hsl(var(--border));
     background: hsl(var(--card-opaque));
     box-shadow: none;

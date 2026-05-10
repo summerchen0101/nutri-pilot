@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -8,52 +8,52 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-} from 'react';
-import { UtensilsCrossed } from 'lucide-react';
+} from "react";
+import { UtensilsCrossed } from "lucide-react";
 import {
   FiActivity,
   FiCamera,
   FiCoffee,
   FiTrash2,
   FiUser,
-} from 'react-icons/fi';
+} from "react-icons/fi";
 
 import {
   LogVitalsCard,
   type LogVitalSnapshot,
-} from '@/app/(main)/log/_components/log-vitals-card';
+} from "@/app/(main)/log/_components/log-vitals-card";
 import {
   AddFoodManualAiPanel,
   type StagedFoodItemForPlan,
-} from '@/app/(main)/log/add-food-manual-ai';
+} from "@/app/(main)/log/add-food-manual-ai";
 import {
   commitPrefillFromPlanAction,
   confirmPhotoItemsAction,
   deleteFoodLogAction,
   listFrequentFoodLogItemsAction,
   type FrequentFoodItemSnapshot,
-} from '@/app/(main)/log/actions';
+} from "@/app/(main)/log/actions";
 import {
   ActivityLogSection,
   type ActivityLogRow,
-} from '@/app/(main)/log/activity-log-section';
-import { NutritionResultCard } from '@/components/food/NutritionResultCard';
-import { Button } from '@/components/ui/button';
-import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
+} from "@/app/(main)/log/activity-log-section";
+import { NutritionResultCard } from "@/components/food/NutritionResultCard";
+import { Button } from "@/components/ui/button";
+import { BottomSheetShell } from "@/components/ui/bottom-sheet-shell";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-} from '@/components/ui/card';
-import { SectionHeading } from '@/components/ui/section-heading';
-import { Input } from '@/components/ui/input';
-import { compressImageForUpload } from '@/lib/food/compress-image-for-upload';
-import { invokeAiPhotoRequestFromBrowser } from '@/lib/food/invoke-photo-request';
-import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
-import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/utils/cn';
-import type { Json } from '@/types/supabase';
+} from "@/components/ui/card";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { Input } from "@/components/ui/input";
+import { compressImageForUpload } from "@/lib/food/compress-image-for-upload";
+import { invokeAiPhotoRequestFromBrowser } from "@/lib/food/invoke-photo-request";
+import type { ManualFoodAnalysisResult } from "@/lib/food/manual-food-analysis-result";
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils/cn";
+import type { Json } from "@/types/supabase";
 
 export interface LogItemSnapshot {
   id: string;
@@ -78,13 +78,13 @@ export interface FoodLogSnapshot {
 }
 
 const MEAL_LABEL: Record<string, string> = {
-  breakfast: '早餐',
-  lunch: '午餐',
-  dinner: '晚餐',
-  snack: '點心',
+  breakfast: "早餐",
+  lunch: "午餐",
+  dinner: "晚餐",
+  snack: "點心",
 };
 
-const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
+const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
 
 type MealType = (typeof MEAL_ORDER)[number];
 
@@ -104,32 +104,34 @@ export interface PlanPrefillPayload {
 }
 
 /** 拍照 job 回傳（物件或陣列）→ 與手動 AI 相同結構；UI 只使用第一筆。 */
-function parsePhotoJobResult(json: Json | null): ManualFoodAnalysisResult | null {
+function parsePhotoJobResult(
+  json: Json | null,
+): ManualFoodAnalysisResult | null {
   if (json == null) return null;
   const rows: unknown[] = Array.isArray(json) ? json : [json];
   for (const row of rows) {
-    if (!row || typeof row !== 'object') continue;
+    if (!row || typeof row !== "object") continue;
     const o = row as Record<string, unknown>;
-    const name = String(o.name ?? '').trim();
+    const name = String(o.name ?? "").trim();
     if (!name) continue;
     const quantity_g = Math.round(Number(o.quantity_g ?? 0));
-    const qd = String(o.quantity_description ?? '').trim();
+    const qd = String(o.quantity_description ?? "").trim();
     const fiberRaw = o.fiber_g;
     const sodiumRaw = o.sodium_mg;
     return {
       name,
       quantity_g: quantity_g > 0 ? quantity_g : 100,
-      quantity_description: qd || (quantity_g > 0 ? `${quantity_g}g` : '1份'),
+      quantity_description: qd || (quantity_g > 0 ? `${quantity_g}g` : "1份"),
       calories: Math.round(Number(o.calories ?? 0)),
       protein_g: Math.round(Number(o.protein_g ?? 0)),
       carb_g: Math.round(Number(o.carb_g ?? 0)),
       fat_g: Math.round(Number(o.fat_g ?? 0)),
       fiber_g:
-        fiberRaw === null || fiberRaw === undefined || fiberRaw === ''
+        fiberRaw === null || fiberRaw === undefined || fiberRaw === ""
           ? null
           : Math.round(Number(fiberRaw)),
       sodium_mg:
-        sodiumRaw === null || sodiumRaw === undefined || sodiumRaw === ''
+        sodiumRaw === null || sodiumRaw === undefined || sodiumRaw === ""
           ? null
           : Math.round(Number(sodiumRaw)),
     };
@@ -146,7 +148,7 @@ function logItemToManualResult(it: LogItemSnapshot): ManualFoodAnalysisResult {
   return {
     name: it.name,
     quantity_g: q > 0 ? q : 1,
-    quantity_description: '',
+    quantity_description: "",
     calories: Math.round(Number(it.calories)),
     protein_g: Math.round(Number(it.protein_g)),
     carb_g: Math.round(Number(it.carb_g)),
@@ -193,12 +195,12 @@ function secondaryExpandable(it: LogItemSnapshot): boolean {
 }
 
 function formatFiber(it: LogItemSnapshot): string {
-  if (it.fiber_g === null) return '—';
+  if (it.fiber_g === null) return "—";
   return `${roundMacroG(Number(it.fiber_g))}g`;
 }
 
 function formatSodium(it: LogItemSnapshot): string {
-  if (it.sodium_mg === null) return '—';
+  if (it.sodium_mg === null) return "—";
   return `${roundMacroG(Number(it.sodium_mg))}mg`;
 }
 
@@ -224,14 +226,12 @@ function LogItemNutrition({ item }: { item: LogItemSnapshot }) {
               e.stopPropagation();
               setOpen((v) => !v);
             }}
-            className="mt-0.5 block text-left text-[11px] font-normal leading-snug text-muted-foreground transition-opacity hover:opacity-80"
-          >
-            {open ? '收合 ‹' : '更多 ›'}
+            className="mt-0.5 block text-left text-[11px] font-normal leading-snug text-muted-foreground transition-opacity hover:opacity-80">
+            {open ? "收合 ‹" : "更多 ›"}
           </button>
           <div
             className="overflow-hidden transition-[max-height] duration-[150ms] ease-[ease]"
-            style={{ maxHeight: open ? 96 : 0 }}
-          >
+            style={{ maxHeight: open ? 96 : 0 }}>
             <p className="pt-1 text-[11px] font-normal leading-snug text-muted-foreground">
               纖維 {formatFiber(item)} · 鈉 {formatSodium(item)}
             </p>
@@ -266,7 +266,7 @@ function patchLogItemInLogs(
   }));
 }
 
-export type LogSectionTab = 'food' | 'activity' | 'body';
+export type LogSectionTab = "food" | "activity" | "body";
 
 interface LogClientProps {
   date: string;
@@ -283,23 +283,21 @@ interface LogClientProps {
   isLogToday: boolean;
 }
 
-type PlanItemShape = PlanPrefillPayload['items'][number];
+type PlanItemShape = PlanPrefillPayload["items"][number];
 
 type ExtraDraftLine = {
   base: PlanItemShape;
   row: PlanItemShape;
 };
 
-function clonePrefillItems(
-  p: PlanPrefillPayload,
-): PlanPrefillPayload['items'] {
+function clonePrefillItems(p: PlanPrefillPayload): PlanPrefillPayload["items"] {
   return p.items.map((i) => ({ ...i }));
 }
 
 function scaleMacrosFromBaseline(
-  base: PlanPrefillPayload['items'][number],
+  base: PlanPrefillPayload["items"][number],
   newQty: number,
-): PlanPrefillPayload['items'][number] {
+): PlanPrefillPayload["items"][number] {
   const q0 = Number(base.quantity_g);
   const safeQ = Number.isFinite(newQty) && newQty > 0 ? newQty : q0;
   const factor = q0 > 0 ? safeQ / q0 : 1;
@@ -332,16 +330,12 @@ function LogSectionTabs({
 
   function go(tab: LogSectionTab) {
     const p = new URLSearchParams();
-    p.set('date', date);
-    p.set('tab', tab);
+    p.set("date", date);
+    p.set("tab", tab);
     router.replace(`/log?${p.toString()}`);
   }
 
-  const tabBtn = (
-    tab: LogSectionTab,
-    label: string,
-    Icon: typeof FiCoffee,
-  ) => (
+  const tabBtn = (tab: LogSectionTab, label: string, Icon: typeof FiCoffee) => (
     <button
       key={tab}
       type="button"
@@ -349,26 +343,21 @@ function LogSectionTabs({
       aria-selected={active === tab}
       onClick={() => go(tab)}
       className={cn(
-        'flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 py-2 text-[13px] font-medium transition-colors',
+        "flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 py-2 text-[13px] font-medium transition-colors",
         active === tab
-          ? 'bg-primary text-white'
-          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-      )}
-    >
+          ? "bg-primary text-white"
+          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+      )}>
       <Icon className="h-4 w-4 shrink-0" aria-hidden />
       <span>{label}</span>
     </button>
   );
 
   return (
-    <div
-      className="flex w-full gap-2"
-      role="tablist"
-      aria-label="紀錄類別"
-    >
-      {tabBtn('food', '飲食', FiCoffee)}
-      {tabBtn('activity', '運動', FiActivity)}
-      {tabBtn('body', '身體與習慣', FiUser)}
+    <div className="flex w-full gap-2" role="tablist" aria-label="紀錄類別">
+      {tabBtn("food", "飲食", FiCoffee)}
+      {tabBtn("activity", "運動", FiActivity)}
+      {tabBtn("body", "身體與習慣", FiUser)}
     </div>
   );
 }
@@ -379,7 +368,7 @@ export function LogClient({
   initialLogs,
   initialMealTab = null,
   prefillFromMeal = null,
-  sectionTab = 'food',
+  sectionTab = "food",
   initialActivities = [],
   initialHeightCm,
   initialVital,
@@ -388,12 +377,13 @@ export function LogClient({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [mealTab, setMealTab] = useState<MealType>(() =>
-    initialMealTab ??
+  const [mealTab, setMealTab] = useState<MealType>(
+    () =>
+      initialMealTab ??
       (prefillFromMeal?.mealType as MealType | undefined) ??
-      'breakfast',
+      "breakfast",
   );
-  const [inputMode, setInputMode] = useState<'manual' | 'photo'>('manual');
+  const [inputMode, setInputMode] = useState<"manual" | "photo">("manual");
 
   const [frequentOpen, setFrequentOpen] = useState(false);
   const [frequentLoading, setFrequentLoading] = useState(false);
@@ -423,10 +413,8 @@ export function LogClient({
   const originalsRef = useRef(
     prefillFromMeal ? clonePrefillItems(prefillFromMeal) : [],
   );
-  const [prefillDraft, setPrefillDraft] = useState<
-    PlanPrefillPayload['items']
-  >(() =>
-    prefillFromMeal ? clonePrefillItems(prefillFromMeal) : [],
+  const [prefillDraft, setPrefillDraft] = useState<PlanPrefillPayload["items"]>(
+    () => (prefillFromMeal ? clonePrefillItems(prefillFromMeal) : []),
   );
   const [prefillBusy, setPrefillBusy] = useState(false);
   const [prefillErr, setPrefillErr] = useState<string | null>(null);
@@ -450,16 +438,16 @@ export function LogClient({
       result_json?: Json | null;
       error_message?: string | null;
     }) => {
-      const st = row.status ?? '';
+      const st = row.status ?? "";
       setJobStatus(st);
-      if (st === 'ready') {
+      if (st === "ready") {
         const one = parsePhotoJobResult(row.result_json ?? null);
         setPhotoResult(one);
         setPhotoError(null);
         return;
       }
-      if (st === 'error') {
-        setPhotoError(row.error_message ?? '辨識失敗');
+      if (st === "error") {
+        setPhotoError(row.error_message ?? "辨識失敗");
         setPhotoResult(null);
       }
     },
@@ -482,11 +470,11 @@ export function LogClient({
     const channel = supabase
       .channel(`photo-job-${activeJobId}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'photo_analysis_jobs',
+          event: "UPDATE",
+          schema: "public",
+          table: "photo_analysis_jobs",
           filter: `id=eq.${activeJobId}`,
         },
         (payload) => {
@@ -517,16 +505,16 @@ export function LogClient({
 
     async function pollOnce(): Promise<boolean> {
       const { data: row } = await supabase
-        .from('photo_analysis_jobs')
-        .select('status,result_json,error_message')
-        .eq('id', activeJobId)
+        .from("photo_analysis_jobs")
+        .select("status,result_json,error_message")
+        .eq("id", activeJobId)
         .maybeSingle();
 
       if (cancelled || !row) return false;
 
-      const st = row.status ?? '';
+      const st = row.status ?? "";
       applyPhotoJobUpdate(row);
-      return st === 'ready' || st === 'error';
+      return st === "ready" || st === "error";
     }
 
     let iv: number | undefined;
@@ -555,7 +543,7 @@ export function LogClient({
     const map = new Map<string, FoodLogSnapshot[]>();
     for (const k of MEAL_ORDER) map.set(k, []);
     for (const log of dayLogs) {
-      const key = log.meal_type in MEAL_LABEL ? log.meal_type : 'snack';
+      const key = log.meal_type in MEAL_LABEL ? log.meal_type : "snack";
       const arr = map.get(key);
       if (arr) arr.push(log);
     }
@@ -571,9 +559,9 @@ export function LogClient({
       setEditSaving(true);
       const supabase = createClient();
       const { error } = await supabase
-        .from('food_log_items')
+        .from("food_log_items")
         .update({
-          name: edited.name.trim() || '未命名',
+          name: edited.name.trim() || "未命名",
           quantity_g: edited.quantity_g,
           calories: edited.calories,
           protein_g: edited.protein_g,
@@ -582,7 +570,7 @@ export function LogClient({
           fiber_g: edited.fiber_g,
           sodium_mg: edited.sodium_mg,
         })
-        .eq('id', itemId);
+        .eq("id", itemId);
 
       setEditSaving(false);
       if (error) {
@@ -592,7 +580,7 @@ export function LogClient({
 
       setDayLogs((prev) =>
         patchLogItemInLogs(prev, itemId, {
-          name: edited.name.trim() || '未命名',
+          name: edited.name.trim() || "未命名",
           quantity_g: edited.quantity_g,
           calories: edited.calories,
           protein_g: edited.protein_g,
@@ -621,13 +609,8 @@ export function LogClient({
 
   useEffect(() => {
     if (prefillFromMeal) return;
-    const m = searchParams.get('meal_type');
-    if (
-      m === 'breakfast' ||
-      m === 'lunch' ||
-      m === 'dinner' ||
-      m === 'snack'
-    ) {
+    const m = searchParams.get("meal_type");
+    if (m === "breakfast" || m === "lunch" || m === "dinner" || m === "snack") {
       setMealTab(m);
     }
   }, [searchParams, prefillFromMeal]);
@@ -663,7 +646,7 @@ export function LogClient({
     const snap: LogItemSnapshot = { ...row.snapshot };
     const manual = logItemToManualResult(snap);
     setFrequentOpen(false);
-    if (inputMode === 'manual') {
+    if (inputMode === "manual") {
       setApplyHistoryPrefill((p) => ({
         version: (p?.version ?? 0) + 1,
         result: manual,
@@ -671,11 +654,11 @@ export function LogClient({
     } else {
       setPhotoError(null);
       setPhotoBusy(false);
-      setPhotoHint('已從常用項目帶入，可調整後確認');
+      setPhotoHint("已從常用項目帶入，可調整後確認");
       setActiveJobId(null);
       setJobStatus(null);
       clearLocalPhotoPreview();
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = "";
       setPhotoResult(manual);
     }
   }
@@ -700,7 +683,7 @@ export function LogClient({
       ...extraDraftLines.map((l) => l.row),
     ];
     if (!merged.length) {
-      setPrefillErr('請至少保留或加入一項食材');
+      setPrefillErr("請至少保留或加入一項食材");
       return;
     }
     setPrefillBusy(true);
@@ -744,7 +727,7 @@ export function LogClient({
     setActiveJobId(null);
     setPhotoResult(null);
     clearLocalPhotoPreview();
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   async function onPhotoFile(file: File | null) {
@@ -764,7 +747,7 @@ export function LogClient({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setPhotoError('未登入');
+      setPhotoError("未登入");
       return;
     }
 
@@ -774,34 +757,34 @@ export function LogClient({
       uploadFile = await compressImageForUpload(file);
     } catch (e) {
       setPhotoBusy(false);
-      setPhotoError(e instanceof Error ? e.message : '圖片處理失敗');
+      setPhotoError(e instanceof Error ? e.message : "圖片處理失敗");
       return;
     }
 
     const ext =
-      uploadFile.name.split('.').pop()?.toLowerCase() ??
-      (uploadFile.type === 'image/png'
-        ? 'png'
-        : uploadFile.type === 'image/webp'
-          ? 'webp'
-          : 'jpg');
-    const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext)
-      ? ext === 'jpeg'
-        ? 'jpg'
+      uploadFile.name.split(".").pop()?.toLowerCase() ??
+      (uploadFile.type === "image/png"
+        ? "png"
+        : uploadFile.type === "image/webp"
+          ? "webp"
+          : "jpg");
+    const safeExt = ["jpg", "jpeg", "png", "webp"].includes(ext)
+      ? ext === "jpeg"
+        ? "jpg"
         : ext
-      : 'jpg';
+      : "jpg";
 
     const path = `${user.id}/${Date.now()}.${safeExt}`;
     const mime =
       uploadFile.type ||
-      (safeExt === 'png'
-        ? 'image/png'
-        : safeExt === 'webp'
-          ? 'image/webp'
-          : 'image/jpeg');
+      (safeExt === "png"
+        ? "image/png"
+        : safeExt === "webp"
+          ? "image/webp"
+          : "image/jpeg");
 
     const { error: upErr } = await supabase.storage
-      .from('food-photos')
+      .from("food-photos")
       .upload(path, uploadFile, {
         contentType: mime,
         upsert: false,
@@ -824,13 +807,13 @@ export function LogClient({
     if (inv.hint) setPhotoHint(inv.hint);
     const jid = inv.jobId ?? null;
     setActiveJobId(jid);
-    setJobStatus('pending');
+    setJobStatus("pending");
 
     if (jid) {
       const { data: row } = await supabase
-        .from('photo_analysis_jobs')
-        .select('status,result_json,error_message')
-        .eq('id', jid)
+        .from("photo_analysis_jobs")
+        .select("status,result_json,error_message")
+        .eq("id", jid)
         .maybeSingle();
 
       if (row) applyPhotoJobUpdate(row);
@@ -869,7 +852,7 @@ export function LogClient({
 
   function handlePhotoFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
-    e.target.value = '';
+    e.target.value = "";
     void onPhotoFile(file);
   }
 
@@ -879,13 +862,13 @@ export function LogClient({
     (photoBusy ||
       (!!activeJobId &&
         jobStatus !== null &&
-        jobStatus !== 'ready' &&
-        jobStatus !== 'error'));
+        jobStatus !== "ready" &&
+        jobStatus !== "error"));
 
   const mealPillPrimary =
-    'min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-transparent';
+    "min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-transparent";
   const mealPillInactive =
-    'min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground';
+    "min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground";
 
   return (
     <div className="space-y-2.5">
@@ -893,7 +876,7 @@ export function LogClient({
         <LogSectionTabs date={date} active={sectionTab} />
       ) : null}
 
-      {!prefillFromMeal && sectionTab === 'body' ? (
+      {!prefillFromMeal && sectionTab === "body" ? (
         <LogVitalsCard
           dateIso={date}
           isToday={isLogToday}
@@ -902,7 +885,7 @@ export function LogClient({
         />
       ) : null}
 
-      {!prefillFromMeal && sectionTab === 'food' ? (
+      {!prefillFromMeal && sectionTab === "food" ? (
         <div className="rounded-xl bg-card px-4 py-3">
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
@@ -910,7 +893,7 @@ export function LogClient({
               <p className="tabular-nums text-heading-page leading-tight text-foreground">
                 {Math.round(todayTotal)}
                 <span className="text-[13px] font-normal text-muted-foreground">
-                  {' '}
+                  {" "}
                   kcal
                 </span>
               </p>
@@ -925,9 +908,7 @@ export function LogClient({
                   尚未設定熱量目標
                 </p>
               )}
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                {date}
-              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">{date}</p>
             </div>
           </div>
         </div>
@@ -955,8 +936,7 @@ export function LogClient({
               {prefillDraft.map((it, idx) => (
                 <li
                   key={`prefill-${idx}`}
-                  className="flex items-start gap-2 rounded-xl bg-card p-3"
-                >
+                  className="flex items-start gap-2 rounded-xl bg-card p-3">
                   <div className="min-w-0 flex-1 space-y-2">
                     <label className="block text-[11px] text-muted-foreground">
                       名稱
@@ -990,9 +970,7 @@ export function LogClient({
                             if (!base) return;
                             const scaled = scaleMacrosFromBaseline(base, raw);
                             setPrefillDraft((prev) =>
-                              prev.map((row, i) =>
-                                i === idx ? scaled : row,
-                              ),
+                              prev.map((row, i) => (i === idx ? scaled : row)),
                             );
                           }}
                         />
@@ -1002,7 +980,7 @@ export function LogClient({
                           熱量
                         </p>
                         <p className="tabular-nums text-[15px] font-medium text-foreground">
-                          {Math.round(it.calories)}{' '}
+                          {Math.round(it.calories)}{" "}
                           <span className="text-[13px] font-normal text-muted-foreground">
                             kcal
                           </span>
@@ -1021,8 +999,7 @@ export function LogClient({
                       originalsRef.current = originalsRef.current.filter(
                         (_, i) => i !== idx,
                       );
-                    }}
-                  >
+                    }}>
                     <TrashIcon className="h-4 w-4" />
                   </button>
                 </li>
@@ -1038,8 +1015,7 @@ export function LogClient({
                   {extraDraftLines.map((line, idx) => (
                     <li
                       key={`extra-${idx}`}
-                      className="flex items-start gap-2 rounded-xl bg-card p-3"
-                    >
+                      className="flex items-start gap-2 rounded-xl bg-card p-3">
                       <div className="min-w-0 flex-1 space-y-2">
                         <p className="text-[13px] font-medium text-foreground">
                           {line.row.name}
@@ -1074,7 +1050,7 @@ export function LogClient({
                               熱量
                             </p>
                             <p className="tabular-nums text-[15px] font-medium text-foreground">
-                              {Math.round(line.row.calories)}{' '}
+                              {Math.round(line.row.calories)}{" "}
                               <span className="text-[13px] font-normal text-muted-foreground">
                                 kcal
                               </span>
@@ -1090,8 +1066,7 @@ export function LogClient({
                           setExtraDraftLines((prev) =>
                             prev.filter((_, i) => i !== idx),
                           )
-                        }
-                      >
+                        }>
                         <TrashIcon className="h-4 w-4" />
                       </button>
                     </li>
@@ -1104,9 +1079,8 @@ export function LogClient({
               type="button"
               variant="outline"
               className="w-full border-hairline"
-              onClick={() => setShowExtraSearch((v) => !v)}
-            >
-              {showExtraSearch ? '收合' : '新增其他食物'}
+              onClick={() => setShowExtraSearch((v) => !v)}>
+              {showExtraSearch ? "收合" : "新增其他食物"}
             </Button>
 
             {showExtraSearch ? (
@@ -1140,313 +1114,306 @@ export function LogClient({
                 prefillBusy ||
                 (prefillDraft.length === 0 && extraDraftLines.length === 0)
               }
-              onClick={() => void onCommitPrefill()}
-            >
-              {prefillBusy ? '存檔中…' : '確認存檔'}
+              onClick={() => void onCommitPrefill()}>
+              {prefillBusy ? "存檔中…" : "確認存檔"}
             </Button>
           </div>
         </div>
       ) : null}
 
-      {!prefillFromMeal && sectionTab === 'food' ? (
-      <Card className="min-w-0 max-w-full overflow-hidden">
-        <CardHeader className="pb-2">
-          <SectionHeading
-            icon={UtensilsCrossed}
-            as="h3"
-            className="leading-none tracking-tight"
-          >
-            新增紀錄
-          </SectionHeading>
-          <CardDescription>
-            選擇餐次後，以文字描述或拍照加入今日飲食。
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="min-w-0 space-y-3 overflow-x-hidden">
-          <div className="space-y-2">
-            <p className="text-[11px] font-medium text-muted-foreground">
-              選擇餐次
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {MEAL_ORDER.map((m) => (
+      {!prefillFromMeal && sectionTab === "food" ? (
+        <Card className="min-w-0 max-w-full overflow-hidden">
+          <CardHeader className="pb-2">
+            <SectionHeading
+              icon={UtensilsCrossed}
+              as="h3"
+              className="leading-none tracking-tight">
+              新增紀錄
+            </SectionHeading>
+            <CardDescription>
+              選擇餐次後，以文字描述或拍照加入今日飲食。
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="min-w-0 space-y-3 overflow-x-hidden">
+            <div className="space-y-2">
+              <p className="text-[11px] font-medium text-muted-foreground">
+                選擇餐次
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {MEAL_ORDER.map((m) => (
+                  <Button
+                    key={m}
+                    type="button"
+                    variant={mealTab === m ? "default" : "ghost"}
+                    className={
+                      mealTab === m ? mealPillPrimary : mealPillInactive
+                    }
+                    onClick={() => setMealTab(m)}>
+                    {MEAL_LABEL[m]}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[11px] font-medium text-muted-foreground">
+                選擇輸入方式
+              </p>
+              <div className="flex flex-wrap gap-2">
                 <Button
-                  key={m}
                   type="button"
-                  variant={mealTab === m ? 'default' : 'ghost'}
+                  variant={inputMode === "manual" ? "default" : "ghost"}
                   className={
-                    mealTab === m ? mealPillPrimary : mealPillInactive
+                    inputMode === "manual" ? mealPillPrimary : mealPillInactive
                   }
-                  onClick={() => setMealTab(m)}
-                >
-                  {MEAL_LABEL[m]}
+                  onClick={() => setInputMode("manual")}>
+                  手動輸入
                 </Button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-[11px] font-medium text-muted-foreground">
-              選擇輸入方式
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant={inputMode === 'manual' ? 'default' : 'ghost'}
-                className={
-                  inputMode === 'manual' ? mealPillPrimary : mealPillInactive
-                }
-                onClick={() => setInputMode('manual')}
-              >
-                手動輸入
-              </Button>
-              <Button
-                type="button"
-                variant={inputMode === 'photo' ? 'default' : 'ghost'}
-                className={
-                  inputMode === 'photo' ? mealPillPrimary : mealPillInactive
-                }
-                onClick={() => setInputMode('photo')}
-              >
-                拍照辨識
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className={cn(
-                  'min-h-9 h-9 shrink-0 rounded-full border-hairline px-4 py-0 text-[13px] font-medium',
-                )}
-                onClick={() => setFrequentOpen(true)}
-              >
-                選擇常用
-              </Button>
-            </div>
-          </div>
-
-          {inputMode === 'manual' ? (
-            <div key="input-mode-manual" className="space-y-3">
-              {actionError ? (
-                <p className="text-[13px] text-destructive">{actionError}</p>
-              ) : null}
-              <AddFoodManualAiPanel
-                mealType={mealTab}
-                mealLabelZh={MEAL_LABEL[mealTab]}
-                date={date}
-                applyHistoryPrefill={applyHistoryPrefill}
-                onError={(msg) => setActionError(msg)}
-                onCommitted={() => {
-                  setActionError(null);
-                  refresh();
-                }}
-              />
-            </div>
-          ) : (
-            <div key="input-mode-photo" className="space-y-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handlePhotoFileChange}
-              />
-
-              {!photoPreviewUrl && !photoResult ?
-                <button
+                <Button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center gap-2 rounded-xl border-hairline border-dashed border-white/25 bg-primary py-8 text-white transition-colors active:bg-primary-dark"
-                >
-                  <FiCamera className="h-8 w-8 shrink-0 text-white" aria-hidden />
-                  <span className="text-[13px] font-medium text-white">
-                    拍照或選擇相片
-                  </span>
-                  <span className="text-[11px] text-white/70">支援 JPG、PNG</span>
-                </button>
-              : photoPreviewUrl && !photoResult ?
-                <div className="relative w-full overflow-hidden rounded-xl">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photoPreviewUrl}
-                    alt="預覽"
-                    className="h-48 w-full object-cover"
-                  />
+                  variant={inputMode === "photo" ? "default" : "ghost"}
+                  className={
+                    inputMode === "photo" ? mealPillPrimary : mealPillInactive
+                  }
+                  onClick={() => setInputMode("photo")}>
+                  拍照辨識
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "min-h-9 h-9 shrink-0 rounded-full border-hairline px-4 py-0 text-[13px] font-medium",
+                  )}
+                  onClick={() => setFrequentOpen(true)}>
+                  選擇常用
+                </Button>
+              </div>
+            </div>
+
+            {inputMode === "manual" ? (
+              <div key="input-mode-manual" className="space-y-3">
+                {actionError ? (
+                  <p className="text-[13px] text-destructive">{actionError}</p>
+                ) : null}
+                <AddFoodManualAiPanel
+                  mealType={mealTab}
+                  mealLabelZh={MEAL_LABEL[mealTab]}
+                  date={date}
+                  applyHistoryPrefill={applyHistoryPrefill}
+                  onError={(msg) => setActionError(msg)}
+                  onCommitted={() => {
+                    setActionError(null);
+                    refresh();
+                  }}
+                />
+              </div>
+            ) : (
+              <div key="input-mode-photo" className="space-y-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoFileChange}
+                />
+
+                {!photoPreviewUrl && !photoResult ? (
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute right-2 top-2 rounded-full bg-[#1E212B]/70 px-3 py-1 text-[11px] text-white transition-opacity hover:opacity-90"
-                  >
-                    重新選擇
+                    className="flex w-full flex-col items-center gap-2 rounded-xl border-hairline border-dashed border-white/25 bg-primary py-8 text-white transition-colors active:bg-primary-dark">
+                    <FiCamera
+                      className="h-8 w-8 shrink-0 text-white"
+                      aria-hidden
+                    />
+                    <span className="text-[13px] font-medium text-white">
+                      拍照或選擇相片
+                    </span>
+                    <span className="text-[11px] text-white/70">
+                      支援 JPG、PNG
+                    </span>
                   </button>
-                </div>
-              : null}
-
-              {photoBusy ?
-                <p className="text-[13px] text-muted-foreground">
-                  上傳並排入分析…
-                </p>
-              : null}
-              {photoHint ?
-                <p className="text-[11px] text-amber-600">{photoHint}</p>
-              : null}
-
-              {photoWaitingAnalysis ?
-                <div className="space-y-3 rounded-xl bg-card p-4">
-                  <div className="animate-pulse space-y-2">
-                    <div className="h-4 w-1/3 rounded-full bg-neutral-border-tertiary" />
-                    <div className="h-3 w-1/2 rounded-full bg-neutral-border-tertiary" />
+                ) : photoPreviewUrl && !photoResult ? (
+                  <div className="relative w-full overflow-hidden rounded-xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photoPreviewUrl}
+                      alt="預覽"
+                      className="h-48 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute right-2 top-2 rounded-full bg-[#1E212B]/70 px-3 py-1 text-[11px] text-white transition-opacity hover:opacity-90">
+                      重新選擇
+                    </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 animate-pulse">
-                    <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
-                    <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
-                    <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
-                    <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
-                  </div>
-                  <div className="h-10 animate-pulse rounded-[10px] bg-neutral-border-tertiary" />
-                  <p className="text-center text-[11px] text-neutral-text-tertiary">
-                    AI 辨識中，請稍候...
+                ) : null}
+
+                {photoBusy ? (
+                  <p className="text-[13px] text-muted-foreground">
+                    上傳並排入分析…
                   </p>
-                </div>
-              : null}
+                ) : null}
+                {photoHint ? (
+                  <p className="text-[11px] text-amber-600">{photoHint}</p>
+                ) : null}
 
-              {photoError ? (
-                <p className="text-[13px] text-destructive">{photoError}</p>
-              ) : null}
+                {photoWaitingAnalysis ? (
+                  <div className="space-y-3 rounded-xl bg-card p-4">
+                    <div className="animate-pulse space-y-2">
+                      <div className="h-4 w-1/3 rounded-full bg-neutral-border-tertiary" />
+                      <div className="h-3 w-1/2 rounded-full bg-neutral-border-tertiary" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 animate-pulse">
+                      <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
+                      <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
+                      <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
+                      <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
+                    </div>
+                    <div className="h-10 animate-pulse rounded-[10px] bg-neutral-border-tertiary" />
+                    <p className="text-center text-[11px] text-neutral-text-tertiary">
+                      AI 辨識中，請稍候...
+                    </p>
+                  </div>
+                ) : null}
 
-              {photoResult ? (
-                <NutritionResultCard
-                  result={photoResult}
-                  mealLabelZh={MEAL_LABEL[mealTab]}
-                  previewImageUrl={photoPreviewUrl ?? undefined}
-                  confirmBusy={addBusy}
-                  onConfirm={(edited) => void onConfirmPhoto(edited)}
-                  onReselect={resetPhotoResultForReselect}
-                />
-              ) : null}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                {photoError ? (
+                  <p className="text-[13px] text-destructive">{photoError}</p>
+                ) : null}
+
+                {photoResult ? (
+                  <NutritionResultCard
+                    result={photoResult}
+                    mealLabelZh={MEAL_LABEL[mealTab]}
+                    previewImageUrl={photoPreviewUrl ?? undefined}
+                    confirmBusy={addBusy}
+                    onConfirm={(edited) => void onConfirmPhoto(edited)}
+                    onReselect={resetPhotoResultForReselect}
+                  />
+                ) : null}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       ) : null}
 
-      {!prefillFromMeal && sectionTab === 'activity' ? (
+      {!prefillFromMeal && sectionTab === "activity" ? (
         <ActivityLogSection date={date} rows={initialActivities} />
       ) : null}
 
-      {sectionTab === 'food' ? (
-      <div className="space-y-2.5">
-        <h2 className="text-[15px] font-medium text-foreground">今日紀錄</h2>
-        <div className="space-y-3">
-          {MEAL_ORDER.map((m) => {
-            const mealLogs = grouped.get(m) ?? [];
-            return (
-              <section key={m}>
-                <h3 className="text-[13px] font-medium text-foreground">
-                  {MEAL_LABEL[m]}
-                </h3>
-                {mealLogs.length === 0 ? (
-                  <p className="mt-1 text-[13px] text-muted-foreground">
-                    尚無紀錄
-                  </p>
-                ) : (
-                  <ul className="mt-2 space-y-2.5">
-                    {mealLogs.map((log) => (
-                      <li key={log.id}>
-                        <div className="flex overflow-hidden rounded-xl bg-card">
-                          <div className="min-w-0 flex-1 divide-y-hairline divide-border">
-                            {(log.food_log_items ?? []).map((it) => (
-                              <div key={it.id} className="flex flex-col">
-                                <div
-                                  role="button"
-                                  tabIndex={0}
-                                  className="flex w-full cursor-pointer gap-2 p-3 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-[#4C956C]/20"
-                                  onClick={() =>
-                                    setExpandedItemId((prev) =>
-                                      prev === it.id ? null : it.id,
-                                    )
-                                  }
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                      e.preventDefault();
+      {sectionTab === "food" ? (
+        <div className="space-y-2.5">
+          <h2 className="text-[15px] font-medium text-foreground">今日紀錄</h2>
+          <div className="space-y-3">
+            {MEAL_ORDER.map((m) => {
+              const mealLogs = grouped.get(m) ?? [];
+              return (
+                <section key={m}>
+                  <h3 className="text-[13px] font-medium text-foreground">
+                    {MEAL_LABEL[m]}
+                  </h3>
+                  {mealLogs.length === 0 ? (
+                    <p className="mt-1 text-[13px] text-muted-foreground">
+                      尚無紀錄
+                    </p>
+                  ) : (
+                    <ul className="mt-2 space-y-2.5">
+                      {mealLogs.map((log) => (
+                        <li key={log.id}>
+                          <div className="flex overflow-hidden rounded-xl bg-card">
+                            <div className="min-w-0 flex-1 divide-y-hairline divide-border">
+                              {(log.food_log_items ?? []).map((it) => (
+                                <div key={it.id} className="flex flex-col">
+                                  <div
+                                    role="button"
+                                    tabIndex={0}
+                                    className="flex w-full cursor-pointer gap-2 p-3 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-[#4C956C]/20"
+                                    onClick={() =>
                                       setExpandedItemId((prev) =>
                                         prev === it.id ? null : it.id,
-                                      );
+                                      )
                                     }
-                                  }}
-                                >
-                                  <span
-                                    className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary"
-                                    aria-hidden
-                                  />
-                                  <div className="min-w-0 flex-1">
-                                    <div className="text-[13px] font-medium text-foreground">
-                                      {it.name}{' '}
-                                      <span className="text-[11px] font-normal text-muted-foreground">
-                                        {Math.round(Number(it.quantity_g))}g
-                                      </span>
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        setExpandedItemId((prev) =>
+                                          prev === it.id ? null : it.id,
+                                        );
+                                      }
+                                    }}>
+                                    <span
+                                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary"
+                                      aria-hidden
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-[13px] font-medium text-foreground">
+                                        {it.name}{" "}
+                                        <span className="text-[11px] font-normal text-muted-foreground">
+                                          {Math.round(Number(it.quantity_g))}g
+                                        </span>
+                                      </div>
+                                      <LogItemNutrition item={it} />
                                     </div>
-                                    <LogItemNutrition item={it} />
+                                  </div>
+                                  <div
+                                    className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+                                    style={{
+                                      maxHeight:
+                                        expandedItemId === it.id ? 1400 : 0,
+                                    }}>
+                                    {expandedItemId === it.id ? (
+                                      <div className="rounded-b-xl border-t border-border bg-card p-4">
+                                        <NutritionResultCard
+                                          key={`${it.id}-${it.calories}-${it.quantity_g}`}
+                                          embedded
+                                          editMode
+                                          editBusy={editSaving}
+                                          result={logItemToManualResult(it)}
+                                          onCancel={() =>
+                                            setExpandedItemId(null)
+                                          }
+                                          onConfirm={(edited) =>
+                                            void handleSaveEditedItem(
+                                              it.id,
+                                              edited,
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                    ) : null}
                                   </div>
                                 </div>
-                                <div
-                                  className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-                                  style={{
-                                    maxHeight:
-                                      expandedItemId === it.id ? 1400 : 0,
-                                  }}
-                                >
-                                  {expandedItemId === it.id ?
-                                    <div className="rounded-b-xl border-t border-border bg-card p-4">
-                                      <NutritionResultCard
-                                        key={`${it.id}-${it.calories}-${it.quantity_g}`}
-                                        embedded
-                                        editMode
-                                        editBusy={editSaving}
-                                        result={logItemToManualResult(it)}
-                                        onCancel={() =>
-                                          setExpandedItemId(null)
-                                        }
-                                        onConfirm={(edited) =>
-                                          void handleSaveEditedItem(
-                                            it.id,
-                                            edited,
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                  : null}
-                                </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
+                            <button
+                              type="button"
+                              className="shrink-0 self-stretch px-3 py-3 text-muted-foreground transition-colors hover:text-destructive"
+                              aria-label="刪除此筆紀錄"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void onDeleteLog(log.id);
+                              }}>
+                              <TrashIcon className="mx-auto h-4 w-4" />
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            className="shrink-0 self-stretch px-3 py-3 text-muted-foreground transition-colors hover:text-destructive"
-                            aria-label="刪除此筆紀錄"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void onDeleteLog(log.id);
-                            }}
-                          >
-                            <TrashIcon className="mx-auto h-4 w-4" />
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            );
-          })}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              );
+            })}
+          </div>
         </div>
-      </div>
       ) : null}
 
-      {!prefillFromMeal && sectionTab === 'food' ? (
+      {!prefillFromMeal && sectionTab === "food" ? (
         <BottomSheetShell
           open={frequentOpen}
           title="選擇常用項目"
-          onClose={() => setFrequentOpen(false)}
-        >
+          onClose={() => setFrequentOpen(false)}>
           <div className="max-h-[min(50vh,420px)] space-y-2 overflow-y-auto pb-2">
             {frequentLoading ? (
               <p className="text-[13px] text-muted-foreground">載入中…</p>
@@ -1462,8 +1429,7 @@ export function LogClient({
                   key={row.snapshot.id}
                   type="button"
                   className="w-full rounded-xl bg-card px-3 py-3 text-left transition-colors hover:bg-muted/40"
-                  onClick={() => pickFrequentItem(row)}
-                >
+                  onClick={() => pickFrequentItem(row)}>
                   <div className="flex items-start justify-between gap-2">
                     <span className="min-w-0 text-[13px] font-medium text-foreground">
                       {row.snapshot.name}

@@ -13,10 +13,10 @@
 |------|---------|------|
 | Header | `user_profiles.name` | 問候語 + 今日日期 + 連續打卡 badge |
 | 熱量圓環卡 | `food_log_items` 加總 | 今日攝取 / 目標，三大營養素進度條（carb/protein/fat） |
-| 體重卡 | `vital_logs`（最新一筆） | 今日或最近體重 + BMI 計算值 |
+| 體重卡 | `vital_logs`（最新一筆） | 今日或最近體重 + BMI 計算值；**點擊**前往 `/log?date=今日&tab=body` 調整體重（與紀錄頁身體卡相同） |
 | 今日餐食卡 | `food_logs` | 四餐記錄摘要（早中晚+點心），有未記錄的顯示提示 |
 | AI 今日建議卡 | 直接呼叫 Claude | lazy load，主畫面 skeleton 先顯示 |
-| 快速操作列 | — | 五項入口：飲食(`/log`)、體重(彈窗)、運動(`/log?tab=activity`)、數據(`/analytics`)、食品安全分析紀錄(`/guard/records`，History 圖示)；樣式為「無外層白底卡」、採分類按鈕列 |
+| 快速操作列 | — | 五項入口：飲食(`/log`)、體重(`/log?date=今日&tab=body`)、運動(`/log?tab=activity`)、數據(`/analytics`)、食品安全分析紀錄(`/guard/records`，History 圖示)；樣式為「無外層白底卡」、採分類按鈕列 |
 
 ### 資料查詢（Server Component）
 
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
 | 區塊 | 說明 |
 |------|------|
 | 主分頁 | URL `?tab=food`（預設）/ `activity` / `body`（身體與習慣）；`?date=` 仍用於當日篩選 |
-| 身體與習慣 | **`tab=body` 時顯示**，雙卡版面：**身體**（身高、體重）、**水分與睡眠**（飲水格、睡眠時數）。依 `?date=` 讀寫 `vital_logs`（`weight_kg`、`water_ml`、`sleep_hours`）；身高 `user_profiles.height_cm`（與設定頁共用）。補登過去日期的體重僅寫入該日 `vital_logs`；今日體重與儀表板「記錄體重」相同會同步代謝與目標熱量。飲水目標 ml 目前為固定常數（與儀表板一致） |
+| 身體與習慣 | **`tab=body` 時顯示**，雙卡版面：**身體**（身高、體重）、**水分與睡眠**（飲水格、睡眠時數）。依 `?date=` 讀寫 `vital_logs`（`weight_kg`、`water_ml`、`sleep_hours`）；身高 `user_profiles.height_cm`（與設定頁共用）。補登過去日期的體重僅寫入該日 `vital_logs`；今日體重在紀錄頁身體卡更新時會同步代謝與目標熱量（儀表板體重卡／快速操作「體重」導向該頁）。飲水目標 ml 目前為固定常數（與儀表板一致） |
 | 餐次 Tab | 僅在飲食分頁：早餐 / 午餐 / 晚餐 / 點心 |
 | 輸入方式切換 | 手動（搜尋＋AI）/ 拍照餐點 |
 | 搜尋輸入 | Open Food Facts 搜尋 + 結果列表 + 份量調整 + 加入 |
