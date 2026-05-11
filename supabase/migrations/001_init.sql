@@ -205,6 +205,7 @@ CREATE TABLE order_items (
   unit_price  NUMERIC(8,2) NOT NULL
 );
 
+-- DISABLED: subscription feature removed in MVP — tables kept for historical/rollback
 CREATE TABLE subscriptions (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id               UUID NOT NULL REFERENCES auth.users(id),
@@ -218,6 +219,7 @@ CREATE TABLE subscriptions (
   updated_at            TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- DISABLED: subscription feature removed in MVP — tables kept for historical/rollback
 CREATE TABLE subscription_items (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   subscription_id     UUID NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,

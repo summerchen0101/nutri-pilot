@@ -22,12 +22,8 @@ import {
   LogVitalsCard,
   type LogVitalSnapshot,
 } from "@/app/(main)/log/_components/log-vitals-card";
+import { AddFoodManualAiPanel } from "@/app/(main)/log/add-food-manual-ai";
 import {
-  AddFoodManualAiPanel,
-  type StagedFoodItemForPlan,
-} from "@/app/(main)/log/add-food-manual-ai";
-import {
-  commitPrefillFromPlanAction,
   confirmPhotoItemsAction,
   deleteFoodLogAction,
   listFrequentFoodLogItemsAction,
@@ -47,7 +43,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { Input } from "@/components/ui/input";
 import { compressImageForUpload } from "@/lib/food/compress-image-for-upload";
 import { invokeAiPhotoRequestFromBrowser } from "@/lib/food/invoke-photo-request";
 import type { ManualFoodAnalysisResult } from "@/lib/food/manual-food-analysis-result";
@@ -87,21 +82,6 @@ const MEAL_LABEL: Record<string, string> = {
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
 
 type MealType = (typeof MEAL_ORDER)[number];
-
-export interface PlanPrefillPayload {
-  mealId: string;
-  mealType: MealType;
-  items: Array<{
-    name: string;
-    quantity_g: number;
-    calories: number;
-    carb_g: number;
-    protein_g: number;
-    fat_g: number;
-    fiber_g: number | null;
-    sodium_mg: number | null;
-  }>;
-}
 
 /** 拍照 job 回傳（物件或陣列）→ 與手動 AI 相同結構；UI 只使用第一筆。 */
 function parsePhotoJobResult(
@@ -274,48 +254,11 @@ interface LogClientProps {
   initialLogs: FoodLogSnapshot[];
   /** URL `meal_type`，無預填時用來選預設餐次 Tab */
   initialMealTab?: MealType | null;
-  prefillFromMeal?: PlanPrefillPayload | null;
   /** URL `tab`：飲食 / 運動 / 其他（`body`） */
   sectionTab?: LogSectionTab;
   initialActivities?: ActivityLogRow[];
   initialVital: LogVitalSnapshot;
   isLogToday: boolean;
-}
-
-type PlanItemShape = PlanPrefillPayload["items"][number];
-
-type ExtraDraftLine = {
-  base: PlanItemShape;
-  row: PlanItemShape;
-};
-
-function clonePrefillItems(p: PlanPrefillPayload): PlanPrefillPayload["items"] {
-  return p.items.map((i) => ({ ...i }));
-}
-
-function scaleMacrosFromBaseline(
-  base: PlanPrefillPayload["items"][number],
-  newQty: number,
-): PlanPrefillPayload["items"][number] {
-  const q0 = Number(base.quantity_g);
-  const safeQ = Number.isFinite(newQty) && newQty > 0 ? newQty : q0;
-  const factor = q0 > 0 ? safeQ / q0 : 1;
-  return {
-    ...base,
-    quantity_g: safeQ,
-    calories: Math.round(Number(base.calories) * factor),
-    carb_g: Math.round(Number(base.carb_g) * factor * 10) / 10,
-    protein_g: Math.round(Number(base.protein_g) * factor * 10) / 10,
-    fat_g: Math.round(Number(base.fat_g) * factor * 10) / 10,
-    fiber_g:
-      base.fiber_g == null
-        ? null
-        : Math.round(Number(base.fiber_g) * factor * 10) / 10,
-    sodium_mg:
-      base.sodium_mg == null
-        ? null
-        : Math.round(Number(base.sodium_mg) * factor),
-  };
 }
 
 function LogSectionTabs({
@@ -366,7 +309,6 @@ export function LogClient({
   dailyCalTarget,
   initialLogs,
   initialMealTab = null,
-  prefillFromMeal = null,
   sectionTab = "food",
   initialActivities = [],
   initialVital,
@@ -376,10 +318,7 @@ export function LogClient({
   const searchParams = useSearchParams();
 
   const [mealTab, setMealTab] = useState<MealType>(
-    () =>
-      initialMealTab ??
-      (prefillFromMeal?.mealType as MealType | undefined) ??
-      "breakfast",
+    () => initialMealTab ?? "breakfast",
   );
   const [inputMode, setInputMode] = useState<"manual" | "photo">("manual");
 
@@ -407,18 +346,6 @@ export function LogClient({
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const photoPreviewUrlRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const originalsRef = useRef(
-    prefillFromMeal ? clonePrefillItems(prefillFromMeal) : [],
-  );
-  const [prefillDraft, setPrefillDraft] = useState<PlanPrefillPayload["items"]>(
-    () => (prefillFromMeal ? clonePrefillItems(prefillFromMeal) : []),
-  );
-  const [prefillBusy, setPrefillBusy] = useState(false);
-  const [prefillErr, setPrefillErr] = useState<string | null>(null);
-
-  const [extraDraftLines, setExtraDraftLines] = useState<ExtraDraftLine[]>([]);
-  const [showExtraSearch, setShowExtraSearch] = useState(false);
 
   const [dayLogs, setDayLogs] = useState(initialLogs);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
@@ -595,28 +522,15 @@ export function LogClient({
   );
 
   useEffect(() => {
-    if (!prefillFromMeal) return;
-    setMealTab(prefillFromMeal.mealType);
-    const next = clonePrefillItems(prefillFromMeal);
-    originalsRef.current = next;
-    setPrefillDraft(next);
-    setPrefillErr(null);
-    setExtraDraftLines([]);
-    setShowExtraSearch(false);
-  }, [prefillFromMeal]);
-
-  useEffect(() => {
-    if (prefillFromMeal) return;
     const m = searchParams.get("meal_type");
     if (m === "breakfast" || m === "lunch" || m === "dinner" || m === "snack") {
       setMealTab(m);
     }
-  }, [searchParams, prefillFromMeal]);
+  }, [searchParams]);
 
   useEffect(() => {
-    if (prefillFromMeal) return;
     if (initialMealTab) setMealTab(initialMealTab);
-  }, [initialMealTab, prefillFromMeal]);
+  }, [initialMealTab]);
 
   useEffect(() => {
     if (!frequentOpen) return;
@@ -659,45 +573,6 @@ export function LogClient({
       if (fileInputRef.current) fileInputRef.current.value = "";
       setPhotoResult(manual);
     }
-  }
-
-  function stagedFoodToPlanShape(item: StagedFoodItemForPlan): PlanItemShape {
-    return {
-      name: item.name,
-      quantity_g: item.quantity_g,
-      calories: item.calories,
-      carb_g: item.carb_g,
-      protein_g: item.protein_g,
-      fat_g: item.fat_g,
-      fiber_g: item.fiber_g,
-      sodium_mg: item.sodium_mg,
-    };
-  }
-
-  async function onCommitPrefill() {
-    if (!prefillFromMeal) return;
-    const merged: PlanItemShape[] = [
-      ...prefillDraft,
-      ...extraDraftLines.map((l) => l.row),
-    ];
-    if (!merged.length) {
-      setPrefillErr("請至少保留或加入一項食材");
-      return;
-    }
-    setPrefillBusy(true);
-    setPrefillErr(null);
-    const err = await commitPrefillFromPlanAction({
-      mealId: prefillFromMeal.mealId,
-      date,
-      mealType: prefillFromMeal.mealType,
-      items: merged,
-    });
-    setPrefillBusy(false);
-    if (err.error) {
-      setPrefillErr(err.error);
-      return;
-    }
-    router.back();
   }
 
   async function onDeleteLog(logId: string) {
@@ -870,11 +745,9 @@ export function LogClient({
 
   return (
     <div className="space-y-2.5">
-      {!prefillFromMeal ? (
-        <LogSectionTabs date={date} active={sectionTab} />
-      ) : null}
+      <LogSectionTabs date={date} active={sectionTab} />
 
-      {!prefillFromMeal && sectionTab === "body" ? (
+      {sectionTab === "body" ? (
         <LogVitalsCard
           dateIso={date}
           isToday={isLogToday}
@@ -882,7 +755,7 @@ export function LogClient({
         />
       ) : null}
 
-      {!prefillFromMeal && sectionTab === "food" ? (
+      {sectionTab === "food" ? (
         <div className="rounded-xl bg-card px-4 py-3">
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
@@ -911,214 +784,7 @@ export function LogClient({
         </div>
       ) : null}
 
-      {prefillFromMeal ? (
-        <div className="space-y-4">
-          <div className="rounded-xl bg-primary-light p-3.5">
-            <p className="text-[13px] leading-snug text-foreground">
-              從計畫帶入：
-              {MEAL_LABEL[prefillFromMeal.mealType]}
-              的食材，可以直接編輯調整
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <h2 className="text-[15px] font-medium text-foreground">
-              計畫食材（可調整）
-            </h2>
-            {prefillErr ? (
-              <p className="text-[13px] text-destructive">{prefillErr}</p>
-            ) : null}
-
-            <ul className="space-y-2.5">
-              {prefillDraft.map((it, idx) => (
-                <li
-                  key={`prefill-${idx}`}
-                  className="flex items-start gap-2 rounded-xl bg-card p-3">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <label className="block text-[11px] text-muted-foreground">
-                      名稱
-                    </label>
-                    <Input
-                      className="mt-1"
-                      value={it.name}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setPrefillDraft((prev) =>
-                          prev.map((row, i) =>
-                            i === idx ? { ...row, name: v } : row,
-                          ),
-                        );
-                      }}
-                    />
-                    <div className="flex flex-wrap items-end gap-3 pt-1">
-                      <div className="w-[min(100%,132px)]">
-                        <label className="block text-[11px] text-muted-foreground">
-                          份量（g）
-                        </label>
-                        <Input
-                          type="number"
-                          min={1}
-                          step={1}
-                          className="mt-1 tabular-nums"
-                          value={Math.round(it.quantity_g)}
-                          onChange={(e) => {
-                            const raw = Number(e.target.value);
-                            const base = originalsRef.current[idx];
-                            if (!base) return;
-                            const scaled = scaleMacrosFromBaseline(base, raw);
-                            setPrefillDraft((prev) =>
-                              prev.map((row, i) => (i === idx ? scaled : row)),
-                            );
-                          }}
-                        />
-                      </div>
-                      <div className="pb-0.5">
-                        <p className="text-[11px] text-muted-foreground">
-                          熱量
-                        </p>
-                        <p className="tabular-nums text-[15px] font-medium text-foreground">
-                          {Math.round(it.calories)}{" "}
-                          <span className="text-[13px] font-normal text-muted-foreground">
-                            kcal
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="mt-6 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-destructive"
-                    aria-label="移除此項"
-                    onClick={() => {
-                      setPrefillDraft((prev) =>
-                        prev.filter((_, i) => i !== idx),
-                      );
-                      originalsRef.current = originalsRef.current.filter(
-                        (_, i) => i !== idx,
-                      );
-                    }}>
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            {extraDraftLines.length > 0 ? (
-              <div className="space-y-2 pt-2">
-                <p className="text-[13px] font-medium text-foreground">
-                  額外加入
-                </p>
-                <ul className="space-y-2.5">
-                  {extraDraftLines.map((line, idx) => (
-                    <li
-                      key={`extra-${idx}`}
-                      className="flex items-start gap-2 rounded-xl bg-card p-3">
-                      <div className="min-w-0 flex-1 space-y-2">
-                        <p className="text-[13px] font-medium text-foreground">
-                          {line.row.name}
-                        </p>
-                        <div className="flex flex-wrap items-end gap-3">
-                          <div className="w-[min(100%,132px)]">
-                            <label className="block text-[11px] text-muted-foreground">
-                              份量（g）
-                            </label>
-                            <Input
-                              type="number"
-                              min={1}
-                              step={1}
-                              className="mt-1 tabular-nums"
-                              value={Math.round(line.row.quantity_g)}
-                              onChange={(e) => {
-                                const raw = Number(e.target.value);
-                                const scaled = scaleMacrosFromBaseline(
-                                  line.base,
-                                  raw,
-                                );
-                                setExtraDraftLines((prev) =>
-                                  prev.map((l, i) =>
-                                    i === idx ? { ...l, row: scaled } : l,
-                                  ),
-                                );
-                              }}
-                            />
-                          </div>
-                          <div className="pb-0.5">
-                            <p className="text-[11px] text-muted-foreground">
-                              熱量
-                            </p>
-                            <p className="tabular-nums text-[15px] font-medium text-foreground">
-                              {Math.round(line.row.calories)}{" "}
-                              <span className="text-[13px] font-normal text-muted-foreground">
-                                kcal
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="mt-1 shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-destructive"
-                        aria-label="移除此項"
-                        onClick={() =>
-                          setExtraDraftLines((prev) =>
-                            prev.filter((_, i) => i !== idx),
-                          )
-                        }>
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full border-hairline"
-              onClick={() => setShowExtraSearch((v) => !v)}>
-              {showExtraSearch ? "收合" : "新增其他食物"}
-            </Button>
-
-            {showExtraSearch ? (
-              <div className="space-y-3 rounded-xl bg-card p-4">
-                <p className="text-[13px] text-muted-foreground">
-                  餐次：{MEAL_LABEL[prefillFromMeal.mealType]}
-                </p>
-                <AddFoodManualAiPanel
-                  mealType={prefillFromMeal.mealType}
-                  mealLabelZh={MEAL_LABEL[prefillFromMeal.mealType]}
-                  date={date}
-                  stagingOnly
-                  onStagedItem={(item) => {
-                    const shape = stagedFoodToPlanShape(item);
-                    setExtraDraftLines((prev) => [
-                      ...prev,
-                      { base: { ...shape }, row: { ...shape } },
-                    ]);
-                    setPrefillErr(null);
-                  }}
-                  onCommitted={() => {}}
-                  onError={(msg) => setPrefillErr(msg)}
-                />
-              </div>
-            ) : null}
-
-            <Button
-              type="button"
-              className="w-full"
-              disabled={
-                prefillBusy ||
-                (prefillDraft.length === 0 && extraDraftLines.length === 0)
-              }
-              onClick={() => void onCommitPrefill()}>
-              {prefillBusy ? "存檔中…" : "確認存檔"}
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
-      {!prefillFromMeal && sectionTab === "food" ? (
+      {sectionTab === "food" ? (
         <Card className="min-w-0 max-w-full overflow-hidden">
           <CardHeader className="pb-2">
             <SectionHeading
@@ -1296,7 +962,7 @@ export function LogClient({
         </Card>
       ) : null}
 
-      {!prefillFromMeal && sectionTab === "activity" ? (
+      {sectionTab === "activity" ? (
         <ActivityLogSection date={date} rows={initialActivities} />
       ) : null}
 
@@ -1406,7 +1072,7 @@ export function LogClient({
         </div>
       ) : null}
 
-      {!prefillFromMeal && sectionTab === "food" ? (
+      {sectionTab === "food" ? (
         <BottomSheetShell
           open={frequentOpen}
           title="選擇常用項目"

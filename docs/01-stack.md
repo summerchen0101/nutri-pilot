@@ -54,9 +54,7 @@ supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/supabase.
 
 ### ❌ 不用 Next.js API Routes 當主要後端
 
-**唯一例外**：Next.js API Routes 只保留一個用途——前端發起 AI Queue 請求的入口（因為需要讀 session）。
-
-**所有其他後端邏輯**都在 Supabase Edge Functions：
+**MVP**：一般 CRUD 與 AI 觸發以 Supabase client（Session）與 Edge Functions 為主；未保留需讀 Next.js session 的 AI Route。**所有後端邏輯**集中於 Supabase Edge Functions：
 - CRUD 操作
 - 金流 Webhook 驗簽
 - cron 排程
@@ -72,12 +70,11 @@ supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/supabase.
 ### 🔥 AI Queue 架構（最重要，不能跳過）
 
 **必須走 Queue 的任務**（耗時 > 3 秒）：
-- 菜單生成 `/functions/ai-menu-generate`
-- 拍照辨識 `/functions/ai-photo-analyze`
+- 拍照辨識 `/functions/ai-photo-analyze`（由 `ai-photo-request` 入隊）
+- 食品標示守衛 `/functions/label-guard-analyze`（由 `label-guard-request` 入隊）
 - 週報洞察 `/functions/ai-weekly-insight`
 
 **可以直接呼叫的任務**（耗時 < 2 秒）：
-- 換食材建議
 - 今日 Dashboard 建議
 
 **Queue 流程**：
@@ -99,26 +96,7 @@ Supabase Realtime 自動推給前端
 前端更新 UI
 ```
 
-**前端等待模式**：
-```typescript
-// SWR polling + Supabase Realtime 雙保險
-useEffect(() => {
-  const channel = supabase
-    .channel('menu-status')
-    .on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'daily_menus',
-      filter: `id=eq.${menuId}`
-    }, (payload) => {
-      if (payload.new.status === 'ready') {
-        mutate() // 觸發 SWR 重新拉資料
-      }
-    })
-    .subscribe()
-  return () => supabase.removeChannel(channel)
-}, [menuId])
-```
+**前端等待模式**（拍照／標示等 Job 表）：以 SWR 輪詢或訂閱 `photo_analysis_jobs` / `label_guard_jobs` 的 `status` 更新為準。
 
 ---
 
@@ -131,8 +109,8 @@ useEffect(() => {
     /onboarding          ← 建檔期 5 步驟 Wizard
   /(main)
     /dashboard           ← 總覽
-    /plan                ← 飲食計畫
     /log                 ← 飲食記錄
+    /guard               ← 食品安全守衛
     /analytics           ← 數據分析
     /shop                ← 健康商城
       /[productId]       ← 商品詳情
@@ -150,9 +128,9 @@ useEffect(() => {
 
 /supabase
   /functions             ← 所有 Edge Functions
-    /ai-menu-generate    ← AI 菜單 Queue Worker
-    /ai-photo-analyze    ← 拍照辨識 Queue Worker
-    /ai-weekly-insight   ← 週報 cron Worker
+    /ai-photo-analyze    ← 餐桌拍照 Queue Worker
+    /label-guard-analyze ← 標示分析 Queue Worker
+    /ai-weekly-insight   ← 週報 cron Worker（若已部署）
     /create-newebpay-payment ← 藍新 MPG 建單（幕前交易參數）
     /newebpay-notify         ← 藍新 NotifyURL（驗簽、入庫 orders）
 

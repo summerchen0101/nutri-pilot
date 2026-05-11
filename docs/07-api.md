@@ -180,12 +180,6 @@ supabase.from('products')
   .select('*, variants:product_variants(*), brand:brands(*)')
   .eq('id', productId)
   .single()
-
-// 取用戶訂閱
-supabase.from('subscriptions')
-  .select('*, items:subscription_items(*, variant:product_variants(*, product:products(*)))')
-  .eq('user_id', userId)
-  .eq('status', 'active')
 ```
 
 ---

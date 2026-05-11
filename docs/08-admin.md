@@ -20,7 +20,6 @@
     /[id]
   /orders             ← 訂單管理
     /[id]             ← 訂單詳情 + 出貨更新
-  /subscriptions      ← 訂閱管理
   /users              ← 用戶列表（唯讀為主）
     /[id]             ← 用戶詳情 + 訂單紀錄
   /settings           ← 後台設定（角色管理，Phase 後期）
@@ -101,7 +100,6 @@ const ROLE_ACCESS: Record<string, string[]> = {
   '/admin/products':      ['super_admin', 'editor'],
   '/admin/brands':        ['super_admin', 'editor'],
   '/admin/orders':        ['super_admin', 'cs'],
-  '/admin/subscriptions': ['super_admin', 'cs'],
   '/admin/users':         ['super_admin', 'cs'],
   '/admin/settings':      ['super_admin'],
 }
@@ -319,13 +317,7 @@ const { count: activeUsers } = await supabase
   .select('user_id', { count: 'exact', head: true })
   .gte('logged_at', sevenDaysAgo.toISOString())
 
-// 訂閱 MRR（每月經常性收入）
-const { data: subs } = await supabase
-  .from('subscriptions')
-  .select('frequency, items:subscription_items(variant:product_variants(sub_price, qty:subscription_items(qty)))')
-  .eq('status', 'active')
-
-// MRR 計算：weekly × 4.33 + biweekly × 2.17 + monthly × 1
+// 訂閱 MRR：MVP 未啟用 subscriptions，儀表板可略過或改以手動匯出
 ```
 
 ### 商品轉換漏斗查詢
@@ -411,10 +403,9 @@ const { data: products } = await supabase
 每個規格欄位：
 - 規格名稱（如「35g 隨手包」）
 - 重量（g）
-- 售價
-- 訂閱價（選填）
+- 售價（`price`）
 - 庫存數量
-- ~~Stripe Price ID~~（已移除；定價以 `price`／`sub_price` 為準）
+- ~~Stripe Price ID~~（已移除；藍新 MPG 以訂單總額為準）
 
 ```typescript
 // 儲存邏輯（transaction-like：先存商品再存規格）
@@ -502,11 +493,11 @@ async function refundOrder(orderId: /* uuid */, amount?: number) {
 const { data: users } = await supabase
   .from('user_profiles')
   .select(`
-    user_id, name, created_at,
+    user_id, name, updated_at,
     goals:user_goals(type, is_active),
-    plans:diet_plans(diet_method, is_active)
+    diet_method
   `)
-  .order('created_at', { ascending: false })
+  .order('updated_at', { ascending: false })
 
 // 注意：不顯示 avoid_foods、allergens 等個資（客服不需要知道）
 ```
@@ -515,9 +506,8 @@ const { data: users } = await supabase
 
 **super_admin 和 cs 都可以看**：
 - 姓名、Email、註冊日
-- 目前飲食計畫（飲食法、開始日）
+- 個人檔案中的飲食法偏好（`user_profiles.diet_method`）
 - 訂單列表（最近 10 筆）
-- 訂閱狀態
 
 **只有 super_admin 可以操作**：
 - 停用帳號按鈕

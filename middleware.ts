@@ -19,7 +19,6 @@ const SORTED_ADMIN_PATHS = Object.keys(ROLE_ACCESS).sort(
 
 const MAIN_PROTECTED_PREFIXES = [
   '/dashboard',
-  '/plan',
   '/log',
   '/analytics',
   '/guard',
@@ -110,10 +109,11 @@ export const config = {
   matcher: [
     '/login',
     '/dashboard/:path*',
-    '/plan/:path*',
     '/log',
     '/log/:path*',
     '/analytics/:path*',
+    '/guard',
+    '/guard/:path*',
     '/shop/:path*',
     '/settings/:path*',
     '/onboarding',

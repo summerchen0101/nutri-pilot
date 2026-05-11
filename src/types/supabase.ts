@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          body: string
+          created_at: string | null
+          id: string
+          is_active: boolean
+          published_at: string
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          published_at?: string
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          published_at?: string
+          title?: string
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           country: string | null
@@ -80,92 +107,6 @@ export type Database = {
         }
         Relationships: []
       }
-      daily_menus: {
-        Row: {
-          completion_pct: number | null
-          created_at: string | null
-          date: string
-          generated_by_ai: boolean | null
-          id: string
-          is_completed: boolean | null
-          plan_id: string
-          status: string
-          total_calories: number | null
-        }
-        Insert: {
-          completion_pct?: number | null
-          created_at?: string | null
-          date: string
-          generated_by_ai?: boolean | null
-          id?: string
-          is_completed?: boolean | null
-          plan_id: string
-          status?: string
-          total_calories?: number | null
-        }
-        Update: {
-          completion_pct?: number | null
-          created_at?: string | null
-          date?: string
-          generated_by_ai?: boolean | null
-          id?: string
-          is_completed?: boolean | null
-          plan_id?: string
-          status?: string
-          total_calories?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "daily_menus_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "diet_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      diet_plans: {
-        Row: {
-          carb_pct: number | null
-          created_at: string | null
-          diet_method: string
-          duration_days: number
-          end_date: string
-          fat_pct: number | null
-          id: string
-          is_active: boolean | null
-          protein_pct: number | null
-          start_date: string
-          user_id: string
-        }
-        Insert: {
-          carb_pct?: number | null
-          created_at?: string | null
-          diet_method: string
-          duration_days: number
-          end_date: string
-          fat_pct?: number | null
-          id?: string
-          is_active?: boolean | null
-          protein_pct?: number | null
-          start_date: string
-          user_id: string
-        }
-        Update: {
-          carb_pct?: number | null
-          created_at?: string | null
-          diet_method?: string
-          duration_days?: number
-          end_date?: string
-          fat_pct?: number | null
-          id?: string
-          is_active?: boolean | null
-          protein_pct?: number | null
-          start_date?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       food_cache: {
         Row: {
           alias: string[] | null
@@ -181,7 +122,7 @@ export type Database = {
           off_code: string | null
           protein_g_per_100g: number
           sodium_mg_per_100g: number | null
-          source: 'off' | 'mohw_tw' | 'usda' | 'ai_estimate' | 'user'
+          source: string
           updated_at: string | null
         }
         Insert: {
@@ -198,7 +139,7 @@ export type Database = {
           off_code?: string | null
           protein_g_per_100g?: number
           sodium_mg_per_100g?: number | null
-          source?: 'off' | 'mohw_tw' | 'usda' | 'ai_estimate' | 'user'
+          source?: string
           updated_at?: string | null
         }
         Update: {
@@ -215,7 +156,7 @@ export type Database = {
           off_code?: string | null
           protein_g_per_100g?: number
           sodium_mg_per_100g?: number | null
-          source?: 'off' | 'mohw_tw' | 'usda' | 'ai_estimate' | 'user'
+          source?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -276,7 +217,6 @@ export type Database = {
       food_logs: {
         Row: {
           date: string
-          from_plan_meal_id: string | null
           id: string
           log_type: string
           logged_at: string | null
@@ -286,7 +226,6 @@ export type Database = {
         }
         Insert: {
           date: string
-          from_plan_meal_id?: string | null
           id?: string
           log_type?: string
           logged_at?: string | null
@@ -296,48 +235,11 @@ export type Database = {
         }
         Update: {
           date?: string
-          from_plan_meal_id?: string | null
           id?: string
           log_type?: string
           logged_at?: string | null
           meal_type?: string
           method?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      photo_analysis_jobs: {
-        Row: {
-          created_at: string | null
-          error_message: string | null
-          id: string
-          job_kind: string
-          result_json: Json | null
-          status: string
-          storage_path: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          error_message?: string | null
-          id?: string
-          job_kind?: string
-          result_json?: Json | null
-          status?: string
-          storage_path: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          error_message?: string | null
-          id?: string
-          job_kind?: string
-          result_json?: Json | null
-          status?: string
-          storage_path?: string
-          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -413,94 +315,6 @@ export type Database = {
           },
         ]
       }
-      meal_items: {
-        Row: {
-          calories: number
-          carb_g: number
-          fat_g: number
-          fiber_g: number | null
-          id: string
-          meal_id: string
-          name: string
-          protein_g: number
-          quantity_g: number
-          sodium_mg: number | null
-        }
-        Insert: {
-          calories: number
-          carb_g: number
-          fat_g: number
-          fiber_g?: number | null
-          id?: string
-          meal_id: string
-          name: string
-          protein_g: number
-          quantity_g: number
-          sodium_mg?: number | null
-        }
-        Update: {
-          calories?: number
-          carb_g?: number
-          fat_g?: number
-          fiber_g?: number | null
-          id?: string
-          meal_id?: string
-          name?: string
-          protein_g?: number
-          quantity_g?: number
-          sodium_mg?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "meal_items_meal_id_fkey"
-            columns: ["meal_id"]
-            isOneToOne: false
-            referencedRelation: "meals"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      meals: {
-        Row: {
-          checkin_type: string | null
-          checked_in_at: string | null
-          id: string
-          is_checked_in: boolean | null
-          menu_id: string
-          scheduled_at: string | null
-          total_calories: number | null
-          type: string
-        }
-        Insert: {
-          checkin_type?: string | null
-          checked_in_at?: string | null
-          id?: string
-          is_checked_in?: boolean | null
-          menu_id: string
-          scheduled_at?: string | null
-          total_calories?: number | null
-          type: string
-        }
-        Update: {
-          checkin_type?: string | null
-          checked_in_at?: string | null
-          id?: string
-          is_checked_in?: boolean | null
-          menu_id?: string
-          scheduled_at?: string | null
-          total_calories?: number | null
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "meals_menu_id_fkey"
-            columns: ["menu_id"]
-            isOneToOne: false
-            referencedRelation: "daily_menus"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       order_items: {
         Row: {
           id: string
@@ -546,7 +360,7 @@ export type Database = {
           gateway_session_ref: string | null
           gateway_trade_no: string | null
           id: string
-          legacy_stripe_payment_intent_id: string | null
+          legacy_stripe_payment_intent_id: string
           merchant_order_no: string | null
           payment_gateway: string
           status: string
@@ -558,7 +372,7 @@ export type Database = {
           gateway_session_ref?: string | null
           gateway_trade_no?: string | null
           id?: string
-          legacy_stripe_payment_intent_id?: string | null
+          legacy_stripe_payment_intent_id: string
           merchant_order_no?: string | null
           payment_gateway?: string
           status?: string
@@ -570,11 +384,47 @@ export type Database = {
           gateway_session_ref?: string | null
           gateway_trade_no?: string | null
           id?: string
-          legacy_stripe_payment_intent_id?: string | null
+          legacy_stripe_payment_intent_id?: string
           merchant_order_no?: string | null
           payment_gateway?: string
           status?: string
           total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      photo_analysis_jobs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          job_kind: string
+          result_json: Json | null
+          status: string
+          storage_path: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          job_kind?: string
+          result_json?: Json | null
+          status?: string
+          storage_path: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          job_kind?: string
+          result_json?: Json | null
+          status?: string
+          storage_path?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -586,7 +436,6 @@ export type Database = {
           price: number
           product_id: string
           stock: number | null
-          sub_price: number | null
           weight_g: number
         }
         Insert: {
@@ -595,7 +444,6 @@ export type Database = {
           price: number
           product_id: string
           stock?: number | null
-          sub_price?: number | null
           weight_g: number
         }
         Update: {
@@ -604,7 +452,6 @@ export type Database = {
           price?: number
           product_id?: string
           stock?: number | null
-          sub_price?: number | null
           weight_g?: number
         }
         Relationships: [
@@ -745,7 +592,7 @@ export type Database = {
       subscriptions: {
         Row: {
           created_at: string | null
-          external_customer_id: string | null
+          external_customer_id: string
           external_subscription_id: string | null
           frequency: string
           id: string
@@ -756,7 +603,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          external_customer_id?: string | null
+          external_customer_id: string
           external_subscription_id?: string | null
           frequency: string
           id?: string
@@ -767,7 +614,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          external_customer_id?: string | null
+          external_customer_id?: string
           external_subscription_id?: string | null
           frequency?: string
           id?: string
@@ -777,6 +624,32 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_announcement_reads: {
+        Row: {
+          announcement_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_announcement_reads_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_goals: {
         Row: {
@@ -814,6 +687,50 @@ export type Database = {
         }
         Relationships: []
       }
+      user_milestones: {
+        Row: {
+          milestone_key: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          milestone_key: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          milestone_key?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_product_favorites: {
+        Row: {
+          created_at: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_product_favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_product_scores: {
         Row: {
           product_id: string
@@ -842,50 +759,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      user_product_favorites: {
-        Row: {
-          created_at: string
-          product_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          product_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          product_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_product_favorites_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_milestones: {
-        Row: {
-          milestone_key: string
-          unlocked_at: string
-          user_id: string
-        }
-        Insert: {
-          milestone_key: string
-          unlocked_at?: string
-          user_id: string
-        }
-        Update: {
-          milestone_key?: string
-          unlocked_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       user_profiles: {
         Row: {
@@ -1010,10 +883,30 @@ export type Database = {
     }
     Functions: {
       match_food_cache: {
-        Args: {
-          p_query: string
+        Args: { p_query: string }
+        Returns: {
+          alias: string[] | null
+          brand: string | null
+          calories_per_100g: number
+          carb_g_per_100g: number
+          external_id: string | null
+          fat_g_per_100g: number
+          fiber_g_per_100g: number | null
+          id: string
+          is_verified: boolean | null
+          name: string
+          off_code: string | null
+          protein_g_per_100g: number
+          sodium_mg_per_100g: number | null
+          source: string
+          updated_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "food_cache"
+          isOneToOne: false
+          isSetofReturn: true
         }
-        Returns: Database['public']['Tables']['food_cache']['Row'][]
       }
     }
     Enums: {

@@ -70,89 +70,23 @@ CREATE TABLE user_goals (
 
 ---
 
-## 2. 飲食計畫
+## 2. 飲食計畫（已自 MVP 移除）
 
-```sql
--- 飲食計畫（用戶選擇的飲食法與時長）
-CREATE TABLE diet_plans (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  diet_method   TEXT NOT NULL CHECK (diet_method IN (
-    'mediterranean', 'keto', 'high_protein', 'low_cal', 'intermittent', 'dash', 'custom'
-  )),
-  duration_days INT NOT NULL CHECK (duration_days IN (7, 14, 21, 30)),
-  start_date    DATE NOT NULL,
-  end_date      DATE NOT NULL,
-  is_active     BOOLEAN DEFAULT TRUE,
-
-  -- 巨量營養素比例目標
-  carb_pct      NUMERIC(4,1) DEFAULT 45,
-  protein_pct   NUMERIC(4,1) DEFAULT 30,
-  fat_pct       NUMERIC(4,1) DEFAULT 25,
-
-  created_at    TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 每日菜單（AI 生成，有生成狀態）
-CREATE TABLE daily_menus (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  plan_id         UUID NOT NULL REFERENCES diet_plans(id) ON DELETE CASCADE,
-  date            DATE NOT NULL,
-  status          TEXT NOT NULL DEFAULT 'pending'
-                  CHECK (status IN ('pending', 'generating', 'ready', 'error')),
-  total_calories  NUMERIC(7,1),
-  is_completed    BOOLEAN DEFAULT FALSE,
-  completion_pct  NUMERIC(4,1),
-  generated_by_ai BOOLEAN DEFAULT TRUE,
-  created_at      TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(plan_id, date)
-);
-
--- 每餐
-CREATE TABLE meals (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  menu_id       UUID NOT NULL REFERENCES daily_menus(id) ON DELETE CASCADE,
-  type          TEXT NOT NULL CHECK (type IN ('breakfast', 'lunch', 'dinner', 'snack')),
-  scheduled_at  TIME,
-  is_checked_in BOOLEAN DEFAULT FALSE,
-  checked_in_at TIMESTAMPTZ,
-  total_calories NUMERIC(7,1),
-  -- 打卡方式（與飲食記錄關聯；migration 009）
-  -- NULL：尚未打卡；'exact'：照吃；'modified'：照吃但調整；'skipped'：沒吃這餐
-  checkin_type  TEXT
-);
-
--- 餐點食材
-CREATE TABLE meal_items (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  meal_id     UUID NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
-  name        TEXT NOT NULL,
-  quantity_g  NUMERIC(7,1) NOT NULL,
-  calories    NUMERIC(7,1) NOT NULL,
-  carb_g      NUMERIC(6,1) NOT NULL,
-  protein_g   NUMERIC(6,1) NOT NULL,
-  fat_g       NUMERIC(6,1) NOT NULL,
-  fiber_g     NUMERIC(6,1),
-  sodium_mg   NUMERIC(7,1)
-);
-```
+`diet_plans`、`daily_menus`、`meals`、`meal_items` 已由 **`022_remove_diet_plan_and_plan_log_links.sql`** 自現行 DB 刪除。飲食法與熱量目標以 `user_profiles`、`user_goals` 為準。
 
 ---
 
 ## 3. 飲食記錄
 
 ```sql
--- 飲食記錄（用戶每天手動 or 拍照記錄）
+-- 飲食記錄（手動 / 拍照 / 搜尋 / AI 估算）
 CREATE TABLE food_logs (
   id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   date      DATE NOT NULL,
   meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
-  method    TEXT NOT NULL CHECK (method IN ('manual', 'photo', 'search')),
+  method    TEXT NOT NULL CHECK (method IN ('manual', 'photo', 'search', 'ai_analysis')),
   logged_at TIMESTAMPTZ DEFAULT NOW(),
-  -- 與計畫餐別關聯（migration 009）；計畫餐刪除時 ON DELETE SET NULL
-  from_plan_meal_id UUID REFERENCES meals(id) ON DELETE SET NULL,
-  -- 'manual'：用戶自己搜尋記錄；'from_plan'：照計畫打卡自動複製；'from_plan_modified'：照計畫但有調整（預設 manual）
   log_type  TEXT NOT NULL DEFAULT 'manual'
 );
 
@@ -263,14 +197,13 @@ CREATE TABLE products (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 商品規格（一個商品可以有多種重量/包裝）
+-- 商品規格（單一定價欄位 price；舊版訂閱價欄位由 **023** migration 刪除）
 CREATE TABLE product_variants (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id  UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   label       TEXT NOT NULL,           -- '35g 隨手包'
   weight_g    NUMERIC(7,1) NOT NULL,
   price       NUMERIC(8,2) NOT NULL,
-  sub_price   NUMERIC(8,2),            -- 訂閱價（展示或未來定期方案用）
   stock       INT DEFAULT 0
 );
 
@@ -298,7 +231,7 @@ CREATE TABLE order_items (
   unit_price  NUMERIC(8,2) NOT NULL
 );
 
--- 訂閱（外部定期方案；第一階段可無列）
+-- 訂閱（MVP 未啟用；表結構保留於 DB，應用程式不讀寫）— migration 001／020 註解標示 DISABLED
 CREATE TABLE subscriptions (
   id                         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id                    UUID NOT NULL REFERENCES auth.users(id),

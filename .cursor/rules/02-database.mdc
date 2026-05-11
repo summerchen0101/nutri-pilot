@@ -8,7 +8,7 @@ alwaysApply: false
 
 ## 核心資料表
 
-user_profiles, user_goals, diet_plans, daily_menus, meals, meal_items,
+user_profiles, user_goals,
 food_logs, food_log_items, vital_logs,
 brands, products, product_variants, orders, order_items,
 subscriptions, subscription_items, user_product_scores,
@@ -30,7 +30,7 @@ if (error) throw error
 
 - user_id、diet_method、avoid_foods、allergen_free、diet_tags
 - daily_cal_target、carb_pct、protein_pct、fat_pct
-- external_subscription_id、product_variants 定價以 `price`／`sub_price`
+- external_subscription_id、`product_variants.price`（單次售價；MVP 無訂閱價欄位）
 
 ## RLS
 

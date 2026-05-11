@@ -70,6 +70,7 @@ export async function addFoodFromAiAnalysisAction(input: {
     return { error: '份量無效' };
   }
 
+  // TODO: food_logs.log_type 若應用層永遠等同 DB default `manual`，可評估後續廢棄該欄位。
   const { data: log, error: logErr } = await supabase
     .from('food_logs')
     .insert({
@@ -77,7 +78,6 @@ export async function addFoodFromAiAnalysisAction(input: {
       date: input.date,
       meal_type: input.mealType,
       method: 'ai_analysis',
-      log_type: 'manual',
     })
     .select('id')
     .single();
@@ -196,24 +196,6 @@ export async function confirmPhotoItemsAction(input: {
 
   revalidatePath('/log');
   return {};
-}
-
-export async function commitPrefillFromPlanAction(_: {
-  mealId: string;
-  date: string;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  items: Array<{
-    name: string;
-    quantity_g: number;
-    calories: number;
-    carb_g: number;
-    protein_g: number;
-    fat_g: number;
-    fiber_g: number | null;
-    sodium_mg: number | null;
-  }>;
-}): Promise<{ error?: string }> {
-  return { error: '飲食計畫功能已下線，請改用手動輸入或拍照記錄。' };
 }
 
 /** 與每日紀錄 `LogItemSnapshot` 欄位一致，供「選擇常用」帶入。 */

@@ -67,7 +67,8 @@ ALTER TABLE product_variants DROP COLUMN IF EXISTS stripe_price_id;
 ALTER TABLE product_variants DROP COLUMN IF EXISTS stripe_sub_price_id;
 
 -- ---------------------------------------------------------------------------
--- subscriptions：中性外部參照欄位（第一階段訂閱未接藍新，欄位可為 NULL）
+-- DISABLED: subscription feature removed in MVP — tables kept for historical/rollback
+-- subscriptions：中性外部參照欄位（歷史 migration；第一階段訂閱未接藍新，欄位可為 NULL）
 -- ---------------------------------------------------------------------------
 ALTER TABLE subscriptions RENAME COLUMN stripe_subscription_id TO external_subscription_id;
 ALTER TABLE subscriptions RENAME COLUMN stripe_customer_id TO external_customer_id;

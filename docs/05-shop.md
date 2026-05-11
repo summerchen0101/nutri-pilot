@@ -170,9 +170,9 @@ export function generateFitReasons(
 4. `ReturnURL` 指向 Next 之 `/shop/payment-return`，再導向 `/shop/success`（僅使用者體驗；**入帳以 Notify 為準**）。
 5. `NotifyURL` 指向 Edge `newebpay-notify`：驗簽、解密後若 `TradeStatus=1`，將訂單更新為 `paid` 並寫入 `gateway_trade_no`（交易編號）。
 
-### 訂閱／定期扣款
+### 定期扣款（未來）
 
-第一階段**不實作**：商城前端僅單次結帳；`subscriptions` 表保留，`external_subscription_id`／`external_customer_id` 可為 NULL，待藍新定期定額方案定案後再接。
+商城 MVP **僅單次結帳**；`subscriptions` 相關表仍可能在 DB 中（歷史 migration），應用程式與本文件之查詢範例不以訂閱為準。未來若接藍新定期定額，再另開規格。
 
 ### 環境變數（Edge Secrets）
 
@@ -201,7 +201,7 @@ async function getShopProducts(userId: string, category?: string, filters?: stri
   // 2. 取商品清單
   let query = supabase
     .from('products')
-    .select('*, brand:brands(name, logo_url), variants:product_variants(id, label, price, sub_price, stock)')
+    .select('*, brand:brands(name, logo_url), variants:product_variants(id, label, price, stock)')
     .eq('is_active', true)
 
   if (category && category !== 'all') {
@@ -255,10 +255,8 @@ async function getShopProducts(userId: string, category?: string, filters?: stri
 | 為什麼適合你 | `generateFitReasons()` 輸出，綠色卡片 |
 | 規格選擇 | `product_variants` 多規格 |
 | 數量選擇 | 加減按鈕 |
-| 購買方式 | 單次購買 / 訂閱切換 |
-| 訂閱頻率 | 每週 / 每兩週 / 每月（訂閱模式才顯示） |
-| 價格顯示 | 訂閱模式顯示 `sub_price`，即時更新 |
-| CTA | 加入購物車 / 立即訂閱 |
+| 價格顯示 | 單次售價（`product_variants.price`） |
+| CTA | 加入購物車、立即結帳（單次） |
 | 完整營養標示 | 表格，每份數據 |
 | 成分與產地 | 純文字 + 認證標籤 |
 | 品牌故事 | 品牌簡介 + 查看全系列連結 |
