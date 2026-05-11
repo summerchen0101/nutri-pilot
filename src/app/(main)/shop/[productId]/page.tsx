@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { ProductDetailClient } from "@/app/(main)/shop/[productId]/product-detail-client";
+import { ProductFavoriteHeaderButton } from "@/app/(main)/shop/_components/product-favorite-controls";
 import { HeaderBackButton } from "@/components/layout/header-back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -66,6 +67,13 @@ export default async function ShopProductPage({ params }: PageProps) {
 
   if (error || !product) notFound();
 
+  const { data: favoriteRow } = await supabase
+    .from("user_product_favorites")
+    .select("product_id")
+    .eq("user_id", user.id)
+    .eq("product_id", product.id as string)
+    .maybeSingle();
+
   const categoryLabel =
     SHOP_CATEGORY_LABEL[product.category as keyof typeof SHOP_CATEGORY_LABEL] ??
     product.category;
@@ -115,6 +123,12 @@ export default async function ShopProductPage({ params }: PageProps) {
           brand?.name ? (
             <p className="text-caption text-muted-foreground">{brand.name}</p>
           ) : undefined
+        }
+        action={
+          <ProductFavoriteHeaderButton
+            productId={product.id as string}
+            initialIsFavorite={favoriteRow != null}
+          />
         }
       />
 

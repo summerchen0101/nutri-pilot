@@ -244,12 +244,13 @@ async function getShopProducts(userId: string, category?: string, filters?: stri
 | 篩選 Chips | 符合飲食法 / 高蛋白（>15g）/ 低糖（<5g）/ 有機認證 |
 | 商品卡格 | 2 欄網格，依推薦分數排序 |
 | 精選品牌列 | 品牌 logo + 名稱 + 商品數量 |
+| 捲動後浮動鈕 | 購物車、我的最愛（愛心導向 `/shop/favorites`；與購物車同欄、愛心在上） |
 
 ### `/shop/[productId]`（商品詳情）
 
 | 區塊 | 說明 |
 |------|------|
-| 商品圖 + badge | 飲食法符合標籤 + 收藏按鈕（暫不實作） |
+| 商品圖 + badge | 飲食法符合標籤 + 右上角「我的最愛」切換；捲動後浮動區另有愛心鈕（與 Header 同步） |
 | 基本資訊 | 商品名、品牌、標籤 |
 | 為什麼適合你 | `generateFitReasons()` 輸出，綠色卡片 |
 | 規格選擇 | `product_variants` 多規格 |
@@ -262,3 +263,17 @@ async function getShopProducts(userId: string, category?: string, filters?: stri
 | 成分與產地 | 純文字 + 認證標籤 |
 | 品牌故事 | 品牌簡介 + 查看全系列連結 |
 | 同品牌商品 | 橫向捲動卡片 |
+
+### `/shop/favorites`（我的最愛）
+
+| 區塊 | 說明 |
+|------|------|
+| 資料 | `user_product_favorites`，依收藏時間新→舊；只顯示仍 `is_active` 的商品 |
+| 列表 | 與商城首頁相同 2 欄商品卡版型；卡片角可取消收藏 |
+| 入口 | 商城首頁 `PageHeader` 右上角愛心連結至本頁 |
+
+### `/shop` 頂欄補充
+
+| 元素 | 說明 |
+|------|------|
+| 我的最愛 | 連結至 `/shop/favorites`（與商品頁「切換收藏」圖示語意區隔：此為進入列表） |
