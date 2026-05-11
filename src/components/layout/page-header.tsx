@@ -10,6 +10,8 @@ interface PageHeaderProps {
   action?: ReactNode;
   spacing?: "compact" | "default";
   className?: string;
+  /** 捲動可見性偵測等用途（例如商城浮動購物車按鈕） */
+  anchorId?: string;
 }
 
 export function PageHeader({
@@ -19,9 +21,11 @@ export function PageHeader({
   action,
   spacing = "default",
   className,
+  anchorId,
 }: PageHeaderProps) {
   return (
     <header
+      id={anchorId}
       className={cn(
         "flex items-center justify-between gap-3",
         spacing === "default" ? "pb-1" : "",

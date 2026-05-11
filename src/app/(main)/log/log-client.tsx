@@ -275,7 +275,7 @@ interface LogClientProps {
   /** URL `meal_type`，無預填時用來選預設餐次 Tab */
   initialMealTab?: MealType | null;
   prefillFromMeal?: PlanPrefillPayload | null;
-  /** URL `tab`：飲食 / 運動 / 體重與習慣 */
+  /** URL `tab`：飲食 / 運動 / 其他（`body`） */
   sectionTab?: LogSectionTab;
   initialActivities?: ActivityLogRow[];
   initialVital: LogVitalSnapshot;
@@ -356,7 +356,7 @@ function LogSectionTabs({
     <div className="flex w-full gap-2" role="tablist" aria-label="紀錄類別">
       {tabBtn("food", "飲食", FiCoffee)}
       {tabBtn("activity", "運動", FiActivity)}
-      {tabBtn("body", "體重與習慣", FiUser)}
+      {tabBtn("body", "其他", FiUser)}
     </div>
   );
 }

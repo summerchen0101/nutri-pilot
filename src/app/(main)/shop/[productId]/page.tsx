@@ -17,7 +17,14 @@ import { ProductDetailClient } from "@/app/(main)/shop/[productId]/product-detai
 import { HeaderBackButton } from "@/components/layout/header-back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { SHOP_CATEGORY_LABEL } from "@/lib/shop/constants";
+import {
+  SHOP_CATEGORY_LABEL,
+  SHOP_HEADER_SCROLL_ANCHOR_ID,
+} from "@/lib/shop/constants";
+import {
+  formatShopGroupedDecimal,
+  formatShopGroupedInteger,
+} from "@/lib/shop/format-shop-number";
 import { generateFitReasons } from "@/lib/shop/fit-reasons";
 import { getCachedAuthContext } from "@/lib/auth";
 
@@ -101,6 +108,7 @@ export default async function ShopProductPage({ params }: PageProps) {
   return (
     <div className="space-y-5">
       <PageHeader
+        anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
         leading={<HeaderBackButton />}
         title={product.name as string}
         meta={
@@ -172,42 +180,57 @@ export default async function ShopProductPage({ params }: PageProps) {
           <tbody>
             <tr className="border-b border-border">
               <th className="px-3 py-2 text-left font-medium">熱量</th>
-              <td className="px-3 py-2">{Number(product.calories)} kcal</td>
+              <td className="px-3 py-2 tabular-nums">
+                {formatShopGroupedInteger(Number(product.calories))} kcal
+              </td>
             </tr>
             <tr className="border-b border-border">
               <th className="px-3 py-2 text-left font-medium">碳水化合物</th>
-              <td className="px-3 py-2">{Number(product.carb_g)} g</td>
+              <td className="px-3 py-2 tabular-nums">
+                {formatShopGroupedDecimal(Number(product.carb_g), 2)} g
+              </td>
             </tr>
             <tr className="border-b border-border">
               <th className="px-3 py-2 text-left font-medium">蛋白質</th>
-              <td className="px-3 py-2">{Number(product.protein_g)} g</td>
+              <td className="px-3 py-2 tabular-nums">
+                {formatShopGroupedDecimal(Number(product.protein_g), 2)} g
+              </td>
             </tr>
             <tr className="border-b border-border">
               <th className="px-3 py-2 text-left font-medium">脂肪</th>
-              <td className="px-3 py-2">{Number(product.fat_g)} g</td>
+              <td className="px-3 py-2 tabular-nums">
+                {formatShopGroupedDecimal(Number(product.fat_g), 2)} g
+              </td>
             </tr>
             {product.fiber_g != null ? (
               <tr className="border-b border-border">
                 <th className="px-3 py-2 text-left font-medium">膳食纖維</th>
-                <td className="px-3 py-2">{Number(product.fiber_g)} g</td>
+                <td className="px-3 py-2 tabular-nums">
+                  {formatShopGroupedDecimal(Number(product.fiber_g), 2)} g
+                </td>
               </tr>
             ) : null}
             {product.sugar_g != null ? (
               <tr className="border-b border-border">
                 <th className="px-3 py-2 text-left font-medium">糖</th>
-                <td className="px-3 py-2">{Number(product.sugar_g)} g</td>
+                <td className="px-3 py-2 tabular-nums">
+                  {formatShopGroupedDecimal(Number(product.sugar_g), 2)} g
+                </td>
               </tr>
             ) : null}
             {product.sodium_mg != null ? (
               <tr>
                 <th className="px-3 py-2 text-left font-medium">鈉</th>
-                <td className="px-3 py-2">{Number(product.sodium_mg)} mg</td>
+                <td className="px-3 py-2 tabular-nums">
+                  {formatShopGroupedInteger(Number(product.sodium_mg))} mg
+                </td>
               </tr>
             ) : null}
           </tbody>
         </table>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          份量基準：{Number(product.serving_size_g)} g
+          份量基準：
+          {formatShopGroupedDecimal(Number(product.serving_size_g), 2)} g
         </p>
       </section>
 
@@ -280,8 +303,8 @@ export default async function ShopProductPage({ params }: PageProps) {
                     <p className="line-clamp-2 text-[11px] font-medium leading-snug text-foreground">
                       {sp.name as string}
                     </p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      NT$ {minP.toFixed(0)} 起
+                    <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
+                      NT$ {formatShopGroupedInteger(minP)} 起
                     </p>
                   </div>
                 </Link>

@@ -7,6 +7,7 @@ import { startCheckout } from "@/app/(main)/shop/actions";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useCartStore } from "@/lib/shop/cart-store";
+import { formatShopGroupedInteger } from "@/lib/shop/format-shop-number";
 import { submitNewebpayMpgForm } from "@/lib/shop/submit-newebpay-mpg-form";
 
 interface VariantRow {
@@ -117,7 +118,7 @@ export function ProductDetailClient({ product }: Props) {
             −
           </button>
           <span className="min-w-[2rem] text-center text-heading-section tabular-nums">
-            {qty}
+            {formatShopGroupedInteger(qty)}
           </span>
           <button
             type="button"
@@ -131,7 +132,7 @@ export function ProductDetailClient({ product }: Props) {
       <div className="-mx-4 mt-4 bg-secondary/50 px-4 py-2.5">
         <p className="text-caption text-muted-foreground">單次價格</p>
         <p className="text-heading-page text-foreground tabular-nums">
-          NT$ {(unitPayment * qty).toFixed(0)}
+          NT$ {formatShopGroupedInteger(unitPayment * qty)}
         </p>
       </div>
 

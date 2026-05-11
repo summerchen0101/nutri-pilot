@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import { getCachedAuthContext } from '@/lib/auth';
+import { SHOP_HEADER_SCROLL_ANCHOR_ID } from '@/lib/shop/constants';
 
 interface PageProps {
   searchParams: { merchant_order_no?: string };
@@ -18,7 +19,11 @@ export default async function ShopSuccessPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-4">
-      <PageHeader leading={<HeaderBackButton />} title="付款處理完成" />
+      <PageHeader
+        anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
+        leading={<HeaderBackButton />}
+        title="付款處理完成"
+      />
       <div className="rounded-xl bg-card p-6 text-center">
         <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
           感謝你的購買。付款結果若需數秒才入帳，請以「訂單紀錄」或通知信為準。

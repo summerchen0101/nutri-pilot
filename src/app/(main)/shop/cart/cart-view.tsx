@@ -9,6 +9,7 @@ import { startCheckout } from "@/app/(main)/shop/actions";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cartTotalPayment, useCartStore } from "@/lib/shop/cart-store";
+import { formatShopGroupedInteger } from "@/lib/shop/format-shop-number";
 import { submitNewebpayMpgForm } from "@/lib/shop/submit-newebpay-mpg-form";
 
 export interface CartViewProps {
@@ -123,7 +124,7 @@ export function CartView({ layout = "page" }: CartViewProps) {
                     −
                   </button>
                   <span className="min-w-[1.5rem] text-center text-heading-section tabular-nums text-foreground">
-                    {line.qty}
+                    {formatShopGroupedInteger(line.qty)}
                   </span>
                   <button
                     type="button"
@@ -133,7 +134,7 @@ export function CartView({ layout = "page" }: CartViewProps) {
                   </button>
                 </div>
                 <p className="text-heading-section tabular-nums text-foreground">
-                  NT$ {(line.unitPrice * line.qty).toFixed(0)}
+                  NT$ {formatShopGroupedInteger(line.unitPrice * line.qty)}
                 </p>
               </div>
             </div>
@@ -147,9 +148,11 @@ export function CartView({ layout = "page" }: CartViewProps) {
     <div className="space-y-4">
       <div className="rounded-xl border-hairline border-primary px-4 py-3">
         <div className="flex items-baseline justify-between gap-3">
-          <span className="text-caption text-muted-foreground">預估總計</span>
-          <span className="text-heading-section tabular-nums text-primary">
-            NT$ {totalPay.toFixed(0)}
+          <span className="text-caption text-primary font-semibold">
+            商品總計
+          </span>
+          <span className="tabular-nums text-primary font-bold">
+            NT$ {formatShopGroupedInteger(totalPay)}
           </span>
         </div>
       </div>

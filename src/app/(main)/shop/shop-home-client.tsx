@@ -22,6 +22,7 @@ import {
   SHOP_CATEGORY_LABEL,
   type ShopCategoryKey,
 } from '@/lib/shop/constants';
+import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 import { cn } from '@/lib/utils/cn';
 
 export interface ShopProductRow {
@@ -207,8 +208,8 @@ export function ShopHomeClient({
                     />
                   : null}
                   {p.score > 0 ?
-                    <span className="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-white">
-                      推薦 {p.score.toFixed(0)}
+                    <span className="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-white tabular-nums">
+                      推薦 {formatShopGroupedInteger(p.score)}
                     </span>
                   : null}
                 </div>
@@ -219,8 +220,8 @@ export function ShopHomeClient({
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {p.brand?.name ?? ''}
                   </p>
-                  <p className="mt-2 text-[13px] font-medium text-foreground">
-                    NT$ {minPrice.toFixed(0)}
+                  <p className="mt-2 text-[13px] font-medium tabular-nums text-foreground">
+                    NT$ {formatShopGroupedInteger(minPrice)}
                     <span className="text-[11px] font-normal text-muted-foreground">
                       {' '}
                       起
@@ -251,8 +252,8 @@ export function ShopHomeClient({
                 <p className="text-[13px] font-medium text-foreground">
                   {b.name}
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  {b.productCount} 件商品
+                <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
+                  {formatShopGroupedInteger(b.productCount)} 件商品
                 </p>
                 <Link
                   href="/shop"

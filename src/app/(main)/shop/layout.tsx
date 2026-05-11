@@ -1,4 +1,5 @@
 import { ShopCartPanel } from '@/app/(main)/shop/_components/shop-cart-panel';
+import { ShopCartScrollFab } from '@/app/(main)/shop/_components/shop-cart-scroll-fab';
 
 export default function ShopLayout({
   children,
@@ -6,6 +7,7 @@ export default function ShopLayout({
   return (
     <>
       {children}
+      <ShopCartScrollFab />
       <ShopCartPanel />
     </>
   );
