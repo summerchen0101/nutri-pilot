@@ -1,18 +1,17 @@
-"use client";
+'use client';
 
-import { useMemo, useState, useTransition } from "react";
-import { ShoppingBag } from "lucide-react";
+import { useMemo, useState } from 'react';
+import { ShoppingBag } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-import { startCheckout } from "@/app/(main)/shop/actions";
-import { Button } from "@/components/ui/button";
-import { SectionHeading } from "@/components/ui/section-heading";
-import { useCartStore } from "@/lib/shop/cart-store";
-import { formatShopGroupedInteger } from "@/lib/shop/format-shop-number";
+import { Button } from '@/components/ui/button';
+import { SectionHeading } from '@/components/ui/section-heading';
+import { useCartStore } from '@/lib/shop/cart-store';
+import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 import {
   SHOP_VARIANT_PILL_INACTIVE_CLASS,
   SHOP_VARIANT_PILL_PRIMARY_CLASS,
-} from "@/lib/shop/variant-pill-classes";
-import { submitNewebpayMpgForm } from "@/lib/shop/submit-newebpay-mpg-form";
+} from '@/lib/shop/variant-pill-classes';
 
 interface VariantRow {
   id: string;
@@ -22,22 +21,30 @@ interface VariantRow {
   stock: number | null;
 }
 
+interface VendorInfo {
+  id: string;
+  name: string;
+  shippingFee: number;
+  freeShippingThreshold: number | null;
+  leadTimeDays: number;
+}
+
 interface Props {
   product: {
     id: string;
     name: string;
     imageUrl: string | null;
     variants: VariantRow[];
+    vendor: VendorInfo;
   };
 }
 
 export function ProductDetailClient({ product }: Props) {
+  const router = useRouter();
   const addLine = useCartStore((s) => s.addLine);
   const openCartPanel = useCartStore((s) => s.openCartPanel);
-  const [variantId, setVariantId] = useState(product.variants[0]?.id ?? "");
+  const [variantId, setVariantId] = useState(product.variants[0]?.id ?? '');
   const [qty, setQty] = useState(1);
-  const [pending, startTransition] = useTransition();
-  const [err, setErr] = useState<string | null>(null);
 
   const variant = useMemo(
     () =>
@@ -46,17 +53,22 @@ export function ProductDetailClient({ product }: Props) {
   );
 
   const unitPayment = variant ? Number(variant.price) : 0;
+  const v = product.vendor;
 
   function addToCart() {
     if (!variant) return;
-    setErr(null);
     addLine({
       variantId: variant.id,
       productId: product.id,
+      vendorId: v.id,
+      vendorName: v.name,
       productName: product.name,
       variantLabel: variant.label,
       qty,
       unitPrice: unitPayment,
+      shippingFee: v.shippingFee,
+      freeShippingThreshold: v.freeShippingThreshold,
+      leadTimeDays: v.leadTimeDays,
       imageUrl: product.imageUrl,
     });
     openCartPanel();
@@ -64,24 +76,36 @@ export function ProductDetailClient({ product }: Props) {
 
   function checkoutNow() {
     if (!variant) return;
-    setErr(null);
-    startTransition(async () => {
-      const res = await startCheckout({
-        items: [{ variantId: variant.id, qty }],
-      });
-      if (res.error) {
-        setErr(res.error);
-        return;
-      }
-      if (res.paymentUrl && res.formFields) {
-        submitNewebpayMpgForm(res.paymentUrl, res.formFields);
-      }
+    addLine({
+      variantId: variant.id,
+      productId: product.id,
+      vendorId: v.id,
+      vendorName: v.name,
+      productName: product.name,
+      variantLabel: variant.label,
+      qty,
+      unitPrice: unitPayment,
+      shippingFee: v.shippingFee,
+      freeShippingThreshold: v.freeShippingThreshold,
+      leadTimeDays: v.leadTimeDays,
+      imageUrl: product.imageUrl,
     });
+    router.push('/shop/checkout');
   }
 
   return (
     <section className="rounded-xl bg-card p-4">
       <SectionHeading icon={ShoppingBag}>規格與購買</SectionHeading>
+
+      <div className="mt-3 rounded-lg bg-muted/40 px-3 py-2 text-[13px] leading-relaxed text-muted-foreground">
+        <p className="text-foreground">
+          由 <span className="font-medium text-primary">{v.name}</span> 出貨
+        </p>
+        <p className="mt-1">
+          預計 <span className="tabular-nums">{v.leadTimeDays}</span>{' '}
+          個工作天內出貨（實際依廠商作業為準）
+        </p>
+      </div>
 
       <div className="mt-3">
         <span className="text-caption text-muted-foreground">規格</span>
@@ -89,20 +113,20 @@ export function ProductDetailClient({ product }: Props) {
           className="mt-1.5 flex flex-wrap gap-2"
           role="radiogroup"
           aria-label="商品規格">
-          {product.variants.map((v) => (
+          {product.variants.map((variantOption) => (
             <Button
-              key={v.id}
+              key={variantOption.id}
               type="button"
               role="radio"
-              aria-checked={v.id === variant?.id}
-              variant={v.id === variant?.id ? "default" : "ghost"}
+              aria-checked={variantOption.id === variant?.id}
+              variant={variantOption.id === variant?.id ? 'default' : 'ghost'}
               className={
-                v.id === variant?.id ?
+                variantOption.id === variant?.id ?
                   SHOP_VARIANT_PILL_PRIMARY_CLASS
                 : SHOP_VARIANT_PILL_INACTIVE_CLASS
               }
-              onClick={() => setVariantId(v.id)}>
-              {v.label}
+              onClick={() => setVariantId(variantOption.id)}>
+              {variantOption.label}
             </Button>
           ))}
         </div>
@@ -136,8 +160,6 @@ export function ProductDetailClient({ product }: Props) {
         </p>
       </div>
 
-      {err ? <p className="mt-3 text-body text-destructive">{err}</p> : null}
-
       <div className="mt-4 flex flex-row gap-3">
         <Button
           type="button"
@@ -149,9 +171,8 @@ export function ProductDetailClient({ product }: Props) {
         <Button
           type="button"
           className="min-w-0 flex-1 bg-[#4C956C] text-white hover:bg-[#3A7A56] focus-visible:ring-[#4C956C]/25"
-          disabled={pending}
           onClick={checkoutNow}>
-          {pending ? "處理中…" : "立即結帳"}
+          立即結帳
         </Button>
       </div>
     </section>

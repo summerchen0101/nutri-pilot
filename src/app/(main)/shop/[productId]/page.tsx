@@ -53,16 +53,25 @@ export default async function ShopProductPage({ params }: PageProps) {
   if (!profile || !goal || !profile.diet_method) redirect("/onboarding");
 
   const { data: product, error } = await supabase
-    .from("products")
+    .from('products')
     .select(
       `
       *,
-      brand:brands ( id, name, slug, description, logo_url ),
+      brand:brands (
+        id, name, slug, description, logo_url,
+        vendor:vendors!inner (
+          id,
+          name,
+          shipping_fee,
+          free_shipping_threshold,
+          lead_time_days
+        )
+      ),
       variants:product_variants ( id, label, weight_g, price, stock )
     `,
     )
-    .eq("id", params.productId)
-    .eq("is_active", true)
+    .eq('id', params.productId)
+    .eq('is_active', true)
     .maybeSingle();
 
   if (error || !product) notFound();
@@ -111,7 +120,40 @@ export default async function ShopProductPage({ params }: PageProps) {
     slug: string;
     description: string | null;
     logo_url: string | null;
+    vendor:
+      | {
+          id: string;
+          name: string;
+          shipping_fee: number | string;
+          free_shipping_threshold: number | string | null;
+          lead_time_days: number | string | null;
+        }
+      | Array<{
+          id: string;
+          name: string;
+          shipping_fee: number | string;
+          free_shipping_threshold: number | string | null;
+          lead_time_days: number | string | null;
+        }>
+      | null;
   } | null;
+
+  const vendorRaw = brand?.vendor;
+  const vendorRow = Array.isArray(vendorRaw) ? vendorRaw[0] : vendorRaw;
+  if (!vendorRow) {
+    notFound();
+  }
+
+  const vendorForClient = {
+    id: String(vendorRow.id),
+    name: String(vendorRow.name),
+    shippingFee: Number(vendorRow.shipping_fee),
+    freeShippingThreshold:
+      vendorRow.free_shipping_threshold == null ?
+        null
+      : Number(vendorRow.free_shipping_threshold),
+    leadTimeDays: Number(vendorRow.lead_time_days ?? 3),
+  };
 
   return (
     <div className="space-y-5">
@@ -169,6 +211,7 @@ export default async function ShopProductPage({ params }: PageProps) {
             price: number;
             stock: number | null;
           }>,
+          vendor: vendorForClient,
         }}
       />
 

@@ -36,6 +36,56 @@ interface LineInput {
   qty: number;
 }
 
+interface CheckoutBody {
+  items?: LineInput[];
+  recipientName?: string;
+  recipientPhone?: string;
+  recipientAddressFull?: string;
+  saveShippingToProfile?: boolean;
+}
+
+interface VendorRow {
+  id: string;
+  name: string;
+  shipping_fee: number | string | null;
+  free_shipping_threshold: number | string | null;
+  lead_time_days: number | null;
+  is_active: boolean | null;
+}
+
+interface VariantRow {
+  id: string;
+  product_id: string;
+  label: string;
+  price: number | string;
+  stock: number | null;
+  product: {
+    id: string;
+    is_active: boolean | null;
+    name: string | null;
+    brand: {
+      vendor_id: string | null;
+      vendor: VendorRow | VendorRow[] | null;
+    } | null;
+  } | null;
+}
+
+interface CheckoutVendorSnapshot {
+  vendorId: string;
+  vendorName: string;
+  itemsSubtotal: number;
+  shippingFee: number;
+  effectiveShipping: number;
+  freeShippingThreshold: number | null;
+  lines: { variantId: string; qty: number; unitPrice: number }[];
+}
+
+interface CheckoutSnapshot {
+  vendors: CheckoutVendorSnapshot[];
+  itemsSubtotal: number;
+  shippingTotal: number;
+}
+
 function mpgGatewayUrl(newebpayEnv: string | undefined): string {
   return newebpayEnv === "production" ?
       "https://core.newebpay.com/MPG/mpg_gateway"
@@ -44,6 +94,43 @@ function mpgGatewayUrl(newebpayEnv: string | undefined): string {
 
 function roundTwdAmt(n: number): number {
   return Math.round(Number(n));
+}
+
+function num(v: unknown, fallback = 0): number {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizeVendor(v: VendorRow | VendorRow[] | null): VendorRow | null {
+  if (v == null) return null;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
+}
+
+function effectiveShippingFee(
+  itemsSubtotal: number,
+  shippingFee: number,
+  freeThreshold: number | null,
+): number {
+  if (freeThreshold == null) {
+    return shippingFee;
+  }
+  if (itemsSubtotal >= freeThreshold) {
+    return 0;
+  }
+  return shippingFee;
+}
+
+function buildPublicOrderNo(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  const short = randomUuid().replace(/-/g, "").slice(0, 8).toUpperCase();
+  return `NP-${y}${m}${d}-${short}`;
+}
+
+function trimReq(s: unknown): string {
+  return typeof s === "string" ? s.trim() : "";
 }
 
 Deno.serve(async (req) => {
@@ -87,11 +174,21 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
-  let body: { items?: LineInput[] };
+  let body: CheckoutBody;
   try {
     body = await req.json();
   } catch {
     return jsonResponse({ error: "Invalid JSON" }, 400);
+  }
+
+  const recipientName = trimReq(body.recipientName);
+  const recipientPhone = trimReq(body.recipientPhone);
+  const recipientAddressFull = trimReq(body.recipientAddressFull);
+  if (!recipientName || !recipientPhone || !recipientAddressFull) {
+    return jsonResponse(
+      { error: "請填寫完整收件人姓名、電話與地址" },
+      422,
+    );
   }
 
   const items = body.items;
@@ -100,43 +197,67 @@ Deno.serve(async (req) => {
   }
 
   const variantIds = items.map((i) => i.variantId);
-  const { data: variants, error: vErr } = await supabase
+  const { data: variantRows, error: vErr } = await supabase
     .from("product_variants")
-    .select("id, product_id, label, price, stock")
+    .select(
+      `
+      id,
+      product_id,
+      label,
+      price,
+      stock,
+      product:products!inner(
+        id,
+        is_active,
+        name,
+        brand:brands!inner(
+          vendor_id,
+          vendor:vendors!inner(
+            id,
+            name,
+            shipping_fee,
+            free_shipping_threshold,
+            lead_time_days,
+            is_active
+          )
+        )
+      )
+    `,
+    )
     .in("id", variantIds);
 
-  if (vErr || !variants?.length) {
-    return jsonResponse({ error: vErr?.message ?? "variants not found" }, 400);
+  if (vErr) {
+    return jsonResponse({ error: vErr.message }, 400);
   }
 
+  const variants = (variantRows ?? []) as unknown as VariantRow[];
   const byId = new Map(variants.map((v) => [v.id as string, v]));
-  const productIds = [...new Set(variants.map((v) => v.product_id as string))];
-  const { data: products } = await supabase
-    .from("products")
-    .select("id, is_active, name")
-    .in("id", productIds);
-
-  const activePid = new Set(
-    (products ?? []).filter((p) => p.is_active === true).map((p) => p.id),
-  );
-  const productNameById = new Map(
-    (products ?? []).map((p) => [p.id as string, String(p.name ?? "")]),
-  );
 
   for (const id of variantIds) {
     const row = byId.get(id);
-    if (!row || !activePid.has(row.product_id as string)) {
+    if (!row) {
       return jsonResponse({ error: `invalid variant ${id}` }, 400);
+    }
+    if (row.product?.is_active !== true) {
+      return jsonResponse({ error: `invalid variant ${id}` }, 400);
+    }
+    const vendor = normalizeVendor(row.product?.brand?.vendor ?? null);
+    if (!vendor || vendor.is_active !== true) {
+      return jsonResponse({ error: `商品未綁定有效出貨廠商：${id}` }, 400);
     }
   }
 
-  let total = 0;
-  const orderItemRows: {
-    variant_id: string;
+  type LineComputed = {
+    variantId: string;
     qty: number;
-    unit_price: number;
-  }[] = [];
-  const descParts: string[] = [];
+    unitPrice: number;
+    vendorId: string;
+    vendorName: string;
+    shippingFee: number;
+    freeShippingThreshold: number | null;
+  };
+
+  const linesComputed: LineComputed[] = [];
 
   for (const line of items) {
     const v = byId.get(line.variantId)!;
@@ -148,20 +269,95 @@ Deno.serve(async (req) => {
         409,
       );
     }
-    const unit = typeof v.price === "number" ? v.price : Number(v.price);
-    total += unit * qty;
-    orderItemRows.push({
-      variant_id: v.id as string,
+    const vendor = normalizeVendor(v.product!.brand!.vendor)!;
+    const unit = num(v.price);
+    linesComputed.push({
+      variantId: v.id,
       qty,
-      unit_price: unit,
+      unitPrice: unit,
+      vendorId: vendor.id,
+      vendorName: String(vendor.name ?? ""),
+      shippingFee: num(vendor.shipping_fee),
+      freeShippingThreshold: vendor.free_shipping_threshold == null ?
+          null
+        : num(vendor.free_shipping_threshold),
     });
-    const pname = productNameById.get(v.product_id as string) ?? "商品";
-    descParts.push(`${pname}×${qty}`);
   }
 
-  const amt = roundTwdAmt(total);
+  const vendorMap = new Map<string, LineComputed[]>();
+  for (const ln of linesComputed) {
+    const arr = vendorMap.get(ln.vendorId) ?? [];
+    arr.push(ln);
+    vendorMap.set(ln.vendorId, arr);
+  }
+
+  const snapshotVendors: CheckoutVendorSnapshot[] = [];
+  let itemsSubtotalAll = 0;
+
+  for (const [, group] of vendorMap) {
+    const vendorId = group[0]!.vendorId;
+    const vendorName = group[0]!.vendorName;
+    const shippingFee = group[0]!.shippingFee;
+    const freeShippingThreshold = group[0]!.freeShippingThreshold;
+
+    let itemsSubtotal = 0;
+    const lines: { variantId: string; qty: number; unitPrice: number }[] = [];
+    for (const ln of group) {
+      itemsSubtotal += ln.unitPrice * ln.qty;
+      lines.push({
+        variantId: ln.variantId,
+        qty: ln.qty,
+        unitPrice: ln.unitPrice,
+      });
+    }
+    itemsSubtotalAll += itemsSubtotal;
+
+    const effectiveShipping = effectiveShippingFee(
+      itemsSubtotal,
+      shippingFee,
+      freeShippingThreshold,
+    );
+
+    snapshotVendors.push({
+      vendorId,
+      vendorName,
+      itemsSubtotal: roundTwdAmt(itemsSubtotal),
+      shippingFee,
+      effectiveShipping: roundTwdAmt(effectiveShipping),
+      freeShippingThreshold,
+      lines,
+    });
+  }
+
+  const shippingTotal = snapshotVendors.reduce(
+    (s, v) => s + v.effectiveShipping,
+    0,
+  );
+  const amt = roundTwdAmt(itemsSubtotalAll + shippingTotal);
+
+  const checkoutSnapshot: CheckoutSnapshot = {
+    vendors: snapshotVendors.map((v) => ({
+      ...v,
+      itemsSubtotal: roundTwdAmt(v.itemsSubtotal),
+    })),
+    itemsSubtotal: roundTwdAmt(itemsSubtotalAll),
+    shippingTotal: roundTwdAmt(shippingTotal),
+  };
+
   if (amt <= 0) {
     return jsonResponse({ error: "金額無效" }, 422);
+  }
+
+  const productNameById = new Map(
+    variants.map((r) => [r.product_id as string, String(r.product?.name ?? "")]),
+  );
+
+  const descParts: string[] = [];
+  for (const line of items) {
+    const v = byId.get(line.variantId)!;
+    const qty = Math.max(1, Math.floor(line.qty));
+    const pname = productNameById.get(v.product_id as string) ?? "商品";
+    descParts.push(`${pname}×${qty}`);
   }
 
   let itemDesc = descParts.join("、");
@@ -171,6 +367,7 @@ Deno.serve(async (req) => {
 
   const orderId = randomUuid();
   const merchantOrderNo = createMerchantOrderNo();
+  const publicOrderNo = buildPublicOrderNo();
   const baseApp = appUrl.replace(/\/$/, "");
   const returnUrl = `${baseApp}/shop/payment-return`;
   const notifyUrl = `${supabaseUrl.replace(/\/$/, "")}/functions/v1/newebpay-notify`;
@@ -212,24 +409,48 @@ Deno.serve(async (req) => {
     total: amt,
     merchant_order_no: merchantOrderNo,
     payment_gateway: "newebpay",
+    recipient_name: recipientName,
+    recipient_phone: recipientPhone,
+    recipient_address_full: recipientAddressFull,
+    public_order_no: publicOrderNo,
+    items_subtotal: roundTwdAmt(itemsSubtotalAll),
+    shipping_total: roundTwdAmt(shippingTotal),
+    checkout_snapshot: checkoutSnapshot,
   });
 
   if (orderErr) {
     return jsonResponse({ error: orderErr.message }, 500);
   }
 
+  const orderItemRows = linesComputed.map((r) => ({
+    order_id: orderId,
+    variant_id: r.variantId,
+    qty: r.qty,
+    unit_price: r.unitPrice,
+    vendor_id: r.vendorId,
+  }));
+
   const { error: itemsErr } = await supabase.from("order_items").insert(
-    orderItemRows.map((r) => ({
-      order_id: orderId,
-      variant_id: r.variant_id,
-      qty: r.qty,
-      unit_price: r.unit_price,
-    })),
+    orderItemRows,
   );
 
   if (itemsErr) {
     await supabase.from("orders").delete().eq("id", orderId);
     return jsonResponse({ error: itemsErr.message }, 500);
+  }
+
+  if (body.saveShippingToProfile === true) {
+    const { error: profErr } = await supabase
+      .from("user_profiles")
+      .update({
+        shipping_recipient_name: recipientName,
+        shipping_phone: recipientPhone,
+        shipping_address_full: recipientAddressFull,
+      })
+      .eq("user_id", user.id);
+    if (profErr) {
+      console.error("[create-newebpay-payment] profile update", profErr);
+    }
   }
 
   const action = mpgGatewayUrl(newebpayEnv);

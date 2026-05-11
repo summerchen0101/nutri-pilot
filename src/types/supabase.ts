@@ -84,6 +84,7 @@ export type Database = {
           logo_url: string | null
           name: string
           slug: string
+          vendor_id: string | null
         }
         Insert: {
           country?: string | null
@@ -94,6 +95,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           slug: string
+          vendor_id?: string | null
         }
         Update: {
           country?: string | null
@@ -104,6 +106,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           slug?: string
+          vendor_id?: string | null
         }
         Relationships: []
       }
@@ -320,22 +323,28 @@ export type Database = {
           id: string
           order_id: string
           qty: number
+          sub_order_id: string | null
           unit_price: number
           variant_id: string
+          vendor_id: string | null
         }
         Insert: {
           id?: string
           order_id: string
           qty: number
+          sub_order_id?: string | null
           unit_price: number
           variant_id: string
+          vendor_id?: string | null
         }
         Update: {
           id?: string
           order_id?: string
           qty?: number
+          sub_order_id?: string | null
           unit_price?: number
           variant_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -356,37 +365,58 @@ export type Database = {
       }
       orders: {
         Row: {
+          checkout_snapshot: Json | null
           created_at: string | null
           gateway_session_ref: string | null
           gateway_trade_no: string | null
           id: string
-          legacy_stripe_payment_intent_id: string
+          items_subtotal: number | null
+          legacy_stripe_payment_intent_id: string | null
           merchant_order_no: string | null
           payment_gateway: string
+          public_order_no: string | null
+          recipient_address_full: string | null
+          recipient_name: string | null
+          recipient_phone: string | null
+          shipping_total: number | null
           status: string
           total: number
           user_id: string
         }
         Insert: {
+          checkout_snapshot?: Json | null
           created_at?: string | null
           gateway_session_ref?: string | null
           gateway_trade_no?: string | null
           id?: string
-          legacy_stripe_payment_intent_id: string
+          items_subtotal?: number | null
+          legacy_stripe_payment_intent_id?: string | null
           merchant_order_no?: string | null
           payment_gateway?: string
+          public_order_no?: string | null
+          recipient_address_full?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          shipping_total?: number | null
           status?: string
           total: number
           user_id: string
         }
         Update: {
+          checkout_snapshot?: Json | null
           created_at?: string | null
           gateway_session_ref?: string | null
           gateway_trade_no?: string | null
           id?: string
-          legacy_stripe_payment_intent_id?: string
+          items_subtotal?: number | null
+          legacy_stripe_payment_intent_id?: string | null
           merchant_order_no?: string | null
           payment_gateway?: string
+          public_order_no?: string | null
+          recipient_address_full?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          shipping_total?: number | null
           status?: string
           total?: number
           user_id?: string
@@ -625,6 +655,51 @@ export type Database = {
         }
         Relationships: []
       }
+      sub_orders: {
+        Row: {
+          created_at: string
+          id: string
+          items_subtotal: number
+          order_id: string
+          public_no: string
+          shipped_at: string | null
+          shipping_carrier: string | null
+          shipping_fee: number
+          status: string
+          total: number
+          tracking_number: string | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items_subtotal: number
+          order_id: string
+          public_no: string
+          shipped_at?: string | null
+          shipping_carrier?: string | null
+          shipping_fee?: number
+          status?: string
+          total: number
+          tracking_number?: string | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items_subtotal?: number
+          order_id?: string
+          public_no?: string
+          shipped_at?: string | null
+          shipping_carrier?: string | null
+          shipping_fee?: number
+          status?: string
+          total?: number
+          tracking_number?: string | null
+          vendor_id?: string
+        }
+        Relationships: []
+      }
       user_announcement_reads: {
         Row: {
           announcement_id: string
@@ -775,6 +850,9 @@ export type Database = {
           id: string
           meal_frequency: number
           name: string
+          shipping_address_full: string | null
+          shipping_phone: string | null
+          shipping_recipient_name: string | null
           tdee: number | null
           tracks_glycemic_concern: boolean
           updated_at: string | null
@@ -795,6 +873,9 @@ export type Database = {
           id?: string
           meal_frequency?: number
           name: string
+          shipping_address_full?: string | null
+          shipping_phone?: string | null
+          shipping_recipient_name?: string | null
           tdee?: number | null
           tracks_glycemic_concern?: boolean
           updated_at?: string | null
@@ -815,11 +896,77 @@ export type Database = {
           id?: string
           meal_frequency?: number
           name?: string
+          shipping_address_full?: string | null
+          shipping_phone?: string | null
+          shipping_recipient_name?: string | null
           tdee?: number | null
           tracks_glycemic_concern?: boolean
           updated_at?: string | null
           user_id?: string
           weight_kg?: number
+        }
+        Relationships: []
+      }
+      vendor_users: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+          vendor_id?: string
+        }
+        Relationships: []
+      }
+      vendors: {
+        Row: {
+          contact_email: string | null
+          created_at: string
+          free_shipping_threshold: number | null
+          id: string
+          is_active: boolean
+          lead_time_days: number
+          name: string
+          notification_email: string | null
+          shipping_fee: number
+          slug: string
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string
+          free_shipping_threshold?: number | null
+          id?: string
+          is_active?: boolean
+          lead_time_days?: number
+          name: string
+          notification_email?: string | null
+          shipping_fee?: number
+          slug: string
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string
+          free_shipping_threshold?: number | null
+          id?: string
+          is_active?: boolean
+          lead_time_days?: number
+          name?: string
+          notification_email?: string | null
+          shipping_fee?: number
+          slug?: string
         }
         Relationships: []
       }

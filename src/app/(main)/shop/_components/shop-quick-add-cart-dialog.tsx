@@ -16,6 +16,15 @@ export type ShopQuickAddProduct = {
   id: string;
   name: string;
   image_url: string | null;
+  brand: {
+    vendor: {
+      id: string;
+      name: string;
+      shipping_fee: number;
+      free_shipping_threshold: number | null;
+      lead_time_days: number;
+    };
+  } | null;
   variants: Array<{
     id: string;
     label: string;
@@ -65,13 +74,20 @@ export function ShopQuickAddCartDialog({ open, product, onClose }: Props) {
 
   function handleAddToCart() {
     if (!product || !variant) return;
+    if (!product.brand?.vendor) return;
+    const v = product.brand.vendor;
     addLine({
       variantId: variant.id,
       productId: product.id,
+      vendorId: v.id,
+      vendorName: v.name,
       productName: product.name,
       variantLabel: variant.label,
       qty,
       unitPrice: unitPayment,
+      shippingFee: v.shipping_fee,
+      freeShippingThreshold: v.free_shipping_threshold,
+      leadTimeDays: v.lead_time_days,
       imageUrl: product.image_url,
     });
     onClose();
@@ -183,7 +199,7 @@ export function ShopQuickAddCartDialog({ open, product, onClose }: Props) {
             <Button
               type="button"
               className="min-w-0 flex-1 bg-[#4C956C] text-white hover:bg-[#3A7A56] focus-visible:ring-[#4C956C]/25"
-              disabled={!variant || !isVariantSelectable(variant.stock)}
+              disabled={!variant || !isVariantSelectable(variant.stock) || !product.brand?.vendor}
               onClick={handleAddToCart}
             >
               加入購物車

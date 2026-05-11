@@ -5,6 +5,7 @@ import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { PageHeader } from '@/components/layout/page-header';
 import { getCachedAuthContext } from '@/lib/auth';
 import { SHOP_HEADER_SCROLL_ANCHOR_ID } from '@/lib/shop/constants';
+import { ClearCartOnSuccess } from '@/app/(main)/shop/success/clear-cart-on-success';
 
 interface PageProps {
   searchParams: { merchant_order_no?: string };
@@ -19,6 +20,7 @@ export default async function ShopSuccessPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-4">
+      <ClearCartOnSuccess />
       <PageHeader
         anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
         leading={<HeaderBackButton />}

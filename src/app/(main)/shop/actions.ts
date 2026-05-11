@@ -11,6 +11,10 @@ export async function ensureShopScores(userId: string): Promise<void> {
 
 export async function startCheckout(payload: {
   items: { variantId: string; qty: number }[];
+  recipientName: string;
+  recipientPhone: string;
+  recipientAddressFull: string;
+  saveShippingToProfile?: boolean;
 }): Promise<{
   paymentUrl?: string;
   formFields?: Record<string, string>;
@@ -38,7 +42,13 @@ export async function startCheckout(payload: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ items: payload.items }),
+      body: JSON.stringify({
+        items: payload.items,
+        recipientName: payload.recipientName,
+        recipientPhone: payload.recipientPhone,
+        recipientAddressFull: payload.recipientAddressFull,
+        saveShippingToProfile: payload.saveShippingToProfile === true,
+      }),
     });
     const data = (await res.json()) as {
       paymentUrl?: string;

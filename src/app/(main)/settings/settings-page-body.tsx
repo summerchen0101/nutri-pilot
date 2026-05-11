@@ -63,6 +63,11 @@ export async function SettingsPageBody() {
       dailyCalTarget: Number(goal.daily_cal_target),
       targetDate: goal.target_date ?? null,
     },
+    shippingRecipientName:
+      (profile.shipping_recipient_name as string | null | undefined) ?? '',
+    shippingPhone: (profile.shipping_phone as string | null | undefined) ?? '',
+    shippingAddressFull:
+      (profile.shipping_address_full as string | null | undefined) ?? '',
   };
 
   return <SettingsView initial={initial} />;

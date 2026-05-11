@@ -45,6 +45,13 @@ export interface ShopProductRow {
     name: string;
     slug: string;
     logo_url: string | null;
+    vendor: {
+      id: string;
+      name: string;
+      shipping_fee: number;
+      free_shipping_threshold: number | null;
+      lead_time_days: number;
+    };
   } | null;
   variants: Array<{
     id: string;
@@ -121,7 +128,9 @@ export function ShopHomeClient({
   };
 
   const filtered = useMemo(() => {
-    let list = [...initialProducts];
+    let list = initialProducts.filter(
+      (p) => p.brand != null && p.brand.vendor != null,
+    );
 
     if (category !== 'all') {
       list = list.filter((p) => p.category === category);

@@ -28,6 +28,7 @@ function revalidateMain() {
   revalidatePath('/settings');
   revalidatePath('/dashboard');
   revalidatePath('/log');
+  revalidatePath('/shop/checkout');
 }
 
 export async function saveTracksGlycemicConcern(
@@ -257,6 +258,47 @@ export async function saveGoals(payload: {
 
   revalidateMain();
   revalidatePath('/analytics');
+  return {};
+}
+
+const MAX_SHIPPING_FIELD = 500;
+
+export async function saveShippingProfile(payload: {
+  recipientName: string;
+  phone: string;
+  addressFull: string;
+}): Promise<{ error?: string }> {
+  const recipientName = payload.recipientName.trim();
+  const phone = payload.phone.trim();
+  const addressFull = payload.addressFull.trim();
+  if (!recipientName || recipientName.length > 120) {
+    return { error: '請填寫收件人姓名（1–120 字）' };
+  }
+  if (!phone || phone.length > 40) {
+    return { error: '請填寫有效聯絡電話' };
+  }
+  if (!addressFull || addressFull.length > MAX_SHIPPING_FIELD) {
+    return { error: `請填寫完整地址（1–${MAX_SHIPPING_FIELD} 字）` };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: '未登入' };
+
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({
+      shipping_recipient_name: recipientName,
+      shipping_phone: phone,
+      shipping_address_full: addressFull,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', user.id);
+
+  if (error) return { error: error.message };
+  revalidateMain();
   return {};
 }
 

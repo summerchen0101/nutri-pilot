@@ -9,6 +9,7 @@ import { BodyMetricsCard } from '@/app/(main)/settings/_components/body-metrics-
 import { DietPreferencesCard } from '@/app/(main)/settings/_components/diet-preferences-card';
 import { GoalSettingsCard } from '@/app/(main)/settings/_components/goal-settings-card';
 import { ProfileSummaryCard } from '@/app/(main)/settings/_components/profile-summary-card';
+import { ShippingDeliveryCard } from '@/app/(main)/settings/_components/shipping-delivery-card';
 import {
   EditAllergenSheet,
   EditBodyMetricsSheet,
@@ -61,6 +62,9 @@ export type SettingsInitialData = {
     dailyCalTarget: number;
     targetDate: string | null;
   };
+  shippingRecipientName: string;
+  shippingPhone: string;
+  shippingAddressFull: string;
 };
 
 type SheetType =
@@ -262,6 +266,12 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         dayCount={initial.dayCount}
         avatarChar={avatarChar}
         onEditName={openNameSheet}
+      />
+
+      <ShippingDeliveryCard
+        initialRecipientName={initial.shippingRecipientName}
+        initialPhone={initial.shippingPhone}
+        initialAddressFull={initial.shippingAddressFull}
       />
 
       <BodyMetricsCard

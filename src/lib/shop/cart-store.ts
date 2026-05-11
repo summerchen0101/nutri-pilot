@@ -6,11 +6,18 @@ import { persist } from 'zustand/middleware';
 export interface CartLine {
   variantId: string;
   productId: string;
+  vendorId: string;
+  vendorName: string;
   productName: string;
   variantLabel: string;
   qty: number;
   /** 單次售價（元） */
   unitPrice: number;
+  /** 廠商基本運費（元），加入購物車時快照 */
+  shippingFee: number;
+  /** 免運門檻（元），null = 無免運 */
+  freeShippingThreshold: number | null;
+  leadTimeDays: number;
   /** 對應 `products.image_url`；舊版 localStorage 資料可能無此欄 */
   imageUrl?: string | null;
 }
@@ -44,6 +51,11 @@ export const useCartStore = create<CartState>()(
                   ...l,
                   qty: l.qty + qty,
                   imageUrl: line.imageUrl ?? l.imageUrl,
+                  vendorId: line.vendorId,
+                  vendorName: line.vendorName,
+                  shippingFee: line.shippingFee,
+                  freeShippingThreshold: line.freeShippingThreshold,
+                  leadTimeDays: line.leadTimeDays,
                 }
               : l,
             ),
@@ -56,10 +68,15 @@ export const useCartStore = create<CartState>()(
             {
               variantId: line.variantId,
               productId: line.productId,
+              vendorId: line.vendorId,
+              vendorName: line.vendorName,
               productName: line.productName,
               variantLabel: line.variantLabel,
               qty,
               unitPrice: line.unitPrice,
+              shippingFee: line.shippingFee,
+              freeShippingThreshold: line.freeShippingThreshold,
+              leadTimeDays: line.leadTimeDays,
               imageUrl: line.imageUrl ?? null,
             },
           ],
@@ -81,12 +98,27 @@ export const useCartStore = create<CartState>()(
       clear: () => set({ lines: [] }),
     }),
     {
-      name: 'nutri-guard-shop-cart-v2',
+      name: 'nutri-guard-shop-cart-v3',
       partialize: (state) => ({ lines: state.lines }),
     },
   ),
 );
 
-export function cartTotalPayment(lines: CartLine[]): number {
+export function cartTotalItemsSubtotal(lines: CartLine[]): number {
   return lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
+}
+
+/** 與 Edge `effectiveShippingFee` 相同邏輯 */
+export function effectiveShippingForVendor(
+  itemsSubtotal: number,
+  shippingFee: number,
+  freeShippingThreshold: number | null,
+): number {
+  if (freeShippingThreshold == null) {
+    return shippingFee;
+  }
+  if (itemsSubtotal >= freeShippingThreshold) {
+    return 0;
+  }
+  return shippingFee;
 }
