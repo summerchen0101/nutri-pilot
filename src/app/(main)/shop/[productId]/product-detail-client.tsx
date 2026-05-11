@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useCartStore } from "@/lib/shop/cart-store";
 import { formatShopGroupedInteger } from "@/lib/shop/format-shop-number";
+import {
+  SHOP_VARIANT_PILL_INACTIVE_CLASS,
+  SHOP_VARIANT_PILL_PRIMARY_CLASS,
+} from "@/lib/shop/variant-pill-classes";
 import { submitNewebpayMpgForm } from "@/lib/shop/submit-newebpay-mpg-form";
 
 interface VariantRow {
@@ -17,12 +21,6 @@ interface VariantRow {
   price: number;
   stock: number | null;
 }
-
-/** 與紀錄頁（飲食輸入方式等）一致的黑底藥丸選取 */
-const variantPillPrimary =
-  "min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-transparent";
-const variantPillInactive =
-  "min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground";
 
 interface Props {
   product: {
@@ -99,7 +97,9 @@ export function ProductDetailClient({ product }: Props) {
               aria-checked={v.id === variant?.id}
               variant={v.id === variant?.id ? "default" : "ghost"}
               className={
-                v.id === variant?.id ? variantPillPrimary : variantPillInactive
+                v.id === variant?.id ?
+                  SHOP_VARIANT_PILL_PRIMARY_CLASS
+                : SHOP_VARIANT_PILL_INACTIVE_CLASS
               }
               onClick={() => setVariantId(v.id)}>
               {v.label}

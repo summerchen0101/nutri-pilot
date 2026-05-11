@@ -19,6 +19,7 @@ export async function ShopCatalogBody() {
     { data: scores },
     { data: catalog },
     { data: brandCounts },
+    { data: favoriteRows },
   ] = await Promise.all([
     getCachedUserProfileCoreRow(supabase, user.id),
     supabase
@@ -52,6 +53,10 @@ export async function ShopCatalogBody() {
       )
       .eq('is_active', true),
     supabase.from('products').select('brand_id').eq('is_active', true),
+    supabase
+      .from('user_product_favorites')
+      .select('product_id')
+      .eq('user_id', user.id),
   ]);
 
   if (profileErr || !profile || !goal || !profile.diet_method) {
@@ -74,8 +79,13 @@ export async function ShopCatalogBody() {
     .eq('is_active', true)
     .order('name');
 
+  const favoriteProductIds = (favoriteRows ?? []).map(
+    (r) => r.product_id as string,
+  );
+
   return (
     <ShopHomeClient
+      initialFavoriteProductIds={favoriteProductIds}
       initialProducts={(catalog ?? []).map((p) => ({
         ...(p as unknown as Omit<ShopProductRow, 'score'>),
         score: scoreMap.get(p.id as string) ?? 0,

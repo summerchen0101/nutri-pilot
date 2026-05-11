@@ -1,8 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import {
   Cookie,
   CupSoda,
@@ -16,6 +15,9 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 
+import { ShopQuickAddCartDialog } from '@/app/(main)/shop/_components/shop-quick-add-cart-dialog';
+import { ShopCatalogProductCard } from '@/app/(main)/shop/shop-catalog-product-card';
+import { toggleProductFavorite } from '@/app/(main)/shop/favorite-actions';
 import { SectionHeading } from '@/components/ui/section-heading';
 import {
   SHOP_CATEGORY_KEYS,
@@ -62,6 +64,7 @@ interface BrandRow {
 
 interface Props {
   initialProducts: ShopProductRow[];
+  initialFavoriteProductIds: string[];
   brands: BrandRow[];
   dietMethod: string;
 }
@@ -90,11 +93,26 @@ function CategoryIcon({ category }: { category: ShopCategoryKey }) {
 
 export function ShopHomeClient({
   initialProducts,
+  initialFavoriteProductIds,
   brands,
   dietMethod,
 }: Props) {
   const [category, setCategory] = useState<ShopCategoryKey>('all');
   const [filters, setFilters] = useState<string[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState(
+    () => new Set(initialFavoriteProductIds),
+  );
+  const [quickAddProduct, setQuickAddProduct] = useState<ShopProductRow | null>(
+    null,
+  );
+  const [pendingFavoriteId, setPendingFavoriteId] = useState<string | null>(
+    null,
+  );
+  const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    setFavoriteIds(new Set(initialFavoriteProductIds));
+  }, [initialFavoriteProductIds]);
 
   const toggleFilter = (key: string) => {
     setFilters((prev) =>
@@ -128,6 +146,39 @@ export function ShopHomeClient({
 
     return list;
   }, [initialProducts, category, filters, dietMethod]);
+
+  function handleToggleFavorite(productId: string) {
+    const was = favoriteIds.has(productId);
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (was) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+    setPendingFavoriteId(productId);
+    startTransition(() => {
+      void (async () => {
+        const res = await toggleProductFavorite(productId);
+        setPendingFavoriteId((cur) => (cur === productId ? null : cur));
+        if (!res.ok) {
+          setFavoriteIds((prev) => {
+            const next = new Set(prev);
+            if (was) next.add(productId);
+            else next.delete(productId);
+            return next;
+          });
+          window.alert(res.error ?? '操作失敗');
+          return;
+        }
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          if (res.isFavorite) next.add(productId);
+          else next.delete(productId);
+          return next;
+        });
+      })();
+    });
+  }
 
   return (
     <div className="space-y-5">
@@ -186,51 +237,20 @@ export function ShopHomeClient({
       <section>
         <SectionHeading icon={Sparkles}>推薦商品（依個人化分數）</SectionHeading>
         <div className="mt-3 grid grid-cols-2 gap-3 items-stretch">
-          {filtered.map((p) => {
-            const minPrice = Math.min(
-              ...p.variants.map((v) => Number(v.price)),
-            );
-            return (
-              <Link
-                key={p.id}
-                href={`/shop/${p.id}`}
-                className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border-hairline border-transparent bg-card transition-colors hover:border-primary/50"
-              >
-                <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
-                  {p.image_url ?
-                    <Image
-                      src={p.image_url}
-                      alt=""
-                      fill
-                      sizes="160px"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  : null}
-                  {p.score > 0 ?
-                    <span className="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-white tabular-nums">
-                      推薦 {formatShopGroupedInteger(p.score)}
-                    </span>
-                  : null}
-                </div>
-                <div className="flex min-h-0 flex-1 flex-col p-3">
-                  <p className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground">
-                    {p.name}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {p.brand?.name ?? ''}
-                  </p>
-                  <p className="mt-2 text-[13px] font-medium tabular-nums text-foreground">
-                    NT$ {formatShopGroupedInteger(minPrice)}
-                    <span className="text-[11px] font-normal text-muted-foreground">
-                      {' '}
-                      起
-                    </span>
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
+          {filtered.map((p) => (
+            <ShopCatalogProductCard
+              key={p.id}
+              product={p}
+              isFavorite={favoriteIds.has(p.id)}
+              isFavoritePending={pendingFavoriteId === p.id}
+              onToggleFavorite={() => {
+                handleToggleFavorite(p.id);
+              }}
+              onQuickAdd={() => {
+                setQuickAddProduct(p);
+              }}
+            />
+          ))}
         </div>
         {filtered.length === 0 ?
           <p className="mt-4 text-[13px] text-muted-foreground">
@@ -238,6 +258,14 @@ export function ShopHomeClient({
           </p>
         : null}
       </section>
+
+      <ShopQuickAddCartDialog
+        open={quickAddProduct != null}
+        product={quickAddProduct}
+        onClose={() => {
+          setQuickAddProduct(null);
+        }}
+      />
 
       <section>
         <SectionHeading icon={Store}>精選品牌</SectionHeading>
