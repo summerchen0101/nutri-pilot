@@ -250,49 +250,6 @@
   }
 
   /*
-   * 語意字級：與 tailwind.config.ts theme.extend.fontSize 同步。
-   * 寫在 globals 可確保規則一定進編譯後的 CSS（避免少數環境下 JIT 產物未含自訂 fontSize）。
-   */
-  .text-heading-screen {
-    font-size: 20px;
-    line-height: 1.2;
-    font-weight: 500;
-  }
-
-  .text-heading-page {
-    font-size: 20px;
-    line-height: 1.25;
-    font-weight: 500;
-  }
-
-  .text-heading-section {
-    font-size: 15px;
-    line-height: 1.3;
-    font-weight: 500;
-  }
-
-  .text-heading-card {
-    font-size: 13px;
-    line-height: 1.35;
-    font-weight: 500;
-  }
-
-  .text-body {
-    font-size: 13px;
-    line-height: 1.45;
-  }
-
-  .text-caption {
-    font-size: 12px;
-    line-height: 1.4;
-  }
-
-  .text-micro {
-    font-size: 11px;
-    line-height: 1.35;
-  }
-
-  /*
    * 不透明白底：與 tailwind.config.ts `colors.card.opaque`、`:root --card-opaque` 同步。
    * 寫在此處可在原始碼搜尋 `.bg-card-opaque`，並與語意字級一樣確保進最終 CSS。
    */
