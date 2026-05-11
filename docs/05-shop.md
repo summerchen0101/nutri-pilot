@@ -254,9 +254,9 @@ async function getShopProducts(userId: string, category?: string, filters?: stri
 | 基本資訊 | 商品名、品牌、標籤 |
 | 為什麼適合你 | `generateFitReasons()` 輸出，綠色卡片 |
 | 規格選擇 | `product_variants` 多規格 |
-| 數量選擇 | 加減按鈕 |
-| 價格顯示 | 單次售價（`product_variants.price`） |
-| CTA | 加入購物車、立即結帳（單次） |
+| 數量選擇 | 點「加入購物車」或「立即結帳」後開啟置中彈窗，於彈窗內以加減鈕選擇數量（有庫存上限時「+」受上限限制） |
+| 價格顯示 | 頁面顯示目前規格之單次售價（`product_variants.price`）；彈窗內顯示依數量計算之小計 |
+| CTA | 加入購物車、立即結帳（點擊後於彈窗確認數量並執行對應動作） |
 | 完整營養標示 | 表格，每份數據 |
 | 成分與產地 | 純文字 + 認證標籤 |
 | 品牌故事 | 品牌簡介 + 查看全系列連結 |

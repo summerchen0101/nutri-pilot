@@ -94,7 +94,7 @@ INSERT INTO vendors (id, name, slug, contact_email, notification_email, shipping
 VALUES
   (
     'c1000001-0000-4000-8000-000000000001',
-    '堅果工坊出貨中心',
+    '堅果工坊',
     'vendor-seed-nut-studio',
     'vendor-nut@example.local',
     'vendor-nut@example.local',
@@ -105,7 +105,7 @@ VALUES
   ),
   (
     'c1000002-0000-4000-8000-000000000002',
-    '輕享蛋白出貨中心',
+    '輕享蛋白',
     'vendor-seed-lite-protein',
     'vendor-protein@example.local',
     'vendor-protein@example.local',
@@ -116,7 +116,7 @@ VALUES
   ),
   (
     'c1000003-0000-4000-8000-000000000003',
-    '植粹生活館出貨中心',
+    '植粹生活館',
     'vendor-seed-plant-pure',
     'vendor-plant@example.local',
     'vendor-plant@example.local',

@@ -4,13 +4,19 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { ShopQuantityStepper } from '@/app/(main)/shop/_components/shop-quantity-stepper';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/shop/cart-store';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 import {
+  getVariantMaxOrderQty,
+  isVariantSelectable,
+} from '@/lib/shop/variant-stock';
+import {
   SHOP_VARIANT_PILL_INACTIVE_CLASS,
   SHOP_VARIANT_PILL_PRIMARY_CLASS,
 } from '@/lib/shop/variant-pill-classes';
+import { cn } from '@/lib/utils/cn';
 
 export type ShopQuickAddProduct = {
   id: string;
@@ -39,10 +45,10 @@ interface Props {
   onClose: () => void;
 }
 
-function isVariantSelectable(stock: number | null): boolean {
-  if (stock === null) return true;
-  return stock > 0;
-}
+const SHEET_PANEL = cn(
+  'relative z-10 flex w-full flex-col overflow-hidden bg-[var(--color-background-primary)] shadow-none',
+  'max-h-[min(88dvh,560px)] rounded-t-2xl sm:max-w-md sm:rounded-2xl',
+);
 
 export function ShopQuickAddCartDialog({ open, product, onClose }: Props) {
   const addLine = useCartStore((s) => s.addLine);
@@ -71,6 +77,7 @@ export function ShopQuickAddCartDialog({ open, product, onClose }: Props) {
   }, [product, variantId]);
 
   const unitPayment = variant ? Number(variant.price) : 0;
+  const maxQty = variant ? getVariantMaxOrderQty(variant.stock) : undefined;
 
   function handleAddToCart() {
     if (!product || !variant) return;
@@ -99,7 +106,7 @@ export function ShopQuickAddCartDialog({ open, product, onClose }: Props) {
   const titleId = 'shop-quick-add-title';
 
   const node = (
-    <div className="fixed inset-0 z-[58] flex items-end justify-center p-4 sm:items-center">
+    <div className="fixed inset-0 z-[58] flex items-end justify-center p-0 sm:items-center sm:p-4">
       <button
         type="button"
         className="absolute inset-0 bg-black/35"
@@ -110,101 +117,107 @@ export function ShopQuickAddCartDialog({ open, product, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 flex max-h-[min(90dvh,560px)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-[var(--color-background-primary)] shadow-none"
+        className={SHEET_PANEL}
       >
-        <div className="max-h-[min(90dvh,560px)] overflow-y-auto p-4">
-          <h2 id={titleId} className="sr-only">
-            加入購物車
-          </h2>
+        <h2 id={titleId} className="sr-only">
+          加入購物車
+        </h2>
 
-          <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted">
+        <button
+          type="button"
+          className="flex w-full flex-col items-center pt-2 pb-1"
+          aria-label="關閉"
+          onClick={onClose}
+        >
+          <span className="h-1 w-10 shrink-0 rounded-full bg-border" />
+        </button>
+
+        <div className="max-h-[34vh] min-h-0 shrink overflow-y-auto px-4 pb-3">
+          <span className="text-caption text-muted-foreground">規格</span>
+          <div
+            className="mt-1.5 flex flex-wrap gap-2"
+            role="radiogroup"
+            aria-label="商品規格"
+          >
+            {product.variants.map((v) => {
+              const selectable = isVariantSelectable(v.stock);
+              return (
+                <Button
+                  key={v.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={v.id === variant?.id}
+                  disabled={!selectable}
+                  variant={v.id === variant?.id ? 'default' : 'ghost'}
+                  className={
+                    v.id === variant?.id ?
+                      SHOP_VARIANT_PILL_PRIMARY_CLASS
+                    : SHOP_VARIANT_PILL_INACTIVE_CLASS
+                  }
+                  onClick={() => {
+                    if (!selectable) return;
+                    setVariantId(v.id);
+                  }}
+                >
+                  {v.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex gap-3 border-t border-border px-4 py-3">
+          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
             {product.image_url ?
               <Image
                 src={product.image_url}
                 alt=""
                 fill
                 className="object-cover"
-                sizes="400px"
+                sizes="80px"
                 unoptimized
               />
             : null}
           </div>
-
-          <div className="mt-4">
-            <span className="text-caption text-muted-foreground">規格</span>
-            <div
-              className="mt-1.5 flex flex-wrap gap-2"
-              role="radiogroup"
-              aria-label="商品規格"
-            >
-              {product.variants.map((v) => {
-                const selectable = isVariantSelectable(v.stock);
-                return (
-                  <Button
-                    key={v.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={v.id === variant?.id}
-                    disabled={!selectable}
-                    variant={v.id === variant?.id ? 'default' : 'ghost'}
-                    className={
-                      v.id === variant?.id ?
-                        SHOP_VARIANT_PILL_PRIMARY_CLASS
-                      : SHOP_VARIANT_PILL_INACTIVE_CLASS
-                    }
-                    onClick={() => {
-                      if (!selectable) return;
-                      setVariantId(v.id);
-                    }}
-                  >
-                    {v.label}
-                  </Button>
-                );
-              })}
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground">
+              {product.name}
+            </p>
+            {variant ?
+              <p className="mt-0.5 text-[11px] text-muted-foreground line-clamp-1">
+                {variant.label}
+              </p>
+            : null}
+            <p className="text-heading-page mt-1 tabular-nums text-primary">
+              NT$ {formatShopGroupedInteger(unitPayment)}
+            </p>
           </div>
+        </div>
 
-          <div className="mt-4">
-            <span className="text-caption text-muted-foreground">數量</span>
-            <div className="mt-1 flex items-center gap-3">
-              <button
-                type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-[10px] border-hairline border-border text-heading-section focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-              >
-                −
-              </button>
-              <span className="min-w-[2rem] text-center text-heading-section tabular-nums">
-                {formatShopGroupedInteger(qty)}
-              </span>
-              <button
-                type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-[10px] border-hairline border-border text-heading-section focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
-                onClick={() => setQty((q) => q + 1)}
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-6 flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="min-w-0 flex-1"
-              onClick={onClose}
-            >
-              取消
-            </Button>
-            <Button
-              type="button"
-              className="min-w-0 flex-1 bg-[#4C956C] text-white hover:bg-[#3A7A56] focus-visible:ring-[#4C956C]/25"
-              disabled={!variant || !isVariantSelectable(variant.stock) || !product.brand?.vendor}
-              onClick={handleAddToCart}
-            >
-              加入購物車
-            </Button>
-          </div>
+        <div
+          className={cn(
+            'flex items-center gap-3 border-t border-border px-4 pt-3',
+            'pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+          )}
+        >
+          <ShopQuantityStepper
+            size="compact"
+            value={qty}
+            onChange={setQty}
+            max={maxQty}
+          />
+          <Button
+            type="button"
+            className="min-w-0 flex-1"
+            disabled={
+              !variant ||
+              !isVariantSelectable(variant.stock) ||
+              !product.brand?.vendor
+            }
+            onClick={handleAddToCart}
+          >
+            加入購物車
+          </Button>
         </div>
       </div>
     </div>

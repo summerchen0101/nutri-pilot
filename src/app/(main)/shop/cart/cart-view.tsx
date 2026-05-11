@@ -60,6 +60,11 @@ export function CartView({ layout = 'page' }: CartViewProps) {
     router.push('/shop/checkout');
   }
 
+  function continueShopping() {
+    closeCartPanel();
+    router.push('/shop');
+  }
+
   if (lines.length === 0) {
     const empty = (
       <EmptyState
@@ -84,9 +89,22 @@ export function CartView({ layout = 'page' }: CartViewProps) {
   const vendorBlocks = (
     <div className="space-y-6">
       {hasLegacyLines ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-900">
-          購物車含有舊版資料，請「清空購物車」後重新加入商品。
-        </p>
+        <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[13px] text-amber-900">
+            購物車含有舊版資料，請清空購物車後重新加入商品。
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0 border-amber-300 text-amber-950 hover:bg-amber-100/80"
+            onClick={() => {
+              clear();
+              router.refresh();
+            }}>
+            清空購物車
+          </Button>
+        </div>
       ) : null}
 
       {summaries.map((block) => (
@@ -234,17 +252,14 @@ export function CartView({ layout = 'page' }: CartViewProps) {
       <div className="flex flex-row gap-3">
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           className="min-w-0 flex-1"
-          onClick={() => {
-            clear();
-            router.refresh();
-          }}>
-          清空購物車
+          onClick={continueShopping}>
+          繼續購物
         </Button>
         <Button
           type="button"
-          className="min-w-0 flex-1 bg-[#4C956C] text-white hover:bg-[#3A7A56] focus-visible:ring-[#4C956C]/25"
+          className="min-w-0 flex-1"
           disabled={!validLines.length || hasLegacyLines}
           onClick={goCheckout}>
           前往結帳

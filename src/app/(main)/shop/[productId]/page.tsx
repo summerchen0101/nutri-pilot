@@ -200,6 +200,7 @@ export default async function ShopProductPage({ params }: PageProps) {
       </section>
 
       <ProductDetailClient
+        key={product.id as string}
         product={{
           id: product.id as string,
           name: product.name as string,
