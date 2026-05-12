@@ -2,15 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { Dumbbell } from "lucide-react";
-import { FiTrash2 } from "react-icons/fi";
+import { ChevronDown, Dumbbell } from 'lucide-react';
+import { FiTrash2 } from 'react-icons/fi';
 
 import {
-  type ActivityType,
   deleteActivityLogAction,
   insertActivityLogAction,
-} from "@/app/(main)/log/activity-actions";
-import { Button } from "@/components/ui/button";
+} from '@/app/(main)/log/activity-actions';
+import { ActivityTypePickerSheet } from '@/app/(main)/log/activity-type-picker-sheet';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -19,9 +19,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { ACTIVITY_TYPE_LABEL } from "@/lib/activity/activity-type-labels";
-import { KCAL_PER_MINUTE } from "@/lib/activity/kcal-per-minute";
-import { cn } from "@/lib/utils/cn";
+import { ACTIVITY_TYPE_LABEL } from '@/lib/activity/activity-type-labels';
+import type { ActivityType } from '@/lib/activity/activity-types';
+import { KCAL_PER_MINUTE } from '@/lib/activity/kcal-per-minute';
+import { cn } from '@/lib/utils/cn';
 
 export type ActivityLogRow = {
   id: string;
@@ -32,25 +33,7 @@ export type ActivityLogRow = {
   notes: string | null;
 };
 
-const ACTIVITY_GROUPS: { label: string; types: readonly ActivityType[] }[] = [
-  {
-    label: "有氧與心肺",
-    types: [
-      "walk",
-      "run",
-      "cycling",
-      "swimming",
-      "cardio",
-      "hiit",
-      "jump_rope",
-      "dance",
-    ],
-  },
-  { label: "球類", types: ["basketball", "tennis", "badminton"] },
-  { label: "肌力", types: ["strength"] },
-  { label: "瑜珈與伸展", types: ["yoga", "pilates", "stretching"] },
-  { label: "其他", types: ["other"] },
-];
+const SUCCESS_HINT_DURATION_MS = 3000;
 
 const QUICK_DURATION_MINUTES = [15, 30, 45, 60, 90] as const;
 
@@ -64,7 +47,9 @@ export function ActivityLogSection({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [activityType, setActivityType] = useState<ActivityType>("walk");
+  const [typeSheetOpen, setTypeSheetOpen] = useState(false);
+  const [successHint, setSuccessHint] = useState<string | null>(null);
+  const [activityType, setActivityType] = useState<ActivityType>('walk');
   const [minutes, setMinutes] = useState("");
   const [calEst, setCalEst] = useState("");
   const [notes, setNotes] = useState("");
@@ -87,8 +72,17 @@ export function ActivityLogSection({
 
   const dayTotalMin = rows.reduce((s, r) => s + r.duration_minutes, 0);
 
+  useEffect(() => {
+    if (!successHint) return undefined;
+    const t = window.setTimeout(() => {
+      setSuccessHint(null);
+    }, SUCCESS_HINT_DURATION_MS);
+    return () => window.clearTimeout(t);
+  }, [successHint]);
+
   async function onSubmit() {
     setError(null);
+    setSuccessHint(null);
     startTransition(async () => {
       const res = await insertActivityLogAction({
         loggedDate: date,
@@ -101,6 +95,7 @@ export function ActivityLogSection({
         setError(res.error);
         return;
       }
+      setSuccessHint('已成功加入運動紀錄');
       setMinutes("");
       setCalEst("");
       setNotes("");
@@ -140,34 +135,36 @@ export function ActivityLogSection({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          {successHint ? (
+            <p className="text-[13px] text-primary">{successHint}</p>
+          ) : null}
           {error ? (
             <p className="text-[13px] text-destructive">{error}</p>
           ) : null}
           <div className="space-y-2">
-            <label
-              htmlFor="activity-type-select"
-              className="text-[11px] font-medium text-muted-foreground">
+            <label className="text-[11px] font-medium text-muted-foreground">
               類型
             </label>
-            <select
-              id="activity-type-select"
+            <Button
+              type="button"
+              variant="outline"
               className={cn(
-                "mt-1 flex h-11 w-full items-center rounded-[10px] border-hairline border-border bg-card px-3 py-2 text-[13px] text-foreground",
-                "focus:border-[#4C956C] focus:ring-1 focus:ring-[#4C956C]/20 focus:outline-none",
-                "disabled:cursor-not-allowed disabled:opacity-50",
+                'mt-1 flex h-11 w-full items-center justify-between rounded-[10px] border-hairline border-border bg-card px-3 text-left text-[13px] font-normal text-foreground',
+                'focus-visible:border-[#4C956C] focus-visible:ring-1 focus-visible:ring-[#4C956C]/20 focus-visible:outline-none',
               )}
-              value={activityType}
-              onChange={(e) => setActivityType(e.target.value as ActivityType)}>
-              {ACTIVITY_GROUPS.map((g) => (
-                <optgroup key={g.label} label={g.label}>
-                  {g.types.map((t) => (
-                    <option key={t} value={t}>
-                      {ACTIVITY_TYPE_LABEL[t]}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+              onClick={() => setTypeSheetOpen(true)}>
+              <span>{ACTIVITY_TYPE_LABEL[activityType]}</span>
+              <ChevronDown
+                aria-hidden
+                className="h-4 w-4 shrink-0 text-muted-foreground"
+              />
+            </Button>
+            <ActivityTypePickerSheet
+              open={typeSheetOpen}
+              onClose={() => setTypeSheetOpen(false)}
+              activityType={activityType}
+              onSelect={setActivityType}
+            />
           </div>
           <div>
             <label className="text-[11px] text-muted-foreground">

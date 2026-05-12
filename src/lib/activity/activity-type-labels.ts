@@ -1,8 +1,10 @@
-/** 與 `activity_logs.activity_type` / `activity-actions` 的 ActivityType 鍵一致 */
+/** 與 `activity_logs.activity_type` / `activity-types` 的 ActivityType 鍵一致 */
 export const ACTIVITY_TYPE_LABEL = {
   walk: '走路',
   run: '跑步',
   cycling: '單車',
+  stationary_bike: '室內健身車',
+  spin_bike: '飛輪',
   swimming: '游泳',
   cardio: '有氧',
   hiit: '間歇有氧',

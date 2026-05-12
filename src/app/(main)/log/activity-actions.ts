@@ -2,28 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { ACTIVITY_TYPES, type ActivityType } from '@/lib/activity/activity-types';
 import { createClient } from '@/lib/supabase/server';
 
-const ACTIVITY_TYPES = [
-  'walk',
-  'run',
-  'cycling',
-  'swimming',
-  'cardio',
-  'hiit',
-  'jump_rope',
-  'dance',
-  'basketball',
-  'tennis',
-  'badminton',
-  'strength',
-  'yoga',
-  'pilates',
-  'stretching',
-  'other',
-] as const;
-
-export type ActivityType = (typeof ACTIVITY_TYPES)[number];
+export type { ActivityType };
 
 function isActivityType(s: string): s is ActivityType {
   return (ACTIVITY_TYPES as readonly string[]).includes(s);

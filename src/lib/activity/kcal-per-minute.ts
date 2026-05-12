@@ -1,12 +1,14 @@
 /**
  * Estimated kcal burned per minute by activity type (~70 kg adult; MET-inspired).
- * Keys must stay in sync with `ActivityType` in activity-actions.
+ * Keys must stay in sync with `ActivityType` in `activity-types.ts`.
  * For UI suggestions only — not medical advice.
  */
 export const KCAL_PER_MINUTE = {
   walk: 4,
   run: 11,
   cycling: 8,
+  stationary_bike: 8,
+  spin_bike: 10,
   swimming: 9,
   cardio: 9,
   hiit: 11,
