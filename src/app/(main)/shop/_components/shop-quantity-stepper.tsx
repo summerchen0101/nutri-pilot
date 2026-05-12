@@ -13,6 +13,8 @@ interface Props {
   value: number;
   onChange: (next: number) => void;
   max?: number;
+  /** 預設 1；設為 0 時「−」可減到 0（由父層決定是否移除列） */
+  minimumQuantity?: number;
   size?: 'default' | 'compact';
   className?: string;
 }
@@ -21,11 +23,13 @@ export function ShopQuantityStepper({
   value,
   onChange,
   max,
+  minimumQuantity = 1,
   size = 'default',
   className,
 }: Props) {
   const canIncrement = max === undefined || value < max;
   const btn = size === 'compact' ? BTN_COMPACT : BTN;
+  const min = minimumQuantity;
 
   return (
     <div
@@ -38,7 +42,7 @@ export function ShopQuantityStepper({
       <button
         type="button"
         className={btn}
-        onClick={() => onChange(Math.max(1, value - 1))}>
+        onClick={() => onChange(Math.max(min, value - 1))}>
         −
       </button>
       <span

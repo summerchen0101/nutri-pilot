@@ -1,59 +1,45 @@
 'use client';
 
-import { Package, Store, Truck, X } from 'lucide-react';
-import Image from 'next/image';
+import { Store, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
+import { CartLineRow } from '@/app/(main)/shop/cart/cart-line-row';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import {
-  calcVendorShippingSummaries,
-  cartGrandTotal,
-  cartTotalShipping,
-} from '@/lib/shop/vendor-shipping';
-import { cartTotalItemsSubtotal, useCartStore, type CartLine } from '@/lib/shop/cart-store';
+import { useCartStore } from '@/lib/shop/cart-store';
+import { useCartDerived } from '@/lib/shop/use-cart-derived';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 
 export interface CartViewProps {
   /** `panel`：側欄内列表捲動，預估總計與按鈕固定於底部 */
   layout?: 'page' | 'panel';
+  /** 與 `layout="page"` 併用：只渲染廠商列表，供全頁固定底欄 */
+  embedded?: boolean;
 }
 
-export function CartView({ layout = 'page' }: CartViewProps) {
+export function CartView({ layout = 'page', embedded = false }: CartViewProps) {
   const router = useRouter();
-  const lines = useCartStore((s) => s.lines);
   const setQty = useCartStore((s) => s.setQty);
   const removeLine = useCartStore((s) => s.removeLine);
   const clear = useCartStore((s) => s.clear);
   const closeCartPanel = useCartStore((s) => s.closeCartPanel);
 
-  const validLines = useMemo(
-    () =>
-      lines.filter(
-        (l): l is CartLine =>
-          Boolean(l.vendorId && l.vendorName && typeof l.unitPrice === 'number'),
-      ),
-    [lines],
-  );
+  const {
+    lines,
+    validLines,
+    summaries,
+    itemsSubtotal,
+    shippingTotal,
+    grandTotal,
+    hasLegacyLines,
+  } = useCartDerived();
 
-  const summaries = useMemo(
-    () => calcVendorShippingSummaries(validLines),
-    [validLines],
-  );
-
-  const itemsSubtotal = useMemo(
-    () => cartTotalItemsSubtotal(validLines),
-    [validLines],
-  );
-  const shippingTotal = useMemo(
-    () => cartTotalShipping(summaries),
-    [summaries],
-  );
-  const grandTotal = useMemo(() => cartGrandTotal(validLines), [validLines]);
-
-  const hasLegacyLines = lines.length > 0 && validLines.length < lines.length;
+  const maxLeadTimeDays = useMemo(() => {
+    if (validLines.length === 0) return 0;
+    return Math.max(...validLines.map((l) => l.leadTimeDays));
+  }, [validLines]);
 
   function goCheckout() {
     closeCartPanel();
@@ -83,14 +69,19 @@ export function CartView({ layout = 'page' }: CartViewProps) {
         </div>
       );
     }
+    if (embedded) return null;
     return empty;
+  }
+
+  function handleQuantityChange(variantId: string, nextQty: number) {
+    setQty(variantId, nextQty);
   }
 
   const vendorBlocks = (
     <div className="space-y-6">
       {hasLegacyLines ? (
         <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[13px] text-amber-900">
+          <p className="text-body text-amber-900">
             購物車含有舊版資料，請清空購物車後重新加入商品。
           </p>
           <Button
@@ -118,76 +109,20 @@ export function CartView({ layout = 'page' }: CartViewProps) {
             </h2>
           </div>
 
-          <ul className="divide-y-hairline divide-border">
+          <ul className="divide-y-hairline divide-border px-3">
             {block.lines.map((line) => (
-              <li key={line.variantId} className="px-3 py-4">
-                <div className="flex gap-3">
-                  <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg bg-muted">
-                    {line.imageUrl ? (
-                      <Image
-                        src={line.imageUrl}
-                        alt=""
-                        width={72}
-                        height={72}
-                        className="h-full w-full object-cover"
-                        sizes="72px"
-                      />
-                    ) : (
-                      <div
-                        className="flex h-full w-full items-center justify-center text-muted-foreground"
-                        aria-hidden>
-                        <Package className="h-7 w-7" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex justify-between gap-2">
-                      <div className="min-w-0 pr-1">
-                        <p className="text-heading-section leading-snug text-foreground">
-                          {line.productName}
-                        </p>
-                        <p className="mt-0.5 text-micro text-muted-foreground">
-                          {line.variantLabel}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border-hairline border-border bg-transparent text-foreground transition-colors hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-                        aria-label={`移除 ${line.productName}`}
-                        onClick={() => removeLine(line.variantId)}>
-                        <X className="h-4 w-4" aria-hidden />
-                      </button>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-hairline border-border text-heading-card leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-                          onClick={() => setQty(line.variantId, line.qty - 1)}>
-                          −
-                        </button>
-                        <span className="min-w-[1.5rem] text-center text-heading-section tabular-nums text-foreground">
-                          {formatShopGroupedInteger(line.qty)}
-                        </span>
-                        <button
-                          type="button"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-hairline border-border text-heading-card leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-                          onClick={() => setQty(line.variantId, line.qty + 1)}>
-                          +
-                        </button>
-                      </div>
-                      <p className="text-heading-section tabular-nums text-foreground">
-                        NT$ {formatShopGroupedInteger(line.unitPrice * line.qty)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              <li key={line.variantId}>
+                <CartLineRow
+                  line={line}
+                  onQuantityChange={handleQuantityChange}
+                  onRemove={removeLine}
+                />
               </li>
             ))}
           </ul>
 
           <div className="space-y-2 border-t-hairline border-border bg-muted/30 px-3 py-3">
-            <div className="flex items-start gap-2 text-[13px] text-muted-foreground">
+            <div className="flex items-start gap-2 text-body text-muted-foreground">
               <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-foreground">配送方式：宅配</p>
@@ -226,9 +161,17 @@ export function CartView({ layout = 'page' }: CartViewProps) {
     </div>
   );
 
+  const shipNote =
+    maxLeadTimeDays > 0 ?
+      `約 ${maxLeadTimeDays} 個工作天起由廠商準備出貨`
+    : '出貨將於結帳後確認';
+
   const checkoutFooter = (
-    <div className="space-y-4">
-      <div className="space-y-2 rounded-xl border-hairline border-primary px-4 py-3">
+    <div className="space-y-3">
+      <p className="bg-[#1E212B] px-3 py-2 text-center text-caption text-white/95">
+        {shipNote}
+      </p>
+      <div className="space-y-2 rounded-xl border-hairline border-border px-3 py-3">
         <div className="flex items-baseline justify-between gap-3 text-caption text-muted-foreground">
           <span>商品小計</span>
           <span className="tabular-nums text-foreground">
@@ -241,32 +184,36 @@ export function CartView({ layout = 'page' }: CartViewProps) {
             NT$ {formatShopGroupedInteger(shippingTotal)}
           </span>
         </div>
-        <div className="flex items-baseline justify-between gap-3 border-t-hairline border-primary/30 pt-2">
-          <span className="text-caption font-semibold text-primary">訂單總計</span>
-          <span className="tabular-nums text-primary font-bold">
+        <div className="flex items-baseline justify-between gap-3 border-t-hairline border-border pt-2">
+          <span className="text-caption font-medium text-primary">訂單總計</span>
+          <span className="tabular-nums text-primary font-medium">
             NT$ {formatShopGroupedInteger(grandTotal)}
           </span>
         </div>
       </div>
 
-      <div className="flex flex-row gap-3">
+      <div className="flex flex-col gap-2">
         <Button
           type="button"
-          variant="outline"
-          className="min-w-0 flex-1"
-          onClick={continueShopping}>
-          繼續購物
+          className="w-full"
+          disabled={!validLines.length || hasLegacyLines}
+          onClick={goCheckout}>
+          繼續結帳
         </Button>
         <Button
           type="button"
-          className="min-w-0 flex-1"
-          disabled={!validLines.length || hasLegacyLines}
-          onClick={goCheckout}>
-          前往結帳
+          variant="outline"
+          className="w-full"
+          onClick={continueShopping}>
+          繼續購物
         </Button>
       </div>
     </div>
   );
+
+  if (layout === 'page' && embedded) {
+    return vendorBlocks;
+  }
 
   if (layout === 'panel') {
     return (
@@ -274,19 +221,12 @@ export function CartView({ layout = 'page' }: CartViewProps) {
         <div className="min-h-0 flex-1 overflow-y-auto hide-scrollbar [-webkit-overflow-scrolling:touch]">
           {vendorBlocks}
         </div>
-        <div className="shrink-0 bg-[var(--color-background-primary)] pt-4">
+        <div className="shrink-0 border-t-hairline border-border bg-[var(--color-background-primary)] pt-3">
           {checkoutFooter}
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="flex min-h-[calc(100dvh-8rem)] flex-col">
-      <div className="min-h-0 flex-1">{vendorBlocks}</div>
-      <div className="shrink-0 bg-[var(--color-background-primary)] pt-4">
-        {checkoutFooter}
-      </div>
-    </div>
-  );
+  return null;
 }
