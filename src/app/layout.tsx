@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 
 import { ScrollToTopOnPathname } from '@/components/layout/scroll-to-top-on-pathname';
+import { AppMessageDialog } from '@/components/ui/app-message-dialog';
 
 import './globals.css';
 
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="zh-Hant" suppressHydrationWarning>
       <body className="min-h-screen antialiased" suppressHydrationWarning>
         <ScrollToTopOnPathname />
+        <AppMessageDialog />
         {children}
       </body>
     </html>

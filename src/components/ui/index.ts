@@ -1,3 +1,4 @@
+export * from '@/components/ui/app-message-dialog';
 export * from '@/components/ui/badge';
 export * from '@/components/ui/bottom-sheet-shell';
 export * from '@/components/ui/button';

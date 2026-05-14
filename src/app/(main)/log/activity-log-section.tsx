@@ -22,6 +22,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { ACTIVITY_TYPE_LABEL } from '@/lib/activity/activity-type-labels';
 import type { ActivityType } from '@/lib/activity/activity-types';
 import { KCAL_PER_MINUTE } from '@/lib/activity/kcal-per-minute';
+import { showSuccessMessage } from '@/lib/ui/app-message-store';
 import { cn } from '@/lib/utils/cn';
 
 export type ActivityLogRow = {
@@ -32,8 +33,6 @@ export type ActivityLogRow = {
   calories_est: number | null;
   notes: string | null;
 };
-
-const SUCCESS_HINT_DURATION_MS = 3000;
 
 const QUICK_DURATION_MINUTES = [15, 30, 45, 60, 90] as const;
 
@@ -48,7 +47,6 @@ export function ActivityLogSection({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [typeSheetOpen, setTypeSheetOpen] = useState(false);
-  const [successHint, setSuccessHint] = useState<string | null>(null);
   const [activityType, setActivityType] = useState<ActivityType>('walk');
   const [minutes, setMinutes] = useState("");
   const [calEst, setCalEst] = useState("");
@@ -72,17 +70,8 @@ export function ActivityLogSection({
 
   const dayTotalMin = rows.reduce((s, r) => s + r.duration_minutes, 0);
 
-  useEffect(() => {
-    if (!successHint) return undefined;
-    const t = window.setTimeout(() => {
-      setSuccessHint(null);
-    }, SUCCESS_HINT_DURATION_MS);
-    return () => window.clearTimeout(t);
-  }, [successHint]);
-
   async function onSubmit() {
     setError(null);
-    setSuccessHint(null);
     startTransition(async () => {
       const res = await insertActivityLogAction({
         loggedDate: date,
@@ -95,7 +84,7 @@ export function ActivityLogSection({
         setError(res.error);
         return;
       }
-      setSuccessHint('已成功加入運動紀錄');
+      showSuccessMessage('已成功加入運動紀錄');
       setMinutes("");
       setCalEst("");
       setNotes("");
@@ -135,9 +124,6 @@ export function ActivityLogSection({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {successHint ? (
-            <p className="text-[13px] text-primary">{successHint}</p>
-          ) : null}
           {error ? (
             <p className="text-[13px] text-destructive">{error}</p>
           ) : null}
