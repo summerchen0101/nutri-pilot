@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ChevronRight } from 'lucide-react';
 
 import { cn } from '@/lib/utils/cn';
 
@@ -43,7 +44,16 @@ export function SettingsRow({
             {value}
           </span>
         ) : null}
-        {trailing ?? <span className={danger ? 'text-destructive' : 'text-neutral-text-tertiary'}>{'>'}</span>}
+        {trailing ?? (
+          <ChevronRight
+            aria-hidden
+            className={cn(
+              'h-4 w-4 shrink-0',
+              danger ? 'text-destructive' : 'text-neutral-text-tertiary',
+            )}
+            strokeWidth={2}
+          />
+        )}
       </div>
     </button>
   );
