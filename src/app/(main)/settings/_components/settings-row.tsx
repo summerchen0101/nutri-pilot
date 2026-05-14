@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { cn } from '@/lib/utils/cn';
+
 interface SettingsRowProps {
   label: string;
   value?: string;
@@ -31,8 +33,16 @@ export function SettingsRow({
       <span className={danger ? 'text-[13px] text-destructive' : 'text-[13px] text-neutral-text-tertiary'}>
         {label}
       </span>
-      <div className="flex items-center gap-2">
-        {value ? <span className={valueClassName ?? 'text-[13px] text-foreground'}>{value}</span> : null}
+      <div className="flex min-w-0 max-w-[65%] items-center justify-end gap-2">
+        {value ? (
+          <span
+            className={cn(
+              'truncate text-[13px] text-foreground',
+              valueClassName,
+            )}>
+            {value}
+          </span>
+        ) : null}
         {trailing ?? <span className={danger ? 'text-destructive' : 'text-neutral-text-tertiary'}>{'>'}</span>}
       </div>
     </button>

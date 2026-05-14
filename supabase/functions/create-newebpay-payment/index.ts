@@ -440,12 +440,62 @@ Deno.serve(async (req) => {
   }
 
   if (body.saveShippingToProfile === true) {
+    const now = new Date().toISOString();
+    const { data: defAddr, error: defErr } = await supabase
+      .from("user_shipping_addresses")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_default", true)
+      .maybeSingle();
+
+    if (defErr) {
+      console.error("[create-newebpay-payment] default address lookup", defErr);
+    }
+
+    const baseAddr = {
+      recipient_name: recipientName,
+      phone: recipientPhone,
+      address_full: recipientAddressFull,
+      updated_at: now,
+    };
+
+    if (defAddr?.id) {
+      const { error: addrErr } = await supabase
+        .from("user_shipping_addresses")
+        .update(baseAddr)
+        .eq("id", defAddr.id)
+        .eq("user_id", user.id);
+      if (addrErr) {
+        console.error("[create-newebpay-payment] address update", addrErr);
+      }
+    } else {
+      const { error: clearErr } = await supabase
+        .from("user_shipping_addresses")
+        .update({ is_default: false, updated_at: now })
+        .eq("user_id", user.id);
+      if (clearErr) {
+        console.error("[create-newebpay-payment] address clear default", clearErr);
+      }
+      const { error: insErr } = await supabase
+        .from("user_shipping_addresses")
+        .insert({
+          user_id: user.id,
+          ...baseAddr,
+          is_default: true,
+          sort_order: 0,
+        });
+      if (insErr) {
+        console.error("[create-newebpay-payment] address insert", insErr);
+      }
+    }
+
     const { error: profErr } = await supabase
       .from("user_profiles")
       .update({
         shipping_recipient_name: recipientName,
         shipping_phone: recipientPhone,
         shipping_address_full: recipientAddressFull,
+        updated_at: now,
       })
       .eq("user_id", user.id);
     if (profErr) {

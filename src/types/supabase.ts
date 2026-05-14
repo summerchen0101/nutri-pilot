@@ -835,6 +835,78 @@ export type Database = {
           },
         ]
       }
+      user_shop_point_ledger: {
+        Row: {
+          balance_after: number
+          created_at: string
+          delta: number
+          id: string
+          note: string | null
+          reason: string
+          ref_id: string | null
+          ref_type: string | null
+          user_id: string
+        }
+        Insert: {
+          balance_after: number
+          created_at?: string
+          delta: number
+          id?: string
+          note?: string | null
+          reason: string
+          ref_id?: string | null
+          ref_type?: string | null
+          user_id: string
+        }
+        Update: {
+          balance_after?: number
+          created_at?: string
+          delta?: number
+          id?: string
+          note?: string | null
+          reason?: string
+          ref_id?: string | null
+          ref_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_shipping_addresses: {
+        Row: {
+          address_full: string
+          created_at: string
+          id: string
+          is_default: boolean
+          phone: string
+          recipient_name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_full: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          phone: string
+          recipient_name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_full?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          phone?: string
+          recipient_name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           activity_level: string
@@ -853,6 +925,8 @@ export type Database = {
           shipping_address_full: string | null
           shipping_phone: string | null
           shipping_recipient_name: string | null
+          shop_personalize_recommendations: boolean
+          shop_points_balance: number
           tdee: number | null
           tracks_glycemic_concern: boolean
           updated_at: string | null
@@ -876,6 +950,8 @@ export type Database = {
           shipping_address_full?: string | null
           shipping_phone?: string | null
           shipping_recipient_name?: string | null
+          shop_personalize_recommendations?: boolean
+          shop_points_balance?: number
           tdee?: number | null
           tracks_glycemic_concern?: boolean
           updated_at?: string | null
@@ -899,6 +975,8 @@ export type Database = {
           shipping_address_full?: string | null
           shipping_phone?: string | null
           shipping_recipient_name?: string | null
+          shop_personalize_recommendations?: boolean
+          shop_points_balance?: number
           tdee?: number | null
           tracks_glycemic_concern?: boolean
           updated_at?: string | null

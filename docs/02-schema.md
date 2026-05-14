@@ -341,6 +341,15 @@ supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/supabase.
 - **`photo_analysis_jobs.job_kind`**：新寫入僅 `meal`；歷史列可能曾為 `label`（已廢止，標示分析改用 `label_guard_jobs`）。
 - **`user_profiles.tracks_glycemic_concern`**：BOOLEAN，預設 FALSE；影響食品安全守衛標示 AI prompt 對高糖提示的強度。
 
+## 補充（2026-05）：購物點、多收件、商城個人化開關
+
+詳見 migration `027_shop_points_shipping_addresses.sql`。
+
+- **`user_profiles.shop_points_balance`**：INTEGER，預設 0。  
+- **`user_profiles.shop_personalize_recommendations`**：BOOLEAN，預設 TRUE；關閉時商城／Dashboard 推薦不依 `user_product_scores` 排序。  
+- **`user_shop_point_ledger`**：點數異動流水（使用者僅 SELECT）。  
+- **`user_shipping_addresses`**：多筆收件，每使用者最多一筆 `is_default = TRUE`；預設列與 `user_profiles.shipping_*` 同步供結帳預填。
+
 ## 補充（食品安全守衛）：`label_guard_jobs`、`label-guard-photos`
 
 詳見 migration `017_label_guard_jobs.sql`。

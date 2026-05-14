@@ -71,6 +71,15 @@ export function calcRecommendScore(
 
 **重算方式**：更新設定 → 呼叫 Edge Function `recalculate-scores` → 批次更新 `user_product_scores`
 
+使用者可於設定頁「商城設定」關閉 **`shop_personalize_recommendations`**：商城列表與 Dashboard 推薦改為不依個人化分數排序（改以評分等一般排序），但快取表仍可能存在；開啟時維持讀取 `user_product_scores`。
+
+---
+
+## 購物點（訂閱轉點）
+
+- **1 點 = 1 元（新台幣）** 折抵商城消費，實際發放／扣抵／餘額遞延以方案條款與後端為準。
+- 餘額欄位：`user_profiles.shop_points_balance`；流水：`user_shop_point_ledger`（`subscription_grant`、`order_redeem`、`admin_adjust`、`other`）。
+
 ---
 
 ## 符合度說明生成

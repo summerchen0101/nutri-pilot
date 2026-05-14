@@ -11,9 +11,11 @@ import { getCachedAuthContext } from '@/lib/auth';
 export async function DashboardRecommendedProductsDeferred({
   dietMethod,
   dietMethodLabel,
+  usePersonalizedScores = true,
 }: {
   dietMethod: string | null;
   dietMethodLabel: string;
+  usePersonalizedScores?: boolean;
 }) {
   const { supabase, user } = await getCachedAuthContext();
   if (!user) return null;
@@ -45,6 +47,7 @@ export async function DashboardRecommendedProductsDeferred({
     products: productCatalog ?? [],
     scores: productScores ?? [],
     dietMethod,
+    usePersonalizedScores,
   }).map((row) => ({
     ...row,
     reason: row.reason ?? `符合${dietMethodLabel}偏好`,

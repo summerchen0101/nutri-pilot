@@ -232,6 +232,7 @@ export default async function DashboardPage() {
         <DashboardRecommendedProductsDeferred
           dietMethod={profile.diet_method ?? null}
           dietMethodLabel={dietMethodLabel}
+          usePersonalizedScores={profile.shop_personalize_recommendations !== false}
         />
       </Suspense>
     ),

@@ -1,6 +1,7 @@
 import { Carrot } from 'lucide-react';
 
 import { SettingsRow } from '@/app/(main)/settings/_components/settings-row';
+import { SETTINGS_DIET_PREFERENCES_ANCHOR_ID } from '@/app/(main)/settings/_lib/settings-anchors';
 import { SectionCard } from '@/components/ui/section-card';
 import { SectionHeading } from '@/components/ui/section-heading';
 
@@ -26,7 +27,7 @@ export function DietPreferencesCard({
   onToggleGlycemic,
 }: DietPreferencesCardProps) {
   return (
-    <SectionCard>
+    <SectionCard id={SETTINGS_DIET_PREFERENCES_ANCHOR_ID}>
       <SectionHeading icon={Carrot} className="mb-1">
         飲食偏好
       </SectionHeading>

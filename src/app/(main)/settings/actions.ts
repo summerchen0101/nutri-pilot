@@ -11,7 +11,7 @@ import {
 } from '@/lib/calculations';
 import { triggerRecalculateScores } from '@/lib/settings/trigger-recalculate-scores';
 import { createClient } from '@/lib/supabase/server';
-import type { TablesUpdate } from '@/types/supabase';
+import type { Tables, TablesUpdate } from '@/types/supabase';
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
@@ -26,8 +26,11 @@ function dateToISODateOnly(d: Date): string {
 
 function revalidateMain() {
   revalidatePath('/settings');
+  revalidatePath('/settings/points');
+  revalidatePath('/settings/membership');
   revalidatePath('/dashboard');
   revalidatePath('/log');
+  revalidatePath('/shop');
   revalidatePath('/shop/checkout');
 }
 
@@ -263,6 +266,36 @@ export async function saveGoals(payload: {
 
 const MAX_SHIPPING_FIELD = 500;
 
+const MAX_SHIPPING_ADDRESSES = 10;
+
+async function syncProfileShippingFromDefault(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<void> {
+  const { data: row } = await supabase
+    .from('user_shipping_addresses')
+    .select('recipient_name, phone, address_full')
+    .eq('user_id', userId)
+    .eq('is_default', true)
+    .maybeSingle();
+
+  const patch: TablesUpdate<'user_profiles'> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!row) {
+    patch.shipping_recipient_name = null;
+    patch.shipping_phone = null;
+    patch.shipping_address_full = null;
+  } else {
+    patch.shipping_recipient_name = row.recipient_name;
+    patch.shipping_phone = row.phone;
+    patch.shipping_address_full = row.address_full;
+  }
+
+  await supabase.from('user_profiles').update(patch).eq('user_id', userId);
+}
+
 export async function saveShippingProfile(payload: {
   recipientName: string;
   phone: string;
@@ -287,17 +320,45 @@ export async function saveShippingProfile(payload: {
   } = await supabase.auth.getUser();
   if (!user) return { error: '未登入' };
 
-  const { error } = await supabase
-    .from('user_profiles')
-    .update({
-      shipping_recipient_name: recipientName,
-      shipping_phone: phone,
-      shipping_address_full: addressFull,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', user.id);
+  const { data: def } = await supabase
+    .from('user_shipping_addresses')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('is_default', true)
+    .maybeSingle();
 
-  if (error) return { error: error.message };
+  const now = new Date().toISOString();
+  const basePatch = {
+    recipient_name: recipientName,
+    phone,
+    address_full: addressFull,
+    updated_at: now,
+  };
+
+  if (def?.id) {
+    const { error } = await supabase
+      .from('user_shipping_addresses')
+      .update(basePatch)
+      .eq('id', def.id)
+      .eq('user_id', user.id);
+    if (error) return { error: error.message };
+  } else {
+    const { error: clearErr } = await supabase
+      .from('user_shipping_addresses')
+      .update({ is_default: false, updated_at: now })
+      .eq('user_id', user.id);
+    if (clearErr) return { error: clearErr.message };
+
+    const { error: insErr } = await supabase.from('user_shipping_addresses').insert({
+      user_id: user.id,
+      ...basePatch,
+      is_default: true,
+      sort_order: 0,
+    });
+    if (insErr) return { error: insErr.message };
+  }
+
+  await syncProfileShippingFromDefault(supabase, user.id);
   revalidateMain();
   return {};
 }
@@ -361,6 +422,265 @@ export async function saveDietPreferences(payload: {
 
   await triggerRecalculateScores(user.id);
 
+  revalidateMain();
+  return {};
+}
+
+export async function listUserShippingAddresses(): Promise<{
+  rows?: Tables<'user_shipping_addresses'>[];
+  error?: string;
+}> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: '未登入' };
+
+  const { data, error } = await supabase
+    .from('user_shipping_addresses')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('is_default', { ascending: false })
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (error) return { error: error.message };
+  return { rows: data ?? [] };
+}
+
+export async function createUserShippingAddress(payload: {
+  recipientName: string;
+  phone: string;
+  addressFull: string;
+  asDefault?: boolean;
+}): Promise<{ error?: string }> {
+  const recipientName = payload.recipientName.trim();
+  const phone = payload.phone.trim();
+  const addressFull = payload.addressFull.trim();
+  if (!recipientName || recipientName.length > 120) {
+    return { error: '請填寫收件人姓名（1–120 字）' };
+  }
+  if (!phone || phone.length > 40) {
+    return { error: '請填寫有效聯絡電話' };
+  }
+  if (!addressFull || addressFull.length > MAX_SHIPPING_FIELD) {
+    return { error: `請填寫完整地址（1–${MAX_SHIPPING_FIELD} 字）` };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: '未登入' };
+
+  const { count, error: cErr } = await supabase
+    .from('user_shipping_addresses')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+
+  if (cErr) return { error: cErr.message };
+  const n = count ?? 0;
+  if (n >= MAX_SHIPPING_ADDRESSES) {
+    return { error: `最多儲存 ${MAX_SHIPPING_ADDRESSES} 筆收件地址` };
+  }
+
+  const makeDefault = payload.asDefault === true || n === 0;
+
+  if (makeDefault) {
+    const { error: uErr } = await supabase
+      .from('user_shipping_addresses')
+      .update({ is_default: false })
+      .eq('user_id', user.id);
+    if (uErr) return { error: uErr.message };
+  }
+
+  const { error: iErr } = await supabase.from('user_shipping_addresses').insert({
+    user_id: user.id,
+    recipient_name: recipientName,
+    phone,
+    address_full: addressFull,
+    is_default: makeDefault,
+    sort_order: n,
+    updated_at: new Date().toISOString(),
+  });
+
+  if (iErr) return { error: iErr.message };
+
+  if (makeDefault) {
+    await syncProfileShippingFromDefault(supabase, user.id);
+  }
+
+  revalidateMain();
+  return {};
+}
+
+export async function updateUserShippingAddress(payload: {
+  id: string;
+  recipientName: string;
+  phone: string;
+  addressFull: string;
+}): Promise<{ error?: string }> {
+  const recipientName = payload.recipientName.trim();
+  const phone = payload.phone.trim();
+  const addressFull = payload.addressFull.trim();
+  if (!recipientName || recipientName.length > 120) {
+    return { error: '請填寫收件人姓名（1–120 字）' };
+  }
+  if (!phone || phone.length > 40) {
+    return { error: '請填寫有效聯絡電話' };
+  }
+  if (!addressFull || addressFull.length > MAX_SHIPPING_FIELD) {
+    return { error: `請填寫完整地址（1–${MAX_SHIPPING_FIELD} 字）` };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: '未登入' };
+
+  const { data: existing, error: fErr } = await supabase
+    .from('user_shipping_addresses')
+    .select('id, is_default')
+    .eq('user_id', user.id)
+    .eq('id', payload.id)
+    .maybeSingle();
+
+  if (fErr) return { error: fErr.message };
+  if (!existing) return { error: '找不到此收件地址' };
+
+  const { error: uErr } = await supabase
+    .from('user_shipping_addresses')
+    .update({
+      recipient_name: recipientName,
+      phone,
+      address_full: addressFull,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', payload.id)
+    .eq('user_id', user.id);
+
+  if (uErr) return { error: uErr.message };
+
+  if (existing.is_default) {
+    await syncProfileShippingFromDefault(supabase, user.id);
+  }
+
+  revalidateMain();
+  return {};
+}
+
+export async function deleteUserShippingAddress(
+  id: string,
+): Promise<{ error?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: '未登入' };
+
+  const { data: row, error: fErr } = await supabase
+    .from('user_shipping_addresses')
+    .select('id, is_default')
+    .eq('user_id', user.id)
+    .eq('id', id)
+    .maybeSingle();
+
+  if (fErr) return { error: fErr.message };
+  if (!row) return { error: '找不到此收件地址' };
+
+  const wasDefault = row.is_default;
+
+  const { error: dErr } = await supabase
+    .from('user_shipping_addresses')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (dErr) return { error: dErr.message };
+
+  if (wasDefault) {
+    const { data: nextRow } = await supabase
+      .from('user_shipping_addresses')
+      .select('id')
+      .eq('user_id', user.id)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (nextRow) {
+      const { error: defErr } = await supabase
+        .from('user_shipping_addresses')
+        .update({ is_default: true, updated_at: new Date().toISOString() })
+        .eq('id', nextRow.id)
+        .eq('user_id', user.id);
+      if (defErr) return { error: defErr.message };
+    }
+    await syncProfileShippingFromDefault(supabase, user.id);
+  }
+
+  revalidateMain();
+  return {};
+}
+
+export async function setDefaultUserShippingAddress(
+  id: string,
+): Promise<{ error?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: '未登入' };
+
+  const { data: row, error: fErr } = await supabase
+    .from('user_shipping_addresses')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('id', id)
+    .maybeSingle();
+
+  if (fErr) return { error: fErr.message };
+  if (!row) return { error: '找不到此收件地址' };
+
+  const { error: clearErr } = await supabase
+    .from('user_shipping_addresses')
+    .update({ is_default: false, updated_at: new Date().toISOString() })
+    .eq('user_id', user.id);
+
+  if (clearErr) return { error: clearErr.message };
+
+  const { error: setErr } = await supabase
+    .from('user_shipping_addresses')
+    .update({ is_default: true, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (setErr) return { error: setErr.message };
+
+  await syncProfileShippingFromDefault(supabase, user.id);
+  revalidateMain();
+  return {};
+}
+
+export async function saveShopPersonalizeRecommendations(
+  enabled: boolean,
+): Promise<{ error?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: '未登入' };
+
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({
+      shop_personalize_recommendations: enabled,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', user.id);
+
+  if (error) return { error: error.message };
   revalidateMain();
   return {};
 }

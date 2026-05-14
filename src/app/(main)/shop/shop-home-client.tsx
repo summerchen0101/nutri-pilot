@@ -74,6 +74,7 @@ interface Props {
   initialFavoriteProductIds: string[];
   brands: BrandRow[];
   dietMethod: string;
+  usePersonalizedScores?: boolean;
 }
 
 function CategoryIcon({ category }: { category: ShopCategoryKey }) {
@@ -103,6 +104,7 @@ export function ShopHomeClient({
   initialFavoriteProductIds,
   brands,
   dietMethod,
+  usePersonalizedScores = true,
 }: Props) {
   const [category, setCategory] = useState<ShopCategoryKey>('all');
   const [filters, setFilters] = useState<string[]>([]);
@@ -151,10 +153,16 @@ export function ShopHomeClient({
       list = list.filter((p) => (p.cert_tags ?? []).includes('organic'));
     }
 
-    list.sort((a, b) => b.score - a.score);
+    list.sort((a, b) => {
+      if (usePersonalizedScores) {
+        const scoreDiff = b.score - a.score;
+        if (scoreDiff !== 0) return scoreDiff;
+      }
+      return Number(b.avg_rating ?? 0) - Number(a.avg_rating ?? 0);
+    });
 
     return list;
-  }, [initialProducts, category, filters, dietMethod]);
+  }, [initialProducts, category, filters, dietMethod, usePersonalizedScores]);
 
   function handleToggleFavorite(productId: string) {
     const was = favoriteIds.has(productId);

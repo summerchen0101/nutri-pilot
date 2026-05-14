@@ -153,6 +153,7 @@ export async function ShopCatalogBody() {
         productCount: brandCountMap.get(b.id as string) ?? 0,
       }))}
       dietMethod={profile.diet_method}
+      usePersonalizedScores={profile.shop_personalize_recommendations !== false}
     />
   );
 }

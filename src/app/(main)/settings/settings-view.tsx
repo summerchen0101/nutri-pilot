@@ -8,8 +8,9 @@ import { AccountManagementCard } from '@/app/(main)/settings/_components/account
 import { BodyMetricsCard } from '@/app/(main)/settings/_components/body-metrics-card';
 import { DietPreferencesCard } from '@/app/(main)/settings/_components/diet-preferences-card';
 import { GoalSettingsCard } from '@/app/(main)/settings/_components/goal-settings-card';
+import { MemberPointsCard } from '@/app/(main)/settings/_components/member-points-card';
 import { ProfileSummaryCard } from '@/app/(main)/settings/_components/profile-summary-card';
-import { ShippingDeliveryCard } from '@/app/(main)/settings/_components/shipping-delivery-card';
+import { ShopSettingsSheet } from '@/app/(main)/settings/_components/shop-settings-sheet';
 import {
   EditAllergenSheet,
   EditBodyMetricsSheet,
@@ -65,6 +66,8 @@ export type SettingsInitialData = {
   shippingRecipientName: string;
   shippingPhone: string;
   shippingAddressFull: string;
+  shopPointsBalance: number;
+  shopPersonalizeFromDiet: boolean;
 };
 
 type SheetType =
@@ -113,6 +116,7 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
   const [errGoal, setErrGoal] = useState<string | null>(null);
   const [errDiet, setErrDiet] = useState<string | null>(null);
   const [signOutPending, setSignOutPending] = useState(false);
+  const [shopSettingsOpen, setShopSettingsOpen] = useState(false);
 
   const bmiValue = useMemo(() => {
     const h = Number.parseFloat(heightCm.replace(',', '.'));
@@ -268,10 +272,13 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         onEditName={openNameSheet}
       />
 
-      <ShippingDeliveryCard
-        initialRecipientName={initial.shippingRecipientName}
-        initialPhone={initial.shippingPhone}
-        initialAddressFull={initial.shippingAddressFull}
+      <MemberPointsCard balance={initial.shopPointsBalance} />
+
+      <ShopSettingsSheet
+        open={shopSettingsOpen}
+        onClose={() => setShopSettingsOpen(false)}
+        dietMethodSummaryText={dietMethodLabel(dietMethod)}
+        personalizeFromDietInitial={initial.shopPersonalizeFromDiet}
       />
 
       <BodyMetricsCard
@@ -324,6 +331,9 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
       />
 
       <AccountManagementCard
+        onOpenShopSettings={() => setShopSettingsOpen(true)}
+        onPointsHistory={() => router.push('/settings/points')}
+        onMembership={() => router.push('/settings/membership')}
         onResetData={() => window.alert('此功能稍後開放，將會重置個人紀錄與目標資料。')}
         onSignOut={signOut}
         onDeleteAccount={() => window.alert('刪除帳號功能尚未開放。')}

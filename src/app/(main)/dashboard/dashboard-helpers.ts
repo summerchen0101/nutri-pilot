@@ -136,6 +136,7 @@ export function buildRecommendedProducts({
   products,
   scores,
   dietMethod,
+  usePersonalizedScores = true,
 }: {
   products: {
     id: string;
@@ -150,6 +151,7 @@ export function buildRecommendedProducts({
   }[];
   scores: { product_id: string; score: number }[];
   dietMethod: string | null;
+  usePersonalizedScores?: boolean;
 }): Array<{
   id: string;
   name: string;
@@ -157,7 +159,9 @@ export function buildRecommendedProducts({
   price: number;
   reason: string | null;
 }> {
-  const scoreMap = new Map(scores.map((row) => [row.product_id, Number(row.score)]));
+  const scoreMap = usePersonalizedScores
+    ? new Map(scores.map((row) => [row.product_id, Number(row.score)]))
+    : new Map<string, number>();
   const ranked = [...products].sort((a, b) => {
     const scoreDiff = (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0);
     if (scoreDiff !== 0) return scoreDiff;
@@ -171,7 +175,11 @@ export function buildRecommendedProducts({
         ...(row.variants ?? []).map((variant) => Number(variant.price)),
       );
       let reason: string | null = null;
-      if (dietMethod && (row.diet_tags ?? []).includes(dietMethod)) {
+      if (
+        usePersonalizedScores &&
+        dietMethod &&
+        (row.diet_tags ?? []).includes(dietMethod)
+      ) {
         reason = '符合你的飲食偏好';
       } else if (Number(row.protein_g) >= 15) {
         reason = '高蛋白補給';

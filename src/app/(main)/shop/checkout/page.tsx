@@ -10,22 +10,33 @@ export default async function ShopCheckoutPage() {
 
   const { data: profile, error: profileErr } = await supabase
     .from('user_profiles')
-    .select(
-      'diet_method, shipping_recipient_name, shipping_phone, shipping_address_full',
-    )
+    .select('diet_method, shipping_recipient_name, shipping_phone, shipping_address_full')
     .eq('user_id', user.id)
     .single();
 
   if (profileErr || !profile?.diet_method) redirect('/onboarding');
 
+  const { data: defaultAddr } = await supabase
+    .from('user_shipping_addresses')
+    .select('recipient_name, phone, address_full')
+    .eq('user_id', user.id)
+    .eq('is_default', true)
+    .maybeSingle();
+
+  const addr = defaultAddr as {
+    recipient_name: string;
+    phone: string;
+    address_full: string;
+  } | null;
+
   return (
     <CheckoutClient
       defaultRecipientName={
-        (profile.shipping_recipient_name as string | null) ?? ''
+        addr?.recipient_name ?? (profile.shipping_recipient_name as string | null) ?? ''
       }
-      defaultPhone={(profile.shipping_phone as string | null) ?? ''}
+      defaultPhone={addr?.phone ?? (profile.shipping_phone as string | null) ?? ''}
       defaultAddressFull={
-        (profile.shipping_address_full as string | null) ?? ''
+        addr?.address_full ?? (profile.shipping_address_full as string | null) ?? ''
       }
     />
   );

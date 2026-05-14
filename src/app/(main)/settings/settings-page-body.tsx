@@ -68,6 +68,8 @@ export async function SettingsPageBody() {
     shippingPhone: (profile.shipping_phone as string | null | undefined) ?? '',
     shippingAddressFull:
       (profile.shipping_address_full as string | null | undefined) ?? '',
+    shopPointsBalance: Number(profile.shop_points_balance ?? 0),
+    shopPersonalizeFromDiet: profile.shop_personalize_recommendations !== false,
   };
 
   return <SettingsView initial={initial} />;
