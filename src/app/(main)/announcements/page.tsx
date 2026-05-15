@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { Megaphone } from 'lucide-react';
 
 import { markAnnouncementsReadForUser } from '@/app/(main)/announcements/actions';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
@@ -47,7 +48,7 @@ export default async function AnnouncementsPage() {
       />
 
       {list.length === 0 ? (
-        <EmptyState message="目前沒有公告。" actionHref="/dashboard" actionLabel="返回總覽" />
+        <EmptyState icon={Megaphone} message="目前沒有公告。" />
       ) : (
         <ul className="space-y-3">
           {list.map((row) => (
