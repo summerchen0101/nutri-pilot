@@ -1,14 +1,22 @@
 export type MembershipPlan = 'free' | 'plus' | 'pro';
 
-/** 每月 AI 額度上限（新台幣，與使用者給定規格一致）。 */
-export function getAiMonthlyCapNtd(plan: MembershipPlan): number {
+/** 假設 1 USD ≈ 32 NT，將原 NT$/月 預算換成 AI 額度（×3000）。 */
+const USD_PER_NTD_ASSUMED = 1 / 32;
+const AI_QUOTA_PER_USD = 3000;
+
+function ntdMonthlyBudgetToAiQuota(ntd: number): number {
+  return Math.round(ntd * USD_PER_NTD_ASSUMED * AI_QUOTA_PER_USD);
+}
+
+/** 每月 AI 額度上限（與原 free/plus/pro 的 NT 方案強度對齊）。 */
+export function getAiMonthlyCapUnits(plan: MembershipPlan): number {
   switch (plan) {
     case 'free':
-      return 10;
+      return ntdMonthlyBudgetToAiQuota(10);
     case 'plus':
-      return 50;
+      return ntdMonthlyBudgetToAiQuota(50);
     case 'pro':
-      return 100;
+      return ntdMonthlyBudgetToAiQuota(100);
   }
 }
 
@@ -32,7 +40,7 @@ export function normalizeMembershipPlan(
   return 'free';
 }
 
-export function aiUsagePercentUsed(usedNtd: number, capNtd: number): number {
-  if (capNtd <= 0) return 0;
-  return Math.min(100, Math.round((usedNtd / capNtd) * 100));
+export function aiUsagePercentUsed(usedUnits: number, capUnits: number): number {
+  if (capUnits <= 0) return 0;
+  return Math.min(100, Math.round((usedUnits / capUnits) * 100));
 }

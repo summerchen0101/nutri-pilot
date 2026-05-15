@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-import type { ClaudeTokenUsage } from '@/lib/ai/cost-ntd';
+import type { ClaudeTokenUsage } from '@/lib/ai/token-usage-to-ai-quota';
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY ?? '',

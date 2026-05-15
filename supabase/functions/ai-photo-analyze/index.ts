@@ -4,7 +4,7 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
-import { billingMonthTaipei, tokensToCostNtd } from "../_shared/ai-cost-ntd.ts";
+import { billingMonthTaipei, tokensToAiQuotaUnits } from "../_shared/token-usage-to-ai-quota.ts";
 import { anthropicVision } from "../_shared/anthropic-vision.ts";
 import { PHOTO_ANALYZE_PROMPT } from "../_shared/photo-analyze-prompt.ts";
 import { mediaTypeFromPath, toBase64 } from "../_shared/image-utils.ts";
@@ -157,14 +157,14 @@ Deno.serve(async (req) => {
       })
       .eq("id", jobId);
 
-    const costNtd = tokensToCostNtd(usage);
+    const quotaUsed = tokensToAiQuotaUnits(usage);
     const { error: usageInsertErr } = await admin.from("ai_usage_events").insert({
       user_id: job.user_id,
       billing_month: billingMonthTaipei(),
       source: "photo_meal",
       input_tokens: usage?.input_tokens ?? null,
       output_tokens: usage?.output_tokens ?? null,
-      cost_ntd: costNtd,
+      quota_used: quotaUsed,
     });
     if (usageInsertErr) {
       console.error("[ai-photo-analyze] ai_usage_events insert", usageInsertErr);

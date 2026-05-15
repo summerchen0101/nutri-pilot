@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { billingMonthTaipei } from '@/lib/datetime/billing-month-taipei';
-import type { ClaudeTokenUsage } from '@/lib/ai/cost-ntd';
-import { tokensToCostNtd } from '@/lib/ai/cost-ntd';
+import type { ClaudeTokenUsage } from '@/lib/ai/token-usage-to-ai-quota';
+import { tokensToAiQuotaUnits } from '@/lib/ai/token-usage-to-ai-quota';
 import type { Database } from '@/types/supabase';
 
 export type AiUsageSource =
@@ -23,7 +23,7 @@ export async function insertAiUsageEvent(
     usage: ClaudeTokenUsage | null;
   },
 ): Promise<void> {
-  const costNtd = tokensToCostNtd(params.usage);
+  const quotaUsed = tokensToAiQuotaUnits(params.usage);
   let billingMonth: string;
   try {
     billingMonth = billingMonthTaipei();
@@ -38,7 +38,7 @@ export async function insertAiUsageEvent(
     source: params.source,
     input_tokens: params.usage?.input_tokens ?? null,
     output_tokens: params.usage?.output_tokens ?? null,
-    cost_ntd: costNtd,
+    quota_used: quotaUsed,
   });
 
   if (error) {

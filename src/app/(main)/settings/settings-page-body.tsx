@@ -6,7 +6,7 @@ import {
 } from '@/app/(main)/settings/settings-view';
 import {
   aiUsagePercentUsed,
-  getAiMonthlyCapNtd,
+  getAiMonthlyCapUnits,
   membershipPlanLabel,
   normalizeMembershipPlan,
 } from '@/lib/ai/ai-quota-limits';
@@ -42,20 +42,20 @@ export async function SettingsPageBody() {
       .eq('user_id', user.id)
       .eq('is_active', true)
       .maybeSingle(),
-    supabase.rpc('get_monthly_ai_usage_ntd', { p_month: billingMonth }),
+    supabase.rpc('get_monthly_ai_quota_used', { p_month: billingMonth }),
   ]);
 
   if (profileErr || !profile) redirect('/onboarding');
   if (!goal) redirect('/onboarding');
 
   if (usageRpcErr) {
-    console.error('get_monthly_ai_usage_ntd', usageRpcErr.message);
+    console.error('get_monthly_ai_quota_used', usageRpcErr.message);
   }
 
   const membershipPlan = normalizeMembershipPlan(profile.membership_plan);
-  const capNtd = getAiMonthlyCapNtd(membershipPlan);
-  const usedNtd = Number(usedRaw ?? 0);
-  const usagePercent = aiUsagePercentUsed(usedNtd, capNtd);
+  const capUnits = getAiMonthlyCapUnits(membershipPlan);
+  const usedUnits = Number(usedRaw ?? 0);
+  const usagePercent = aiUsagePercentUsed(usedUnits, capUnits);
 
   const initial: SettingsInitialData = {
     dayCount: toDayCount(
@@ -92,8 +92,8 @@ export async function SettingsPageBody() {
     shopPersonalizeFromDiet: profile.shop_personalize_recommendations !== false,
     aiQuota: {
       planLabel: membershipPlanLabel(membershipPlan),
-      usedNtd,
-      capNtd,
+      usedUnits,
+      capUnits,
       usagePercent,
     },
   };

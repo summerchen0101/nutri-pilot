@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { callClaudeJSON } from '@/lib/ai/claude';
-import type { ClaudeTokenUsage } from '@/lib/ai/cost-ntd';
+import type { ClaudeTokenUsage } from '@/lib/ai/token-usage-to-ai-quota';
 import { insertAiUsageEvent } from '@/lib/ai/record-ai-usage';
 import { buildQuickLogIntentPrompt } from '@/lib/ai/prompts/quick-log-intent';
 import { validateQuickLogClaudePayload } from '@/lib/quick-log/validate-quick-log-response';

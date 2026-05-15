@@ -71,8 +71,8 @@ export type SettingsInitialData = {
   shopPersonalizeFromDiet: boolean;
   aiQuota: {
     planLabel: string;
-    usedNtd: number;
-    capNtd: number;
+    usedUnits: number;
+    capUnits: number;
     usagePercent: number;
   };
 };
@@ -348,8 +348,8 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
 
       <AiQuotaCard
         planLabel={initial.aiQuota.planLabel}
-        usedNtd={initial.aiQuota.usedNtd}
-        capNtd={initial.aiQuota.capNtd}
+        usedUnits={initial.aiQuota.usedUnits}
+        capUnits={initial.aiQuota.capUnits}
         usagePercent={initial.aiQuota.usagePercent}
       />
 

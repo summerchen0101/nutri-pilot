@@ -50,31 +50,31 @@ export type Database = {
       ai_usage_events: {
         Row: {
           billing_month: string
-          cost_ntd: number
           created_at: string
           id: string
           input_tokens: number | null
           output_tokens: number | null
+          quota_used: number
           source: string
           user_id: string
         }
         Insert: {
           billing_month: string
-          cost_ntd: number
           created_at?: string
           id?: string
           input_tokens?: number | null
           output_tokens?: number | null
+          quota_used: number
           source: string
           user_id: string
         }
         Update: {
           billing_month?: string
-          cost_ntd?: number
           created_at?: string
           id?: string
           input_tokens?: number | null
           output_tokens?: number | null
+          quota_used?: number
           source?: string
           user_id?: string
         }
@@ -1143,7 +1143,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_monthly_ai_usage_ntd: {
+      get_monthly_ai_quota_used: {
         Args: { p_month: string }
         Returns: number
       }

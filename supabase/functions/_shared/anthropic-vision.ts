@@ -1,5 +1,5 @@
 /** Claude Vision HTTP call（Edge Functions / Deno）。 */
-import type { TokenUsage } from "./ai-cost-ntd.ts";
+import type { TokenUsage } from "./token-usage-to-ai-quota.ts";
 
 export async function anthropicVision(params: {
   mediaType: "image/jpeg" | "image/png" | "image/webp";
