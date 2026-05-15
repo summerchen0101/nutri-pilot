@@ -12,8 +12,6 @@ import {
   PlusCircle,
   Scale,
   Sparkles,
-  TrendingUp,
-  Trophy,
   UtensilsCrossed,
 } from "lucide-react";
 import { FiAward, FiBell, FiHeadphones } from "react-icons/fi";
@@ -57,24 +55,43 @@ function shouldShowNoAchievementLine(
   return !milestoneChips.some((m) => !FIRST_STEP_MILESTONE_KEYS.has(m.key));
 }
 
+/** ≥ 最高熱量此比例視為「接近最高」，外環改橘色（未超過時） */
+const CALORIE_NEAR_MAX_RATIO = 0.9;
+/** 鈉橫條參考上限（mg）；介面示意用 */
+const DASHBOARD_SODIUM_MAX_REF_MG = 2400;
+
 function CalorieRingBlock({
   todayKcal,
   targetKcal,
   carbG,
   proteinG,
   fatG,
+  sodiumMg,
 }: {
   todayKcal: number;
   targetKcal: number | null;
   carbG: number;
   proteinG: number;
   fatG: number;
+  sodiumMg: number;
 }) {
   const ringR = 36;
   const circumference = 2 * Math.PI * ringR;
   const target = targetKcal != null && targetKcal > 0 ? targetKcal : 0;
-  const ratio =
+  let ratio =
     target > 0 && todayKcal > 0 ? Math.min(1, todayKcal / target) : 0;
+  if (target > 0 && todayKcal > target) ratio = 1;
+
+  let ringStroke = "#4C956C";
+  if (target > 0 && todayKcal > target) ringStroke = "#E24B4A";
+  else if (
+    target > 0 &&
+    todayKcal > 0 &&
+    todayKcal <= target &&
+    todayKcal >= target * CALORIE_NEAR_MAX_RATIO
+  ) {
+    ringStroke = "#EF9F27";
+  }
 
   const t = targetKcal != null && targetKcal > 0 ? targetKcal : 0;
   const m = t > 0 ? macroTargetsFromKcal(t) : { carb: 0, protein: 0, fat: 0 };
@@ -106,7 +123,7 @@ function CalorieRingBlock({
               cy="50"
               r={ringR}
               fill="none"
-              stroke="#4C956C"
+              stroke={ringStroke}
               strokeWidth="6"
               strokeLinecap="round"
               strokeDasharray={circumference}
@@ -126,7 +143,7 @@ function CalorieRingBlock({
                 <p className="text-[9px] text-muted-foreground">kcal</p>
                 {t > 0 ? (
                   <p className="mt-0.5 text-[10px] text-muted-foreground">
-                    目標 {Math.round(t)}
+                    最高 {Math.round(t)}
                   </p>
                 ) : null}
               </>
@@ -166,6 +183,23 @@ function CalorieRingBlock({
               </div>
             </div>
           ))}
+          <div>
+            <div className="mb-0.5 flex items-center justify-between">
+              <span className="text-[11px] text-muted-foreground">鈉</span>
+              <span className="text-[11px] tabular-nums text-muted-foreground">
+                {Math.round(sodiumMg)}mg
+              </span>
+            </div>
+            <div className="h-[5px] w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full transition-all duration-200"
+                style={{
+                  width: `${bar(sodiumMg, DASHBOARD_SODIUM_MAX_REF_MG)}%`,
+                  backgroundColor: "#0891b2",
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </Link>
@@ -189,9 +223,9 @@ export type DashboardHomeProps = {
   carbG: number;
   proteinG: number;
   fatG: number;
+  /** 今日 `food_log_items` 鈉加總（mg） */
+  sodiumMgToday: number;
   meals: DashboardMealRow[];
-  weeklyWeight: { label: string; kg: number | null }[];
-  weeklyKcal: { label: string; kcal: number }[];
   /** Suspense 串流：今日 AI 建議 */
   insightSlot?: ReactNode;
   /** Suspense 串流：為你推薦區塊 */
@@ -234,93 +268,6 @@ function MealStatusDot({
       style={{ backgroundColor: bg }}
       aria-hidden
     />
-  );
-}
-
-function WeeklyTrendCard({
-  weeklyWeight,
-  weeklyKcal,
-}: {
-  weeklyWeight: { label: string; kg: number | null }[];
-  weeklyKcal: { label: string; kcal: number }[];
-}) {
-  const validWeights = weeklyWeight
-    .map((row) => row.kg)
-    .filter(
-      (value): value is number => value != null && Number.isFinite(value),
-    );
-  const minW = validWeights.length ? Math.min(...validWeights) : 0;
-  const maxW = validWeights.length ? Math.max(...validWeights) : 0;
-  const weightRange = Math.max(0.1, maxW - minW);
-  const weightPoints = weeklyWeight
-    .map((row, idx) => {
-      if (row.kg == null || !Number.isFinite(row.kg)) return null;
-      const x =
-        weeklyWeight.length <= 1 ? 50 : (idx / (weeklyWeight.length - 1)) * 100;
-      const y = 32 - ((row.kg - minW) / weightRange) * 24;
-      return `${x},${y}`;
-    })
-    .filter((point): point is string => point != null)
-    .join(" ");
-  const maxKcal = Math.max(1, ...weeklyKcal.map((row) => row.kcal));
-
-  return (
-    <SectionCard>
-      <SectionHeading icon={TrendingUp}>本週趨勢</SectionHeading>
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <div className="rounded-[10px] border-hairline border-border p-3">
-          <p className="text-[11px] text-muted-foreground">體重（7 日）</p>
-          <div className="mt-2 h-14">
-            {weightPoints ? (
-              <svg viewBox="0 0 100 36" className="h-full w-full" aria-hidden>
-                <polyline
-                  points={weightPoints}
-                  fill="none"
-                  stroke="#4C956C"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            ) : (
-              <p className="text-[11px] text-muted-foreground">尚無資料</p>
-            )}
-          </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            {validWeights.length > 0
-              ? `${validWeights[validWeights.length - 1]} kg`
-              : "—"}
-          </p>
-        </div>
-        <div className="rounded-[10px] border-hairline border-border p-3">
-          <p className="text-[11px] text-muted-foreground">熱量（7 日）</p>
-          <div className="mt-2 flex h-14 items-end gap-1">
-            {weeklyKcal.map((row) => (
-              <div
-                key={row.label}
-                className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                <div className="h-10 w-full overflow-hidden rounded-[4px] bg-muted">
-                  <div
-                    className="w-full rounded-[4px] bg-primary"
-                    style={{
-                      height: `${Math.max(8, (row.kcal / maxKcal) * 100)}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            平均{" "}
-            {Math.round(
-              weeklyKcal.reduce((sum, row) => sum + row.kcal, 0) /
-                Math.max(1, weeklyKcal.length),
-            )}{" "}
-            kcal
-          </p>
-        </div>
-      </div>
-    </SectionCard>
   );
 }
 
@@ -520,9 +467,8 @@ export function DashboardHome({
   carbG,
   proteinG,
   fatG,
+  sodiumMgToday,
   meals,
-  weeklyWeight,
-  weeklyKcal,
   recommendSlot,
   insightSlot,
   promoBanner,
@@ -616,6 +562,7 @@ export function DashboardHome({
         carbG={carbG}
         proteinG={proteinG}
         fatG={fatG}
+        sodiumMg={sodiumMgToday}
       />
 
       <div className="grid grid-cols-2 items-stretch gap-2.5">
@@ -818,23 +765,6 @@ export function DashboardHome({
           ))}
         </ul>
       </SectionCard>
-
-      <WeeklyTrendCard weeklyWeight={weeklyWeight} weeklyKcal={weeklyKcal} />
-
-      {milestoneChips.length > 0 ? (
-        <SectionCard>
-          <SectionHeading icon={Trophy}>里程碑</SectionHeading>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {milestoneChips.map((m) => (
-              <span
-                key={m.key}
-                className="inline-flex items-center rounded-full bg-primary px-3 py-1.5 text-caption font-medium text-white">
-                {m.label}
-              </span>
-            ))}
-          </div>
-        </SectionCard>
-      ) : null}
 
       {recommendSlot ?? null}
 

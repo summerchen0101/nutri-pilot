@@ -12,7 +12,7 @@
 | 區塊 | 資料來源 | 說明 |
 |------|---------|------|
 | Header | `user_profiles.name` | 問候語 + 今日日期 + 連續打卡 badge |
-| 熱量圓環卡 | `food_log_items` 加總 | 今日攝取 / 目標，三大營養素進度條（carb/protein/fat） |
+| 熱量圓環卡 | `food_log_items` 加總 | 今日攝取對 `user_goals.daily_cal_target` 顯示為「最高」；環色：未接近為綠、接近最高（約 ≥90% 且未超）為橘、超過為紅並滿環；進度條含碳水／蛋白質／脂肪及鈉（鈉以固定參考上線示意，無個別化上限欄） |
 | 體重卡 | `vital_logs`（最新一筆） | 今日或最近體重 + BMI 計算值；**點擊**前往 `/log?date=今日&tab=body` 調整體重（與紀錄頁體重卡相同） |
 | 今日餐食卡 | `food_logs` | 四餐記錄摘要（早中晚+點心），有未記錄的顯示提示 |
 | AI 今日建議卡 | 伺服端自動：近 7 日紀錄（結束於 Taipei「今日」曆日）+ 對齊「飲食與脈絡」「健康與目標」；`dashboard_daily_insights` 以 Taipei **每日 04:00** 換線的「建議週期」為快取鍵（`insight_date`） | Suspense + `DashboardDailyInsightDeferred`；同一週期僅產生／呼叫模型一次，其餘讀快取（見 `docs/04-ai-engine.md`） |

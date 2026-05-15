@@ -33,60 +33,6 @@ export function normalizeDashboardUserName(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function shortLabel(iso: string): string {
-  const [, month, day] = iso.split('-').map(Number);
-  return `${month}/${day}`;
-}
-
-function iterateDates(start: string, end: string): string[] {
-  const out: string[] = [];
-  let cursor = start;
-  while (cursor <= end) {
-    out.push(cursor);
-    cursor = addCalendarDaysISO(cursor, 1);
-  }
-  return out;
-}
-
-export function buildWeeklyTrend(
-  weekStart: string,
-  today: string,
-  vitals: { date: string; weight_kg: number | null }[],
-  foods: {
-    date: string;
-    food_log_items: { calories: number }[] | null;
-  }[],
-): {
-  weightRows: { label: string; kg: number | null }[];
-  kcalRows: { label: string; kcal: number }[];
-} {
-  const dates = iterateDates(weekStart, today);
-  const weightMap = new Map<string, number>();
-  for (const row of vitals) {
-    if (row.date && row.weight_kg != null) {
-      weightMap.set(row.date, Number(row.weight_kg));
-    }
-  }
-  const kcalMap = new Map<string, number>();
-  for (const row of foods) {
-    const total = (row.food_log_items ?? []).reduce(
-      (sum, item) => sum + Number(item.calories || 0),
-      0,
-    );
-    kcalMap.set(row.date, (kcalMap.get(row.date) ?? 0) + Math.round(total));
-  }
-  return {
-    weightRows: dates.map((date) => ({
-      label: shortLabel(date),
-      kg: weightMap.get(date) ?? null,
-    })),
-    kcalRows: dates.map((date) => ({
-      label: shortLabel(date),
-      kcal: kcalMap.get(date) ?? 0,
-    })),
-  };
-}
-
 export function buildRecommendedProducts({
   products,
   scores,
@@ -163,23 +109,26 @@ function sumNutrientsFromLogs(
           carb_g: number;
           protein_g: number;
           fat_g: number;
+          sodium_mg: number | null;
         }[]
       | null;
   }[],
-): { kcal: number; carb: number; protein: number; fat: number } {
+): { kcal: number; carb: number; protein: number; fat: number; sodiumMg: number } {
   let kcal = 0;
   let carb = 0;
   let protein = 0;
   let fat = 0;
+  let sodiumMg = 0;
   for (const row of rows) {
     for (const it of row.food_log_items ?? []) {
       kcal += Number(it.calories) || 0;
       carb += Number(it.carb_g) || 0;
       protein += Number(it.protein_g) || 0;
       fat += Number(it.fat_g) || 0;
+      sodiumMg += Number(it.sodium_mg) || 0;
     }
   }
-  return { kcal, carb, protein, fat };
+  return { kcal, carb, protein, fat, sodiumMg };
 }
 
 export { sumNutrientsFromLogs };

@@ -14,7 +14,6 @@ import {
 import {
   aggregateKcalByDate,
   buildMealRows,
-  buildWeeklyTrend,
   computeGoalMetStreak,
   hasUnreadAnnouncementsForUser,
   normalizeDashboardUserName,
@@ -44,7 +43,6 @@ export default async function DashboardPage() {
   if (!user) redirect('/login');
 
   const today = todayLocalISODate();
-  const weekStart = addCalendarDaysISO(today, -6);
   const streakWindowStart = addCalendarDaysISO(today, -120);
 
   const [
@@ -52,7 +50,6 @@ export default async function DashboardPage() {
     { data: latestVitalRows },
     { data: goal },
     { data: foodLogsStreakWindow },
-    { data: weekVitalRows },
     { data: activityRowsToday },
     { data: todayVitalRow },
     hasUnreadAnnouncements,
@@ -81,20 +78,14 @@ export default async function DashboardPage() {
         calories,
         carb_g,
         protein_g,
-        fat_g
+        fat_g,
+        sodium_mg
       )
     `,
       )
       .eq('user_id', user.id)
       .gte('date', streakWindowStart)
       .lte('date', today),
-    supabase
-      .from('vital_logs')
-      .select('date, weight_kg')
-      .eq('user_id', user.id)
-      .gte('date', weekStart)
-      .lte('date', today)
-      .order('date', { ascending: true }),
     supabase
       .from('activity_logs')
       .select('duration_minutes, calories_est, activity_type')
@@ -114,9 +105,6 @@ export default async function DashboardPage() {
   const foodLogsCombined = foodLogsStreakWindow ?? [];
   const foodRows = foodLogsCombined.filter((r) => r.date === today);
   const streakFoodRows = foodLogsCombined;
-  const weekFoodRows = foodLogsCombined.filter(
-    (r) => r.date != null && r.date >= weekStart && r.date <= today,
-  );
 
   await syncUserMilestones(supabase, user.id);
 
@@ -171,12 +159,6 @@ export default async function DashboardPage() {
       : null;
 
   const nutrientTotals = sumNutrientsFromLogs(foodRows ?? []);
-  const weeklyTrend = buildWeeklyTrend(
-    weekStart,
-    today,
-    weekVitalRows ?? [],
-    weekFoodRows ?? [],
-  );
   const dietMethodLabel =
     DIET_METHOD_OPTIONS.find((option) => option.value === profile.diet_method)?.label ??
     profile.diet_method ??
@@ -218,10 +200,9 @@ export default async function DashboardPage() {
     carbG: nutrientTotals.carb,
     proteinG: nutrientTotals.protein,
     fatG: nutrientTotals.fat,
+    sodiumMgToday: nutrientTotals.sodiumMg,
     todayIsoDate: today,
     meals: buildMealRows(foodRows ?? [], today),
-    weeklyWeight: weeklyTrend.weightRows,
-    weeklyKcal: weeklyTrend.kcalRows,
     insightSlot: (
       <Suspense fallback={<DashboardInsightSkeleton />}>
         <DashboardDailyInsightDeferred />
