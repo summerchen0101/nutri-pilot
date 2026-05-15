@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { Activity, Carrot, Coins, UserCog } from 'lucide-react';
 import { FiLogOut } from 'react-icons/fi';
 
@@ -13,7 +13,12 @@ import { PersonalContextCard } from '@/app/(main)/settings/_components/personal-
 import { GoalSettingsCard } from '@/app/(main)/settings/_components/goal-settings-card';
 import { MemberPointsCard } from '@/app/(main)/settings/_components/member-points-card';
 import { ProfileSummaryCard } from '@/app/(main)/settings/_components/profile-summary-card';
-import { SettingsCollapsibleSection } from '@/app/(main)/settings/_components/settings-collapsible-section';
+import {
+  type SettingsSectionId,
+  readStoredExpandedSection,
+  SettingsCollapsibleSection,
+  writeStoredExpandedSection,
+} from '@/app/(main)/settings/_components/settings-collapsible-section';
 import { ShopSettingsSheet } from '@/app/(main)/settings/_components/shop-settings-sheet';
 import {
   EditAllergenSheet,
@@ -129,6 +134,35 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
   const [errDiet, setErrDiet] = useState<string | null>(null);
   const [signOutPending, setSignOutPending] = useState(false);
   const [shopSettingsOpen, setShopSettingsOpen] = useState(false);
+  const [expandedSectionId, setExpandedSectionId] =
+    useState<SettingsSectionId | null>('health');
+  const [hasHydratedAccordionStorage, setHasHydratedAccordionStorage] =
+    useState(false);
+
+  useEffect(() => {
+    setExpandedSectionId(readStoredExpandedSection());
+    setHasHydratedAccordionStorage(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedAccordionStorage) {
+      return;
+    }
+    writeStoredExpandedSection(expandedSectionId);
+  }, [expandedSectionId, hasHydratedAccordionStorage]);
+
+  function handleSettingsSectionOpenChange(
+    sectionId: SettingsSectionId,
+    nextOpen: boolean,
+  ) {
+    if (nextOpen) {
+      setExpandedSectionId(sectionId);
+      return;
+    }
+    setExpandedSectionId((current) =>
+      current === sectionId ? null : current,
+    );
+  }
 
   const bmiValue = useMemo(() => {
     const h = Number.parseFloat(heightCm.replace(',', '.'));
@@ -329,7 +363,11 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         sectionId="health"
         icon={Activity}
         title="健康與目標"
-        summary={healthSummary}>
+        summary={healthSummary}
+        open={expandedSectionId === 'health'}
+        onOpenChange={(next) =>
+          handleSettingsSectionOpenChange('health', next)
+        }>
         <BodyMetricsCard
           heightCm={heightCm}
           weightKg={weightKg}
@@ -361,7 +399,11 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         sectionId="diet"
         icon={Carrot}
         title="飲食與脈絡"
-        summary={dietSummary}>
+        summary={dietSummary}
+        open={expandedSectionId === 'diet'}
+        onOpenChange={(next) =>
+          handleSettingsSectionOpenChange('diet', next)
+        }>
         <DietPreferencesCard
           dietMethodText={dietMethodLabel(dietMethod)}
           allergenText={allergenText}
@@ -377,7 +419,11 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         sectionId="shop"
         icon={Coins}
         title="商城與點數"
-        summary={shopSummary}>
+        summary={shopSummary}
+        open={expandedSectionId === 'shop'}
+        onOpenChange={(next) =>
+          handleSettingsSectionOpenChange('shop', next)
+        }>
         <MemberPointsCard
           balance={initial.shopPointsBalance}
           onPointsHistory={() => router.push('/settings/points')}
@@ -389,7 +435,11 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         sectionId="account"
         icon={UserCog}
         title="帳號與 AI"
-        summary={accountSummary}>
+        summary={accountSummary}
+        open={expandedSectionId === 'account'}
+        onOpenChange={(next) =>
+          handleSettingsSectionOpenChange('account', next)
+        }>
         <AccountManagementCard
           onMembership={() => router.push('/settings/membership')}
           onResetData={() => window.alert('此功能稍後開放，將會重置個人紀錄與目標資料。')}

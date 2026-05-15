@@ -2,13 +2,8 @@
 
 import type { LucideIcon } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useId,
-  useState,
-} from 'react';
+import type { ReactNode } from 'react';
+import { useId } from 'react';
 
 import { cn } from '@/lib/utils/cn';
 
@@ -16,27 +11,93 @@ export const SETTINGS_SECTION_STORAGE_KEY = 'nutri_settings_sections_v1';
 
 export type SettingsSectionId = 'health' | 'diet' | 'shop' | 'account';
 
-type StoredShape = Partial<Record<SettingsSectionId, boolean>>;
+const SETTINGS_SECTION_IDS_IN_ORDER: SettingsSectionId[] = [
+  'health',
+  'diet',
+  'shop',
+  'account',
+];
 
-export const SETTINGS_SECTION_DEFAULTS: Record<SettingsSectionId, boolean> = {
-  health: true,
-  diet: false,
-  shop: false,
-  account: false,
+const SETTINGS_ACCORDION_STORE_VERSION = 2 as const;
+
+type StoredAccordionShape = {
+  v: typeof SETTINGS_ACCORDION_STORE_VERSION;
+  expanded: SettingsSectionId | null;
 };
 
-function readStoredOpen(sectionId: SettingsSectionId): boolean {
+type LegacyStoredShape = Partial<Record<SettingsSectionId, boolean>>;
+
+function isSettingsSectionId(value: unknown): value is SettingsSectionId {
+  return (
+    value === 'health' ||
+    value === 'diet' ||
+    value === 'shop' ||
+    value === 'account'
+  );
+}
+
+function legacyExpandedSection(parsed: LegacyStoredShape): SettingsSectionId {
+  for (const id of SETTINGS_SECTION_IDS_IN_ORDER) {
+    if (parsed[id] === true) {
+      return id;
+    }
+  }
+  return 'health';
+}
+
+export function readStoredExpandedSection(): SettingsSectionId | null {
+  if (typeof window === 'undefined') {
+    return 'health';
+  }
   try {
     const raw = sessionStorage.getItem(SETTINGS_SECTION_STORAGE_KEY);
-    if (!raw) return SETTINGS_SECTION_DEFAULTS[sectionId];
-    const parsed = JSON.parse(raw) as StoredShape;
-    if (typeof parsed[sectionId] === 'boolean') {
-      return parsed[sectionId];
+    if (!raw) {
+      return 'health';
+    }
+    const parsed = JSON.parse(raw) as unknown;
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      'v' in parsed &&
+      (parsed as StoredAccordionShape).v === SETTINGS_ACCORDION_STORE_VERSION &&
+      'expanded' in parsed
+    ) {
+      const expanded = (parsed as StoredAccordionShape).expanded;
+      if (expanded === null) {
+        return null;
+      }
+      if (isSettingsSectionId(expanded)) {
+        return expanded;
+      }
+      return 'health';
+    }
+    if (parsed && typeof parsed === 'object') {
+      return legacyExpandedSection(parsed as LegacyStoredShape);
     }
   } catch {
     /* ignore */
   }
-  return SETTINGS_SECTION_DEFAULTS[sectionId];
+  return 'health';
+}
+
+export function writeStoredExpandedSection(
+  expanded: SettingsSectionId | null,
+): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  try {
+    const payload: StoredAccordionShape = {
+      v: SETTINGS_ACCORDION_STORE_VERSION,
+      expanded,
+    };
+    sessionStorage.setItem(
+      SETTINGS_SECTION_STORAGE_KEY,
+      JSON.stringify(payload),
+    );
+  } catch {
+    /* ignore */
+  }
 }
 
 interface SettingsCollapsibleSectionProps {
@@ -44,6 +105,8 @@ interface SettingsCollapsibleSectionProps {
   icon: LucideIcon;
   title: string;
   summary: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   children: ReactNode;
 }
 
@@ -52,46 +115,20 @@ export function SettingsCollapsibleSection({
   icon: Icon,
   title,
   summary,
+  open,
+  onOpenChange,
   children,
 }: SettingsCollapsibleSectionProps) {
   const panelId = useId();
 
-  const [open, setOpen] = useState(
-    () => SETTINGS_SECTION_DEFAULTS[sectionId],
-  );
-
-  useEffect(() => {
-    setOpen(readStoredOpen(sectionId));
-  }, [sectionId]);
-
-  const persist = useCallback(
-    (nextOpen: boolean) => {
-      try {
-        let parsed: StoredShape = {};
-        const raw = sessionStorage.getItem(SETTINGS_SECTION_STORAGE_KEY);
-        if (raw) {
-          parsed = JSON.parse(raw) as StoredShape;
-        }
-        parsed[sectionId] = nextOpen;
-        sessionStorage.setItem(
-          SETTINGS_SECTION_STORAGE_KEY,
-          JSON.stringify(parsed),
-        );
-      } catch {
-        /* ignore */
-      }
-    },
-    [sectionId],
-  );
-
   function toggle() {
-    const next = !open;
-    setOpen(next);
-    persist(next);
+    onOpenChange(!open);
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border-hairline border-border bg-background">
+    <div
+      id={`settings-section-${sectionId}`}
+      className="overflow-hidden rounded-xl border-hairline border-border bg-background">
       <button
         type="button"
         aria-expanded={open}
