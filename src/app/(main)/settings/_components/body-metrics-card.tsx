@@ -76,7 +76,7 @@ export function BodyMetricsCard({
 
   return (
     <SectionCard>
-      <SectionHeading icon={Ruler} className="mb-1">
+      <SectionHeading icon={Ruler} variant="nested" className="mb-1">
         身體數據
       </SectionHeading>
       <SettingsRow label="身高" value={heightDisplay} onClick={onEdit} />

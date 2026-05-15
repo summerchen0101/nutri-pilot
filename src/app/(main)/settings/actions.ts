@@ -34,28 +34,6 @@ function revalidateMain() {
   revalidatePath('/shop/checkout');
 }
 
-export async function saveTracksGlycemicConcern(
-  value: boolean,
-): Promise<{ error?: string }> {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: '未登入' };
-
-  const { error } = await supabase
-    .from('user_profiles')
-    .update({
-      tracks_glycemic_concern: value,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', user.id);
-
-  if (error) return { error: error.message };
-  revalidateMain();
-  return {};
-}
-
 export async function saveProfileName(
   name: string,
 ): Promise<{ error?: string }> {

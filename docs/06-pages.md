@@ -200,6 +200,8 @@ const { data: insight } = await supabase
 
 ## `/settings`（個人設定；頁首標題「我的」）
 
+頁首與個人抬頭卡以下，其餘設定依主題分為四個可摺疊區塊（標題列含一行摘要）；同一區塊內若有多張卡，以卡片小標（13px）區分，避免與大分類標題同級重複。
+
 ### 設定區塊
 
 | 區塊 | 可編輯欄位 | 儲存觸發 |
@@ -208,7 +210,7 @@ const { data: insight } = await supabase
 | 身體數據 | 僅身高（底層彈窗「編輯身高」）；體重於 `/log` 體重卡 | Server Action `saveHeightCm`：依目前 `user_profiles.weight_kg` 重算 BMI/BMR/TDEE，並更新作用中 `user_goals.daily_cal_target`、`target_date`；**不寫入** `vital_logs` |
 | 飲控目標 | 目標類型、目標體重、每週速率 | 重算每日熱量目標與達標日 |
 | 飲食偏好 | 飲食法、每日餐次、忌食、過敏原 | 更新後觸發推薦分數重算 |
-| 個人化健康／飲食脈絡 | 口述草稿 → AI 整理預覽 → 確認後寫入 `user_profiles.personal_context_facets`；不清存原文 | `POST /api/ai/personal-context/analyze`（計 AI 額度）、`confirm`、`clear` |
+| 個人化健康／飲食脈絡（健康脈絡卡） | 口述草稿 → AI 整理預覽 → 確認後寫入 `user_profiles.personal_context_facets`（含糖分／血糖等注意可於口述說明，仍非醫療診斷）；不清存原文 | `POST /api/ai/personal-context/analyze`（計 AI 額度）、`confirm`、`clear` |
 | 會員購物點 | 顯示 `user_profiles.shop_points_balance`；1 點 = 1 元折抵（條款另定） | 異動寫入 `user_shop_point_ledger`（後端／金流） |
 | 帳號管理 | 點數紀錄（`/settings/points`）、商城設定 Bottom Sheet、會員方案頁（`/settings/membership`）、重置、登出、刪除 | 商城設定：`user_shipping_addresses` CRUD、`saveShopPersonalizeRecommendations`；預設收件同步 `user_profiles.shipping_*` |
 

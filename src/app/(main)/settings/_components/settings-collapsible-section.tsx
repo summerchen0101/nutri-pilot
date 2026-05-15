@@ -123,7 +123,7 @@ export function SettingsCollapsibleSection({
       {open ? (
         <div
           id={panelId}
-          className="space-y-3 border-t-hairline border-border px-0 pb-3 pt-1">
+          className="space-y-3 border-t-hairline border-border px-3 pb-3 pt-2 sm:px-4">
           {children}
         </div>
       ) : null}

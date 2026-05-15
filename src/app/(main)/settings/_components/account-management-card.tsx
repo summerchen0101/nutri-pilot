@@ -1,8 +1,5 @@
-import { UserCog } from 'lucide-react';
-
 import { SettingsRow } from '@/app/(main)/settings/_components/settings-row';
 import { SectionCard } from '@/components/ui/section-card';
-import { SectionHeading } from '@/components/ui/section-heading';
 
 interface AccountManagementCardProps {
   onMembership: () => void;
@@ -19,9 +16,6 @@ export function AccountManagementCard({
 }: AccountManagementCardProps) {
   return (
     <SectionCard>
-      <SectionHeading icon={UserCog} className="mb-1">
-        帳號管理
-      </SectionHeading>
       <SettingsRow label="會員方案" onClick={onMembership} />
       <SettingsRow label="重置數據" onClick={onResetData} />
       <SettingsRow label="登出" onClick={onSignOut} />

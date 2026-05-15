@@ -35,8 +35,8 @@ export function AiQuotaCard({
   return (
     <>
       <SectionCard>
-        <SectionHeading icon={Sparkles} className="mb-2">
-          AI 使用額度
+        <SectionHeading icon={Sparkles} variant="nested" className="mb-2">
+          使用額度
         </SectionHeading>
         <p className="text-caption text-muted-foreground">
           方案：{planLabel} · 本月上限 {capLabel} AI 額度

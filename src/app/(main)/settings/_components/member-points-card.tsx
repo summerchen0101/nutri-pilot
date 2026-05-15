@@ -1,8 +1,5 @@
-import { Coins } from 'lucide-react';
-
 import { SettingsRow } from '@/app/(main)/settings/_components/settings-row';
 import { SectionCard } from '@/components/ui/section-card';
-import { SectionHeading } from '@/components/ui/section-heading';
 
 interface MemberPointsCardProps {
   balance: number;
@@ -17,9 +14,6 @@ export function MemberPointsCard({
 }: MemberPointsCardProps) {
   return (
     <SectionCard>
-      <SectionHeading icon={Coins} className="mb-2">
-        會員購物點
-      </SectionHeading>
       <div className="flex items-baseline gap-2">
         <span className="text-heading-page text-primary">
           {balance.toLocaleString()}

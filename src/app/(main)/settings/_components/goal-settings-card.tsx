@@ -33,7 +33,7 @@ export function GoalSettingsCard({
 }: GoalSettingsCardProps) {
   return (
     <SectionCard>
-      <SectionHeading icon={Target} className="mb-1">
+      <SectionHeading icon={Target} variant="nested" className="mb-1">
         飲控目標
       </SectionHeading>
       <SettingsRow label="目標類型" value={goalTypeText} onClick={onOpenGoalType} />

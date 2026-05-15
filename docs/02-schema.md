@@ -341,7 +341,7 @@ supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/supabase.
 - **`activity_logs`**：`user_id`、`logged_date`、`activity_type`（`walk` / `run` / `cycling` / `swimming` / `cardio` / `hiit` / `jump_rope` / `dance` / `basketball` / `tennis` / `badminton` / `strength` / `yoga` / `pilates` / `stretching` / `other`；見 migration `015_activity_expand_types.sql`、`016_activity_types_sports.sql`）、`duration_minutes`、`calories_est`、`notes`。紀錄頁以分類下拉選取類型。
 - **`user_milestones`**：複合鍵 `(user_id, milestone_key)`、`unlocked_at`。
 - **`photo_analysis_jobs.job_kind`**：新寫入僅 `meal`；歷史列可能曾為 `label`（已廢止，標示分析改用 `label_guard_jobs`）。
-- **`user_profiles.tracks_glycemic_concern`**：BOOLEAN，預設 FALSE；影響食品安全守衛標示 AI prompt 對高糖提示的強度。
+- **`user_profiles.tracks_glycemic_concern`**：BOOLEAN，預設 FALSE；標示守衛流程仍可查該欄以調整高糖提示強度。**應用層已不再提供設定頁開關**；新使用者不經 UI 異動時維持預設。（若需相關留意，請以口述健康脈絡寫入 `personal_context_facets`。）
 
 ## 補充（2026-05）：購物點、多收件、商城個人化開關
 
