@@ -114,6 +114,7 @@ export async function addFoodFromAiAnalysisAction(input: {
   });
 
   revalidatePath('/log');
+  revalidatePath('/dashboard');
   return {};
 }
 

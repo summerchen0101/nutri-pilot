@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { FiAward, FiBell, FiHeadphones } from "react-icons/fi";
 
+import { DashboardAiSprite } from "@/app/(main)/dashboard/dashboard-ai-sprite";
 import { DashboardWaterGrid } from "@/app/(main)/dashboard/dashboard-water-grid";
 import {
   HEADER_ACTION_ICON_CLASS,
@@ -562,6 +563,10 @@ export function DashboardHome({
         spacing="compact"
         action={
           <div className="flex shrink-0 items-center gap-2">
+            <DashboardAiSprite
+              todayIsoDate={todayIsoDate}
+              waterMlKnownToday={waterMlToday}
+            />
             <Link
               href="/announcements"
               aria-label="公告"
