@@ -1,4 +1,4 @@
-/** 拍照辨識；須與 `supabase/functions/_shared/photo-analyze-prompt.ts` 同步。 */
+/** 拍照辨識本體；Edge `ai-photo-analyze` 可於此段後附加個人化面向摘要。須與 `supabase/functions/_shared/photo-analyze-prompt.ts` 同步。 */
 export const PHOTO_ANALYZE_PROMPT = `
 這是用戶拍攝的餐點照片。
 

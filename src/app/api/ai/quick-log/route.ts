@@ -4,6 +4,11 @@ import { callClaudeJSON } from '@/lib/ai/claude';
 import type { ClaudeTokenUsage } from '@/lib/ai/token-usage-to-ai-quota';
 import { insertAiUsageEvent } from '@/lib/ai/record-ai-usage';
 import { buildQuickLogIntentPrompt } from '@/lib/ai/prompts/quick-log-intent';
+import { personalFacetsToPromptBrief } from '@/lib/personal-context/facets-to-prompt-brief';
+import {
+  personalContextFacetsHasContent,
+} from '@/lib/personal-context/normalize-facets';
+import { parsePersonalContextFacetsFromDb } from '@/lib/personal-context/parse-from-db';
 import { validateQuickLogClaudePayload } from '@/lib/quick-log/validate-quick-log-response';
 import { createServiceRoleClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
@@ -60,10 +65,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: '參考日期格式不正確' }, { status: 422 });
   }
 
+  const { data: profileRow } = await supabase
+    .from('user_profiles')
+    .select('personal_context_facets')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const storedFacets = parsePersonalContextFacetsFromDb(
+    profileRow?.personal_context_facets,
+  );
+  const personalFacetsBrief =
+    storedFacets && personalContextFacetsHasContent(storedFacets) ?
+      personalFacetsToPromptBrief(storedFacets)
+    : '';
+
   const prompt = buildQuickLogIntentPrompt({
     referenceDateIso,
     userMessage: message,
     waterMlKnownToday,
+    personalFacetsBrief: personalFacetsBrief || undefined,
   });
 
   let parsed: ClaudeQuickLogShape;

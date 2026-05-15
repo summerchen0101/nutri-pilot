@@ -15,7 +15,7 @@
 | 熱量圓環卡 | `food_log_items` 加總 | 今日攝取 / 目標，三大營養素進度條（carb/protein/fat） |
 | 體重卡 | `vital_logs`（最新一筆） | 今日或最近體重 + BMI 計算值；**點擊**前往 `/log?date=今日&tab=body` 調整體重（與紀錄頁體重卡相同） |
 | 今日餐食卡 | `food_logs` | 四餐記錄摘要（早中晚+點心），有未記錄的顯示提示 |
-| AI 今日建議卡 | 直接呼叫 Claude | lazy load，主畫面 skeleton 先顯示 |
+| AI 今日建議卡 | 規則引擎 +（若有 `personal_context_facets`）client 呼叫 Claude 合併補充句 | 先顯示規則 bullet；有面向時 lazy load `/api/ai/dashboard-insight` |
 | 快速操作列 | — | 五項入口：飲食(`/log`)、體重(`/log?date=今日&tab=body`)、運動(`/log?tab=activity`)、數據(`/analytics`)、食品安全分析紀錄(`/guard/records`，History 圖示)；樣式為「無外層白底卡」、採分類按鈕列 |
 
 ### 資料查詢（Server Component）
@@ -208,6 +208,7 @@ const { data: insight } = await supabase
 | 身體數據 | 僅身高（底層彈窗「編輯身高」）；體重於 `/log` 體重卡 | Server Action `saveHeightCm`：依目前 `user_profiles.weight_kg` 重算 BMI/BMR/TDEE，並更新作用中 `user_goals.daily_cal_target`、`target_date`；**不寫入** `vital_logs` |
 | 飲控目標 | 目標類型、目標體重、每週速率 | 重算每日熱量目標與達標日 |
 | 飲食偏好 | 飲食法、每日餐次、忌食、過敏原 | 更新後觸發推薦分數重算 |
+| 個人化健康／飲食脈絡 | 口述草稿 → AI 整理預覽 → 確認後寫入 `user_profiles.personal_context_facets`；不清存原文 | `POST /api/ai/personal-context/analyze`（計 AI 額度）、`confirm`、`clear` |
 | 會員購物點 | 顯示 `user_profiles.shop_points_balance`；1 點 = 1 元折抵（條款另定） | 異動寫入 `user_shop_point_ledger`（後端／金流） |
 | 帳號管理 | 點數紀錄（`/settings/points`）、商城設定 Bottom Sheet、會員方案頁（`/settings/membership`）、重置、登出、刪除 | 商城設定：`user_shipping_addresses` CRUD、`saveShopPersonalizeRecommendations`；預設收件同步 `user_profiles.shipping_*` |
 

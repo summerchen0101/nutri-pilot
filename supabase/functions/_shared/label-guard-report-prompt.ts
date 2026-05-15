@@ -27,6 +27,8 @@ export function buildLabelGuardReportPrompt(ctx: {
   allergens: string[];
   avoidFoods: string[];
   tracksGlycemicConcern: boolean;
+  /** 由 personalFacetsJsonToPromptBrief 產生；空字串可略 */
+  personalFacetsBrief?: string;
 }): string {
   const allergenLine =
     ctx.allergens.length > 0
@@ -48,7 +50,11 @@ export function buildLabelGuardReportPrompt(ctx: {
 - 自述過敏原：${allergenLine}
 - 自述忌食偏好：${avoidLine}
 - 使用者希望加強血糖／糖分相關提醒：${ctx.tracksGlycemicConcern ? "是" : "否"}
-
+${
+  ctx.personalFacetsBrief && ctx.personalFacetsBrief.trim().length > 0
+    ? `\n個人化自述整理（供語氣參考）：\n${ctx.personalFacetsBrief.trim()}\n`
+    : ""
+}
 規則：
 1. 僅依圖片可讀文字推論；看不清請在 alert_keywords 或 summary_note 說明「辨識不清」。
 2. 避免斷言醫療安全性；用「建議留意」「如有疑慮請諮詢醫師」等語氣。

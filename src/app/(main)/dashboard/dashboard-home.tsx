@@ -8,7 +8,6 @@ import {
   Dumbbell,
   Flame,
   History,
-  Lightbulb,
   Megaphone,
   PlusCircle,
   Scale,
@@ -20,6 +19,7 @@ import {
 import { FiAward, FiBell, FiHeadphones } from "react-icons/fi";
 
 import { DashboardAiSprite } from "@/app/(main)/dashboard/dashboard-ai-sprite";
+import { DashboardInsightSection } from "@/app/(main)/dashboard/dashboard-insight-section";
 import { DashboardWaterGrid } from "@/app/(main)/dashboard/dashboard-water-grid";
 import {
   HEADER_ACTION_ICON_CLASS,
@@ -194,6 +194,8 @@ export type DashboardHomeProps = {
   weeklyWeight: { label: string; kg: number | null }[];
   weeklyKcal: { label: string; kcal: number }[];
   insightBullets: string[];
+  /** 有個人化面向時，client 會再向 /api/ai/dashboard-insight 取補充建議 */
+  dashboardInsightFetchAi: boolean;
   /** Suspense 串流：為你推薦區塊 */
   recommendSlot?: ReactNode;
   promoBanner: {
@@ -321,26 +323,6 @@ function WeeklyTrendCard({
         </div>
       </div>
     </SectionCard>
-  );
-}
-
-function InsightCard({ bullets }: { bullets: string[] }) {
-  return (
-    <section className="rounded-xl bg-primary-light p-4">
-      <SectionHeading icon={Lightbulb} tone="primary">
-        今日建議
-      </SectionHeading>
-      <ul className="mt-3 space-y-2">
-        {bullets.map((text, idx) => (
-          <li key={`${idx}-${text.slice(0, 8)}`} className="flex gap-2">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-            <span className="text-[13px] leading-relaxed text-primary-foreground">
-              {text}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 
@@ -528,6 +510,7 @@ export function DashboardHome({
   weeklyWeight,
   weeklyKcal,
   insightBullets,
+  dashboardInsightFetchAi,
   recommendSlot,
   promoBanner,
   popularBrandsSlot,
@@ -769,7 +752,15 @@ export function DashboardHome({
         </div>
       </section>
 
-      <InsightCard bullets={insightBullets} />
+      <DashboardInsightSection
+        baseBullets={insightBullets}
+        fetchAi={dashboardInsightFetchAi}
+        todayKcal={todayKcal}
+        targetKcal={targetKcal}
+        carbG={carbG}
+        proteinG={proteinG}
+        fatG={fatG}
+      />
 
       <SectionCard>
         <div className="flex items-center justify-between gap-2">

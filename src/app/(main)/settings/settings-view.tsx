@@ -8,6 +8,7 @@ import { AiQuotaCard } from '@/app/(main)/settings/_components/ai-quota-card';
 import { AccountManagementCard } from '@/app/(main)/settings/_components/account-management-card';
 import { BodyMetricsCard } from '@/app/(main)/settings/_components/body-metrics-card';
 import { DietPreferencesCard } from '@/app/(main)/settings/_components/diet-preferences-card';
+import { PersonalContextCard } from '@/app/(main)/settings/_components/personal-context-card';
 import { GoalSettingsCard } from '@/app/(main)/settings/_components/goal-settings-card';
 import { MemberPointsCard } from '@/app/(main)/settings/_components/member-points-card';
 import { ProfileSummaryCard } from '@/app/(main)/settings/_components/profile-summary-card';
@@ -33,6 +34,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { cn } from '@/lib/utils/cn';
 import { createClient } from '@/lib/supabase/client';
 import { ALLERGEN_OPTIONS, DIET_METHOD_OPTIONS, GOAL_TYPE_OPTIONS } from '@/lib/onboarding/constants';
+import type { PersonalContextFacets } from '@/lib/personal-context/types';
 
 import {
   saveDietPreferences,
@@ -75,6 +77,7 @@ export type SettingsInitialData = {
     capUnits: number;
     usagePercent: number;
   };
+  personalContextFacets: PersonalContextFacets | null;
 };
 
 type SheetType =
@@ -336,6 +339,8 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
           });
         }}
       />
+
+      <PersonalContextCard initialFacets={initial.personalContextFacets} />
 
       <AccountManagementCard
         onOpenShopSettings={() => setShopSettingsOpen(true)}

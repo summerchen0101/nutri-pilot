@@ -12,7 +12,8 @@
 | 拍照辨識（餐桌食物） | claude-sonnet-4-5 | **Queue** | 圖片上傳 + Vision 處理，耗時不定 |
 | 食品標示守衛 | claude-sonnet-4-5 | **Queue** | 獨立 `label-guard-photos` + `label_guard_jobs`；prompt 見 `supabase/functions/_shared/label-guard-report-prompt.ts` |
 | 週報洞察 | claude-sonnet-4-5 | **Queue（cron 觸發）** | 資料量大，每週自動跑 |
-| 今日 Dashboard 建議 | claude-sonnet-4-5 | 直接呼叫 | lazy load，不擋主畫面 |
+| 今日 Dashboard 建議（個人化補充） | claude-sonnet-4-5 | 直接呼叫 | 僅在使用者已儲存 `personal_context_facets` 時 client 呼叫 `/api/ai/dashboard-insight`，與規則 bullet 合併 |
+| 個人化口述整理 | claude-sonnet-4-5 | 直接呼叫 | 設定頁 `POST /api/ai/personal-context/analyze`；確認套用不呼叫模型 |
 
 ---
 

@@ -956,6 +956,7 @@ export type Database = {
           meal_frequency: number
           membership_plan: string
           name: string
+          personal_context_facets: Json | null
           shipping_address_full: string | null
           shipping_phone: string | null
           shipping_recipient_name: string | null
@@ -982,6 +983,7 @@ export type Database = {
           meal_frequency?: number
           membership_plan?: string
           name: string
+          personal_context_facets?: Json | null
           shipping_address_full?: string | null
           shipping_phone?: string | null
           shipping_recipient_name?: string | null
@@ -1008,6 +1010,7 @@ export type Database = {
           meal_frequency?: number
           membership_plan?: string
           name?: string
+          personal_context_facets?: Json | null
           shipping_address_full?: string | null
           shipping_phone?: string | null
           shipping_recipient_name?: string | null

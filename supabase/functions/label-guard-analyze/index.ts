@@ -11,6 +11,7 @@ import {
   TW_ALLERGEN_CATEGORY_KEYS,
   type TwAllergenCategoryKey,
 } from "../_shared/label-guard-report-prompt.ts";
+import { personalFacetsJsonToPromptBrief } from "../_shared/personal-facets-brief.ts";
 import { mediaTypeFromPath, toBase64 } from "../_shared/image-utils.ts";
 
 function ageFromBirthIso(birthIso: string): number {
@@ -127,7 +128,9 @@ Deno.serve(async (req) => {
 
     const { data: profile } = await admin
       .from("user_profiles")
-      .select("birth_date, allergens, avoid_foods, tracks_glycemic_concern")
+      .select(
+        "birth_date, allergens, avoid_foods, tracks_glycemic_concern, personal_context_facets",
+      )
       .eq("user_id", job.user_id)
       .maybeSingle();
 
@@ -142,12 +145,17 @@ Deno.serve(async (req) => {
       ? (profile!.avoid_foods as string[])
       : [];
     const tracksGlycemicConcern = profile?.tracks_glycemic_concern === true;
+    const personalFacetsBrief = personalFacetsJsonToPromptBrief(
+      profile?.personal_context_facets ?? null,
+    );
 
     const prompt = buildLabelGuardReportPrompt({
       userAgeYears,
       allergens,
       avoidFoods,
       tracksGlycemicConcern,
+      personalFacetsBrief:
+        personalFacetsBrief.trim().length > 0 ? personalFacetsBrief : undefined,
     });
 
     const { text: raw, usage } = await anthropicVision({

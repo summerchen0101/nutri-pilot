@@ -68,6 +68,8 @@ CREATE TABLE user_goals (
 );
 ```
 
+**現行擴充（`030_personal_context_facets.sql`）**：`user_profiles.personal_context_facets`（`jsonb`，可 `null`）— 口述整理後之多面向資料，不含原文。`ai_usage_events.source` 另含 `personal_context_extract`、`dashboard_insight`（見該 migration）。
+
 ---
 
 ## 2. 飲食計畫（已自 MVP 移除）

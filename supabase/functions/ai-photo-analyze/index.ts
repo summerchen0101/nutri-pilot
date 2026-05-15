@@ -7,6 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import { billingMonthTaipei, tokensToAiQuotaUnits } from "../_shared/token-usage-to-ai-quota.ts";
 import { anthropicVision } from "../_shared/anthropic-vision.ts";
 import { PHOTO_ANALYZE_PROMPT } from "../_shared/photo-analyze-prompt.ts";
+import { personalFacetsJsonToPromptBrief } from "../_shared/personal-facets-brief.ts";
 import { mediaTypeFromPath, toBase64 } from "../_shared/image-utils.ts";
 
 interface PhotoItem {
@@ -120,6 +121,20 @@ Deno.serve(async (req) => {
 
     if (jobErr || !job) throw new Error("job not found");
 
+    const { data: profileRow } = await admin
+      .from("user_profiles")
+      .select("personal_context_facets")
+      .eq("user_id", job.user_id)
+      .maybeSingle();
+
+    const facetsAppend = personalFacetsJsonToPromptBrief(
+      profileRow?.personal_context_facets ?? null,
+    );
+    const visionPrompt =
+      facetsAppend.trim().length > 0 ?
+        `${PHOTO_ANALYZE_PROMPT}\n\n${facetsAppend}`
+      : PHOTO_ANALYZE_PROMPT;
+
     await admin
       .from("photo_analysis_jobs")
       .update({ status: "processing", error_message: null })
@@ -140,7 +155,7 @@ Deno.serve(async (req) => {
     const { text: raw, usage } = await anthropicVision({
       mediaType,
       base64,
-      prompt: PHOTO_ANALYZE_PROMPT,
+      prompt: visionPrompt,
     });
 
     const items = parseItems(raw);

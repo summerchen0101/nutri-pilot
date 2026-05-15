@@ -11,6 +11,7 @@ import {
   normalizeMembershipPlan,
 } from '@/lib/ai/ai-quota-limits';
 import { getCachedAuthContext } from '@/lib/auth';
+import { parsePersonalContextFacetsFromDb } from '@/lib/personal-context/parse-from-db';
 import { billingMonthTaipei } from '@/lib/datetime/billing-month-taipei';
 
 function toDayCount(createdAt: string | null | undefined): number {
@@ -96,6 +97,9 @@ export async function SettingsPageBody() {
       capUnits,
       usagePercent,
     },
+    personalContextFacets: parsePersonalContextFacetsFromDb(
+      profile.personal_context_facets,
+    ),
   };
 
   return <SettingsView initial={initial} />;

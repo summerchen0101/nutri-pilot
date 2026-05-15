@@ -12,6 +12,8 @@ export function buildQuickLogIntentPrompt(input: {
   referenceDateIso: string;
   userMessage: string;
   waterMlKnownToday: number | null;
+  /** 由 `personalFacetsToPromptBrief` 產生；空字串則略過 */
+  personalFacetsBrief?: string;
 }): string {
   const safeMsg = input.userMessage.replace(/`/g, "'").trim().slice(0, 2500);
   const waterHint =
@@ -20,11 +22,16 @@ export function buildQuickLogIntentPrompt(input: {
       `目前使用者在 ${input.referenceDateIso} 已紀錄飲水約 ${Math.round(input.waterMlKnownToday)} ml（若使用者說「再喝」「又喝了」等增量，請將 waterMlTotal 設為 此值加上增量；若表達的是當日總量則直接使用總量）。`
     : `未提供當日既有飲水量；若使用者描述「喝了 X ml」且語意為當日總量，將 waterMlTotal 設為 X；若明顯為单次增量且無法推算總量，將 waterMlTotal 設為該增量（保守假設從 0 開始的一天）。`;
 
+  const personalBlock =
+    input.personalFacetsBrief && input.personalFacetsBrief.trim().length > 0 ?
+      `\n${input.personalFacetsBrief.trim()}\n`
+    : '';
+
   return `
 你是 Nutri Pilot 健康紀錄助手。使用者用繁體中文（台灣）描述飲食、運動或生活數據。
 參考日期（今天）為：${input.referenceDateIso}。
 ${waterHint}
-
+${personalBlock}
 請解析使用者意圖，產生 0 至多筆紀錄。**每個事實一筆**：若同一段話包含多個獨立紀錄請拆成多個 entries。
 
 規則：
@@ -39,6 +46,7 @@ ${activitySlugListForPrompt()}
 8. **睡眠 sleepHours**：0–24（小時，可一位小數）。
 9. 若資訊不足或無法安全估算，請回傳空 entries，並在 summary_zh 簡短說明缺少什麼。
 10. 不要臆造使用者沒提到的項目。
+11. 若有個人化脈絡區塊，估熱量／食材時可溫和留意（仍不得臆造未提及的食物）。
 
 請只回傳 JSON（物件），格式如下（欄位名稱與類型請嚴格遵守）：
 {

@@ -9,7 +9,9 @@ export type AiUsageSource =
   | 'photo_meal'
   | 'label_guard'
   | 'quick_log'
-  | 'analyze_food';
+  | 'analyze_food'
+  | 'personal_context_extract'
+  | 'dashboard_insight';
 
 /**
  * 寫入 ai_usage_events（需 service role client）。
