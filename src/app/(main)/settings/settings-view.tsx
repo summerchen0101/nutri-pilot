@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
+import { Activity, Carrot, Coins, UserCog } from 'lucide-react';
 import { FiLogOut } from 'react-icons/fi';
 
 import { AiQuotaCard } from '@/app/(main)/settings/_components/ai-quota-card';
@@ -12,6 +13,7 @@ import { PersonalContextCard } from '@/app/(main)/settings/_components/personal-
 import { GoalSettingsCard } from '@/app/(main)/settings/_components/goal-settings-card';
 import { MemberPointsCard } from '@/app/(main)/settings/_components/member-points-card';
 import { ProfileSummaryCard } from '@/app/(main)/settings/_components/profile-summary-card';
+import { SettingsCollapsibleSection } from '@/app/(main)/settings/_components/settings-collapsible-section';
 import { ShopSettingsSheet } from '@/app/(main)/settings/_components/shop-settings-sheet';
 import {
   EditAllergenSheet,
@@ -29,6 +31,12 @@ import {
   formatDate,
   goalTypeLabel,
 } from '@/app/(main)/settings/_lib/formatters';
+import {
+  accountSectionSummary,
+  dietSectionSummary,
+  healthSectionSummary,
+  shopSectionSummary,
+} from '@/app/(main)/settings/_lib/settings-section-summaries';
 import { HEADER_ACTION_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
 import { PageHeader } from '@/components/layout/page-header';
 import { cn } from '@/lib/utils/cn';
@@ -139,6 +147,40 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
   const tdeePreview = useMemo(() => Math.round(initial.tdee ?? initial.goal.dailyCalTarget * 1.3), [initial.tdee, initial.goal.dailyCalTarget]);
   const avatarChar = (name.trim().charAt(0) || '?').toUpperCase();
   const allergenText = allergens.length ? allergens.map(formatAllergenLabel).join('・') : '未設定';
+
+  const healthSummary = useMemo(
+    () =>
+      healthSectionSummary({
+        heightCmDisplay: heightCm.trim(),
+        bmiValue,
+        dailyCalTarget: initial.goal.dailyCalTarget,
+      }),
+    [heightCm, bmiValue, initial.goal.dailyCalTarget],
+  );
+
+  const dietSummary = useMemo(
+    () =>
+      dietSectionSummary({
+        dietMethod,
+        allergenLine: `過敏：${allergenText}`,
+        personalContextFacets: initial.personalContextFacets,
+      }),
+    [dietMethod, allergenText, initial.personalContextFacets],
+  );
+
+  const shopSummary = useMemo(
+    () => shopSectionSummary(initial.shopPointsBalance),
+    [initial.shopPointsBalance],
+  );
+
+  const accountSummary = useMemo(
+    () =>
+      accountSectionSummary({
+        planLabel: initial.aiQuota.planLabel,
+        usagePercent: initial.aiQuota.usagePercent,
+      }),
+    [initial.aiQuota.planLabel, initial.aiQuota.usagePercent],
+  );
 
   function refresh() {
     router.refresh();
@@ -282,8 +324,6 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         onEditName={openNameSheet}
       />
 
-      <MemberPointsCard balance={initial.shopPointsBalance} />
-
       <ShopSettingsSheet
         open={shopSettingsOpen}
         onClose={() => setShopSettingsOpen(false)}
@@ -291,72 +331,99 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         personalizeFromDietInitial={initial.shopPersonalizeFromDiet}
       />
 
-      <BodyMetricsCard
-        heightCm={heightCm}
-        weightKg={weightKg}
-        bmiValue={bmiValue}
-        bmr={initial.bmr}
-        tdeePreview={tdeePreview}
-        bmiStatus={bmiStatusText(bmiValue)}
-        bmiToneClass={bmiTone(bmiValue)}
-        onEdit={openBodySheet}
-      />
+      <SettingsCollapsibleSection
+        sectionId="health"
+        icon={Activity}
+        title="健康與目標"
+        summary={healthSummary}>
+        <BodyMetricsCard
+          heightCm={heightCm}
+          weightKg={weightKg}
+          bmiValue={bmiValue}
+          bmr={initial.bmr}
+          tdeePreview={tdeePreview}
+          bmiStatus={bmiStatusText(bmiValue)}
+          bmiToneClass={bmiTone(bmiValue)}
+          onEdit={openBodySheet}
+          onOpenWeightRecord={() => router.push('/log?tab=body')}
+        />
 
-      <GoalSettingsCard
-        goalTypeText={goalTypeLabel(goalType)}
-        targetWeightText={`${targetW} kg`}
-        weeklyRateText={`${weeklyRate} kg/週`}
-        dailyCalTargetText={`${Math.round(initial.goal.dailyCalTarget).toLocaleString()} kcal`}
-        targetDateText={formatDate(initial.goal.targetDate)}
-        error={errGoal}
-        onOpenGoalType={() => openGoalSheet('goalType')}
-        onOpenGoalWeight={() => openGoalSheet('goalWeight')}
-        onOpenGoalWeeklyRate={() => openGoalSheet('goalWeeklyRate')}
-        onOpenGoalDailyCal={() => openGoalDependencySheet('goalDailyCal')}
-        onOpenGoalTargetDate={() => openGoalDependencySheet('goalTargetDate')}
-      />
+        <GoalSettingsCard
+          goalTypeText={goalTypeLabel(goalType)}
+          targetWeightText={`${targetW} kg`}
+          weeklyRateText={`${weeklyRate} kg/週`}
+          dailyCalTargetText={`${Math.round(initial.goal.dailyCalTarget).toLocaleString()} kcal`}
+          targetDateText={formatDate(initial.goal.targetDate)}
+          error={errGoal}
+          onOpenGoalType={() => openGoalSheet('goalType')}
+          onOpenGoalWeight={() => openGoalSheet('goalWeight')}
+          onOpenGoalWeeklyRate={() => openGoalSheet('goalWeeklyRate')}
+          onOpenGoalDailyCal={() => openGoalDependencySheet('goalDailyCal')}
+          onOpenGoalTargetDate={() => openGoalDependencySheet('goalTargetDate')}
+        />
+      </SettingsCollapsibleSection>
 
-      <DietPreferencesCard
-        dietMethodText={dietMethodLabel(dietMethod)}
-        allergenText={allergenText}
-        tracksGlycemicConcern={tracksGlycemic}
-        glycemicPending={glycemicPending}
-        error={errDiet}
-        onEditMethod={() => setActiveSheet('dietMethod')}
-        onEditAllergens={() => setActiveSheet('allergens')}
-        onToggleGlycemic={(next) => {
-          setGlycemicPending(true);
-          startTransition(async () => {
-            const res = await saveTracksGlycemicConcern(next);
-            setGlycemicPending(false);
-            if (res.error) {
-              setErrDiet(res.error);
-              return;
-            }
-            setTracksGlycemic(next);
-            setErrDiet(null);
-            refresh();
-          });
-        }}
-      />
+      <SettingsCollapsibleSection
+        sectionId="diet"
+        icon={Carrot}
+        title="飲食與脈絡"
+        summary={dietSummary}>
+        <DietPreferencesCard
+          dietMethodText={dietMethodLabel(dietMethod)}
+          allergenText={allergenText}
+          tracksGlycemicConcern={tracksGlycemic}
+          glycemicPending={glycemicPending}
+          error={errDiet}
+          onEditMethod={() => setActiveSheet('dietMethod')}
+          onEditAllergens={() => setActiveSheet('allergens')}
+          onToggleGlycemic={(next) => {
+            setGlycemicPending(true);
+            startTransition(async () => {
+              const res = await saveTracksGlycemicConcern(next);
+              setGlycemicPending(false);
+              if (res.error) {
+                setErrDiet(res.error);
+                return;
+              }
+              setTracksGlycemic(next);
+              setErrDiet(null);
+              refresh();
+            });
+          }}
+        />
 
-      <PersonalContextCard initialFacets={initial.personalContextFacets} />
+        <PersonalContextCard initialFacets={initial.personalContextFacets} />
+      </SettingsCollapsibleSection>
 
-      <AccountManagementCard
-        onOpenShopSettings={() => setShopSettingsOpen(true)}
-        onPointsHistory={() => router.push('/settings/points')}
-        onMembership={() => router.push('/settings/membership')}
-        onResetData={() => window.alert('此功能稍後開放，將會重置個人紀錄與目標資料。')}
-        onSignOut={signOut}
-        onDeleteAccount={() => window.alert('刪除帳號功能尚未開放。')}
-      />
+      <SettingsCollapsibleSection
+        sectionId="shop"
+        icon={Coins}
+        title="商城與點數"
+        summary={shopSummary}>
+        <MemberPointsCard balance={initial.shopPointsBalance} />
+      </SettingsCollapsibleSection>
 
-      <AiQuotaCard
-        planLabel={initial.aiQuota.planLabel}
-        usedUnits={initial.aiQuota.usedUnits}
-        capUnits={initial.aiQuota.capUnits}
-        usagePercent={initial.aiQuota.usagePercent}
-      />
+      <SettingsCollapsibleSection
+        sectionId="account"
+        icon={UserCog}
+        title="帳號與 AI"
+        summary={accountSummary}>
+        <AccountManagementCard
+          onOpenShopSettings={() => setShopSettingsOpen(true)}
+          onPointsHistory={() => router.push('/settings/points')}
+          onMembership={() => router.push('/settings/membership')}
+          onResetData={() => window.alert('此功能稍後開放，將會重置個人紀錄與目標資料。')}
+          onSignOut={signOut}
+          onDeleteAccount={() => window.alert('刪除帳號功能尚未開放。')}
+        />
+
+        <AiQuotaCard
+          planLabel={initial.aiQuota.planLabel}
+          usedUnits={initial.aiQuota.usedUnits}
+          capUnits={initial.aiQuota.capUnits}
+          usagePercent={initial.aiQuota.usagePercent}
+        />
+      </SettingsCollapsibleSection>
 
       <OptionSelectSheet
         open={activeSheet === 'dietMethod'}

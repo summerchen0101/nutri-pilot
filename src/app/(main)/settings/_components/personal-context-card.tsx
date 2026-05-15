@@ -30,6 +30,7 @@ export function PersonalContextCard({
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [draftEditorOpen, setDraftEditorOpen] = useState(false);
 
   useEffect(() => {
     setSaved(initialFacets);
@@ -76,6 +77,7 @@ export function PersonalContextCard({
       setSaved(preview);
       setPreview(null);
       setDraft('');
+      setDraftEditorOpen(false);
       router.refresh();
     });
   }
@@ -99,6 +101,7 @@ export function PersonalContextCard({
       setSaved(null);
       setPreview(null);
       setDraft('');
+      setDraftEditorOpen(false);
       router.refresh();
     });
   }
@@ -108,62 +111,28 @@ export function PersonalContextCard({
       <SectionHeading icon={FileText} className="mb-1">
         個人化健康／飲食脈絡
       </SectionHeading>
-      <p className="text-[11px] leading-snug text-muted-foreground">
+      <p className="text-caption leading-snug text-muted-foreground">
         可用口語或條列描述疾病史、家族史、目前狀況、飲食留意等。按下「整理成重點」後會由
         AI 分類（非醫療診斷）；確認無誤再套用，必要時可手動調整內容。資料僅供 App 內建議參考。
       </p>
 
-      {!preview ? (
-        <div className="mt-3 space-y-2">
-          <label htmlFor="personal-context-draft" className="sr-only">
-            個人化描述草稿
-          </label>
-          <textarea
-            id="personal-context-draft"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={5}
-            placeholder="例如：家族有糖尿病，醫師建議控制澱粉；目前備孕，較在意葉酸與生食..."
-            className={cn(
-              'w-full resize-y rounded-[10px] border-hairline border-border bg-background px-3 py-2 text-body',
-              'outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15',
-            )}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              disabled={pending || draft.trim().length < 8}
-              onClick={runAnalyze}>
-              {pending ? '整理中…' : '整理成重點'}
-            </Button>
-            {saved != null ? (
+      {!preview && saved ? (
+        <div className="mt-4 space-y-2 border-t border-border pt-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-caption font-medium text-muted-foreground">
+              目前已套用
+            </p>
+            {!draftEditorOpen ? (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 disabled={pending}
-                onClick={runClear}>
-                清除已儲存重點
+                onClick={() => setDraftEditorOpen(true)}>
+                重新設定
               </Button>
             ) : null}
           </div>
-        </div>
-      ) : (
-        <PersonalContextPreviewPanel
-          preview={preview}
-          pending={pending}
-          onConfirm={runConfirm}
-          onCancelPreview={runCancelPreview}
-          onPreviewChange={setPreview}
-        />
-      )}
-
-      {!preview && saved ? (
-        <div className="mt-4 space-y-2 border-t border-border pt-3">
-          <p className="text-[11px] font-medium text-muted-foreground">
-            目前已套用
-          </p>
           {saved.summary_zh ? (
             <p className="text-[13px] leading-relaxed text-foreground">
               {saved.summary_zh}
@@ -193,8 +162,75 @@ export function PersonalContextCard({
         </div>
       ) : null}
 
+      {!preview && draftEditorOpen ? (
+        <div className="mt-3 space-y-2">
+          <label htmlFor="personal-context-draft" className="sr-only">
+            個人化描述草稿
+          </label>
+          <textarea
+            id="personal-context-draft"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={5}
+            placeholder="例如：家族有糖尿病，醫師建議控制澱粉；目前備孕，較在意葉酸與生食..."
+            className={cn(
+              'w-full resize-y rounded-[10px] border-hairline border-border bg-background px-3 py-2 text-body',
+              'outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15',
+            )}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              disabled={pending || draft.trim().length < 8}
+              onClick={runAnalyze}>
+              {pending ? '整理中…' : '整理成重點'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pending}
+              onClick={() => setDraftEditorOpen(false)}>
+              收起
+            </Button>
+            {saved != null ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={pending}
+                onClick={runClear}>
+                清除已儲存重點
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {!preview && saved == null && !draftEditorOpen ? (
+        <div className="mt-3">
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setDraftEditorOpen(true)}>
+            設定
+          </Button>
+        </div>
+      ) : null}
+
+      {preview ? (
+        <PersonalContextPreviewPanel
+          preview={preview}
+          pending={pending}
+          onConfirm={runConfirm}
+          onCancelPreview={runCancelPreview}
+          onPreviewChange={setPreview}
+        />
+      ) : null}
+
       {error ? (
-        <p className="mt-2 text-[11px] text-destructive">{error}</p>
+        <p className="mt-2 text-caption text-destructive">{error}</p>
       ) : null}
     </SectionCard>
   );
