@@ -2,7 +2,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { DashboardHomeProps } from '@/app/(main)/dashboard/dashboard-home';
 import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
-import { macroTargetsFromKcal } from '@/lib/dashboard/macro-targets';
 import { addCalendarDaysISO } from '@/lib/onboarding/date';
 
 const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
@@ -86,50 +85,6 @@ export function buildWeeklyTrend(
       kcal: kcalMap.get(date) ?? 0,
     })),
   };
-}
-
-export function buildInsightBullets({
-  todayKcal,
-  targetKcal,
-  carbG,
-  proteinG,
-  fatG,
-}: {
-  todayKcal: number;
-  targetKcal: number | null;
-  carbG: number;
-  proteinG: number;
-  fatG: number;
-}): string[] {
-  const bullets: string[] = [];
-  if (targetKcal != null && targetKcal > 0) {
-    const diff = Math.round(targetKcal - todayKcal);
-    if (diff > 100) {
-      bullets.push(`今日熱量距離目標尚差約 ${diff} kcal，可安排一份輕食補足。`);
-    }
-    if (diff < -100) {
-      bullets.push(
-        `今日熱量超出目標約 ${Math.abs(diff)} kcal，晚餐可選擇低油與高纖組合。`,
-      );
-    }
-  }
-  const target =
-    targetKcal != null && targetKcal > 0 ?
-      macroTargetsFromKcal(targetKcal)
-    : null;
-  if (target) {
-    if (proteinG < target.protein * 0.7) {
-      bullets.push('蛋白質攝取偏低，建議加一份高蛋白食物提升飽足與恢復。');
-    } else if (fatG > target.fat * 1.2) {
-      bullets.push('脂肪攝取偏高，下一餐可優先清蒸或水煮料理。');
-    } else if (carbG > target.carb * 1.2) {
-      bullets.push('碳水比例略高，可把部分主食替換成蔬菜或豆類。');
-    }
-  }
-  if (bullets.length === 0) {
-    bullets.push('今天進度穩定，維持目前飲食節奏就很不錯。');
-  }
-  return bullets.slice(0, 2);
 }
 
 export function buildRecommendedProducts({

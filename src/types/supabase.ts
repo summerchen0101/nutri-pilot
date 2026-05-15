@@ -143,6 +143,30 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_daily_insights: {
+        Row: {
+          bullets: Json
+          created_at: string
+          id: string
+          insight_date: string
+          user_id: string
+        }
+        Insert: {
+          bullets: Json
+          created_at?: string
+          id?: string
+          insight_date: string
+          user_id: string
+        }
+        Update: {
+          bullets?: Json
+          created_at?: string
+          id?: string
+          insight_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       food_cache: {
         Row: {
           alias: string[] | null

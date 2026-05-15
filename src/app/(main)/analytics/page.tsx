@@ -10,6 +10,10 @@ import {
   todayLocalISODate,
 } from '@/lib/onboarding/date';
 import { getCachedAuthContext } from '@/lib/auth';
+import {
+  aggregateActivityLogsByDate,
+  aggregateFoodLogsByDate,
+} from '@/lib/log';
 import type { Json } from '@/types/supabase';
 
 export default async function AnalyticsPage() {
@@ -81,8 +85,8 @@ export default async function AnalyticsPage() {
   const insightRow =
     insightResult.error ? null : insightResult.data;
 
-  const nutritionByDate = aggregateFoodRows(foodRows ?? []);
-  const { activityByDate, activityEvents } = aggregateActivityRows(
+  const nutritionByDate = aggregateFoodLogsByDate(foodRows ?? []);
+  const { activityByDate, activityEvents } = aggregateActivityLogsByDate(
     activityRows ?? [],
   );
 
@@ -200,89 +204,6 @@ export default async function AnalyticsPage() {
       }}
     />
   );
-}
-
-function aggregateFoodRows(
-  rows: {
-    date: string;
-    food_log_items:
-      | {
-          calories: number;
-          carb_g: number;
-          protein_g: number;
-          fat_g: number;
-        }[]
-      | null;
-  }[],
-): Record<
-  string,
-  { kcal: number; carbG: number; proteinG: number; fatG: number }
-> {
-  const map: Record<
-    string,
-    { kcal: number; carbG: number; proteinG: number; fatG: number }
-  > = {};
-
-  for (const row of rows) {
-    const d = row.date;
-    if (!map[d]) {
-      map[d] = { kcal: 0, carbG: 0, proteinG: 0, fatG: 0 };
-    }
-    for (const it of row.food_log_items ?? []) {
-      map[d].kcal += Number(it.calories) || 0;
-      map[d].carbG += Number(it.carb_g) || 0;
-      map[d].proteinG += Number(it.protein_g) || 0;
-      map[d].fatG += Number(it.fat_g) || 0;
-    }
-  }
-
-  return map;
-}
-
-function aggregateActivityRows(
-  rows: {
-    logged_date: string;
-    activity_type: string;
-    duration_minutes: number;
-    calories_est: number | null;
-  }[],
-): {
-  activityByDate: Record<string, { minutes: number; kcalEst: number }>;
-  activityEvents: {
-    logged_date: string;
-    activity_type: string;
-    duration_minutes: number;
-  }[];
-} {
-  const activityByDate: Record<string, { minutes: number; kcalEst: number }> =
-    {};
-  const activityEvents: {
-    logged_date: string;
-    activity_type: string;
-    duration_minutes: number;
-  }[] = [];
-
-  for (const row of rows) {
-    const d = row.logged_date;
-    if (!activityByDate[d]) {
-      activityByDate[d] = { minutes: 0, kcalEst: 0 };
-    }
-    const min = Number(row.duration_minutes) || 0;
-    activityByDate[d].minutes += min;
-    if (
-      row.calories_est != null &&
-      Number.isFinite(Number(row.calories_est))
-    ) {
-      activityByDate[d].kcalEst += Number(row.calories_est);
-    }
-    activityEvents.push({
-      logged_date: d,
-      activity_type: row.activity_type,
-      duration_minutes: min,
-    });
-  }
-
-  return { activityByDate, activityEvents };
 }
 
 function parseInsightsJson(raw: Json): WeeklyInsightPayload['items'] {

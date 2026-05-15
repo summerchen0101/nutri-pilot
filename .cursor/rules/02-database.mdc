@@ -12,7 +12,7 @@ user_profiles, user_goals,
 food_logs, food_log_items, vital_logs,
 brands, products, product_variants, orders, order_items,
 subscriptions, subscription_items, user_product_scores,
-product_events, weekly_insights
+product_events, weekly_insights, dashboard_daily_insights
 
 ## 查詢寫法
 

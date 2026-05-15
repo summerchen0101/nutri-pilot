@@ -5,11 +5,14 @@ import {
   DashboardBrandsSkeleton,
   DashboardHome,
   type DashboardHomeProps,
+  DashboardInsightSkeleton,
   DashboardRecommendationSkeleton,
 } from '@/app/(main)/dashboard/dashboard-home';
 import {
+  DashboardDailyInsightDeferred,
+} from '@/app/(main)/dashboard/dashboard-insight-stream';
+import {
   aggregateKcalByDate,
-  buildInsightBullets,
   buildMealRows,
   buildWeeklyTrend,
   computeGoalMetStreak,
@@ -23,10 +26,6 @@ import {
   DashboardRecommendedProductsDeferred,
 } from '@/app/(main)/dashboard/dashboard-shop-stream';
 import { getCachedAuthContext } from '@/lib/auth';
-import {
-  personalContextFacetsHasContent,
-} from '@/lib/personal-context/normalize-facets';
-import { parsePersonalContextFacetsFromDb } from '@/lib/personal-context/parse-from-db';
 import { getCachedUserProfileCoreRow } from '@/lib/user-profile';
 import { round1 } from '@/lib/food/nutrition';
 import {
@@ -178,18 +177,6 @@ export default async function DashboardPage() {
     weekVitalRows ?? [],
     weekFoodRows ?? [],
   );
-  const insightBullets = buildInsightBullets({
-    todayKcal: nutrientTotals.kcal,
-    targetKcal,
-    carbG: nutrientTotals.carb,
-    proteinG: nutrientTotals.protein,
-    fatG: nutrientTotals.fat,
-  });
-  const personalFacets = parsePersonalContextFacetsFromDb(
-    profile.personal_context_facets,
-  );
-  const dashboardInsightFetchAi =
-    personalFacets != null && personalContextFacetsHasContent(personalFacets);
   const dietMethodLabel =
     DIET_METHOD_OPTIONS.find((option) => option.value === profile.diet_method)?.label ??
     profile.diet_method ??
@@ -235,8 +222,11 @@ export default async function DashboardPage() {
     meals: buildMealRows(foodRows ?? [], today),
     weeklyWeight: weeklyTrend.weightRows,
     weeklyKcal: weeklyTrend.kcalRows,
-    insightBullets,
-    dashboardInsightFetchAi,
+    insightSlot: (
+      <Suspense fallback={<DashboardInsightSkeleton />}>
+        <DashboardDailyInsightDeferred />
+      </Suspense>
+    ),
     recommendSlot: (
       <Suspense fallback={<DashboardRecommendationSkeleton />}>
         <DashboardRecommendedProductsDeferred

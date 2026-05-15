@@ -15,7 +15,7 @@
 | 熱量圓環卡 | `food_log_items` 加總 | 今日攝取 / 目標，三大營養素進度條（carb/protein/fat） |
 | 體重卡 | `vital_logs`（最新一筆） | 今日或最近體重 + BMI 計算值；**點擊**前往 `/log?date=今日&tab=body` 調整體重（與紀錄頁體重卡相同） |
 | 今日餐食卡 | `food_logs` | 四餐記錄摘要（早中晚+點心），有未記錄的顯示提示 |
-| AI 今日建議卡 | 規則引擎 +（若有 `personal_context_facets`）client 呼叫 Claude 合併補充句 | 先顯示規則 bullet；有面向時 lazy load `/api/ai/dashboard-insight` |
+| AI 今日建議卡 | 伺服端自動：近 7 日紀錄（結束於 Taipei「今日」曆日）+ 對齊「飲食與脈絡」「健康與目標」；`dashboard_daily_insights` 以 Taipei **每日 04:00** 換線的「建議週期」為快取鍵（`insight_date`） | Suspense + `DashboardDailyInsightDeferred`；同一週期僅產生／呼叫模型一次，其餘讀快取（見 `docs/04-ai-engine.md`） |
 | 快速操作列 | — | 五項入口：飲食(`/log`)、體重(`/log?date=今日&tab=body`)、運動(`/log?tab=activity`)、數據(`/analytics`)、食品安全分析紀錄(`/guard/records`，History 圖示)；樣式為「無外層白底卡」、採分類按鈕列 |
 
 ### 資料查詢（Server Component）

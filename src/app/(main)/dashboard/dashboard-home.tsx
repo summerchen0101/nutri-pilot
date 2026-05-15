@@ -19,7 +19,6 @@ import {
 import { FiAward, FiBell, FiHeadphones } from "react-icons/fi";
 
 import { DashboardAiSprite } from "@/app/(main)/dashboard/dashboard-ai-sprite";
-import { DashboardInsightSection } from "@/app/(main)/dashboard/dashboard-insight-section";
 import { DashboardWaterGrid } from "@/app/(main)/dashboard/dashboard-water-grid";
 import {
   HEADER_ACTION_ICON_CLASS,
@@ -193,9 +192,8 @@ export type DashboardHomeProps = {
   meals: DashboardMealRow[];
   weeklyWeight: { label: string; kg: number | null }[];
   weeklyKcal: { label: string; kcal: number }[];
-  insightBullets: string[];
-  /** 有個人化面向時，client 會再向 /api/ai/dashboard-insight 取補充建議 */
-  dashboardInsightFetchAi: boolean;
+  /** Suspense 串流：今日 AI 建議 */
+  insightSlot?: ReactNode;
   /** Suspense 串流：為你推薦區塊 */
   recommendSlot?: ReactNode;
   promoBanner: {
@@ -460,6 +458,22 @@ export function WeeklyPopularBrandsRail({
   );
 }
 
+export function DashboardInsightSkeleton() {
+  return (
+    <section className="rounded-xl bg-primary-light p-4">
+      <div className="h-5 w-24 animate-pulse rounded bg-muted" />
+      <div className="mt-3 space-y-2">
+        {[0, 1, 2].map((k) => (
+          <div key={k} className="flex gap-2">
+            <div className="mt-1.5 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-muted" />
+            <div className="h-8 min-w-0 flex-1 animate-pulse rounded bg-muted/70" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function DashboardRecommendationSkeleton() {
   return (
     <SectionCard>
@@ -509,9 +523,8 @@ export function DashboardHome({
   meals,
   weeklyWeight,
   weeklyKcal,
-  insightBullets,
-  dashboardInsightFetchAi,
   recommendSlot,
+  insightSlot,
   promoBanner,
   popularBrandsSlot,
   hasUnreadAnnouncements,
@@ -752,15 +765,7 @@ export function DashboardHome({
         </div>
       </section>
 
-      <DashboardInsightSection
-        baseBullets={insightBullets}
-        fetchAi={dashboardInsightFetchAi}
-        todayKcal={todayKcal}
-        targetKcal={targetKcal}
-        carbG={carbG}
-        proteinG={proteinG}
-        fatG={fatG}
-      />
+      {insightSlot ?? null}
 
       <SectionCard>
         <div className="flex items-center justify-between gap-2">
