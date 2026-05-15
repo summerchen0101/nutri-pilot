@@ -400,7 +400,11 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         icon={Coins}
         title="商城與點數"
         summary={shopSummary}>
-        <MemberPointsCard balance={initial.shopPointsBalance} />
+        <MemberPointsCard
+          balance={initial.shopPointsBalance}
+          onPointsHistory={() => router.push('/settings/points')}
+          onOpenShopSettings={() => setShopSettingsOpen(true)}
+        />
       </SettingsCollapsibleSection>
 
       <SettingsCollapsibleSection
@@ -409,8 +413,6 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         title="帳號與 AI"
         summary={accountSummary}>
         <AccountManagementCard
-          onOpenShopSettings={() => setShopSettingsOpen(true)}
-          onPointsHistory={() => router.push('/settings/points')}
           onMembership={() => router.push('/settings/membership')}
           onResetData={() => window.alert('此功能稍後開放，將會重置個人紀錄與目標資料。')}
           onSignOut={signOut}

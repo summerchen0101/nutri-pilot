@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils/cn';
 
 interface SettingsRowProps {
   label: string;
+  /** 顯示在標題右側（如說明按鈕）；若置於互動列內請在按鈕 onClick 內 stopPropagation */
+  labelAccessory?: ReactNode;
   value?: string;
   onClick?: () => void;
   valueClassName?: string;
@@ -15,6 +17,7 @@ interface SettingsRowProps {
 
 export function SettingsRow({
   label,
+  labelAccessory,
   value,
   onClick,
   valueClassName,
@@ -33,13 +36,17 @@ export function SettingsRow({
 
   const inner = (
     <>
-      <span
-        className={
-          danger
-            ? 'text-[13px] text-destructive'
-            : 'text-[13px] text-neutral-text-tertiary'
-        }>
-        {label}
+      <span className="flex flex-wrap items-center gap-1.5">
+        <span
+          className={
+            danger
+              ? 'text-[13px] text-destructive'
+              : 'text-[13px] text-neutral-text-tertiary'
+          }
+        >
+          {label}
+        </span>
+        {labelAccessory ?? null}
       </span>
       <div className="flex min-w-0 max-w-[65%] items-center justify-end gap-2">
         {value ? (
