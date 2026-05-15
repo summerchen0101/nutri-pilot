@@ -4,7 +4,14 @@ import {
   SettingsView,
   type SettingsInitialData,
 } from '@/app/(main)/settings/settings-view';
+import {
+  aiUsagePercentUsed,
+  getAiMonthlyCapNtd,
+  membershipPlanLabel,
+  normalizeMembershipPlan,
+} from '@/lib/ai/ai-quota-limits';
 import { getCachedAuthContext } from '@/lib/auth';
+import { billingMonthTaipei } from '@/lib/datetime/billing-month-taipei';
 
 function toDayCount(createdAt: string | null | undefined): number {
   if (!createdAt) return 1;
@@ -21,9 +28,12 @@ export async function SettingsPageBody() {
 
   if (!user) redirect('/login');
 
+  const billingMonth = billingMonthTaipei();
+
   const [
     { data: profile, error: profileErr },
     { data: goal },
+    { data: usedRaw, error: usageRpcErr },
   ] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('user_id', user.id).single(),
     supabase
@@ -32,10 +42,20 @@ export async function SettingsPageBody() {
       .eq('user_id', user.id)
       .eq('is_active', true)
       .maybeSingle(),
+    supabase.rpc('get_monthly_ai_usage_ntd', { p_month: billingMonth }),
   ]);
 
   if (profileErr || !profile) redirect('/onboarding');
   if (!goal) redirect('/onboarding');
+
+  if (usageRpcErr) {
+    console.error('get_monthly_ai_usage_ntd', usageRpcErr.message);
+  }
+
+  const membershipPlan = normalizeMembershipPlan(profile.membership_plan);
+  const capNtd = getAiMonthlyCapNtd(membershipPlan);
+  const usedNtd = Number(usedRaw ?? 0);
+  const usagePercent = aiUsagePercentUsed(usedNtd, capNtd);
 
   const initial: SettingsInitialData = {
     dayCount: toDayCount(
@@ -70,6 +90,12 @@ export async function SettingsPageBody() {
       (profile.shipping_address_full as string | null | undefined) ?? '',
     shopPointsBalance: Number(profile.shop_points_balance ?? 0),
     shopPersonalizeFromDiet: profile.shop_personalize_recommendations !== false,
+    aiQuota: {
+      planLabel: membershipPlanLabel(membershipPlan),
+      usedNtd,
+      capNtd,
+      usagePercent,
+    },
   };
 
   return <SettingsView initial={initial} />;

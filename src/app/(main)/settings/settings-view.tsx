@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import { FiLogOut } from 'react-icons/fi';
 
+import { AiQuotaCard } from '@/app/(main)/settings/_components/ai-quota-card';
 import { AccountManagementCard } from '@/app/(main)/settings/_components/account-management-card';
 import { BodyMetricsCard } from '@/app/(main)/settings/_components/body-metrics-card';
 import { DietPreferencesCard } from '@/app/(main)/settings/_components/diet-preferences-card';
@@ -68,6 +69,12 @@ export type SettingsInitialData = {
   shippingAddressFull: string;
   shopPointsBalance: number;
   shopPersonalizeFromDiet: boolean;
+  aiQuota: {
+    planLabel: string;
+    usedNtd: number;
+    capNtd: number;
+    usagePercent: number;
+  };
 };
 
 type SheetType =
@@ -337,6 +344,13 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
         onResetData={() => window.alert('此功能稍後開放，將會重置個人紀錄與目標資料。')}
         onSignOut={signOut}
         onDeleteAccount={() => window.alert('刪除帳號功能尚未開放。')}
+      />
+
+      <AiQuotaCard
+        planLabel={initial.aiQuota.planLabel}
+        usedNtd={initial.aiQuota.usedNtd}
+        capNtd={initial.aiQuota.capNtd}
+        usagePercent={initial.aiQuota.usagePercent}
       />
 
       <OptionSelectSheet

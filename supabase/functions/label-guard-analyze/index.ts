@@ -4,6 +4,7 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
+import { billingMonthTaipei, tokensToCostNtd } from "../_shared/ai-cost-ntd.ts";
 import { anthropicVision } from "../_shared/anthropic-vision.ts";
 import {
   buildLabelGuardReportPrompt,
@@ -149,7 +150,7 @@ Deno.serve(async (req) => {
       tracksGlycemicConcern,
     });
 
-    const raw = await anthropicVision({
+    const { text: raw, usage } = await anthropicVision({
       mediaType,
       base64,
       prompt,
@@ -172,6 +173,19 @@ Deno.serve(async (req) => {
         error_message: null,
       })
       .eq("id", jobId);
+
+    const costNtd = tokensToCostNtd(usage);
+    const { error: usageInsertErr } = await admin.from("ai_usage_events").insert({
+      user_id: job.user_id,
+      billing_month: billingMonthTaipei(),
+      source: "label_guard",
+      input_tokens: usage?.input_tokens ?? null,
+      output_tokens: usage?.output_tokens ?? null,
+      cost_ntd: costNtd,
+    });
+    if (usageInsertErr) {
+      console.error("[label-guard-analyze] ai_usage_events insert", usageInsertErr);
+    }
 
     return new Response(JSON.stringify({ ok: true, jobId }), {
       headers: { "Content-Type": "application/json" },

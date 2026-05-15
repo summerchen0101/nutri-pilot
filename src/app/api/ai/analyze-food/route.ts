@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 
 import { callClaudeJSON } from '@/lib/ai/claude';
+import { insertAiUsageEvent } from '@/lib/ai/record-ai-usage';
 import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
 import { buildManualInputPrompt, buildReanalyzePrompt } from '@/lib/food/prompts';
 import { fetchFoodCacheHintsForManualInput } from '@/lib/food/search';
+import { createServiceRoleClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 
 function formatCacheReference(rows: Awaited<
@@ -72,9 +74,20 @@ export async function POST(req: Request) {
       })();
 
   try {
-    const result = await callClaudeJSON<ManualFoodAnalysisResult>(prompt);
+    const { data: result, usage } =
+      await callClaudeJSON<ManualFoodAnalysisResult>(prompt);
     if (!result || typeof result !== 'object') {
       return NextResponse.json({ error: '分析結果格式異常' }, { status: 500 });
+    }
+    try {
+      const admin = createServiceRoleClient();
+      await insertAiUsageEvent(admin, {
+        userId: user.id,
+        source: 'analyze_food',
+        usage,
+      });
+    } catch (e) {
+      console.error('analyze-food record AI usage:', e);
     }
     return NextResponse.json(result);
   } catch (e) {

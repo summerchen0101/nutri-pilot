@@ -4,6 +4,7 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
+import { billingMonthTaipei, tokensToCostNtd } from "../_shared/ai-cost-ntd.ts";
 import { anthropicVision } from "../_shared/anthropic-vision.ts";
 import { PHOTO_ANALYZE_PROMPT } from "../_shared/photo-analyze-prompt.ts";
 import { mediaTypeFromPath, toBase64 } from "../_shared/image-utils.ts";
@@ -113,7 +114,7 @@ Deno.serve(async (req) => {
   try {
     const { data: job, error: jobErr } = await admin
       .from("photo_analysis_jobs")
-      .select("id, storage_path")
+      .select("id, user_id, storage_path")
       .eq("id", jobId)
       .single();
 
@@ -136,7 +137,7 @@ Deno.serve(async (req) => {
     const mediaType = mediaTypeFromPath(job.storage_path);
     const base64 = toBase64(buf);
 
-    const raw = await anthropicVision({
+    const { text: raw, usage } = await anthropicVision({
       mediaType,
       base64,
       prompt: PHOTO_ANALYZE_PROMPT,
@@ -155,6 +156,19 @@ Deno.serve(async (req) => {
         error_message: null,
       })
       .eq("id", jobId);
+
+    const costNtd = tokensToCostNtd(usage);
+    const { error: usageInsertErr } = await admin.from("ai_usage_events").insert({
+      user_id: job.user_id,
+      billing_month: billingMonthTaipei(),
+      source: "photo_meal",
+      input_tokens: usage?.input_tokens ?? null,
+      output_tokens: usage?.output_tokens ?? null,
+      cost_ntd: costNtd,
+    });
+    if (usageInsertErr) {
+      console.error("[ai-photo-analyze] ai_usage_events insert", usageInsertErr);
+    }
 
     return new Response(JSON.stringify({ ok: true, jobId }), {
       headers: { "Content-Type": "application/json" },

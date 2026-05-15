@@ -1,5 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
+import type { ClaudeTokenUsage } from '@/lib/ai/cost-ntd';
+
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY ?? '',
 });
@@ -9,13 +11,30 @@ export function anthropicModel(): string {
   return process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-20250514';
 }
 
-export async function callClaude(
+function usageFromResponse(
+  response: Anthropic.Messages.Message,
+): ClaudeTokenUsage | null {
+  const u = response.usage;
+  if (
+    u &&
+    typeof u.input_tokens === 'number' &&
+    typeof u.output_tokens === 'number'
+  ) {
+    return {
+      input_tokens: u.input_tokens,
+      output_tokens: u.output_tokens,
+    };
+  }
+  return null;
+}
+
+export async function callClaudeWithMetadata(
   prompt: string,
   options?: {
     imageBase64?: string;
     imageMediaType?: 'image/jpeg' | 'image/png' | 'image/webp';
   },
-): Promise<string> {
+): Promise<{ text: string; usage: ClaudeTokenUsage | null }> {
   const content: Anthropic.MessageParam['content'] = [];
 
   if (options?.imageBase64) {
@@ -38,7 +57,19 @@ export async function callClaude(
   });
 
   const block = response.content[0];
-  return block.type === 'text' ? block.text : '';
+  const text = block.type === 'text' ? block.text : '';
+  return { text, usage: usageFromResponse(response) };
+}
+
+export async function callClaude(
+  prompt: string,
+  options?: {
+    imageBase64?: string;
+    imageMediaType?: 'image/jpeg' | 'image/png' | 'image/webp';
+  },
+): Promise<string> {
+  const { text } = await callClaudeWithMetadata(prompt, options);
+  return text;
 }
 
 export async function callClaudeJSON<T>(
@@ -47,11 +78,12 @@ export async function callClaudeJSON<T>(
     imageBase64?: string;
     imageMediaType?: 'image/jpeg' | 'image/png' | 'image/webp';
   },
-): Promise<T> {
+): Promise<{ data: T; usage: ClaudeTokenUsage | null }> {
   const fullPrompt = `${prompt}\n\n只回傳 JSON，不加 markdown code block 或任何說明文字。`;
-  const text = await callClaude(fullPrompt, options);
+  const { text, usage } = await callClaudeWithMetadata(fullPrompt, options);
   try {
-    return JSON.parse(text.replace(/```json|```/g, '').trim()) as T;
+    const data = JSON.parse(text.replace(/```json|```/g, '').trim()) as T;
+    return { data, usage };
   } catch {
     throw new Error(`Claude 回傳的不是有效 JSON：${text.slice(0, 200)}`);
   }

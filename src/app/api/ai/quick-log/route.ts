@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 
 import { callClaudeJSON } from '@/lib/ai/claude';
+import type { ClaudeTokenUsage } from '@/lib/ai/cost-ntd';
+import { insertAiUsageEvent } from '@/lib/ai/record-ai-usage';
 import { buildQuickLogIntentPrompt } from '@/lib/ai/prompts/quick-log-intent';
 import { validateQuickLogClaudePayload } from '@/lib/quick-log/validate-quick-log-response';
+import { createServiceRoleClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 
 type ClaudeQuickLogShape = {
@@ -64,8 +67,11 @@ export async function POST(req: Request) {
   });
 
   let parsed: ClaudeQuickLogShape;
+  let usage: ClaudeTokenUsage | null = null;
   try {
-    parsed = await callClaudeJSON<ClaudeQuickLogShape>(prompt);
+    const out = await callClaudeJSON<ClaudeQuickLogShape>(prompt);
+    parsed = out.data;
+    usage = out.usage;
   } catch (e) {
     const msg = e instanceof Error ? e.message : '解析失敗';
     return NextResponse.json({ error: msg }, { status: 500 });
@@ -75,6 +81,17 @@ export async function POST(req: Request) {
 
   if (!validated.ok) {
     return NextResponse.json({ error: validated.error }, { status: 422 });
+  }
+
+  try {
+    const admin = createServiceRoleClient();
+    await insertAiUsageEvent(admin, {
+      userId: user.id,
+      source: 'quick_log',
+      usage,
+    });
+  } catch (e) {
+    console.error('quick-log record AI usage:', e);
   }
 
   return NextResponse.json({

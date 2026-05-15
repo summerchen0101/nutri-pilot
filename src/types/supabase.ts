@@ -47,6 +47,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_events: {
+        Row: {
+          billing_month: string
+          cost_ntd: number
+          created_at: string
+          id: string
+          input_tokens: number | null
+          output_tokens: number | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          billing_month: string
+          cost_ntd: number
+          created_at?: string
+          id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          billing_month?: string
+          cost_ntd?: number
+          created_at?: string
+          id?: string
+          input_tokens?: number | null
+          output_tokens?: number | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           body: string
@@ -921,6 +954,7 @@ export type Database = {
           height_cm: number
           id: string
           meal_frequency: number
+          membership_plan: string
           name: string
           shipping_address_full: string | null
           shipping_phone: string | null
@@ -946,6 +980,7 @@ export type Database = {
           height_cm: number
           id?: string
           meal_frequency?: number
+          membership_plan?: string
           name: string
           shipping_address_full?: string | null
           shipping_phone?: string | null
@@ -971,6 +1006,7 @@ export type Database = {
           height_cm?: number
           id?: string
           meal_frequency?: number
+          membership_plan?: string
           name?: string
           shipping_address_full?: string | null
           shipping_phone?: string | null
@@ -1107,6 +1143,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_monthly_ai_usage_ntd: {
+        Args: { p_month: string }
+        Returns: number
+      }
       match_food_cache: {
         Args: { p_query: string }
         Returns: {

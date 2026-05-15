@@ -1,11 +1,12 @@
 /** Claude Vision HTTP call（Edge Functions / Deno）。 */
+import type { TokenUsage } from "./ai-cost-ntd.ts";
 
 export async function anthropicVision(params: {
   mediaType: "image/jpeg" | "image/png" | "image/webp";
   base64: string;
   prompt: string;
   maxTokens?: number;
-}): Promise<string> {
+}): Promise<{ text: string; usage: TokenUsage | null }> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
 
@@ -53,7 +54,19 @@ export async function anthropicVision(params: {
 
   const data = (await res.json()) as {
     content?: { type: string; text?: string }[];
+    usage?: { input_tokens?: number; output_tokens?: number };
   };
   const block = data.content?.[0];
-  return block?.type === "text" ? (block.text ?? "") : "";
+  const text = block?.type === "text" ? (block.text ?? "") : "";
+  const rawUsage = data.usage;
+  const usage =
+    rawUsage &&
+    typeof rawUsage.input_tokens === "number" &&
+    typeof rawUsage.output_tokens === "number"
+      ? {
+          input_tokens: rawUsage.input_tokens,
+          output_tokens: rawUsage.output_tokens,
+        }
+      : null;
+  return { text, usage };
 }
