@@ -1,3 +1,4 @@
+import { ShopCatalogHeaderActions } from '@/app/(main)/shop/shop-catalog-header-actions';
 import { ShopCartHeaderAction } from '@/app/(main)/shop/shop-cart-header-action';
 import { ShopFavoritesHeaderLink } from '@/app/(main)/shop/shop-favorites-header-link';
 import { PageHeader } from '@/components/layout/page-header';
@@ -11,6 +12,7 @@ export function ShopPageHeader() {
       spacing="compact"
       action={
         <div className="flex shrink-0 items-center gap-2">
+          <ShopCatalogHeaderActions />
           <ShopFavoritesHeaderLink />
           <ShopCartHeaderAction />
         </div>

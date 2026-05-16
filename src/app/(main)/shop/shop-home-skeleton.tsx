@@ -1,16 +1,15 @@
+export function ShopBannerSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-xl bg-muted/50" aria-hidden>
+      <div className="aspect-[3/1] w-full animate-pulse bg-muted/70" />
+    </div>
+  );
+}
+
 export function ShopHomeSkeleton() {
   return (
-    <div className="space-y-4" aria-busy aria-label="載入商城資料">
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={`cat-${i}`}
-            className="h-9 w-14 shrink-0 animate-pulse rounded-full bg-muted/70"
-          />
-        ))}
-      </div>
-      <div className="h-5 w-28 animate-pulse rounded-md bg-muted/80" />
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-2">
+    <div className="space-y-5" aria-busy aria-label="載入商城資料">
+      <div className="grid grid-cols-2 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={`pd-${i}`}
