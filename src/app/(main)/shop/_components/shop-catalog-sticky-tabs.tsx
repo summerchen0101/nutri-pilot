@@ -3,6 +3,7 @@
 import {
   SHOP_CATEGORY_KEYS,
   SHOP_CATEGORY_LABEL,
+  SHOP_UNDER_HEADER_STICKY_TOP_CLASS,
 } from '@/lib/shop/constants';
 import type { ShopCategoryKey } from '@/lib/shop/constants';
 import { useShopCatalogUiStore } from '@/lib/shop/shop-catalog-ui-store';
@@ -10,21 +11,44 @@ import { cn } from '@/lib/utils/cn';
 
 const ALL_LABEL = '全部';
 
-export function ShopCatalogStickyTabs() {
+const TAB_BUTTON_CLASS = cn(
+  'shrink-0 whitespace-nowrap pb-2.5 pt-0.5 text-heading-section !font-normal',
+  'text-foreground transition-[color,box-shadow]',
+);
+
+/** inset 底線避免 button border 與 overflow 裁切／層叠問題 */
+const TAB_BUTTON_ACTIVE_CLASS = cn(
+  '!font-medium text-primary shadow-[inset_0_-2px_0_0_var(--primary)]',
+);
+
+interface ShopCatalogStickyTabsProps {
+  /**
+   * `embedded`：與 `StickyPageHeaderShell` 內標題共用同一區 sticky；
+   * `floating`：獨立 `sticky`（例：尚需與主頁首分段的場景）。
+   */
+  variant?: 'embedded' | 'floating';
+}
+
+export function ShopCatalogStickyTabs({
+  variant = 'floating',
+}: ShopCatalogStickyTabsProps) {
   const category = useShopCatalogUiStore((s) => s.category);
   const setCategory = useShopCatalogUiStore((s) => s.setCategory);
 
   return (
     <div
       className={cn(
-        'sticky z-40 -mx-4 mb-3 border-b-hairline border-border/70',
-        'bg-background/90 px-4 py-2.5 backdrop-blur-md',
-        /** 與全站 sticky header 疊放：頁首約一行 + safe area */
-        'top-[calc(env(safe-area-inset-top)+3.25rem)]',
+        '-mx-4 border-border/70 px-4 pb-0 pt-2.5 backdrop-blur-md bg-background/90',
+        variant === 'embedded' ?
+          'border-t-hairline'
+        : cn(
+            'sticky z-40 mb-3',
+            SHOP_UNDER_HEADER_STICKY_TOP_CLASS,
+          ),
       )}
     >
       <div
-        className="hide-scrollbar flex gap-4 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]"
+        className="hide-scrollbar flex gap-4 overflow-x-auto border-b-hairline border-border/70 [-webkit-overflow-scrolling:touch]"
         role="tablist"
         aria-label="商品分類"
       >
@@ -39,20 +63,14 @@ export function ShopCatalogStickyTabs() {
               role="tab"
               aria-selected={active}
               className={cn(
-                'relative shrink-0 whitespace-nowrap pb-2 text-body text-muted-foreground transition-colors',
-                active && 'font-medium text-foreground',
+                TAB_BUTTON_CLASS,
+                active && TAB_BUTTON_ACTIVE_CLASS,
               )}
               onClick={() => {
                 setCategory(key as ShopCategoryKey);
               }}
             >
               {label}
-              {active ?
-                <span
-                  className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-[var(--steel-accent)]"
-                  aria-hidden
-                />
-              : null}
             </button>
           );
         })}

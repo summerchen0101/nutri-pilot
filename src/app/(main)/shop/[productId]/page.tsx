@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { ProductDetailMaraisClient } from '@/app/(main)/shop/[productId]/product-detail-marais-client';
 import { ShopProductDetailHeaderActions } from '@/app/(main)/shop/[productId]/shop-product-detail-header-actions';
+import { ShopHeaderPointsTitle } from '@/app/(main)/shop/_components/shop-header-points-title';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import {
@@ -143,17 +144,23 @@ export default async function ShopProductPage({ params }: PageProps) {
     leadTimeDays: Number(vendorRow.lead_time_days ?? 3),
   };
 
+  const productNameStr = product.name as string;
+  const shopPointsBalance = Math.max(
+    0,
+    Math.floor(Number(profile.shop_points_balance ?? 0)),
+  );
+  const detailA11yTitle = `${productNameStr}，購物金餘額 ${shopPointsBalance.toLocaleString('zh-TW')} 元`;
+
   return (
     <div className="space-y-5">
       <StickyPageHeader
         anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
+        spacing="compact"
         leading={<HeaderBackButton />}
-        title={product.name as string}
-        titleSlot={<div className="min-h-9 min-w-0 flex-1" aria-hidden />}
+        title={detailA11yTitle}
+        titleSlot={<ShopHeaderPointsTitle balance={shopPointsBalance} />}
         action={
-          <ShopProductDetailHeaderActions
-            productName={product.name as string}
-          />
+          <ShopProductDetailHeaderActions productName={productNameStr} />
         }
       />
 

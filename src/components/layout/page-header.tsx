@@ -37,7 +37,7 @@ export function PageHeader({
       <div className="flex min-w-0 items-center gap-2.5">
         {leading ? <div className="shrink-0">{leading}</div> : null}
         <div className="min-w-0 space-y-1">
-          <div className="flex min-h-9 items-center">
+          <div className="flex min-h-12 items-center">
             {titleSlot ?
               <>
                 <span className="sr-only">{title}</span>

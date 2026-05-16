@@ -12,6 +12,13 @@ import { SectionHeading } from '@/components/ui/section-heading';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 import { cn } from '@/lib/utils/cn';
 
+const FAVORITE_REMOVE_BUTTON_CLASS = cn(
+  'flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px]',
+  'text-primary transition-opacity',
+  'hover:opacity-80 active:opacity-95 disabled:opacity-50',
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-1',
+);
+
 interface Props {
   initialProducts: ShopProductRow[];
 }
@@ -24,12 +31,7 @@ function FavoriteRemoveButton({ productId }: { productId: string }) {
     <button
       type="button"
       disabled={isPending}
-      className={cn(
-        'absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-[10px]',
-        'border-[1.5px] border-solid border-primary bg-card/95 text-primary',
-        'transition-colors hover:bg-primary hover:text-white',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1',
-      )}
+      className={FAVORITE_REMOVE_BUTTON_CLASS}
       aria-label="取消我的最愛"
       onClick={(e) => {
         e.preventDefault();
@@ -46,7 +48,10 @@ function FavoriteRemoveButton({ productId }: { productId: string }) {
         });
       }}
     >
-      <Heart className="h-[18px] w-[18px] fill-current" aria-hidden />
+      <Heart
+        className="h-[18px] w-[18px] fill-current text-primary"
+        aria-hidden
+      />
     </button>
   );
 }
@@ -60,15 +65,15 @@ export function ShopFavoritesView({ initialProducts }: Props) {
           const minPrice = Math.min(
             ...p.variants.map((v) => Number(v.price)),
           );
+          const detailHref = `/shop/${p.id}`;
           return (
             <div
               key={p.id}
-              className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-xl border-hairline border-transparent bg-card transition-colors hover:border-primary/50"
+              className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border-hairline border-transparent bg-card transition-colors hover:border-primary/50"
             >
-              <FavoriteRemoveButton productId={p.id} />
               <Link
-                href={`/shop/${p.id}`}
-                className="flex h-full min-h-0 flex-col"
+                href={detailHref}
+                className="flex min-h-0 flex-1 flex-col"
               >
                 <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
                   {p.image_url ?
@@ -87,22 +92,28 @@ export function ShopFavoritesView({ initialProducts }: Props) {
                     </span>
                   : null}
                 </div>
-                <div className="flex min-h-0 flex-1 flex-col p-3">
+                <div className="flex min-h-0 flex-1 flex-col p-3 pb-2">
                   <p className="line-clamp-2 text-[13px] font-medium leading-snug text-foreground">
                     {p.name}
                   </p>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {p.brand?.name ?? ''}
                   </p>
-                  <p className="mt-2 text-[13px] font-medium tabular-nums text-foreground">
-                    NT$ {formatShopGroupedInteger(minPrice)}
-                    <span className="text-[11px] font-normal text-muted-foreground">
-                      {' '}
-                      起
-                    </span>
-                  </p>
                 </div>
               </Link>
+              <div className="flex items-center justify-between gap-2 px-3 pb-3">
+                <Link
+                  href={detailHref}
+                  className="min-w-0 flex-1 text-[13px] font-medium tabular-nums text-foreground"
+                >
+                  NT$ {formatShopGroupedInteger(minPrice)}
+                  <span className="text-[11px] font-normal text-muted-foreground">
+                    {' '}
+                    起
+                  </span>
+                </Link>
+                <FavoriteRemoveButton productId={p.id} />
+              </div>
             </div>
           );
         })}

@@ -4,6 +4,7 @@ import { Home, Search, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 import { SHOP_HEADER_ICON_BUTTON_CLASS } from '@/app/(main)/shop/_components/shop-header-icon-styles';
 import { useShopCatalogUiStore } from '@/lib/shop/shop-catalog-ui-store';
@@ -106,37 +107,42 @@ export function ShopCatalogSearchButton() {
       </button>
 
       {overlayOpen ?
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[46] bg-black/25"
-            aria-label="關閉搜尋"
-            onClick={() => {
-              closeOverlay();
-            }}
-          />
-          <div className="fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+4.25rem)] z-[47] rounded-xl border-hairline border-border bg-[var(--color-background-primary)] p-3 shadow-sm">
-            <label className="sr-only" htmlFor="shop-catalog-search-input">
-              搜尋商品名稱
-            </label>
-            <input
-              ref={inputRef}
-              id="shop-catalog-search-input"
-              type="search"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-              }}
-              placeholder="搜尋商品名稱"
-              autoComplete="off"
-              className={cn(
-                'h-11 w-full rounded-[10px] border-hairline border-border bg-secondary px-3 text-body text-foreground outline-none',
-                'placeholder:text-muted-foreground',
-                'focus:border-primary focus:ring-2 focus:ring-primary/15',
-              )}
-            />
-          </div>
-        </>
+        typeof document === 'undefined' ?
+          null
+        : createPortal(
+            <>
+              <button
+                type="button"
+                className="fixed inset-0 z-[50] bg-black/25"
+                aria-label="關閉搜尋"
+                onClick={() => {
+                  closeOverlay();
+                }}
+              />
+              <div className="fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+4.25rem)] z-[51] rounded-xl border-hairline border-border bg-[var(--color-background-primary)] p-3 shadow-sm">
+                <label className="sr-only" htmlFor="shop-catalog-search-input">
+                  搜尋商品名稱
+                </label>
+                <input
+                  ref={inputRef}
+                  id="shop-catalog-search-input"
+                  type="search"
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                  }}
+                  placeholder="搜尋商品名稱"
+                  autoComplete="off"
+                  className={cn(
+                    'h-11 w-full rounded-[10px] border-hairline border-border bg-secondary px-3 text-body text-foreground outline-none',
+                    'placeholder:text-muted-foreground',
+                    'focus:border-primary focus:ring-2 focus:ring-primary/15',
+                  )}
+                />
+              </div>
+            </>,
+            document.body,
+          )
       : null}
     </>
   );

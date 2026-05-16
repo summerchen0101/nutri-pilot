@@ -18,12 +18,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         /** 由商城 layout 注入 `next/font` 的 `--font-shop-serif` */
-        serif: [
-          "var(--font-shop-serif)",
-          "Georgia",
-          "Noto Serif TC",
-          "serif",
-        ],
+        serif: ["var(--font-shop-serif)", "Georgia", "Noto Serif TC", "serif"],
       },
       /** 極細框 — coarse 時改 1px 見 tailwind-hairline-plugin.ts */
       borderWidth: {
@@ -31,7 +26,7 @@ const config: Config = {
       },
       fontSize: {
         /** 螢幕頂主標（PageHeading）— docs/09-ui-design.md */
-        "heading-screen": ["22px", { lineHeight: "1.2", fontWeight: "500" }],
+        "heading-screen": ["18px", { lineHeight: "1.2", fontWeight: "500" }],
         /** 數字大值等 — docs/09-ui-design.md */
         "heading-page": ["20px", { lineHeight: "1.25", fontWeight: "500" }],
         /** 區塊標題 */

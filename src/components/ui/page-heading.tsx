@@ -16,10 +16,7 @@ export function PageHeading({
 }: PageHeadingProps) {
   return (
     <h1
-      className={cn(
-        "text-heading-screen text-primary",
-        className,
-      )}
+      className={cn("text-heading-screen text-foreground", className)}
       {...props}>
       {children}
     </h1>

@@ -11,13 +11,21 @@ import { ShopPageHeader } from '@/app/(main)/shop/shop-page-header';
 import { getCachedAuthContext } from '@/lib/auth';
 
 export default async function ShopPage() {
-  const { user } = await getCachedAuthContext();
+  const { supabase, user } = await getCachedAuthContext();
 
   if (!user) redirect('/login');
 
+  const { data: pointsRow } = await supabase
+    .from('user_profiles')
+    .select('shop_points_balance')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const shopPointsBalance = Number(pointsRow?.shop_points_balance ?? 0);
+
   return (
     <div className="space-y-4">
-      <ShopPageHeader />
+      <ShopPageHeader shopPointsBalance={shopPointsBalance} />
       <Suspense fallback={<ShopBannerSkeleton />}>
         <ShopHomeBanner />
       </Suspense>
