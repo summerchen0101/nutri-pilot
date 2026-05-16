@@ -2,12 +2,12 @@ import Link from 'next/link';
 import { History } from 'lucide-react';
 
 import { HEADER_ACTION_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 
 export default function GuardLoading() {
   return (
     <div className="space-y-3" aria-busy aria-label="載入守衛">
-      <PageHeader
+      <StickyPageHeader
         title="食品安全守衛"
         spacing="compact"
         action={

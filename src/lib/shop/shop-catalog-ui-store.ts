@@ -20,11 +20,16 @@ interface ShopCatalogUiState {
   personalizedScoresEnabled: boolean | null;
   categoryPanelOpen: boolean;
   filterPanelOpen: boolean;
+  catalogSearchQuery: string;
+  catalogSearchOverlayOpen: boolean;
   setCategory: (category: ShopCategoryKey) => void;
   toggleFilter: (key: string) => void;
   clearFiltersAndSort: () => void;
   setSortMode: (mode: ShopCatalogSortMode) => void;
   setPersonalizedScoresEnabled: (enabled: boolean) => void;
+  setCatalogSearchQuery: (query: string) => void;
+  openCatalogSearchOverlay: () => void;
+  closeCatalogSearchOverlay: () => void;
   openCategoryPanel: () => void;
   closeCategoryPanel: () => void;
   openFilterPanel: () => void;
@@ -47,6 +52,8 @@ export const useShopCatalogUiStore = create<ShopCatalogUiState>((set) => ({
   personalizedScoresEnabled: null,
   categoryPanelOpen: false,
   filterPanelOpen: false,
+  catalogSearchQuery: '',
+  catalogSearchOverlayOpen: false,
   setCategory: (category) => set({ category }),
   toggleFilter: (key) =>
     set((s) => ({
@@ -69,6 +76,9 @@ export const useShopCatalogUiStore = create<ShopCatalogUiState>((set) => ({
       sortMode:
         !enabled && s.sortMode === 'personalized' ? 'rating' : s.sortMode,
     })),
+  setCatalogSearchQuery: (catalogSearchQuery) => set({ catalogSearchQuery }),
+  openCatalogSearchOverlay: () => set({ catalogSearchOverlayOpen: true }),
+  closeCatalogSearchOverlay: () => set({ catalogSearchOverlayOpen: false }),
   openCategoryPanel: () =>
     set({ categoryPanelOpen: true, filterPanelOpen: false }),
   closeCategoryPanel: () => set({ categoryPanelOpen: false }),

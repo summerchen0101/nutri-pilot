@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { HeaderBackButton } from '@/components/layout/header-back-button';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { SectionCard } from '@/components/ui/section-card';
 import { getCachedAuthContext } from '@/lib/auth';
 
@@ -12,7 +12,7 @@ export default async function SupportPage() {
 
   return (
     <div className="space-y-3 pb-4">
-      <PageHeader
+      <StickyPageHeader
         leading={<HeaderBackButton />}
         title="客服"
         spacing="compact"

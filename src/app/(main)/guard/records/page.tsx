@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { GuardSavedRecordDeleteButton } from "@/app/(main)/guard/records/guard-saved-record-delete-button";
 import { GuardSavedRecordRenameButton } from "@/app/(main)/guard/records/guard-saved-record-rename-button";
 import { HeaderBackButton } from "@/components/layout/header-back-button";
-import { PageHeader } from "@/components/layout/page-header";
+import { StickyPageHeader } from "@/components/layout/sticky-page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { MAX_LABEL_GUARD_SAVED_REPORTS } from "@/lib/food/label-guard-saved";
 import { safetyScoreTextClass } from "@/lib/food/label-guard-report";
@@ -57,7 +57,7 @@ export default async function GuardRecordsPage() {
   if (error) {
     return (
       <div className="space-y-3">
-        <PageHeader
+        <StickyPageHeader
           leading={<HeaderBackButton />}
           title="食品安全分析紀錄"
           spacing="compact"
@@ -76,7 +76,7 @@ export default async function GuardRecordsPage() {
 
   return (
     <div className="space-y-3">
-      <PageHeader
+      <StickyPageHeader
         leading={<HeaderBackButton />}
         title="食品安全分析紀錄"
         spacing="compact"

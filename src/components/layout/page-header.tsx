@@ -3,9 +3,11 @@ import type { ReactNode } from "react";
 import { PageHeading } from "@/components/ui/page-heading";
 import { cn } from "@/lib/utils/cn";
 
-interface PageHeaderProps {
+export interface PageHeaderProps {
   leading?: ReactNode;
   title: string;
+  /** 取代預設 PageHeading；建議搭配 sr-only 標題由 title 提供 */
+  titleSlot?: ReactNode;
   meta?: ReactNode;
   action?: ReactNode;
   spacing?: "compact" | "default";
@@ -17,6 +19,7 @@ interface PageHeaderProps {
 export function PageHeader({
   leading,
   title,
+  titleSlot,
   meta,
   action,
   spacing = "default",
@@ -35,7 +38,12 @@ export function PageHeader({
         {leading ? <div className="shrink-0">{leading}</div> : null}
         <div className="min-w-0 space-y-1">
           <div className="flex min-h-9 items-center">
-            <PageHeading>{title}</PageHeading>
+            {titleSlot ?
+              <>
+                <span className="sr-only">{title}</span>
+                {titleSlot}
+              </>
+            : <PageHeading>{title}</PageHeading>}
           </div>
           {meta ? <div className="pt-0.5">{meta}</div> : null}
         </div>

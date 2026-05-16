@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { labelShopPointReason } from '@/app/(main)/settings/_lib/point-ledger-labels';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { getCachedAuthContext } from '@/lib/auth';
 import type { Tables } from '@/types/supabase';
 
@@ -39,7 +39,7 @@ export default async function SettingsPointsHistoryPage() {
 
   return (
     <div className="space-y-4 pb-6">
-      <PageHeader title="點數紀錄" leading={<HeaderBackButton />} />
+      <StickyPageHeader title="點數紀錄" leading={<HeaderBackButton />} />
       <p className="text-caption leading-relaxed text-muted-foreground">
         1 點可折抵 1 元商城消費。異動原因與餘額僅供參考，以正式方案條款與系統為準。
       </p>

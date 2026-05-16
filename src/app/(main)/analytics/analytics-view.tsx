@@ -30,7 +30,7 @@ import {
 } from "recharts";
 
 import { HeaderBackButton } from "@/components/layout/header-back-button";
-import { PageHeader } from "@/components/layout/page-header";
+import { StickyPageHeader } from "@/components/layout/sticky-page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -356,7 +356,7 @@ export function AnalyticsView({
 
   return (
     <div className="space-y-3">
-      <PageHeader
+      <StickyPageHeader
         leading={<HeaderBackButton />}
         title="數據分析"
         spacing="compact"

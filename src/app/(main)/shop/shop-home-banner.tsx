@@ -6,13 +6,13 @@ import { getCachedAuthContext } from '@/lib/auth';
 function ShopHomeBannerFallback() {
   return (
     <section
-      className="overflow-hidden rounded-xl bg-primary-light px-4 py-5"
+      className="overflow-hidden rounded-xl bg-primary-light px-6 py-8 text-center"
       aria-label="商城活動"
     >
       <p className="text-heading-section text-[#2D6B4A]">
         為你的健康計畫精選好物
       </p>
-      <p className="mt-1 text-caption text-[#2D6B4A]/85">
+      <p className="mt-2 text-caption text-[#2D6B4A]/85">
         依飲食偏好與目標排序，安心選購。
       </p>
     </section>
@@ -46,17 +46,17 @@ export async function ShopHomeBanner() {
             sizes="(max-width: 768px) 100vw, 440px"
             unoptimized
           />
-          <div className="absolute inset-x-0 bottom-0 bg-black/45 px-4 py-3">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 px-6 text-center">
             <p className="text-heading-section text-white">{data.title}</p>
             {data.subtitle ?
-              <p className="mt-1 text-caption text-white/85">{data.subtitle}</p>
+              <p className="mt-2 text-caption text-white/90">{data.subtitle}</p>
             : null}
           </div>
         </div>
-      : <div className="px-4 py-5">
+      : <div className="px-6 py-8 text-center">
           <p className="text-heading-section text-[#2D6B4A]">{data.title}</p>
           {data.subtitle ?
-            <p className="mt-1 text-caption text-[#2D6B4A]/85">{data.subtitle}</p>
+            <p className="mt-2 text-caption text-[#2D6B4A]/85">{data.subtitle}</p>
           : null}
         </div>
       }

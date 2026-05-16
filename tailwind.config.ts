@@ -16,6 +16,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        /** 由商城 layout 注入 `next/font` 的 `--font-shop-serif` */
+        serif: [
+          "var(--font-shop-serif)",
+          "Georgia",
+          "Noto Serif TC",
+          "serif",
+        ],
+      },
       /** 極細框 — coarse 時改 1px 見 tailwind-hairline-plugin.ts */
       borderWidth: {
         hairline: "0.5px",

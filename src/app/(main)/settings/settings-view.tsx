@@ -43,7 +43,7 @@ import {
   shopSectionSummary,
 } from '@/app/(main)/settings/_lib/settings-section-summaries';
 import { HEADER_ACTION_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { cn } from '@/lib/utils/cn';
 import { createClient } from '@/lib/supabase/client';
 import { ALLERGEN_OPTIONS, DIET_METHOD_OPTIONS, GOAL_TYPE_OPTIONS } from '@/lib/onboarding/constants';
@@ -327,7 +327,7 @@ export function SettingsView({ initial }: { initial: SettingsInitialData }) {
 
   return (
     <div className="space-y-3 pb-4">
-      <PageHeader
+      <StickyPageHeader
         title="我的"
         action={
           <button

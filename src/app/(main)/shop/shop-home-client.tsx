@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { Sparkles, Store } from 'lucide-react';
 
+import { ShopCatalogStickyTabs } from '@/app/(main)/shop/_components/shop-catalog-sticky-tabs';
 import { ShopQuickAddCartDialog } from '@/app/(main)/shop/_components/shop-quick-add-cart-dialog';
 import { ShopCatalogProductCard } from '@/app/(main)/shop/shop-catalog-product-card';
 import { toggleProductFavorite } from '@/app/(main)/shop/favorite-actions';
@@ -122,6 +123,7 @@ export function ShopHomeClient({
   const category = useShopCatalogUiStore((s) => s.category);
   const filters = useShopCatalogUiStore((s) => s.filters);
   const sortMode = useShopCatalogUiStore((s) => s.sortMode);
+  const catalogSearchQuery = useShopCatalogUiStore((s) => s.catalogSearchQuery);
   const setPersonalizedScoresEnabled = useShopCatalogUiStore(
     (s) => s.setPersonalizedScoresEnabled,
   );
@@ -167,6 +169,11 @@ export function ShopHomeClient({
       list = list.filter((p) => (p.cert_tags ?? []).includes('organic'));
     }
 
+    const q = catalogSearchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((p) => p.name.toLowerCase().includes(q));
+    }
+
     const effectiveSort: ShopCatalogSortMode =
       !usePersonalizedScores && sortMode === 'personalized' ?
         'rating'
@@ -184,6 +191,7 @@ export function ShopHomeClient({
     dietMethod,
     usePersonalizedScores,
     sortMode,
+    catalogSearchQuery,
   ]);
 
   function handleToggleFavorite(productId: string) {
@@ -221,6 +229,7 @@ export function ShopHomeClient({
 
   return (
     <div className="space-y-5">
+      <ShopCatalogStickyTabs />
       <section>
         <SectionHeading icon={Sparkles}>為你推薦</SectionHeading>
         {!usePersonalizedScores ?

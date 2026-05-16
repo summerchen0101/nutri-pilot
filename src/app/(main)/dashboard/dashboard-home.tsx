@@ -22,7 +22,7 @@ import {
   HEADER_ACTION_ICON_CLASS,
   SECTION_HEADING_ACTION_ICON_CLASS,
 } from "@/components/layout/header-action-icon-styles";
-import { PageHeader } from "@/components/layout/page-header";
+import { StickyPageHeader } from "@/components/layout/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { macroTargetsFromKcal } from "@/lib/dashboard/macro-targets";
@@ -500,7 +500,7 @@ export function DashboardHome({
 
   return (
     <div className="space-y-3">
-      <PageHeader
+      <StickyPageHeader
         title={headerTitle}
         spacing="compact"
         action={

@@ -1,39 +1,19 @@
-import Link from "next/link";
-import Image from "next/image";
-import { notFound, redirect } from "next/navigation";
-import {
-  AlertTriangle,
-  Apple,
-  BookOpen,
-  CircleCheck,
-  Info,
-  Leaf,
-  MapPin,
-  Sparkles,
-  Store,
-} from "lucide-react";
+import { notFound, redirect } from 'next/navigation';
 
-import { ProductDetailClient } from "@/app/(main)/shop/[productId]/product-detail-client";
-import { ProductFavoriteHeaderButton } from "@/app/(main)/shop/_components/product-favorite-controls";
-import { HeaderBackButton } from "@/components/layout/header-back-button";
-import { PageHeader } from "@/components/layout/page-header";
-import { SectionHeading } from "@/components/ui/section-heading";
+import { ProductDetailMaraisClient } from '@/app/(main)/shop/[productId]/product-detail-marais-client';
+import { ShopProductDetailHeaderActions } from '@/app/(main)/shop/[productId]/shop-product-detail-header-actions';
+import { HeaderBackButton } from '@/components/layout/header-back-button';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import {
   SHOP_CATEGORY_LABEL,
   SHOP_HEADER_SCROLL_ANCHOR_ID,
-} from "@/lib/shop/constants";
-import {
-  formatShopGroupedDecimal,
-  formatShopGroupedInteger,
-} from "@/lib/shop/format-shop-number";
-import { generateFitReasons } from "@/lib/shop/fit-reasons";
-import { getCachedAuthContext } from "@/lib/auth";
+} from '@/lib/shop/constants';
+import { generateFitReasons } from '@/lib/shop/fit-reasons';
+import { getCachedAuthContext } from '@/lib/auth';
 
 interface PageProps {
   params: { productId: string };
 }
-
-const MAX_PRODUCT_INTRO_CHARS = 80;
 
 export default async function ShopProductPage({ params }: PageProps) {
   const { supabase, user } = await getCachedAuthContext();
@@ -106,6 +86,14 @@ export default async function ShopProductPage({ params }: PageProps) {
     { diet_method: profile.diet_method },
   );
 
+  const { count: brandProductCountRaw } = await supabase
+    .from('products')
+    .select('*', { count: 'exact', head: true })
+    .eq('brand_id', product.brand_id as string)
+    .eq('is_active', true);
+
+  const brandProductCount = brandProductCountRaw ?? 0;
+
   const { data: sameBrand } = await supabase
     .from("products")
     .select("id, name, image_url, slug, variants:product_variants(price)")
@@ -140,7 +128,7 @@ export default async function ShopProductPage({ params }: PageProps) {
 
   const vendorRaw = brand?.vendor;
   const vendorRow = Array.isArray(vendorRaw) ? vendorRaw[0] : vendorRaw;
-  if (!vendorRow) {
+  if (!vendorRow || !brand) {
     notFound();
   }
 
@@ -157,272 +145,64 @@ export default async function ShopProductPage({ params }: PageProps) {
 
   return (
     <div className="space-y-5">
-      <PageHeader
+      <StickyPageHeader
         anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
         leading={<HeaderBackButton />}
         title={product.name as string}
-        meta={
-          brand?.name ? (
-            <p className="text-caption text-muted-foreground">{brand.name}</p>
-          ) : undefined
-        }
+        titleSlot={<div className="min-h-9 min-w-0 flex-1" aria-hidden />}
         action={
-          <ProductFavoriteHeaderButton
-            productId={product.id as string}
-            initialIsFavorite={favoriteRow != null}
+          <ShopProductDetailHeaderActions
+            productName={product.name as string}
           />
         }
       />
 
-      <section className="overflow-hidden rounded-xl bg-card">
-        <div className="relative aspect-[4/3] w-full bg-muted">
-          {product.image_url ? (
-            <Image
-              src={product.image_url}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="400px"
-              priority
-              unoptimized
-            />
-          ) : null}
-        </div>
-        <div className="space-y-3 p-4">
-          <BadgeRow
-            categoryLabel={categoryLabel}
-            dietTags={product.diet_tags}
-          />
-          <p className="text-[13px] leading-relaxed text-muted-foreground">
-            {truncateProductIntro(product.description)}
-          </p>
-        </div>
-      </section>
-
-      <ProductDetailClient
+      <ProductDetailMaraisClient
         key={product.id as string}
-        product={{
-          id: product.id as string,
-          name: product.name as string,
-          imageUrl: (product.image_url as string | null) ?? null,
-          variants: (product.variants ?? []) as Array<{
-            id: string;
-            label: string;
-            weight_g: number;
-            price: number;
-            stock: number | null;
-          }>,
-          vendor: vendorForClient,
+        productId={product.id as string}
+        productName={product.name as string}
+        imageUrl={(product.image_url as string | null) ?? null}
+        description={(product.description as string | null) ?? null}
+        categoryLabel={categoryLabel}
+        dietTags={product.diet_tags as string[] | null}
+        certTags={product.cert_tags as string[] | null}
+        ingredients={(product.ingredients as string | null) ?? null}
+        origin={(product.origin as string | null) ?? null}
+        vendor={vendorForClient}
+        brand={{
+          id: brand.id,
+          name: brand.name,
+          slug: brand.slug,
+          description: brand.description,
+          logo_url: brand.logo_url,
         }}
+        brandProductCount={brandProductCount}
+        variants={(product.variants ?? []) as Array<{
+          id: string;
+          label: string;
+          weight_g: number;
+          price: number;
+          stock: number | null;
+        }>}
+        fitReasons={fitReasons}
+        nutrition={{
+          calories: Number(product.calories),
+          carb_g: Number(product.carb_g),
+          protein_g: Number(product.protein_g),
+          fat_g: Number(product.fat_g),
+          fiber_g: product.fiber_g != null ? Number(product.fiber_g) : null,
+          sugar_g: product.sugar_g != null ? Number(product.sugar_g) : null,
+          sodium_mg: product.sodium_mg != null ? Number(product.sodium_mg) : null,
+          serving_size_g: Number(product.serving_size_g),
+        }}
+        sameBrand={(sameBrand ?? []) as Array<{
+          id: string;
+          name: string;
+          image_url: string | null;
+          variants: { price: number }[] | null;
+        }>}
+        initialIsFavorite={favoriteRow != null}
       />
-
-      <section className="rounded-xl bg-primary-light p-4">
-        <SectionHeading icon={Sparkles}>為什麼適合你</SectionHeading>
-        <ul className="mt-3 space-y-2">
-          {fitReasons.map((r, i) => (
-            <li
-              key={i}
-              className="flex gap-2 text-[13px] leading-relaxed text-foreground">
-              <FitReasonTypeIcon type={r.type} />
-              <span className={cnReason(r.type, "min-w-0 flex-1")}>
-                {r.text}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="rounded-xl bg-card p-4">
-        <SectionHeading icon={Apple}>營養標示（每份）</SectionHeading>
-        <table className="mt-2 w-full text-[13px]">
-          <tbody>
-            <tr className="border-b border-border">
-              <th className="px-3 py-2 text-left font-medium">熱量</th>
-              <td className="px-3 py-2 tabular-nums">
-                {formatShopGroupedInteger(Number(product.calories))} kcal
-              </td>
-            </tr>
-            <tr className="border-b border-border">
-              <th className="px-3 py-2 text-left font-medium">碳水化合物</th>
-              <td className="px-3 py-2 tabular-nums">
-                {formatShopGroupedDecimal(Number(product.carb_g), 2)} g
-              </td>
-            </tr>
-            <tr className="border-b border-border">
-              <th className="px-3 py-2 text-left font-medium">蛋白質</th>
-              <td className="px-3 py-2 tabular-nums">
-                {formatShopGroupedDecimal(Number(product.protein_g), 2)} g
-              </td>
-            </tr>
-            <tr className="border-b border-border">
-              <th className="px-3 py-2 text-left font-medium">脂肪</th>
-              <td className="px-3 py-2 tabular-nums">
-                {formatShopGroupedDecimal(Number(product.fat_g), 2)} g
-              </td>
-            </tr>
-            {product.fiber_g != null ? (
-              <tr className="border-b border-border">
-                <th className="px-3 py-2 text-left font-medium">膳食纖維</th>
-                <td className="px-3 py-2 tabular-nums">
-                  {formatShopGroupedDecimal(Number(product.fiber_g), 2)} g
-                </td>
-              </tr>
-            ) : null}
-            {product.sugar_g != null ? (
-              <tr className="border-b border-border">
-                <th className="px-3 py-2 text-left font-medium">糖</th>
-                <td className="px-3 py-2 tabular-nums">
-                  {formatShopGroupedDecimal(Number(product.sugar_g), 2)} g
-                </td>
-              </tr>
-            ) : null}
-            {product.sodium_mg != null ? (
-              <tr>
-                <th className="px-3 py-2 text-left font-medium">鈉</th>
-                <td className="px-3 py-2 tabular-nums">
-                  {formatShopGroupedInteger(Number(product.sodium_mg))} mg
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-        <p className="mt-1 text-[11px] text-muted-foreground">
-          份量基準：
-          {formatShopGroupedDecimal(Number(product.serving_size_g), 2)} g
-        </p>
-      </section>
-
-      <section className="rounded-xl bg-card p-4">
-        <SectionHeading icon={Leaf}>成分與產地</SectionHeading>
-        <p className="mt-2 text-[13px] leading-relaxed text-foreground">
-          {product.ingredients ?? "—"}
-        </p>
-        <p className="mt-3 flex items-start gap-2 text-[13px] text-foreground">
-          <MapPin
-            className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
-            aria-hidden
-          />
-          <span>產地：{product.origin ?? "—"}</span>
-        </p>
-        {(product.cert_tags ?? []).length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(product.cert_tags ?? []).map((t: string) => (
-              <span
-                key={t}
-                className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-                {t === "organic" ? "有機" : t}
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </section>
-
-      {brand?.description ? (
-        <section className="rounded-xl bg-card p-4">
-          <SectionHeading icon={BookOpen}>品牌故事</SectionHeading>
-          <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-            {brand.description}
-          </p>
-          <Link
-            href={`/shop`}
-            className="mt-3 inline-block text-[13px] font-medium text-primary">
-            查看商城全系列 →
-          </Link>
-        </section>
-      ) : null}
-
-      {(sameBrand ?? []).length > 0 ? (
-        <section>
-          <SectionHeading icon={Store}>同品牌推薦</SectionHeading>
-          <div className="hide-scrollbar mt-3 flex gap-3 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
-            {(sameBrand ?? []).map((sp) => {
-              const variants = sp.variants as { price: number }[] | null;
-              const minP = variants?.length
-                ? Math.min(...variants.map((v) => Number(v.price)))
-                : 0;
-              return (
-                <Link
-                  key={sp.id}
-                  href={`/shop/${sp.id}`}
-                  className="flex w-36 shrink-0 flex-col overflow-hidden rounded-xl bg-card">
-                  <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
-                    {sp.image_url ? (
-                      <Image
-                        src={sp.image_url}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="144px"
-                        unoptimized
-                      />
-                    ) : null}
-                  </div>
-                  <div className="flex flex-1 flex-col p-2">
-                    <p className="line-clamp-2 text-[11px] font-medium leading-snug text-foreground">
-                      {sp.name as string}
-                    </p>
-                    <p className="mt-1 text-[11px] tabular-nums text-muted-foreground">
-                      NT$ {formatShopGroupedInteger(minP)} 起
-                    </p>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
     </div>
   );
-}
-
-function truncateProductIntro(description: string | null): string {
-  const trimmed = (description ?? "").trim();
-  if (trimmed.length === 0) return "尚無商品簡介";
-  const chars = Array.from(trimmed);
-  if (chars.length <= MAX_PRODUCT_INTRO_CHARS) return trimmed;
-  return `${chars.slice(0, MAX_PRODUCT_INTRO_CHARS).join("")}…`;
-}
-
-function BadgeRow({
-  categoryLabel,
-  dietTags,
-}: {
-  categoryLabel: string;
-  dietTags: string[] | null;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-        {categoryLabel}
-      </span>
-      {(dietTags ?? []).slice(0, 3).map((t) => (
-        <span
-          key={t}
-          className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-medium text-white">
-          {t}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function cnReason(type: "positive" | "info" | "caution", base: string): string {
-  if (type === "positive") return `${base} text-primary-foreground`;
-  if (type === "caution") return `${base} text-amber-600`;
-  return base;
-}
-
-function FitReasonTypeIcon({
-  type,
-}: {
-  type: "positive" | "info" | "caution";
-}) {
-  const className = "mt-0.5 h-4 w-4 shrink-0 text-muted-foreground";
-  if (type === "positive") {
-    return <CircleCheck className={className} aria-hidden />;
-  }
-  if (type === "caution") {
-    return <AlertTriangle className={className} aria-hidden />;
-  }
-  return <Info className={className} aria-hidden />;
 }

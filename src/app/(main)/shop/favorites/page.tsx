@@ -6,7 +6,7 @@ import { ShopCartHeaderAction } from '@/app/(main)/shop/shop-cart-header-action'
 import { ShopFavoritesView } from '@/app/(main)/shop/favorites/shop-favorites-view';
 import type { ShopProductRow } from '@/app/(main)/shop/shop-home-client';
 import { HEADER_LEADING_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { SHOP_HEADER_SCROLL_ANCHOR_ID } from '@/lib/shop/constants';
 import { cn } from '@/lib/utils/cn';
 import { getCachedAuthContext } from '@/lib/auth';
@@ -71,7 +71,7 @@ export default async function ShopFavoritesPage() {
   if (!favRows?.length) {
     return (
       <div className="space-y-4">
-        <PageHeader
+        <StickyPageHeader
           anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
           leading={backLink}
           title="我的最愛"
@@ -130,7 +130,7 @@ export default async function ShopFavoritesPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader
+      <StickyPageHeader
         anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
         leading={backLink}
         title="我的最愛"

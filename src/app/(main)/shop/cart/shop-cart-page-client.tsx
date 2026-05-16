@@ -6,7 +6,7 @@ import { CheckoutProgressSteps } from '@/app/(main)/shop/cart/checkout-progress-
 import { CartFixedSummaryBar } from '@/app/(main)/shop/cart/cart-fixed-summary-bar';
 import { CartView } from '@/app/(main)/shop/cart/cart-view';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useCartDerived } from '@/lib/shop/use-cart-derived';
 import { useCartStore } from '@/lib/shop/cart-store';
@@ -21,7 +21,7 @@ export function ShopCartPageClient() {
 
   const headerBlock = (
     <>
-      <PageHeader
+      <StickyPageHeader
         leading={<HeaderBackButton />}
         title="購物車"
         action={

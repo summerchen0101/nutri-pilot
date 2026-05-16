@@ -1,6 +1,5 @@
 /**
- * 商城頁 `PageHeader` 的 `id`，供 `ShopCartScrollFab` 用 IntersectionObserver
- * 判斷頁首是否仍在視窗內。
+ * 商城頁 `StickyPageHeader`／`PageHeader` 的 `id`，供捲動錨點或觀察用途。
  */
 export const SHOP_HEADER_SCROLL_ANCHOR_ID = 'shop-header-scroll-anchor';
 

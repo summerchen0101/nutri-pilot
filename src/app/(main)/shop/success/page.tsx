@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { HeaderBackButton } from '@/components/layout/header-back-button';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { getCachedAuthContext } from '@/lib/auth';
 import { SHOP_HEADER_SCROLL_ANCHOR_ID } from '@/lib/shop/constants';
 import { ClearCartOnSuccess } from '@/app/(main)/shop/success/clear-cart-on-success';
@@ -21,7 +21,7 @@ export default async function ShopSuccessPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-4">
       <ClearCartOnSuccess />
-      <PageHeader
+      <StickyPageHeader
         anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
         leading={<HeaderBackButton />}
         title="付款處理完成"

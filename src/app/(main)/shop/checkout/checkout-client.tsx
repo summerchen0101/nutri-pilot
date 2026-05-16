@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { startCheckout } from '@/app/(main)/shop/actions';
 import { Button } from '@/components/ui/button';
 import { HEADER_LEADING_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import {
   calcVendorShippingSummaries,
   cartGrandTotal,
@@ -126,7 +126,7 @@ export function CheckoutClient({
 
   return (
     <div className="space-y-5 pb-8">
-      <PageHeader
+      <StickyPageHeader
         leading={
           <Link
             href="/shop/cart"

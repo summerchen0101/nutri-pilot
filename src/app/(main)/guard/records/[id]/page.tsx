@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 
 import { HeaderBackButton } from '@/components/layout/header-back-button';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { GuardSavedRecordDetailClient } from '@/app/(main)/guard/records/guard-saved-record-detail-client';
 import { parseLabelGuardReportJson } from '@/lib/food/label-guard-report';
 import { getCachedAuthContext } from '@/lib/auth';
@@ -52,7 +52,7 @@ export default async function GuardSavedRecordDetailPage({ params }: PageProps) 
   if (error) {
     return (
       <div className="space-y-3">
-        <PageHeader
+        <StickyPageHeader
           leading={<HeaderBackButton />}
           title="食品安全分析紀錄"
           spacing="compact"
@@ -68,7 +68,7 @@ export default async function GuardSavedRecordDetailPage({ params }: PageProps) 
   if (!report) {
     return (
       <div className="space-y-3">
-        <PageHeader
+        <StickyPageHeader
           leading={<HeaderBackButton />}
           title="食品安全分析紀錄"
           spacing="compact"
@@ -105,7 +105,7 @@ export default async function GuardSavedRecordDetailPage({ params }: PageProps) 
 
   return (
     <div className="space-y-3">
-      <PageHeader
+      <StickyPageHeader
         leading={<HeaderBackButton />}
         title="食品安全分析紀錄"
         spacing="compact"

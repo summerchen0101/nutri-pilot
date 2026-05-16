@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { LogContentSkeleton } from '@/app/(main)/log/log-content-skeleton';
 import { LogPageContent } from '@/app/(main)/log/log-page-content';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { getCachedAuthContext } from '@/lib/auth';
 
 export default async function LogPage({
@@ -21,7 +21,7 @@ export default async function LogPage({
 
   return (
     <div className="space-y-3">
-      <PageHeader title="每日紀錄" spacing="compact" />
+      <StickyPageHeader title="每日紀錄" spacing="compact" />
 
       <Suspense fallback={<LogContentSkeleton />}>
         <LogPageContent searchParams={searchParams} />

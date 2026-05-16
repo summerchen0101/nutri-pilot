@@ -3,7 +3,7 @@ import { Megaphone } from 'lucide-react';
 
 import { markAnnouncementsReadForUser } from '@/app/(main)/announcements/actions';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
-import { PageHeader } from '@/components/layout/page-header';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SectionCard } from '@/components/ui/section-card';
 import { getCachedAuthContext } from '@/lib/auth';
@@ -41,7 +41,7 @@ export default async function AnnouncementsPage() {
 
   return (
     <div className="space-y-3 pb-4">
-      <PageHeader
+      <StickyPageHeader
         leading={<HeaderBackButton />}
         title="公告"
         spacing="compact"
