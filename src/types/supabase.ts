@@ -936,6 +936,7 @@ export type Database = {
           balance_after: number
           created_at: string
           delta: number
+          expires_at: string | null
           id: string
           note: string | null
           reason: string
@@ -947,6 +948,7 @@ export type Database = {
           balance_after: number
           created_at?: string
           delta: number
+          expires_at?: string | null
           id?: string
           note?: string | null
           reason: string
@@ -958,6 +960,7 @@ export type Database = {
           balance_after?: number
           created_at?: string
           delta?: number
+          expires_at?: string | null
           id?: string
           note?: string | null
           reason?: string
@@ -966,6 +969,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_shop_point_lots: {
+        Row: {
+          amount_remaining: number
+          created_at: string
+          expires_at: string
+          grant_ledger_id: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount_remaining: number
+          created_at?: string
+          expires_at: string
+          grant_ledger_id?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount_remaining?: number
+          created_at?: string
+          expires_at?: string
+          grant_ledger_id?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_shop_point_lots_grant_ledger_id_fkey"
+            columns: ["grant_ledger_id"]
+            isOneToOne: false
+            referencedRelation: "user_shop_point_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_shipping_addresses: {
         Row: {
@@ -1212,6 +1250,13 @@ export type Database = {
       get_monthly_ai_quota_used: {
         Args: { p_month: string }
         Returns: number
+      }
+      get_shop_points_next_expiry: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          expires_at: string
+          points: number
+        }[]
       }
       match_food_cache: {
         Args: { p_query: string }

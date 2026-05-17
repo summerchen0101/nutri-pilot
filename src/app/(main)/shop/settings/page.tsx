@@ -9,15 +9,24 @@ export default async function ShopSettingsPage() {
 
   if (!user) redirect('/login');
 
-  const { data: profile, error } = await supabase
-    .from('user_profiles')
-    .select('diet_method, shop_personalize_recommendations')
-    .eq('user_id', user.id)
-    .single();
+  const [{ data: profile, error: profileErr }, { data: nextExpiryRows, error: expiryErr }] =
+    await Promise.all([
+      supabase
+        .from('user_profiles')
+        .select('diet_method, shop_personalize_recommendations, shop_points_balance')
+        .eq('user_id', user.id)
+        .single(),
+      supabase.rpc('get_shop_points_next_expiry'),
+    ]);
 
-  if (error || !profile) redirect('/onboarding');
+  if (profileErr || !profile) redirect('/onboarding');
+  if (expiryErr) {
+    throw new Error(expiryErr.message);
+  }
 
   const dietMethod = (profile.diet_method as string) ?? 'mediterranean';
+  const shopPointsBalance = Number(profile.shop_points_balance ?? 0);
+  const nextExpiry = nextExpiryRows?.[0];
 
   return (
     <ShopSettingsPageClient
@@ -25,6 +34,9 @@ export default async function ShopSettingsPage() {
       personalizeFromDietInitial={
         profile.shop_personalize_recommendations !== false
       }
+      shopPointsBalance={shopPointsBalance}
+      nextExpiringPoints={nextExpiry != null ? Number(nextExpiry.points) : null}
+      nextExpiryAt={nextExpiry?.expires_at ?? null}
     />
   );
 }

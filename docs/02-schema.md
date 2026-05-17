@@ -350,7 +350,8 @@ supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/supabase.
 
 - **`user_profiles.shop_points_balance`**：INTEGER，預設 0。  
 - **`user_profiles.shop_personalize_recommendations`**：BOOLEAN，預設 TRUE；關閉時商城／Dashboard 推薦不依 `user_product_scores` 排序。  
-- **`user_shop_point_ledger`**：點數異動流水（使用者僅 SELECT）。  
+- **`user_shop_point_ledger`**：點數異動流水（使用者僅 SELECT）；可選欄位 **`expires_at`**（入帳列與批次到期對齊；扣帳列通常為 NULL）。  
+- **`user_shop_point_lots`**（migration `035_shop_point_lots.sql`）：每筆入帳分批之 **`amount_remaining`**、**`expires_at`**；僅 SELECT RLS；`shop_points_balance` 應等於尚未核銷之 `amount_remaining` 總和（由入帳／扣帳流程同步維護）。既有餘額回填為單一批次、到期日為建立後 365 日（過渡政策，見 `docs/changes`）。函式 **`get_shop_points_next_expiry()`**（`authenticated` 可執行）：回傳目前使用者最早到期且 `expires_at > now()` 之批次加總點數與到期時間。  
 - **`user_shipping_addresses`**：多筆收件，每使用者最多一筆 `is_default = TRUE`；預設列與 `user_profiles.shipping_*` 同步供結帳預填。
 
 ## 補充（食品安全守衛）：`label_guard_jobs`、`label-guard-photos`

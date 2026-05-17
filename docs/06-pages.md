@@ -249,6 +249,10 @@ async function updateDietPreferences(userId: string, prefs: DietPreferences) {
 
 詳見 `05-shop.md`。
 
+### `/shop/settings`（商城設定頁）
+
+頂部顯示 `user_profiles.shop_points_balance` 與最早到期且尚未過期之點數批次摘要（RPC `get_shop_points_next_expiry`，資料來源 `user_shop_point_lots`）；下方為訂單、常用地址（開啟 `ShopSettingsSheet`）、點數紀錄、優惠券捷徑。
+
 ---
 
 ## Onboarding `/onboarding`（4 步驟）
