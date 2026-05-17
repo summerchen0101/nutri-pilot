@@ -1,6 +1,12 @@
+import { STICKY_PAGE_HEADER_TOP_SAFE_CLASS } from '@/components/layout/sticky-page-header-top-safe-class';
+import { cn } from '@/lib/utils/cn';
+
 export default function DashboardLoading() {
   return (
-    <div className="space-y-4" aria-busy aria-label="載入總覽">
+    <div
+      className={cn('space-y-4', STICKY_PAGE_HEADER_TOP_SAFE_CLASS)}
+      aria-busy
+      aria-label="載入總覽">
       <div className="flex items-center justify-between gap-2">
         <div className="h-7 w-36 animate-pulse rounded-lg bg-muted/80" />
         <div className="h-8 w-8 shrink-0 animate-pulse rounded-full bg-muted/70" />

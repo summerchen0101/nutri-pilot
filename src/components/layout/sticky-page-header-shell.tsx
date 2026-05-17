@@ -3,9 +3,12 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
+import { STICKY_PAGE_HEADER_TOP_SAFE_CLASS } from '@/components/layout/sticky-page-header-top-safe-class';
 import { cn } from '@/lib/utils/cn';
 
 const SCROLL_SCOPED_BG_PX = 8;
+
+export { STICKY_PAGE_HEADER_TOP_SAFE_CLASS } from './sticky-page-header-top-safe-class';
 
 interface StickyPageHeaderShellProps {
   children: ReactNode;
@@ -36,7 +39,8 @@ export function StickyPageHeaderShell({
     <div
       id={anchorId}
       className={cn(
-        'sticky top-0 z-[45] -mx-4 mb-1 px-4 pt-[max(0.25rem,env(safe-area-inset-top))]',
+        'sticky top-0 z-[45] -mx-4 mb-1 px-4',
+        STICKY_PAGE_HEADER_TOP_SAFE_CLASS,
         'transition-[background-color,border-color,backdrop-filter] duration-200 ease-out',
         isScrolled ?
           'border-b-hairline border-border/60 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/75'

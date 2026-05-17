@@ -24,7 +24,6 @@ import { Button } from '@/components/ui/button';
 import { useDashboardAiSprite } from '@/hooks/use-dashboard-ai-sprite';
 import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
 import type { QuickLogValidatedEntry } from '@/lib/quick-log/types';
-import { cn } from '@/lib/utils/cn';
 
 const MEAL_LABEL_ZH: Record<string, string> = {
   breakfast: '早餐',
@@ -281,7 +280,7 @@ export function DashboardAiSprite({
     <button
       type="button"
       aria-label="AI 精靈快速紀錄"
-      className={cn(HEADER_ACTION_ICON_CLASS, 'text-primary')}
+      className={HEADER_ACTION_ICON_CLASS}
       onClick={() => {
         resetAll();
         setSheetOpen(true);

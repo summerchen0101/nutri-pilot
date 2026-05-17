@@ -14,6 +14,7 @@ import {
 
 import {
   isShopCatalogHomePathname,
+  isShopCommerceShortcutPathname,
 } from '@/lib/shop/shop-path';
 import { useShopCatalogUiStore } from '@/lib/shop/shop-catalog-ui-store';
 import { cn } from '@/lib/utils/cn';
@@ -78,7 +79,8 @@ export function ShopBottomNav() {
     pathname === '/shop/history' || pathname.startsWith('/shop/history/');
   const shopSettingsActive =
     pathname === '/shop/settings' ||
-    pathname.startsWith('/shop/settings/');
+    pathname.startsWith('/shop/settings/') ||
+    isShopCommerceShortcutPathname(pathname);
 
   const homeSlotHref = isCatalogHome ? '/dashboard' : '/shop';
   const homeSlotLabel = isCatalogHome ? '總覽' : '首頁';

@@ -12,7 +12,7 @@
 | 拍照辨識（餐桌食物） | claude-sonnet-4-5 | **Queue** | 圖片上傳 + Vision 處理，耗時不定 |
 | 食品標示守衛 | claude-sonnet-4-5 | **Queue** | 獨立 `label-guard-photos` + `label_guard_jobs`；prompt 見 `supabase/functions/_shared/label-guard-report-prompt.ts` |
 | 週報洞察 | claude-sonnet-4-5 | **Queue（cron 觸發）** | 資料量大，每週自動跑 |
-| 今日 Dashboard 建議（近 7 日脈絡） | claude-sonnet-4-5 | 直接呼叫 | 首頁載入時以 Suspense 觸發；`POST /api/ai/dashboard-insight` 與首頁 defer 共用邏輯。`dashboard_daily_insights.insight_date` 為 **Asia/Taipei 每日 04:00** 換線的「建議週期」錨點（當日 04:00 以前與前一曆日同一快取）；**同一週期每使用者快取一次**（命中不重打 Claude、不複寫 `ai_usage_events`）。近 7 日彙總仍以 Taipei **曆法今日**為結束日（與是否已過 04:00 無關）。Prompt 對齊「飲食與脈絡」「健康與目標」與近 7 日紀錄；無脈絡時可快取固定引導句。另抑制僅因未完整紀錄導致的單日熱量落差而作「波動」提醒。輸出 3～4 則 bullet（`source = dashboard_insight`） |
+| 今日 Dashboard 建議（近 7 日脈絡） | claude-sonnet-4-5 | 直接呼叫 | 首頁載入時以 Suspense 觸發；`POST /api/ai/dashboard-insight` 與首頁 defer 共用邏輯。`dashboard_daily_insights.insight_date` 為 **Asia/Taipei 每日 04:00** 換線的「建議週期」錨點（當日 04:00 以前與前一曆日同一快取）；**同一週期每使用者快取一次**（命中不重打 Claude、不複寫 `ai_usage_events`）。近 7 日彙總仍以 Taipei **曆法今日**為結束日（與是否已過 04:00 無關）。**介面**：建議全文以首頁浮動鈕 + `BottomSheetShell` 展開，非內嵌卡片。Prompt 對齊「飲食與脈絡」「健康與目標」與近 7 日紀錄；無脈絡時可快取固定引導句。另抑制僅因未完整紀錄導致的單日熱量落差而作「波動」提醒。輸出 3～4 則 bullet（`source = dashboard_insight`） |
 | 個人化口述整理 | claude-sonnet-4-5 | 直接呼叫 | 設定頁 `POST /api/ai/personal-context/analyze`；確認套用不呼叫模型 |
 
 ---

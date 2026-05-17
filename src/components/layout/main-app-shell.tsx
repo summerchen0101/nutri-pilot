@@ -26,19 +26,15 @@ export function MainAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const shopProductDetail = isShopProductDetailPathname(pathname);
   const compactBottomPadding = shouldUseCompactBottomPadding(pathname);
-  /** 商城樹與商城 commerce 捷徑頁皆以 StickyPageHeader Shell 自理 safe-area，避免頂緣多出全站 pt-5 */
-  const topPadClass =
-    isShopRoutePathname(pathname) || isShopCommerceShortcutPathname(pathname) ?
-      'pt-0'
-    : 'pt-5';
+  /** 全路由 pt-0；頂部 safe-area 由 StickyPageHeaderShell 或無頁首的 loading／skeleton 自理 */
   const contentPaddingClass =
     shopProductDetail ?
-      `mx-auto max-w-sm px-4 pb-8 ${topPadClass}`
+      'mx-auto max-w-sm px-4 pb-8 pt-0'
     : compactBottomPadding ?
-      `mx-auto max-w-sm px-4 pb-24 ${topPadClass}`
-    : `mx-auto max-w-sm px-4 pb-28 ${topPadClass}`;
+      'mx-auto max-w-sm px-4 pb-24 pt-0'
+    : 'mx-auto max-w-sm px-4 pb-28 pt-0';
   const showShopBottomNav =
-    isShopRoutePathname(pathname) &&
+    (isShopRoutePathname(pathname) || isShopCommerceShortcutPathname(pathname)) &&
     !shouldHideAllBottomNavPathname(pathname);
   const showMainBottomNav =
     !isShopRoutePathname(pathname) && !isShopCommerceShortcutPathname(pathname);

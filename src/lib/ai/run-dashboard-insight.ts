@@ -305,6 +305,16 @@ async function insertInsightCacheRow(
   console.error('dashboard_daily_insights insert:', error);
 }
 
+export type DashboardDailyInsightResult = {
+  bullets: string[];
+  status: number;
+  error?: string;
+  /** 與 `dashboard_daily_insights.insight_date` 一致（Taipei 每日 04:00 換線） */
+  insightPeriodDate: string;
+  /** 本次請求未命中快取且已成功寫入新列 */
+  justGenerated: boolean;
+};
+
 /**
  * 以 Asia/Taipei 每日 04:00 為界的「建議週期日」為 `insight_date` 快取鍵；有快取即回傳，否則產出（每週期每使用者最多呼叫 Claude 一次並寫入快取）。
  * 近 7 日彙總仍以 Taipei 曆法「今日」為結束日（與是否已過 04:00 無關）。
@@ -312,12 +322,17 @@ async function insertInsightCacheRow(
 export async function getOrCreateDashboardDailyInsight(
   supabase: SupabaseClient<Database>,
   userId: string,
-): Promise<{ bullets: string[]; status: number; error?: string }> {
+): Promise<DashboardDailyInsightResult> {
   const { periodDate, dataAsOfDate } = taipeiInsightWindowContext();
 
   const cached = await selectCachedBullets(supabase, userId, periodDate);
   if (cached != null) {
-    return { bullets: cached, status: 200 };
+    return {
+      bullets: cached,
+      status: 200,
+      insightPeriodDate: periodDate,
+      justGenerated: false,
+    };
   }
 
   const fresh = await computeFreshDashboardInsight(
@@ -326,7 +341,13 @@ export async function getOrCreateDashboardDailyInsight(
     dataAsOfDate,
   );
   if (!fresh.ok) {
-    return { bullets: [], status: fresh.status, error: fresh.error };
+    return {
+      bullets: [],
+      status: fresh.status,
+      error: fresh.error,
+      insightPeriodDate: periodDate,
+      justGenerated: false,
+    };
   }
 
   await insertInsightCacheRow(supabase, userId, periodDate, fresh.bullets);
@@ -346,5 +367,10 @@ export async function getOrCreateDashboardDailyInsight(
 
   const reread = await selectCachedBullets(supabase, userId, periodDate);
 
-  return { bullets: reread ?? fresh.bullets, status: 200 };
+  return {
+    bullets: reread ?? fresh.bullets,
+    status: 200,
+    insightPeriodDate: periodDate,
+    justGenerated: true,
+  };
 }

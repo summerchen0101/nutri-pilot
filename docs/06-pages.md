@@ -15,8 +15,7 @@
 | 熱量圓環卡 | `food_log_items` 加總 | 今日攝取對 `user_goals.daily_cal_target` 顯示為「最高」；環色：未接近為綠、接近最高（約 ≥90% 且未超）為橘、超過為紅並滿環；進度條含碳水／蛋白質／脂肪及鈉（鈉以固定參考上線示意，無個別化上限欄） |
 | 體重卡 | `vital_logs`（最新一筆） | 今日或最近體重 + BMI 計算值；**點擊**前往 `/log?date=今日&tab=body` 調整體重（與紀錄頁體重卡相同） |
 | 今日餐食卡 | `food_logs` | 四餐記錄摘要（早中晚+點心），有未記錄的顯示提示 |
-| AI 今日建議卡 | 伺服端自動：近 7 日紀錄（結束於 Taipei「今日」曆日）+ 對齊「飲食與脈絡」「健康與目標」；`dashboard_daily_insights` 以 Taipei **每日 04:00** 換線的「建議週期」為快取鍵（`insight_date`） | Suspense + `DashboardDailyInsightDeferred`；同一週期僅產生／呼叫模型一次，其餘讀快取（見 `docs/04-ai-engine.md`） |
-| 快速操作列 | — | 五項入口：飲食(`/log`)、體重(`/log?date=今日&tab=body`)、運動(`/log?tab=activity`)、數據(`/analytics`)、食品安全分析紀錄(`/guard/records`，History 圖示)；樣式為「無外層白底卡」、採分類按鈕列 |
+| AI 今日建議 | 伺服端自動：近 7 日紀錄（結束於 Taipei「今日」曆日）+ 對齊「飲食與脈絡」「健康與目標」；`dashboard_daily_insights` 以 Taipei **每日 04:00** 換線的「建議週期」為快取鍵（`insight_date`） | Suspense + `DashboardDailyInsightDeferred` → `DashboardInsightFab`：**右下角浮動燈泡鈕**，點擊開 `BottomSheetShell` 顯示建議全文（預載仍於 defer 完成）。新週期未讀（`localStorage`）或本次請求剛寫入快取（`justGenerated`）時外圈輕量提醒動效；開啟抽層後標記已讀。同一週期僅產生／呼叫模型一次，其餘讀快取（見 `docs/04-ai-engine.md`） |
 
 ### 資料查詢（Server Component）
 
@@ -78,7 +77,7 @@ export default async function DashboardPage() {
 | 區塊 | 說明 |
 |------|------|
 | 主分頁 | URL `?tab=food`（預設）/ `activity` / `body`（體重與習慣）；`?date=` 仍用於當日篩選 |
-| 體重與習慣 | **`tab=body` 時顯示**，雙卡版面：**體重**（加／減步進並按「更新體重」寫入；無當日體重紀錄時可按「加」自 60 kg 起調。**身高**僅於設定編輯，不在此區）、**水分與睡眠**（飲水格、睡眠時數）。依 `?date=` 讀寫 `vital_logs`（`weight_kg`、`water_ml`、`sleep_hours`）。補登過去日期的體重僅寫入該日 `vital_logs`；今日體重在紀錄頁「體重」卡更新時會同步代謝與目標熱量（儀表板體重卡／快速操作「體重」導向該頁）。飲水目標 ml 目前為固定常數（與儀表板一致） |
+| 體重與習慣 | **`tab=body` 時顯示**，雙卡版面：**體重**（加／減步進並按「更新體重」寫入；無當日體重紀錄時可按「加」自 60 kg 起調。**身高**僅於設定編輯，不在此區）、**水分與睡眠**（飲水格、睡眠時數）。依 `?date=` 讀寫 `vital_logs`（`weight_kg`、`water_ml`、`sleep_hours`）。補登過去日期的體重僅寫入該日 `vital_logs`；今日體重在紀錄頁「體重」卡更新時會同步代謝與目標熱量（儀表板體重卡導向該頁）。飲水目標 ml 目前為固定常數（與儀表板一致） |
 | 餐次 Tab | 僅在飲食分頁：早餐 / 午餐 / 晚餐 / 點心 |
 | 輸入方式切換 | 手動（搜尋＋AI）/ 拍照餐點 |
 | 搜尋輸入 | Open Food Facts 搜尋 + 結果列表 + 份量調整 + 加入 |

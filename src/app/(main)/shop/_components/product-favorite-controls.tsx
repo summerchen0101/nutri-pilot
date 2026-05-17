@@ -88,7 +88,7 @@ export function ProductFavoriteDetailBarButton({
 interface ProductFavoriteHeaderButtonProps {
   productId: string;
   initialIsFavorite: boolean;
-  /** 預設為全站頁首主色框；商城詳情可改為 {@link SHOP_HEADER_ICON_BUTTON_CLASS} */
+  /** 預設與全站／商城頁首無框圖示一致 */
   iconButtonClassName?: string;
 }
 

@@ -59,11 +59,7 @@ export function isShopCommerceShortcutPathname(pathname: string | null): boolean
   return SHOP_COMMERCE_SHORTCUT_PATHS.has(trimmed);
 }
 
-/** 不顯示 ShopBottomNav 亦不顯示 BottomNav（商品詳情、商城設定 hub、商城 commerce 捷徑頁）。 */
+/** 不顯示 ShopBottomNav 亦不顯示 BottomNav（僅商品詳情；其餘商城路徑與 commerce 捷徑由 MainAppShell 顯示 ShopBottomNav）。 */
 export function shouldHideAllBottomNavPathname(pathname: string | null): boolean {
-  return (
-    isShopProductDetailPathname(pathname) ||
-    isShopSettingsHubPathname(pathname) ||
-    isShopCommerceShortcutPathname(pathname)
-  );
+  return isShopProductDetailPathname(pathname);
 }

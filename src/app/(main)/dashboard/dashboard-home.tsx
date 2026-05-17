@@ -4,13 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
-  BarChart3,
-  Dumbbell,
   Flame,
-  History,
   Megaphone,
   PlusCircle,
-  Scale,
   Sparkles,
   UtensilsCrossed,
 } from "lucide-react";
@@ -405,19 +401,13 @@ export function WeeklyPopularBrandsRail({
   );
 }
 
+/** 與 `DashboardInsightFab` 浮動鈕同位置，避免 Suspense 時版面跳動 */
 export function DashboardInsightSkeleton() {
   return (
-    <section className="rounded-xl bg-primary-light p-4">
-      <div className="h-5 w-24 animate-pulse rounded bg-muted" />
-      <div className="mt-3 space-y-2">
-        {[0, 1, 2].map((k) => (
-          <div key={k} className="flex gap-2">
-            <div className="mt-1.5 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-muted" />
-            <div className="h-8 min-w-0 flex-1 animate-pulse rounded bg-muted/70" />
-          </div>
-        ))}
-      </div>
-    </section>
+    <div
+      className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] right-4 z-[45] h-14 w-14 shrink-0 animate-pulse rounded-full border-hairline border-border bg-muted/60"
+      aria-hidden
+    />
   );
 }
 
@@ -482,11 +472,6 @@ export function DashboardHome({
   activityTypesLabel,
 }: DashboardHomeProps) {
   const logBodyHref = `/log?date=${encodeURIComponent(todayIsoDate)}&tab=body`;
-
-  const quickActionClass =
-    "flex h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border-hairline border-transparent bg-card px-1 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-[#4C956C]/40 hover:text-foreground";
-
-  const quickIconClass = "h-[18px] w-[18px] shrink-0 text-primary";
 
   const headerTitle = userName ? `Hi, ${userName}` : "Hi there";
 
@@ -660,56 +645,6 @@ export function DashboardHome({
           waterTargetMl={waterTargetMl}
           showQuickAdds
         />
-      </section>
-
-      <section>
-        <p className="text-[15px] font-medium text-foreground">快速操作</p>
-        <div className="mt-3 grid grid-cols-5 gap-1.5">
-          <Link href="/log" className={cn(quickActionClass)} title="記錄飲食">
-            <UtensilsCrossed
-              className={quickIconClass}
-              strokeWidth={1.8}
-              aria-hidden
-            />
-            <span className="text-center leading-tight">飲食</span>
-          </Link>
-          <Link
-            href={logBodyHref}
-            className={cn(quickActionClass)}
-            title="記錄體重">
-            <Scale className={quickIconClass} strokeWidth={1.8} aria-hidden />
-            <span className="text-center leading-tight">體重</span>
-          </Link>
-          <Link
-            href="/log?tab=activity"
-            className={cn(quickActionClass)}
-            title="記錄運動">
-            <Dumbbell
-              className={quickIconClass}
-              strokeWidth={1.8}
-              aria-hidden
-            />
-            <span className="text-center leading-tight">運動</span>
-          </Link>
-          <Link
-            href="/analytics"
-            className={cn(quickActionClass)}
-            title="數據分析">
-            <BarChart3
-              className={quickIconClass}
-              strokeWidth={1.8}
-              aria-hidden
-            />
-            <span className="text-center leading-tight">數據</span>
-          </Link>
-          <Link
-            href="/guard/records"
-            className={cn(quickActionClass)}
-            title="食品安全分析紀錄">
-            <History className={quickIconClass} strokeWidth={1.8} aria-hidden />
-            <span className="text-center leading-tight">標籤</span>
-          </Link>
-        </div>
       </section>
 
       {insightSlot ?? null}
