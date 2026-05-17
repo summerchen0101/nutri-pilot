@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition, type UIEvent } from "react";
 import { FiChevronLeft } from "react-icons/fi";
 
 import {
@@ -12,11 +12,11 @@ import { CheckoutLegalHint } from "@/app/(main)/shop/checkout/_components/checko
 import { CheckoutPanelFooter } from "@/app/(main)/shop/checkout/_components/checkout-panel-footer";
 import { CheckoutPaymentBreakdownCard } from "@/app/(main)/shop/checkout/_components/checkout-payment-breakdown-card";
 import { CheckoutPaymentMethodCard } from "@/app/(main)/shop/checkout/_components/checkout-payment-method-card";
-import { CheckoutRecipientFormCard } from "@/app/(main)/shop/checkout/_components/checkout-recipient-form-card";
 import { CheckoutShippingSummaryCard } from "@/app/(main)/shop/checkout/_components/checkout-shipping-summary-card";
+import { CheckoutVendorRecipientEditSheet } from "@/app/(main)/shop/checkout/_components/checkout-vendor-recipient-edit-sheet";
 import { HEADER_LEADING_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
-import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/shop/cart-store";
+import { isCvsShippingCode } from "@/lib/shop/shipping-method-kind";
 import { submitNewebpayMpgForm } from "@/lib/shop/submit-newebpay-mpg-form";
 import { useCartDerived } from "@/lib/shop/use-cart-derived";
 
@@ -48,12 +48,21 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
   const [recipientPhone, setRecipientPhone] = useState("");
   const [recipientAddressFull, setRecipientAddressFull] = useState("");
   const [saveShippingToProfile, setSaveShippingToProfile] = useState(false);
+  const [cvsStoreNameByVendor, setCvsStoreNameByVendor] = useState<
+    Record<string, string>
+  >({});
+  const [editingVendorId, setEditingVendorId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [defaultsLoading, setDefaultsLoading] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  const editingSummary = useMemo(() => {
+    if (!editingVendorId) return null;
+    return summaries.find((s) => s.vendorId === editingVendorId) ?? null;
+  }, [editingVendorId, summaries]);
+
   const onScroll = useCallback(
-    (e: React.UIEvent<HTMLDivElement>) => {
+    (e: UIEvent<HTMLDivElement>) => {
       onBodyScrollTopChange?.(e.currentTarget.scrollTop);
     },
     [onBodyScrollTopChange],
@@ -94,6 +103,21 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     openCartPanel();
   }, [isCheckoutPanelOpen, lines.length, closeCheckoutPanel, openCartPanel]);
 
+  useEffect(() => {
+    setCvsStoreNameByVendor((prev) => {
+      const cvsIds = new Set(
+        summaries
+          .filter((s) => isCvsShippingCode(s.selectedShippingMethodCode))
+          .map((s) => s.vendorId),
+      );
+      const next: Record<string, string> = {};
+      cvsIds.forEach((id) => {
+        next[id] = prev[id] ?? "";
+      });
+      return next;
+    });
+  }, [summaries]);
+
   const itemsPayload = validLines.map((l) => ({
     variantId: l.variantId,
     qty: l.qty,
@@ -113,9 +137,31 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     const rn = recipientName.trim();
     const rp = recipientPhone.trim();
     const ra = recipientAddressFull.trim();
-    if (!rn || !rp || !ra) {
-      setErr("請填寫完整收件人姓名、電話與地址");
+    if (!rn || !rp) {
+      setErr("請填寫收件人姓名與聯絡電話");
       return;
+    }
+
+    for (const s of summaries) {
+      if (isCvsShippingCode(s.selectedShippingMethodCode)) {
+        const st = (cvsStoreNameByVendor[s.vendorId] ?? "").trim();
+        if (!st) {
+          setErr(`請填寫或選擇超商門市（${s.vendorName}）`);
+          return;
+        }
+      } else if (!ra) {
+        setErr("請填寫收件地址（訂單含宅配運送）");
+        return;
+      }
+    }
+
+    const cvsPayload: Record<string, string> = {};
+    for (const s of summaries) {
+      if (isCvsShippingCode(s.selectedShippingMethodCode)) {
+        cvsPayload[s.vendorId] = (
+          cvsStoreNameByVendor[s.vendorId] ?? ""
+        ).trim();
+      }
     }
 
     startTransition(async () => {
@@ -126,6 +172,7 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
         recipientPhone: rp,
         recipientAddressFull: ra,
         saveShippingToProfile,
+        cvsStoreNameByVendor: cvsPayload,
       });
       if (res.error) {
         setErr(res.error);
@@ -146,9 +193,30 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <CheckoutVendorRecipientEditSheet
+        open={editingSummary != null}
+        summary={editingSummary}
+        recipientName={recipientName}
+        recipientPhone={recipientPhone}
+        recipientAddressFull={recipientAddressFull}
+        saveShippingToProfile={saveShippingToProfile}
+        cvsStoreNameByVendor={cvsStoreNameByVendor}
+        onClose={() => setEditingVendorId(null)}
+        onSave={(patch) => {
+          setRecipientName(patch.recipientName);
+          setRecipientPhone(patch.recipientPhone);
+          setRecipientAddressFull(patch.recipientAddressFull);
+          setSaveShippingToProfile(patch.saveShippingToProfile);
+          setCvsStoreNameByVendor((prev) => ({
+            ...prev,
+            [patch.vendorId]: patch.cvsStoreName,
+          }));
+        }}
+      />
+
       {defaultsLoading ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-8">
-          <p className="text-caption text-muted-foreground">載入收件資料…</p>
+          <p className="text-caption text-muted-foreground">載入結帳資料…</p>
         </div>
       ) : (
         <>
@@ -166,18 +234,9 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
               recipientName={recipientName}
               recipientPhone={recipientPhone}
               recipientAddressFull={recipientAddressFull}
+              cvsStoreNameByVendor={cvsStoreNameByVendor}
               onChangeShipping={goBackToCart}
-            />
-
-            <CheckoutRecipientFormCard
-              recipientName={recipientName}
-              recipientPhone={recipientPhone}
-              recipientAddressFull={recipientAddressFull}
-              saveShippingToProfile={saveShippingToProfile}
-              onRecipientNameChange={setRecipientName}
-              onRecipientPhoneChange={setRecipientPhone}
-              onRecipientAddressChange={setRecipientAddressFull}
-              onSaveShippingToProfileChange={setSaveShippingToProfile}
+              onEditVendor={(vendorId) => setEditingVendorId(vendorId)}
             />
 
             <CheckoutPaymentMethodCard />

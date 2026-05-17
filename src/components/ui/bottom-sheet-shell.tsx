@@ -14,9 +14,17 @@ interface BottomSheetShellProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** 全螢幕遮罩／面板層級（預設 `z-50`）；需高於結帳側欄時傳 `z-[60]` 等 */
+  stackZClassName?: string;
 }
 
-export function BottomSheetShell({ open, title, onClose, children }: BottomSheetShellProps) {
+export function BottomSheetShell({
+  open,
+  title,
+  onClose,
+  children,
+  stackZClassName = 'z-50',
+}: BottomSheetShellProps) {
   const [present, setPresent] = useState(open);
   const [enter, setEnter] = useState(false);
 
@@ -36,7 +44,7 @@ export function BottomSheetShell({ open, title, onClose, children }: BottomSheet
   if (!open && !present) return null;
 
   const node = (
-    <div className="fixed inset-0 z-50">
+    <div className={cn('fixed inset-0', stackZClassName)}>
       <button
         type="button"
         className={cn(

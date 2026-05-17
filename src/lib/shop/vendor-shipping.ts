@@ -20,6 +20,8 @@ export interface VendorShippingSummary {
   gapToFreeShipping: number | null;
   selectedShippingMethodId: string | null;
   selectedShippingMethodLabel: string | null;
+  /** `vendor_shipping_methods.code`；無 method 列時為 null（走宅配／地址驗證） */
+  selectedShippingMethodCode: string | null;
   availableShippingMethods: VendorShippingMethodLite[];
 }
 
@@ -91,6 +93,7 @@ function resolveMethodRow(
   freeShippingThreshold: number | null;
   methodId: string | null;
   methodLabel: string | null;
+  methodCode: string | null;
 } {
   const rawRows = methodsByVendor.get(vendorId) ?? [];
   const sorted = sortShippingMethods(filterCheckoutShippingMethods(rawRows));
@@ -100,6 +103,7 @@ function resolveMethodRow(
       freeShippingThreshold: fallbackLine.freeShippingThreshold,
       methodId: null,
       methodLabel: null,
+      methodCode: null,
     };
   }
   const sel = selections[vendorId];
@@ -111,6 +115,7 @@ function resolveMethodRow(
     freeShippingThreshold: picked.free_shipping_threshold,
     methodId: picked.id,
     methodLabel: picked.label,
+    methodCode: picked.code,
   };
 }
 
@@ -173,6 +178,7 @@ export function calcVendorShippingSummaries(
       gapToFreeShipping: gapToFree,
       selectedShippingMethodId: resolved.methodId,
       selectedShippingMethodLabel: resolved.methodLabel,
+      selectedShippingMethodCode: resolved.methodCode,
       availableShippingMethods: available,
     });
   }

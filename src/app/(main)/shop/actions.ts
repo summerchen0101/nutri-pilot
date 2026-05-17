@@ -71,6 +71,8 @@ export async function startCheckout(payload: {
   saveShippingToProfile?: boolean;
   /** vendor_id → vendor_shipping_methods.id */
   vendorShippingSelections?: Record<string, string>;
+  /** vendor_id → 超商門市名（僅 CVS 運送時必填） */
+  cvsStoreNameByVendor?: Record<string, string>;
 }): Promise<{
   paymentUrl?: string;
   formFields?: Record<string, string>;
@@ -105,6 +107,7 @@ export async function startCheckout(payload: {
         recipientPhone: payload.recipientPhone,
         recipientAddressFull: payload.recipientAddressFull,
         saveShippingToProfile: payload.saveShippingToProfile === true,
+        cvsStoreNameByVendor: payload.cvsStoreNameByVendor ?? {},
       }),
     });
     const data = (await res.json()) as {

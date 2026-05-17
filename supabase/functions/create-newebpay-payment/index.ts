@@ -43,6 +43,8 @@ interface CheckoutBody {
   recipientAddressFull?: string;
   saveShippingToProfile?: boolean;
   vendorShippingSelections?: Record<string, string>;
+  /** vendor_id → 超商門市顯示名（與將來地圖／店舖 API 串接） */
+  cvsStoreNameByVendor?: Record<string, string>;
 }
 
 interface VendorShippingMethodRow {
@@ -92,6 +94,7 @@ interface CheckoutVendorSnapshot {
   shippingMethodId?: string | null;
   shippingMethodLabel?: string | null;
   shippingMethodCode?: string | null;
+  cvsStoreName?: string | null;
 }
 
 interface CheckoutSnapshot {
@@ -150,6 +153,25 @@ function normalizeSelectionMap(
   return o;
 }
 
+function normalizeCvsStoreNameByVendor(
+  raw: unknown,
+  allowedVendorIds: Set<string>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const vid of allowedVendorIds) {
+    out[vid] = "";
+  }
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
+    return out;
+  }
+  const rec = raw as Record<string, unknown>;
+  for (const vid of allowedVendorIds) {
+    const v = rec[vid];
+    out[vid] = typeof v === "string" ? v.trim() : "";
+  }
+  return out;
+}
+
 function sortMethodRows(rows: VendorShippingMethodRow[]): VendorShippingMethodRow[] {
   return [...rows].sort((a, b) =>
     num(a.sort_order) - num(b.sort_order) ||
@@ -158,6 +180,20 @@ function sortMethodRows(rows: VendorShippingMethodRow[]): VendorShippingMethodRo
 }
 
 const STORE_PICKUP_SHIPPING_CODE = "store_pickup";
+const HOME_DELIVERY_SHIPPING_CODE = "home_delivery";
+
+function isHomeDeliveryShippingCode(code: string | null | undefined): boolean {
+  return code === HOME_DELIVERY_SHIPPING_CODE;
+}
+
+/** 與前台 `shipping-method-kind` 一致：非宅配、非門市自取、code 有值視為超商取貨 */
+function isCvsShippingCodeEdge(code: string | null | undefined): boolean {
+  if (code == null) return false;
+  const c = String(code);
+  if (c.length === 0) return false;
+  if (c === STORE_PICKUP_SHIPPING_CODE) return false;
+  return !isHomeDeliveryShippingCode(c);
+}
 
 function filterCheckoutMethodRows(
   rows: VendorShippingMethodRow[],
@@ -352,9 +388,9 @@ Deno.serve(async (req) => {
   const recipientName = trimReq(body.recipientName);
   const recipientPhone = trimReq(body.recipientPhone);
   const recipientAddressFull = trimReq(body.recipientAddressFull);
-  if (!recipientName || !recipientPhone || !recipientAddressFull) {
+  if (!recipientName || !recipientPhone) {
     return jsonResponse(
-      { error: "請填寫完整收件人姓名、電話與地址" },
+      { error: "請填寫收件人姓名與聯絡電話" },
       422,
     );
   }
@@ -536,12 +572,47 @@ Deno.serve(async (req) => {
     (s, v) => s + v.effectiveShipping,
     0,
   );
+
+  const vendorIdSet = new Set(snapshotVendors.map((v) => v.vendorId));
+  const cvsStoreByVendor = normalizeCvsStoreNameByVendor(
+    body.cvsStoreNameByVendor,
+    vendorIdSet,
+  );
+
+  let anyNeedsAddress = false;
+  for (const v of snapshotVendors) {
+    const code = v.shippingMethodCode;
+    if (isCvsShippingCodeEdge(code)) {
+      const store = cvsStoreByVendor[v.vendorId] ?? "";
+      if (!store) {
+        return jsonResponse(
+          {
+            error: `請填寫或選擇超商門市（${v.vendorName}）`,
+          },
+          422,
+        );
+      }
+    } else {
+      anyNeedsAddress = true;
+    }
+  }
+
+  if (anyNeedsAddress && !recipientAddressFull) {
+    return jsonResponse(
+      { error: "請填寫收件地址（訂單含宅配運送）" },
+      422,
+    );
+  }
+
   const amt = roundTwdAmt(itemsSubtotalAll + shippingTotal);
 
   const checkoutSnapshot: CheckoutSnapshot = {
     vendors: snapshotVendors.map((v) => ({
       ...v,
       itemsSubtotal: roundTwdAmt(v.itemsSubtotal),
+      cvsStoreName: isCvsShippingCodeEdge(v.shippingMethodCode) ?
+          (cvsStoreByVendor[v.vendorId] ?? null)
+        : null,
     })),
     itemsSubtotal: roundTwdAmt(itemsSubtotalAll),
     shippingTotal: roundTwdAmt(shippingTotal),
@@ -614,7 +685,7 @@ Deno.serve(async (req) => {
     payment_gateway: "newebpay",
     recipient_name: recipientName,
     recipient_phone: recipientPhone,
-    recipient_address_full: recipientAddressFull,
+    recipient_address_full: recipientAddressFull.length > 0 ? recipientAddressFull : null,
     public_order_no: publicOrderNo,
     items_subtotal: roundTwdAmt(itemsSubtotalAll),
     shipping_total: roundTwdAmt(shippingTotal),
@@ -642,7 +713,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: itemsErr.message }, 500);
   }
 
-  if (body.saveShippingToProfile === true) {
+  if (body.saveShippingToProfile === true && recipientAddressFull.length > 0) {
     const now = new Date().toISOString();
     const { data: defAddr, error: defErr } = await supabase
       .from("user_shipping_addresses")

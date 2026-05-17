@@ -28,3 +28,8 @@ export function maskAddressForDisplay(address: string): string {
   const tail = t.slice(-4);
   return `${head}***${tail}`;
 }
+
+/** 超商門市名稱：與地址同等級遮罩 */
+export function maskCvsStoreNameForDisplay(storeName: string): string {
+  return maskAddressForDisplay(storeName);
+}
