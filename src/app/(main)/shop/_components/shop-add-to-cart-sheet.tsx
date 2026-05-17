@@ -58,14 +58,6 @@ const SHEET_PANEL = cn(
   'max-h-[min(88dvh,620px)] rounded-t-2xl sm:rounded-2xl',
 );
 
-const PRODUCT_ID_PREFIX_LEN = 8;
-
-function formatProductCodeSnippet(productId: string) {
-  const compact = productId.replace(/-/g, '');
-  if (compact.length <= PRODUCT_ID_PREFIX_LEN) return productId;
-  return `${compact.slice(0, PRODUCT_ID_PREFIX_LEN)}…`;
-}
-
 export function ShopAddToCartSheet({
   open,
   onClose,
@@ -228,9 +220,11 @@ export function ShopAddToCartSheet({
                 NT$ {formatShopGroupedInteger(unitPayment)}
               </span>
             </p>
-            <p className="mt-1.5 text-caption text-muted-foreground">
-              商品編號：{formatProductCodeSnippet(product.id)}
-            </p>
+            {vendor ?
+              <p className="mt-1.5 text-caption text-muted-foreground">
+                廠商：{vendor.name}
+              </p>
+            : null}
           </div>
         </div>
 
@@ -277,11 +271,12 @@ export function ShopAddToCartSheet({
             value={qty}
             onChange={setQty}
             max={maxQty}
+            valueClassName="min-w-[2.25rem] text-heading-section font-medium text-foreground"
           />
         </div>
 
         {shippingNote ?
-          <div className="mx-4 mt-3 flex gap-2 rounded-xl border-hairline border-primary/25 bg-primary-light px-3 py-2.5 text-caption text-primary-foreground">
+          <div className="mx-4 mt-3 flex gap-2 rounded-xl bg-primary-light px-3 py-2.5 text-caption text-primary-foreground">
             <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary-foreground" aria-hidden />
             <p className="min-w-0 leading-relaxed">{shippingNote}</p>
           </div>

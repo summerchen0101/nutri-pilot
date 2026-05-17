@@ -17,6 +17,8 @@ interface Props {
   minimumQuantity?: number;
   size?: 'default' | 'compact';
   className?: string;
+  /** 覆寫數字欄位樣式（例如 Sheet 內加大字級） */
+  valueClassName?: string;
 }
 
 export function ShopQuantityStepper({
@@ -26,6 +28,7 @@ export function ShopQuantityStepper({
   minimumQuantity = 1,
   size = 'default',
   className,
+  valueClassName,
 }: Props) {
   const canIncrement = max === undefined || value < max;
   const btn = size === 'compact' ? BTN_COMPACT : BTN;
@@ -51,6 +54,7 @@ export function ShopQuantityStepper({
           size === 'compact' ?
             'min-w-[1.75rem] text-[13px] font-medium text-foreground'
           : 'text-heading-section',
+          valueClassName,
         )}>
         {formatShopGroupedInteger(value)}
       </span>

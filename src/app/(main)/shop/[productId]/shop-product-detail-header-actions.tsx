@@ -12,7 +12,7 @@ export function ShopProductDetailHeaderActions({ productName }: Props) {
   return (
     <div
       className={cn(
-        "hide-scrollbar flex max-w-[min(100%,calc(100vw-8rem))] shrink-0 items-center justify-end gap-1.5 overflow-x-auto",
+        "hide-scrollbar flex max-w-[min(100%,calc(100vw-8rem))] shrink-0 items-center justify-end gap-1.5",
       )}>
       <ShopHeaderShareButton shareTitle={productName} />
       <ShopCartHeaderAction />
