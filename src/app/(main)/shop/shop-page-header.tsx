@@ -21,16 +21,18 @@ export function ShopPageHeader({ shopPointsBalance = 0 }: ShopPageHeaderProps) {
       title="健康商城"
       spacing="compact"
       action={
-        <div
-          className={cn(
-            'hide-scrollbar flex max-w-[min(100%,72vw)] shrink-0 items-center justify-end gap-1 overflow-x-auto sm:max-w-none',
-          )}>
-          <ShopHeaderPointsTitle balance={points} className="justify-start" />
-          <div className="flex shrink-0 items-center gap-0.5">
-            <ShopCatalogSearchButton />
-            <ShopCatalogHeaderActions />
-            <ShopCartHeaderAction />
+        <div className="flex shrink-0 items-center justify-end gap-1">
+          <div
+            className={cn(
+              "hide-scrollbar flex min-w-0 max-w-[min(100%,72vw)] items-center gap-1 overflow-x-auto sm:max-w-none",
+            )}>
+            <ShopHeaderPointsTitle balance={points} className="justify-start" />
+            <div className="flex shrink-0 items-center gap-0.5">
+              <ShopCatalogSearchButton />
+              <ShopCatalogHeaderActions />
+            </div>
           </div>
+          <ShopCartHeaderAction />
         </div>
       }
       afterHeader={<ShopCatalogStickyTabs variant="embedded" />}

@@ -38,12 +38,14 @@ export function PageHeader({
         {leading ? <div className="shrink-0">{leading}</div> : null}
         <div className="min-w-0 space-y-1">
           <div className="flex min-h-12 items-center">
-            {titleSlot ?
+            {titleSlot ? (
               <>
                 <span className="sr-only">{title}</span>
                 {titleSlot}
               </>
-            : <PageHeading>{title}</PageHeading>}
+            ) : (
+              <PageHeading>{title}</PageHeading>
+            )}
           </div>
           {meta ? <div className="pt-0.5">{meta}</div> : null}
         </div>

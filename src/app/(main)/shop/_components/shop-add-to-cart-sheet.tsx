@@ -281,8 +281,8 @@ export function ShopAddToCartSheet({
         </div>
 
         {shippingNote ?
-          <div className="mx-4 mt-3 flex gap-2 rounded-xl border-hairline border-[hsl(var(--steel-border))] bg-[hsl(var(--steel-panel))] px-3 py-2.5 text-caption text-[var(--steel-text)]">
-            <Truck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <div className="mx-4 mt-3 flex gap-2 rounded-xl border-hairline border-primary/25 bg-primary-light px-3 py-2.5 text-caption text-primary-foreground">
+            <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary-foreground" aria-hidden />
             <p className="min-w-0 leading-relaxed">{shippingNote}</p>
           </div>
         : null}

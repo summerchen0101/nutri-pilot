@@ -74,7 +74,7 @@ export function ShopCatalogProductCard({
               unoptimized
             />
           ) : null}
-          <span className="absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)] truncate rounded-full bg-primary-light px-2.5 py-0.5 text-caption font-medium text-primary-foreground">
+          <span className="absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)] truncate rounded-full bg-shadow-grey px-2.5 py-0.5 text-caption font-medium text-white/95">
             {categoryChipLabel(p.category)}
           </span>
         </div>
