@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 
 import { ShopQuantityStepper } from '@/app/(main)/shop/_components/shop-quantity-stepper';
 import { Button } from '@/components/ui/button';
+import { BOTTOM_SHEET_TRANSITION_MS } from '@/components/ui/bottom-sheet-shell';
 import { useCartStore } from '@/lib/shop/cart-store';
 import { variantListStrikePrice } from '@/lib/shop/catalog-card-price';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
@@ -70,6 +71,9 @@ export function ShopAddToCartSheet({
   const addLine = useCartStore((s) => s.addLine);
   const openCartPanel = useCartStore((s) => s.openCartPanel);
 
+  const [present, setPresent] = useState(open);
+  const [enter, setEnter] = useState(false);
+
   const firstSelectableId = useMemo(
     () => getPreferredSelectableVariantId(variants),
     [variants],
@@ -86,6 +90,19 @@ export function ShopAddToCartSheet({
     }
     return internalVariantId;
   }, [selectedVariantId, internalVariantId, variants]);
+
+  useEffect(() => {
+    if (open) {
+      setPresent(true);
+      const id = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setEnter(true));
+      });
+      return () => cancelAnimationFrame(id);
+    }
+    setEnter(false);
+    const t = window.setTimeout(() => setPresent(false), BOTTOM_SHEET_TRANSITION_MS);
+    return () => window.clearTimeout(t);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -146,7 +163,7 @@ export function ShopAddToCartSheet({
     openCartPanel();
   }
 
-  if (!open) return null;
+  if (!open && !present) return null;
 
   const titleId = 'shop-add-to-cart-sheet-title';
   const stockLabel =
@@ -161,7 +178,10 @@ export function ShopAddToCartSheet({
     <div className="fixed inset-0 z-[58] flex items-end justify-center p-0 sm:items-center sm:p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/35"
+        className={cn(
+          'absolute inset-0 bg-black/35 transition-opacity duration-200 ease-out',
+          enter ? 'opacity-100' : 'opacity-0',
+        )}
         aria-label="關閉"
         onClick={onClose}
       />
@@ -169,7 +189,11 @@ export function ShopAddToCartSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={SHEET_PANEL}
+        className={cn(
+          SHEET_PANEL,
+          'transition-[transform,opacity] duration-200 ease-out',
+          enter ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0',
+        )}
       >
         <div className="relative shrink-0 border-b-hairline border-border px-4 pb-2 pt-2">
           <div className="flex w-full flex-col items-center pb-1 pt-0">
