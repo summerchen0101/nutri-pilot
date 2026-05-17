@@ -206,7 +206,7 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
         onClick={() => setCouponSheetOpen(true)}
         className="flex w-full items-center justify-between gap-3 rounded-xl bg-[var(--color-background-primary)] px-3 py-3.5 text-left transition-colors hover:bg-muted/35"
       >
-        <span className="text-body text-foreground">優惠券與優惠碼</span>
+        <span className="text-heading-section text-foreground">優惠券與優惠碼</span>
         <span className="flex items-center gap-0.5 text-caption font-medium text-primary">
           選擇或輸入
           <ChevronRight className="h-3.5 w-3.5 text-primary" aria-hidden />
@@ -216,7 +216,7 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
       <div className="rounded-xl bg-[var(--color-background-primary)] px-3 py-3.5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-body text-foreground">點數折抵</p>
+            <p className="text-heading-section text-foreground">點數折抵</p>
             <p className="mt-1 text-caption text-muted-foreground">
               可折抵 {redeemablePoints} 點
             </p>
@@ -238,7 +238,7 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
       </div>
 
       <section className="rounded-xl bg-[var(--color-background-primary)] pb-4 pt-3">
-        <h3 className="text-center text-heading-card text-foreground">
+        <h3 className="px-3 text-heading-section text-foreground">
           人氣商品・加購推薦
         </h3>
         {recommendationsFailed ?
