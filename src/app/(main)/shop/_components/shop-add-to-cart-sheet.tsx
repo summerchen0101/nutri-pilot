@@ -8,8 +8,10 @@ import { createPortal } from 'react-dom';
 import { ShopQuantityStepper } from '@/app/(main)/shop/_components/shop-quantity-stepper';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/shop/cart-store';
+import { variantListStrikePrice } from '@/lib/shop/catalog-card-price';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 import {
+  getPreferredSelectableVariantId,
   getVariantMaxOrderQty,
   isVariantSelectable,
 } from '@/lib/shop/variant-stock';
@@ -24,6 +26,7 @@ export interface ShopAddToCartSheetVariant {
   label: string;
   price: number;
   stock: number | null;
+  list_price: number | null;
 }
 
 export interface ShopAddToCartSheetVendor {
@@ -75,11 +78,10 @@ export function ShopAddToCartSheet({
   const addLine = useCartStore((s) => s.addLine);
   const openCartPanel = useCartStore((s) => s.openCartPanel);
 
-  const firstSelectableId = useMemo(() => {
-    if (!variants.length) return '';
-    const first = variants.find((v) => isVariantSelectable(v.stock));
-    return first?.id ?? '';
-  }, [variants]);
+  const firstSelectableId = useMemo(
+    () => getPreferredSelectableVariantId(variants),
+    [variants],
+  );
 
   const [internalVariantId, setInternalVariantId] = useState('');
   const [qty, setQty] = useState(1);
@@ -111,6 +113,18 @@ export function ShopAddToCartSheet({
   }, [variants, effectiveVariantId]);
 
   const unitPayment = variant ? Number(variant.price) : 0;
+  const sheetListStrike = useMemo(() => {
+    if (!variant) return null;
+    const lp = variant.list_price;
+    return variantListStrikePrice(
+      Number(variant.price),
+      lp == null ? null : Number(lp),
+    );
+  }, [variant]);
+  const sheetPriceAriaLabel =
+    sheetListStrike != null ?
+      `優惠價 ${formatShopGroupedInteger(unitPayment)} 元，原價 ${formatShopGroupedInteger(sheetListStrike)} 元`
+    : `售價 ${formatShopGroupedInteger(unitPayment)} 元`;
   const maxQty = variant ? getVariantMaxOrderQty(variant.stock) : undefined;
   const selectable =
     Boolean(variant && isVariantSelectable(variant.stock)) && vendor != null;
@@ -201,8 +215,18 @@ export function ShopAddToCartSheet({
             <p className="line-clamp-2 text-body font-medium leading-snug text-foreground">
               {product.name}
             </p>
-            <p className="text-heading-page mt-1 tabular-nums text-foreground">
-              NT$ {formatShopGroupedInteger(unitPayment)}
+            <p
+              aria-label={sheetPriceAriaLabel}
+              className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-medium leading-tight tabular-nums"
+            >
+              {sheetListStrike != null ? (
+                <span className="text-caption font-medium line-through text-muted-foreground">
+                  NT$ {formatShopGroupedInteger(sheetListStrike)}
+                </span>
+              ) : null}
+              <span className="text-heading-page text-primary">
+                NT$ {formatShopGroupedInteger(unitPayment)}
+              </span>
             </p>
             <p className="mt-1.5 text-caption text-muted-foreground">
               商品編號：{formatProductCodeSnippet(product.id)}

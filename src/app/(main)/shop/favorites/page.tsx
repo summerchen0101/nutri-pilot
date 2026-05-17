@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { FiChevronLeft } from 'react-icons/fi';
 import { redirect } from 'next/navigation';
 
+import { mapSupabaseProductToShopRow } from '@/app/(main)/shop/map-shop-product-row';
 import { ShopCartHeaderAction } from '@/app/(main)/shop/shop-cart-header-action';
 import { ShopFavoritesView } from '@/app/(main)/shop/favorites/shop-favorites-view';
 import type { ShopProductRow } from '@/app/(main)/shop/shop-home-client';
@@ -24,8 +25,17 @@ const CATALOG_PRODUCT_SELECT = `
   diet_tags,
   cert_tags,
   avg_rating,
-  brand:brands ( id, name, slug, logo_url ),
-  variants:product_variants ( id, label, price, stock )
+  brand:brands (
+    id, name, slug, logo_url,
+    vendor:vendors!inner (
+      id,
+      name,
+      shipping_fee,
+      free_shipping_threshold,
+      lead_time_days
+    )
+  ),
+  variants:product_variants ( id, label, price, stock, list_price )
 `;
 
 export default async function ShopFavoritesPage() {
@@ -122,10 +132,12 @@ export default async function ShopFavoritesPage() {
     const pid = row.product_id as string;
     const rowProduct = productById.get(pid);
     if (!rowProduct) continue;
-    ordered.push({
-      ...(rowProduct as unknown as Omit<ShopProductRow, 'score'>),
-      score: scoreMap.get(pid) ?? 0,
-    });
+    ordered.push(
+      mapSupabaseProductToShopRow(
+        rowProduct as Record<string, unknown>,
+        scoreMap.get(pid) ?? 0,
+      ),
+    );
   }
 
   return (

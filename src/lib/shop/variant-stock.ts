@@ -16,3 +16,26 @@ export function getVariantMaxOrderQty(
   if (stock < 1) return undefined;
   return stock;
 }
+
+/**
+ * Prefer the selectable variant with the lowest `price`; ties keep the earlier
+ * index in `variants`. If none selectable, `variants[0]?.id ?? ''`.
+ */
+export function getPreferredSelectableVariantId(
+  variants: Array<{ id: string; price: number; stock: number | null }>,
+): string {
+  if (variants.length === 0) return '';
+  let bestIdx = -1;
+  let bestPrice = Infinity;
+  for (let i = 0; i < variants.length; i++) {
+    const v = variants[i];
+    if (!isVariantSelectable(v.stock)) continue;
+    const p = Number(v.price);
+    if (p < bestPrice) {
+      bestPrice = p;
+      bestIdx = i;
+    }
+  }
+  if (bestIdx >= 0) return variants[bestIdx].id;
+  return variants[0]?.id ?? '';
+}

@@ -45,6 +45,7 @@ export interface ShopProductRow {
     label: string;
     price: number;
     stock: number | null;
+    list_price: number | null;
   }>;
 }
 

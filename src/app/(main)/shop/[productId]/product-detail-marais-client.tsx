@@ -20,12 +20,16 @@ import { ShopAddToCartSheet } from "@/app/(main)/shop/_components/shop-add-to-ca
 import { ProductFavoriteDetailBarButton } from "@/app/(main)/shop/_components/product-favorite-controls";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { variantListStrikePrice } from "@/lib/shop/catalog-card-price";
 import { SHOP_HEADER_SCROLL_ANCHOR_ID } from "@/lib/shop/constants";
 import {
   formatShopGroupedDecimal,
   formatShopGroupedInteger,
 } from "@/lib/shop/format-shop-number";
-import { isVariantSelectable } from "@/lib/shop/variant-stock";
+import {
+  getPreferredSelectableVariantId,
+  isVariantSelectable,
+} from "@/lib/shop/variant-stock";
 import { cn } from "@/lib/utils/cn";
 
 type DetailTab = "intro" | "delivery" | "payment";
@@ -73,6 +77,7 @@ export interface ProductDetailMaraisClientProps {
     weight_g: number;
     price: number;
     stock: number | null;
+    list_price: number | null;
   }>;
   fitReasons: FitReasonItem[];
   nutrition: {
@@ -87,20 +92,6 @@ export interface ProductDetailMaraisClientProps {
   };
   sameBrand: SameBrandProduct[];
   initialIsFavorite: boolean;
-}
-
-interface VariantRow {
-  id: string;
-  label: string;
-  weight_g: number;
-  price: number;
-  stock: number | null;
-}
-
-function getInitialVariantId(variants: VariantRow[]) {
-  const firstSelectable = variants.find((v) => isVariantSelectable(v.stock));
-  if (firstSelectable) return firstSelectable.id;
-  return variants[0]?.id ?? "";
 }
 
 function cnReason(type: "positive" | "info" | "caution", base: string): string {
@@ -178,7 +169,7 @@ export function ProductDetailMaraisClient({
 }: ProductDetailMaraisClientProps) {
   const [detailTab, setDetailTab] = useState<DetailTab>("intro");
   const [variantId, setVariantId] = useState(() =>
-    getInitialVariantId(variants),
+    getPreferredSelectableVariantId(variants),
   );
   const [sheetOpen, setSheetOpen] = useState(false);
   const [detailTabsPinned, setDetailTabsPinned] = useState(false);
@@ -198,6 +189,20 @@ export function ProductDetailMaraisClient({
 
   const unitPayment = variant ? Number(variant.price) : 0;
 
+  const listStrike = useMemo(() => {
+    if (!variant) return null;
+    const lp = variant.list_price;
+    return variantListStrikePrice(
+      Number(variant.price),
+      lp == null ? null : Number(lp),
+    );
+  }, [variant]);
+
+  const detailPriceAriaLabel =
+    listStrike != null ?
+      `優惠價 ${formatShopGroupedInteger(unitPayment)} 元，原價 ${formatShopGroupedInteger(listStrike)} 元`
+    : `售價 ${formatShopGroupedInteger(unitPayment)} 元`;
+
   const sheetVariantPayload = useMemo(
     () =>
       variants.map((v) => ({
@@ -205,6 +210,7 @@ export function ProductDetailMaraisClient({
         label: v.label,
         price: Number(v.price),
         stock: v.stock,
+        list_price: v.list_price == null ? null : Number(v.list_price),
       })),
     [variants],
   );
@@ -291,8 +297,17 @@ export function ProductDetailMaraisClient({
         <div className="space-y-3 p-4">
           <h1 className="text-heading-screen text-foreground">{productName}</h1>
           <BadgeRow categoryLabel={categoryLabel} dietTags={dietTags} />
-          <p className="text-heading-page tabular-nums text-foreground">
-            NT$ {formatShopGroupedInteger(unitPayment)}
+          <p
+            aria-label={detailPriceAriaLabel}
+            className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-left font-medium leading-tight tabular-nums">
+            {listStrike != null ? (
+              <span className="text-caption font-medium line-through text-muted-foreground">
+                NT$ {formatShopGroupedInteger(listStrike)}
+              </span>
+            ) : null}
+            <span className="text-heading-page text-primary">
+              NT$ {formatShopGroupedInteger(unitPayment)}
+            </span>
           </p>
 
           <div className="flex items-center gap-3 rounded-xl bg-secondary/80 px-3 py-2.5">

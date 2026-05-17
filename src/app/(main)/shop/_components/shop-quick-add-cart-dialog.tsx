@@ -20,6 +20,7 @@ export type ShopQuickAddProduct = {
     label: string;
     price: number;
     stock: number | null;
+    list_price: number | null;
   }>;
 };
 

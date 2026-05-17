@@ -199,13 +199,14 @@ CREATE TABLE products (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 商品規格（單一定價欄位 price；舊版訂閱價欄位由 **023** migration 刪除）
+-- 商品規格（單一定價欄位 price；舊版訂閱價欄位由 **023** migration 刪除；**033** 新增可選 list_price 作劃線原價展示）
 CREATE TABLE product_variants (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id  UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   label       TEXT NOT NULL,           -- '35g 隨手包'
   weight_g    NUMERIC(7,1) NOT NULL,
   price       NUMERIC(8,2) NOT NULL,
+  list_price  NUMERIC(8,2),            -- 可選；非 NULL 且大於 price 時 UI 可顯示劃線原價；結帳仍以 price 為準（見 migration 033）
   stock       INT DEFAULT 0
 );
 

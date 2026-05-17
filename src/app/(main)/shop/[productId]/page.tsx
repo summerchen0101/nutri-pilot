@@ -48,7 +48,7 @@ export default async function ShopProductPage({ params }: PageProps) {
           lead_time_days
         )
       ),
-      variants:product_variants ( id, label, weight_g, price, stock )
+      variants:product_variants ( id, label, weight_g, price, stock, list_price )
     `,
     )
     .eq('id', params.productId)
@@ -190,6 +190,7 @@ export default async function ShopProductPage({ params }: PageProps) {
           weight_g: number;
           price: number;
           stock: number | null;
+          list_price: number | null;
         }>}
         fitReasons={fitReasons}
         nutrition={{

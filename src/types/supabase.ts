@@ -520,6 +520,7 @@ export type Database = {
         Row: {
           id: string
           label: string
+          list_price: number | null
           price: number
           product_id: string
           stock: number | null
@@ -528,6 +529,7 @@ export type Database = {
         Insert: {
           id?: string
           label: string
+          list_price?: number | null
           price: number
           product_id: string
           stock?: number | null
@@ -536,6 +538,7 @@ export type Database = {
         Update: {
           id?: string
           label?: string
+          list_price?: number | null
           price?: number
           product_id?: string
           stock?: number | null
