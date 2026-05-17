@@ -16,6 +16,7 @@
 4. **側欄購物車**：[`ShopRightSheet`](../../src/app/(main)/shop/_components/shop-right-sheet.tsx) `mutedBody` 標題列預設透明、無固定底線；列表捲動後 **`elevatedHeader`** 升起（與 **`StickyPageHeaderShell`** 同款）；標題 **`text-foreground`**；[`ShopCartPanel`](../../src/app/(main)/shop/_components/shop-cart-panel.tsx) 不外層水平 `px` 包住 [`CartView`](../../src/app/(main)/shop/cart/cart-view.tsx)，列表區 `px-4`、結帳條滿寬。
 5. **程式過濾**：仍過濾內碼 **`store_pickup`**（防異常資料）。
 6. **購物車頂欄（全頁）**：[`StickyPageHeaderShell`](../../src/components/layout/sticky-page-header-shell.tsx) 支援選填 **`scrollContainerRef`**（內層捲動時判定升起）；結帳進度列改為 **`StickyPageHeader` `afterHeader`**。
+7. **固定結帳列文案**：[`CartCheckoutDock`](../../src/app/(main)/shop/cart/cart-checkout-dock.tsx) 左側 **`結帳金額總計（含運費）`**（`text-caption`／前景色）+ **`itemsSubtotal + shippingTotal`**（同 `grandTotal`，`text-primary`、`text-heading-page`）；明細觸控旁 **`Plus`**、`items-start` 對齊。
 
 ## 原因
 

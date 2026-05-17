@@ -165,7 +165,7 @@ function filterCheckoutMethodRows(
   return rows.filter((r) => String(r.code) !== STORE_PICKUP_SHIPPING_CODE);
 }
 
-/** 與前台 `pickCheapestShippingMethod` 一致：effective 最低，平手依 sort_order、code */
+/** 與前台 `pickCheapestShippingMethod` 一致：effective 最低，平手依 shipping_fee、sort_order、code */
 function pickCheapestMethodRow(
   rowsSorted: VendorShippingMethodRow[],
   itemsSubtotalRounded: number,
@@ -176,24 +176,35 @@ function pickCheapestMethodRow(
     num(best.shipping_fee),
     best.free_shipping_threshold == null ? null : num(best.free_shipping_threshold),
   );
+  let bestFee = num(best.shipping_fee);
 
   for (let i = 1; i < rowsSorted.length; i++) {
     const row = rowsSorted[i]!;
     const thr = row.free_shipping_threshold == null ?
       null
       : num(row.free_shipping_threshold);
+    const rowFee = num(row.shipping_fee);
     const eff = effectiveShippingFee(
       itemsSubtotalRounded,
-      num(row.shipping_fee),
+      rowFee,
       thr,
     );
 
     if (eff < bestEff) {
       best = row;
       bestEff = eff;
+      bestFee = rowFee;
       continue;
     }
-    if (eff !== bestEff) continue;
+    if (eff > bestEff) continue;
+
+    if (rowFee < bestFee) {
+      best = row;
+      bestEff = eff;
+      bestFee = rowFee;
+      continue;
+    }
+    if (rowFee > bestFee) continue;
 
     const orderCmp = num(row.sort_order) - num(best.sort_order);
     if (
@@ -203,6 +214,7 @@ function pickCheapestMethodRow(
     ) {
       best = row;
       bestEff = eff;
+      bestFee = rowFee;
     }
   }
 

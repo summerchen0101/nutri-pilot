@@ -37,7 +37,31 @@ export function sortShippingMethods(
   );
 }
 
-/** 在目前廠商小計下，選 effective 運費最低者（平手依 sort_order、code） */
+/**
+ * 自動選運送方式：effective 運費低者優先（0＝免運最優），
+ * 平手再依標示運費 `shipping_fee` 由低到高，最後 `sort_order`、`code`。
+ */
+function compareShippingMethodsForAutoPick(
+  a: VendorShippingMethodLite,
+  b: VendorShippingMethodLite,
+  itemsSubtotalRounded: number,
+): number {
+  const effA = effectiveShippingForVendor(
+    itemsSubtotalRounded,
+    a.shipping_fee,
+    a.free_shipping_threshold,
+  );
+  const effB = effectiveShippingForVendor(
+    itemsSubtotalRounded,
+    b.shipping_fee,
+    b.free_shipping_threshold,
+  );
+  if (effA !== effB) return effA - effB;
+  if (a.shipping_fee !== b.shipping_fee) return a.shipping_fee - b.shipping_fee;
+  if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+  return a.code.localeCompare(b.code);
+}
+
 export function pickCheapestShippingMethod(
   methods: VendorShippingMethodLite[],
   itemsSubtotalRounded: number,
@@ -46,35 +70,12 @@ export function pickCheapestShippingMethod(
   if (rows.length === 0) return null;
 
   let best = rows[0]!;
-  let bestEff = effectiveShippingForVendor(
-    itemsSubtotalRounded,
-    best.shipping_fee,
-    best.free_shipping_threshold,
-  );
-
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i]!;
-    const eff = effectiveShippingForVendor(
-      itemsSubtotalRounded,
-      row.shipping_fee,
-      row.free_shipping_threshold,
-    );
-    if (eff < bestEff) {
+    if (compareShippingMethodsForAutoPick(row, best, itemsSubtotalRounded) < 0) {
       best = row;
-      bestEff = eff;
-      continue;
-    }
-    if (eff !== bestEff) continue;
-    const orderCmp = row.sort_order - best.sort_order;
-    if (orderCmp < 0) {
-      best = row;
-      bestEff = eff;
-    } else if (orderCmp === 0 && row.code.localeCompare(best.code) < 0) {
-      best = row;
-      bestEff = eff;
     }
   }
-
   return best;
 }
 

@@ -1,20 +1,21 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-import { CartTotalsDetailSheet } from '@/app/(main)/shop/cart/cart-totals-detail-sheet';
-import { Button } from '@/components/ui/button';
-import { useCartDerived } from '@/lib/shop/use-cart-derived';
-import { useCartStore } from '@/lib/shop/cart-store';
-import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
+import { CartTotalsDetailSheet } from "@/app/(main)/shop/cart/cart-totals-detail-sheet";
+import { Button } from "@/components/ui/button";
+import { useCartDerived } from "@/lib/shop/use-cart-derived";
+import { useCartStore } from "@/lib/shop/cart-store";
+import { formatShopGroupedInteger } from "@/lib/shop/format-shop-number";
 
 export interface CartCheckoutDockProps {
   /** `page`：全頁底部圓角＋細框；`panel`：側欄無外框 */
-  variant?: 'page' | 'panel';
+  variant?: "page" | "panel";
 }
 
-export function CartCheckoutDock({ variant = 'page' }: CartCheckoutDockProps) {
+export function CartCheckoutDock({ variant = "page" }: CartCheckoutDockProps) {
   const router = useRouter();
   const closeCartPanel = useCartStore((s) => s.closeCartPanel);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -26,29 +27,36 @@ export function CartCheckoutDock({ variant = 'page' }: CartCheckoutDockProps) {
     hasLegacyLines,
   } = useCartDerived();
 
+  /** 與 `grandTotal` 同值（商品小計 + 運費合計），寫成相加以利閱讀 */
+  const checkoutTotalIncludingShipping = itemsSubtotal + shippingTotal;
+
   function goCheckout() {
     closeCartPanel();
-    router.push('/shop/checkout');
+    router.push("/shop/checkout");
   }
 
-  const outerClass = 'overflow-hidden bg-[var(--color-background-primary)]';
+  const outerClass = "overflow-hidden bg-[var(--color-background-primary)]";
 
-  const pbSafe = 'pb-[max(0.75rem,env(safe-area-inset-bottom))]';
+  const pbSafe = "pb-[max(0.75rem,env(safe-area-inset-bottom))]";
 
   return (
     <>
       <div className={outerClass}>
         <div className={`px-3 pt-3 ${pbSafe}`}>
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap items-start gap-3">
             <div className="min-w-0 flex-1">
               <button
                 type="button"
-                className="block text-caption font-medium text-primary underline-offset-2 hover:underline"
+                className="inline-flex items-center gap-1 text-caption font-medium text-primary underline-offset-2 hover:underline"
                 onClick={() => setDetailOpen(true)}>
-                明細
+                <span>結帳明細</span>
+                <Plus className="h-3.5 w-3.5 shrink-0" aria-hidden />
               </button>
-              <p className="mt-0.5 text-heading-section tabular-nums text-primary">
-                訂單總計 NT$ {formatShopGroupedInteger(grandTotal)}
+              <p className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
+                <span className="text-caption text-foreground">金額總計</span>
+                <span className="text-heading-screen font-semibold tabular-nums text-primary tracking-tight">
+                  NT$ {formatShopGroupedInteger(checkoutTotalIncludingShipping)}
+                </span>
               </p>
             </div>
             <Button

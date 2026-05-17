@@ -29,6 +29,15 @@ function methodEffectiveFee(
   );
 }
 
+function shippingMethodFreeHint(
+  threshold: number | null,
+): { show: true; amount: number } | { show: false } {
+  if (threshold == null || threshold <= 0) {
+    return { show: false };
+  }
+  return { show: true, amount: threshold };
+}
+
 export function CartVendorShippingPicker({
   ariaLabelSuffix,
   methods,
@@ -92,6 +101,7 @@ export function CartVendorShippingPicker({
           {methods.map((m) => {
             const active = m.id === resolvedSelectedId;
             const eff = methodEffectiveFee(m, itemsSubtotalRounded);
+            const freeHint = shippingMethodFreeHint(m.free_shipping_threshold);
             return (
               <button
                 key={m.id}
@@ -106,7 +116,20 @@ export function CartVendorShippingPicker({
                   onSelectMethodId(m.id);
                   setSheetOpen(false);
                 }}>
-                <span className="min-w-0 flex-1 text-body">{m.label}</span>
+                <span className="min-w-0 flex-1 space-y-0.5">
+                  <span className="block text-body">{m.label}</span>
+                  {freeHint.show ?
+                    <span
+                      className={cn(
+                        'block text-caption',
+                        active ?
+                          'text-white/80'
+                        : 'text-muted-foreground',
+                      )}>
+                      滿 NT$ {formatShopGroupedInteger(freeHint.amount)} 免運
+                    </span>
+                  : null}
+                </span>
                 <span
                   className={cn(
                     'shrink-0 tabular-nums text-body',

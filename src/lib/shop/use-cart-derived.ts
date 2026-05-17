@@ -52,13 +52,12 @@ export function useCartDerived() {
         vendorLines.reduce((s, l) => s + l.unitPrice * l.qty, 0),
       );
 
-      const sel = vendorShippingSelections[vid];
-      const validSel = Boolean(sel && checkoutRows.some((r) => r.id === sel));
-      if (validSel) continue;
-
       const cheapest = pickCheapestShippingMethod(rawRows, roundedSub);
       if (!cheapest) continue;
-      if (vendorShippingSelections[vid] === cheapest.id) continue;
+
+      const current =
+        useCartStore.getState().vendorShippingSelections[vid] ?? null;
+      if (current === cheapest.id) continue;
 
       setVendorShippingSelection(vid, cheapest.id);
     }
@@ -66,7 +65,6 @@ export function useCartDerived() {
     methodsByVendor,
     shippingMethodsLoading,
     vendorIds,
-    vendorShippingSelections,
     validLines,
     setVendorShippingSelection,
   ]);
