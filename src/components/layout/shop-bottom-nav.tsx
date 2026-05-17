@@ -3,7 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Heart, History, Home, LayoutGrid, Settings } from 'lucide-react';
+import {
+  Heart,
+  History,
+  Home,
+  LayoutDashboard,
+  Settings,
+  Tags,
+} from 'lucide-react';
 
 import {
   isShopCatalogHomePathname,
@@ -73,6 +80,11 @@ export function ShopBottomNav() {
     pathname === '/shop/settings' ||
     pathname.startsWith('/shop/settings/');
 
+  const homeSlotHref = isCatalogHome ? '/dashboard' : '/shop';
+  const homeSlotLabel = isCatalogHome ? '總覽' : '首頁';
+  const homeSlotAriaLabel = isCatalogHome ? '前往總覽' : '前往商城首頁';
+  const HomeSlotIcon = isCatalogHome ? LayoutDashboard : Home;
+
   return (
     <div
       className={cn(
@@ -87,14 +99,14 @@ export function ShopBottomNav() {
         className="pointer-events-auto grid grid-cols-5 rounded-2xl border border-white/15 bg-primary px-1 py-1.5"
       >
         <Link
-          href="/dashboard"
-          aria-label="前往儀表板"
+          href={homeSlotHref}
+          aria-label={homeSlotAriaLabel}
           className={navItemClass(false)}
         >
           <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden>
-            <Home className="h-[18px] w-[18px]" strokeWidth={2} />
+            <HomeSlotIcon className="h-[18px] w-[18px]" strokeWidth={2} />
           </span>
-          首頁
+          {homeSlotLabel}
         </Link>
 
         <button
@@ -107,7 +119,7 @@ export function ShopBottomNav() {
           }}
         >
           <span className="flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden>
-            <LayoutGrid
+            <Tags
               className="h-[18px] w-[18px]"
               strokeWidth={categoryActive ? 2.25 : 2}
             />

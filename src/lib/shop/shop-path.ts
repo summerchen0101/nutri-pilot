@@ -38,3 +38,32 @@ export function getShopProductIdFromPathname(
 export function isShopProductDetailPathname(pathname: string | null): boolean {
   return getShopProductIdFromPathname(pathname) != null;
 }
+
+/** `/shop/settings` hub（含未來子路由），不顯示商城底欄。 */
+export function isShopSettingsHubPathname(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return pathname === '/shop/settings' || pathname.startsWith('/shop/settings/');
+}
+
+/** 商城設定捷徑導向的 `/settings/…` 頁，與商城頂緣對齊且不顯示主程式底欄。 */
+const SHOP_COMMERCE_SHORTCUT_PATHS = new Set([
+  '/settings/orders',
+  '/settings/points',
+  '/settings/coupons',
+]);
+
+export function isShopCommerceShortcutPathname(pathname: string | null): boolean {
+  if (!pathname) return false;
+  const trimmed =
+    pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  return SHOP_COMMERCE_SHORTCUT_PATHS.has(trimmed);
+}
+
+/** 不顯示 ShopBottomNav 亦不顯示 BottomNav（商品詳情、商城設定 hub、商城 commerce 捷徑頁）。 */
+export function shouldHideAllBottomNavPathname(pathname: string | null): boolean {
+  return (
+    isShopProductDetailPathname(pathname) ||
+    isShopSettingsHubPathname(pathname) ||
+    isShopCommerceShortcutPathname(pathname)
+  );
+}
