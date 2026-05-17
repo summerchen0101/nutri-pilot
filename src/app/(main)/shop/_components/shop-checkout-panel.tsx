@@ -5,13 +5,17 @@ import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useState } from 'react';
 
 import { ShopRightSheet } from '@/app/(main)/shop/_components/shop-right-sheet';
-import { CartView } from '@/app/(main)/shop/cart/cart-view';
+import {
+  CheckoutClient,
+  CheckoutPanelBackButton,
+} from '@/app/(main)/shop/checkout/checkout-client';
 import { STICKY_PAGE_HEADER_SCROLL_THRESHOLD } from '@/components/layout/sticky-page-header-shell';
 import { useCartStore } from '@/lib/shop/cart-store';
 
-export function ShopCartPanel(): ReactNode {
-  const open = useCartStore((s) => s.isCartPanelOpen);
-  const closeCartPanel = useCartStore((s) => s.closeCartPanel);
+export function ShopCheckoutPanel(): ReactNode {
+  const open = useCartStore((s) => s.isCheckoutPanelOpen);
+  const closeCheckoutPanel = useCartStore((s) => s.closeCheckoutPanel);
+  const openCartPanel = useCartStore((s) => s.openCartPanel);
 
   const [elevatedHeader, setElevatedHeader] = useState(false);
 
@@ -19,21 +23,26 @@ export function ShopCartPanel(): ReactNode {
     if (!open) setElevatedHeader(false);
   }, [open]);
 
-  const onPanelScrollTopChange = useCallback((scrollTop: number) => {
+  const onBodyScrollTopChange = useCallback((scrollTop: number) => {
     setElevatedHeader(scrollTop > STICKY_PAGE_HEADER_SCROLL_THRESHOLD);
   }, []);
+
+  function goBackToCart() {
+    closeCheckoutPanel();
+    openCartPanel();
+  }
 
   const node = (
     <ShopRightSheet
       open={open}
-      onClose={closeCartPanel}
-      title="購物車"
+      onClose={closeCheckoutPanel}
+      title="確認結帳"
+      leading={<CheckoutPanelBackButton onBack={goBackToCart} />}
       asideVariant="mutedBody"
       elevatedHeader={elevatedHeader}
+      stackZClassName="z-[56]"
     >
-      <div className="flex min-h-0 flex-1 flex-col">
-        <CartView onPanelScrollTopChange={onPanelScrollTopChange} />
-      </div>
+      <CheckoutClient onBodyScrollTopChange={onBodyScrollTopChange} />
     </ShopRightSheet>
   );
 

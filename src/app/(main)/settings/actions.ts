@@ -31,7 +31,6 @@ function revalidateMain() {
   revalidatePath('/dashboard');
   revalidatePath('/log');
   revalidatePath('/shop');
-  revalidatePath('/shop/checkout');
 }
 
 export async function saveProfileName(

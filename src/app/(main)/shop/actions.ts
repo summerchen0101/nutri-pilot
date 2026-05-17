@@ -9,6 +9,60 @@ export async function ensureShopScores(userId: string): Promise<void> {
   await triggerRecalculateScores(userId);
 }
 
+export type GetCheckoutShippingDefaultsResult =
+  | {
+      ok: true;
+      defaultRecipientName: string;
+      defaultPhone: string;
+      defaultAddressFull: string;
+    }
+  | { ok: false; reason: 'unauthenticated' | 'needs_onboarding' };
+
+/**
+ * 結帳側欄開啟時載入收件預設值（與原 `/shop/checkout` 頁面查詢一致）。
+ */
+export async function getCheckoutShippingDefaults(): Promise<GetCheckoutShippingDefaultsResult> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, reason: 'unauthenticated' };
+  }
+
+  const { data: profile, error: profileErr } = await supabase
+    .from('user_profiles')
+    .select('diet_method, shipping_recipient_name, shipping_phone, shipping_address_full')
+    .eq('user_id', user.id)
+    .single();
+
+  if (profileErr || !profile?.diet_method) {
+    return { ok: false, reason: 'needs_onboarding' };
+  }
+
+  const { data: defaultAddr } = await supabase
+    .from('user_shipping_addresses')
+    .select('recipient_name, phone, address_full')
+    .eq('user_id', user.id)
+    .eq('is_default', true)
+    .maybeSingle();
+
+  return {
+    ok: true,
+    defaultRecipientName:
+      defaultAddr?.recipient_name ??
+      (profile.shipping_recipient_name as string | null) ??
+      '',
+    defaultPhone:
+      defaultAddr?.phone ?? (profile.shipping_phone as string | null) ?? '',
+    defaultAddressFull:
+      defaultAddr?.address_full ??
+      (profile.shipping_address_full as string | null) ??
+      '',
+  };
+}
+
 export async function startCheckout(payload: {
   items: { variantId: string; qty: number }[];
   recipientName: string;

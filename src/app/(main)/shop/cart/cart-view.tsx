@@ -15,19 +15,11 @@ import { useCartStore } from '@/lib/shop/cart-store';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 
 export interface CartViewProps {
-  /** `panel`：側欄内列表捲動，預估總計與按鈕固定於底部 */
-  layout?: 'page' | 'panel';
-  /** 與 `layout="page"` 併用：只渲染廠商列表，供全頁固定底欄 */
-  embedded?: boolean;
-  /** 僅 `layout="panel"`：列表 `scrollTop` 供側欄標題列升起態 */
+  /** 列表 `scrollTop` 供側欄標題列升起態 */
   onPanelScrollTopChange?: (scrollTop: number) => void;
 }
 
-export function CartView({
-  layout = 'page',
-  embedded = false,
-  onPanelScrollTopChange,
-}: CartViewProps) {
+export function CartView({ onPanelScrollTopChange }: CartViewProps) {
   const router = useRouter();
   const setQty = useCartStore((s) => s.setQty);
   const removeLine = useCartStore((s) => s.removeLine);
@@ -55,22 +47,18 @@ export function CartView({
         onActionNavigate={closeCartPanel}
       />
     );
-    if (layout === 'panel') {
-      return (
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div
-            className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 pt-3 pb-6 hide-scrollbar [-webkit-overflow-scrolling:touch]"
-            onScroll={(e) => {
-              onPanelScrollTopChange?.(e.currentTarget.scrollTop);
-            }}
-          >
-            {empty}
-          </div>
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div
+          className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 pt-3 pb-6 hide-scrollbar [-webkit-overflow-scrolling:touch]"
+          onScroll={(e) => {
+            onPanelScrollTopChange?.(e.currentTarget.scrollTop);
+          }}
+        >
+          {empty}
         </div>
-      );
-    }
-    if (embedded) return null;
-    return empty;
+      </div>
+    );
   }
 
   function handleQuantityChange(variantId: string, nextQty: number) {
@@ -125,7 +113,7 @@ export function CartView({
               <div className="min-w-0 flex-1 space-y-2">
                 <p className="text-heading-card text-foreground">配送與運費</p>
                 <p className="text-caption">
-                  與全單相同收件地址；可於結帳頁或
+                  與全單相同收件地址；可於結帳時或
                   <Link
                     href="/settings"
                     className="mx-0.5 font-medium text-primary underline-offset-2 hover:underline"
@@ -190,28 +178,20 @@ export function CartView({
     </>
   );
 
-  if (layout === 'page' && embedded) {
-    return scrollBlock;
-  }
-
-  if (layout === 'panel') {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div
-          className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 hide-scrollbar [-webkit-overflow-scrolling:touch]"
-          onScroll={(e) => {
-            onPanelScrollTopChange?.(e.currentTarget.scrollTop);
-          }}
-        >
-          {scrollBlock}
-          <div className="pb-6" aria-hidden />
-        </div>
-        <div className="w-full shrink-0 border-t-hairline border-[var(--color-border-secondary)] bg-[var(--color-background-primary)]">
-          <CartCheckoutDock variant="panel" />
-        </div>
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 hide-scrollbar [-webkit-overflow-scrolling:touch]"
+        onScroll={(e) => {
+          onPanelScrollTopChange?.(e.currentTarget.scrollTop);
+        }}
+      >
+        {scrollBlock}
+        <div className="pb-6" aria-hidden />
       </div>
-    );
-  }
-
-  return null;
+      <div className="w-full shrink-0 border-t-hairline border-[var(--color-border-secondary)] bg-[var(--color-background-primary)]">
+        <CartCheckoutDock />
+      </div>
+    </div>
+  );
 }

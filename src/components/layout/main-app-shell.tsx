@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { ShopBottomNav } from '@/components/layout/shop-bottom-nav';
 import {
+  isShopCheckoutFunnelPathname,
   isShopCommerceShortcutPathname,
   isShopProductDetailPathname,
   isShopRoutePathname,
@@ -24,15 +25,16 @@ function shouldUseCompactBottomPadding(pathname: string): boolean {
 
 export function MainAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const shopProductDetail = isShopProductDetailPathname(pathname);
+  const minimalBottomPadding =
+    isShopProductDetailPathname(pathname) || isShopCheckoutFunnelPathname(pathname);
   const compactBottomPadding = shouldUseCompactBottomPadding(pathname);
   /** 全路由 pt-0；頂部 safe-area 由 StickyPageHeaderShell 或無頁首的 loading／skeleton 自理 */
   const contentPaddingClass =
-    shopProductDetail ?
-      'mx-auto max-w-sm px-4 pb-8 pt-0'
+    minimalBottomPadding ?
+      'mx-auto w-full min-w-0 max-w-sm px-4 pb-8 pt-0'
     : compactBottomPadding ?
-      'mx-auto max-w-sm px-4 pb-24 pt-0'
-    : 'mx-auto max-w-sm px-4 pb-28 pt-0';
+      'mx-auto w-full min-w-0 max-w-sm px-4 pb-24 pt-0'
+    : 'mx-auto w-full min-w-0 max-w-sm px-4 pb-28 pt-0';
   const showShopBottomNav =
     (isShopRoutePathname(pathname) || isShopCommerceShortcutPathname(pathname)) &&
     !shouldHideAllBottomNavPathname(pathname);
@@ -40,7 +42,7 @@ export function MainAppShell({ children }: { children: ReactNode }) {
     !isShopRoutePathname(pathname) && !isShopCommerceShortcutPathname(pathname);
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen overflow-x-hidden">
       <div className={contentPaddingClass}>
         {children}
       </div>

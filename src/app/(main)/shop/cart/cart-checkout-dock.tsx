@@ -1,23 +1,17 @@
-"use client";
+'use client';
 
-import { Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Plus } from 'lucide-react';
+import { useState } from 'react';
 
-import { CartTotalsDetailSheet } from "@/app/(main)/shop/cart/cart-totals-detail-sheet";
-import { Button } from "@/components/ui/button";
-import { useCartDerived } from "@/lib/shop/use-cart-derived";
-import { useCartStore } from "@/lib/shop/cart-store";
-import { formatShopGroupedInteger } from "@/lib/shop/format-shop-number";
+import { CartTotalsDetailSheet } from '@/app/(main)/shop/cart/cart-totals-detail-sheet';
+import { Button } from '@/components/ui/button';
+import { useCartDerived } from '@/lib/shop/use-cart-derived';
+import { useCartStore } from '@/lib/shop/cart-store';
+import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 
-export interface CartCheckoutDockProps {
-  /** `page`：全頁底部圓角＋細框；`panel`：側欄無外框 */
-  variant?: "page" | "panel";
-}
-
-export function CartCheckoutDock({ variant = "page" }: CartCheckoutDockProps) {
-  const router = useRouter();
+export function CartCheckoutDock() {
   const closeCartPanel = useCartStore((s) => s.closeCartPanel);
+  const openCheckoutPanel = useCartStore((s) => s.openCheckoutPanel);
   const [detailOpen, setDetailOpen] = useState(false);
   const {
     itemsSubtotal,
@@ -32,7 +26,7 @@ export function CartCheckoutDock({ variant = "page" }: CartCheckoutDockProps) {
 
   function goCheckout() {
     closeCartPanel();
-    router.push("/shop/checkout");
+    openCheckoutPanel();
   }
 
   const outerClass = "overflow-hidden bg-[var(--color-background-primary)]";

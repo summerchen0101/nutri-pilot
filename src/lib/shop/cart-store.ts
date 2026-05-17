@@ -41,8 +41,11 @@ interface CartState {
   /** 每廠商目前選擇的 `vendor_shipping_methods.id` */
   vendorShippingSelections: Record<string, string>;
   isCartPanelOpen: boolean;
+  isCheckoutPanelOpen: boolean;
   openCartPanel: () => void;
   closeCartPanel: () => void;
+  openCheckoutPanel: () => void;
+  closeCheckoutPanel: () => void;
   addLine: (line: Omit<CartLine, 'qty'> & { qty?: number }) => void;
   setQty: (variantId: string, qty: number) => void;
   removeLine: (variantId: string) => void;
@@ -56,8 +59,11 @@ export const useCartStore = create<CartState>()(
       lines: [],
       vendorShippingSelections: {},
       isCartPanelOpen: false,
+      isCheckoutPanelOpen: false,
       openCartPanel: () => set({ isCartPanelOpen: true }),
       closeCartPanel: () => set({ isCartPanelOpen: false }),
+      openCheckoutPanel: () => set({ isCheckoutPanelOpen: true }),
+      closeCheckoutPanel: () => set({ isCheckoutPanelOpen: false }),
       addLine: (line) => {
         const qty = line.qty ?? 1;
         const existing = get().lines.find((l) => l.variantId === line.variantId);

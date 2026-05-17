@@ -59,7 +59,25 @@ export function isShopCommerceShortcutPathname(pathname: string | null): boolean
   return SHOP_COMMERCE_SHORTCUT_PATHS.has(trimmed);
 }
 
-/** 不顯示 ShopBottomNav 亦不顯示 BottomNav（僅商品詳情；其餘商城路徑與 commerce 捷徑由 MainAppShell 顯示 ShopBottomNav）。 */
+/** 正規化路徑（去除結尾 `/`，根路徑除外） */
+export function normalizeShopPathname(pathname: string | null): string | null {
+  if (!pathname) return null;
+  return pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+}
+
+const SHOP_CHECKOUT_FUNNEL_PATHS = new Set(['/shop/success']);
+
+/**
+ * 付款完成頁等：專注流程，不顯示商城底欄；`MainAppShell` 亦用 `pb-8`。
+ */
+export function isShopCheckoutFunnelPathname(pathname: string | null): boolean {
+  const p = normalizeShopPathname(pathname);
+  return p != null && SHOP_CHECKOUT_FUNNEL_PATHS.has(p);
+}
+
+/** 不顯示 ShopBottomNav 亦不顯示 BottomNav（商品詳情、結帳漏斗頁；其餘商城路徑與 commerce 捷徑由 MainAppShell 顯示 ShopBottomNav）。 */
 export function shouldHideAllBottomNavPathname(pathname: string | null): boolean {
-  return isShopProductDetailPathname(pathname);
+  if (isShopProductDetailPathname(pathname)) return true;
+  if (isShopCheckoutFunnelPathname(pathname)) return true;
+  return false;
 }
