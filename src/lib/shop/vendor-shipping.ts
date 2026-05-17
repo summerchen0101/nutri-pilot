@@ -1,8 +1,12 @@
 import type { CartLine } from '@/lib/shop/cart-store';
+import type { VendorShippingMethodLite } from '@/lib/shop/vendor-shipping-method-types';
 import {
   cartTotalItemsSubtotal,
   effectiveShippingForVendor,
 } from '@/lib/shop/cart-store';
+
+/** 已下架之門市自取內碼；仍過濾以防快取或異常資料 */
+export const STORE_PICKUP_SHIPPING_CODE = 'store_pickup';
 
 export interface VendorShippingSummary {
   vendorId: string;
@@ -14,13 +18,108 @@ export interface VendorShippingSummary {
   effectiveShipping: number;
   /** 距離免運尚差金額；已免運或無門檻為 null */
   gapToFreeShipping: number | null;
+  selectedShippingMethodId: string | null;
+  selectedShippingMethodLabel: string | null;
+  availableShippingMethods: VendorShippingMethodLite[];
+}
+
+export function filterCheckoutShippingMethods(
+  methods: VendorShippingMethodLite[],
+): VendorShippingMethodLite[] {
+  return methods.filter((m) => m.code !== STORE_PICKUP_SHIPPING_CODE);
+}
+
+export function sortShippingMethods(
+  methods: VendorShippingMethodLite[],
+): VendorShippingMethodLite[] {
+  return [...methods].sort(
+    (a, b) => a.sort_order - b.sort_order || a.code.localeCompare(b.code),
+  );
+}
+
+/** 在目前廠商小計下，選 effective 運費最低者（平手依 sort_order、code） */
+export function pickCheapestShippingMethod(
+  methods: VendorShippingMethodLite[],
+  itemsSubtotalRounded: number,
+): VendorShippingMethodLite | null {
+  const rows = sortShippingMethods(filterCheckoutShippingMethods(methods));
+  if (rows.length === 0) return null;
+
+  let best = rows[0]!;
+  let bestEff = effectiveShippingForVendor(
+    itemsSubtotalRounded,
+    best.shipping_fee,
+    best.free_shipping_threshold,
+  );
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i]!;
+    const eff = effectiveShippingForVendor(
+      itemsSubtotalRounded,
+      row.shipping_fee,
+      row.free_shipping_threshold,
+    );
+    if (eff < bestEff) {
+      best = row;
+      bestEff = eff;
+      continue;
+    }
+    if (eff !== bestEff) continue;
+    const orderCmp = row.sort_order - best.sort_order;
+    if (orderCmp < 0) {
+      best = row;
+      bestEff = eff;
+    } else if (orderCmp === 0 && row.code.localeCompare(best.code) < 0) {
+      best = row;
+      bestEff = eff;
+    }
+  }
+
+  return best;
+}
+
+/** 為單廠選定可用列／fallback CartLine */
+function resolveMethodRow(
+  vendorId: string,
+  selections: Record<string, string>,
+  methodsByVendor: Map<string, VendorShippingMethodLite[]>,
+  fallbackLine: CartLine,
+  itemsSubtotalRounded: number,
+): {
+  shippingFee: number;
+  freeShippingThreshold: number | null;
+  methodId: string | null;
+  methodLabel: string | null;
+} {
+  const rawRows = methodsByVendor.get(vendorId) ?? [];
+  const sorted = sortShippingMethods(filterCheckoutShippingMethods(rawRows));
+  if (sorted.length === 0) {
+    return {
+      shippingFee: fallbackLine.shippingFee,
+      freeShippingThreshold: fallbackLine.freeShippingThreshold,
+      methodId: null,
+      methodLabel: null,
+    };
+  }
+  const sel = selections[vendorId];
+  const fromSel = sel ? sorted.find((r) => r.id === sel) : undefined;
+  const cheapest = pickCheapestShippingMethod(rawRows, itemsSubtotalRounded);
+  const picked = fromSel ?? cheapest ?? sorted[0]!;
+  return {
+    shippingFee: picked.shipping_fee,
+    freeShippingThreshold: picked.free_shipping_threshold,
+    methodId: picked.id,
+    methodLabel: picked.label,
+  };
 }
 
 /**
- * 依廠商分組並計算各廠運費（與 create-newebpay-payment 規則一致）。
+ * 依廠商分組並計算運費。若無任何 method 資料，退回 CartLine 上快照運費（舊版）。
  */
 export function calcVendorShippingSummaries(
   lines: CartLine[],
+  selections: Record<string, string>,
+  methodsByVendor: Map<string, VendorShippingMethodLite[]>,
 ): VendorShippingSummary[] {
   const valid = lines.filter(
     (l) =>
@@ -39,30 +138,41 @@ export function calcVendorShippingSummaries(
   const out: VendorShippingSummary[] = [];
   for (const group of Array.from(byVendor.values())) {
     const first = group[0]!;
-    const itemsSubtotal = group.reduce(
-      (s, l) => s + l.unitPrice * l.qty,
-      0,
-    );
+    const itemsSubtotal = group.reduce((s, l) => s + l.unitPrice * l.qty, 0);
     const roundedSub = Math.round(itemsSubtotal);
+    const resolved = resolveMethodRow(
+      first.vendorId,
+      selections,
+      methodsByVendor,
+      first,
+      roundedSub,
+    );
     const eff = effectiveShippingForVendor(
       roundedSub,
-      first.shippingFee,
-      first.freeShippingThreshold,
+      resolved.shippingFee,
+      resolved.freeShippingThreshold,
     );
     const gapToFree =
-      first.freeShippingThreshold == null ? null
+      resolved.freeShippingThreshold == null ? null
       : eff === 0 ? null
-      : Math.max(0, first.freeShippingThreshold - roundedSub);
+      : Math.max(0, resolved.freeShippingThreshold - roundedSub);
+    const rawAvailable = methodsByVendor.get(first.vendorId) ?? [];
+    const available = sortShippingMethods(
+      filterCheckoutShippingMethods(rawAvailable),
+    );
 
     out.push({
       vendorId: first.vendorId,
       vendorName: first.vendorName,
       lines: group,
       itemsSubtotal: roundedSub,
-      shippingFee: first.shippingFee,
-      freeShippingThreshold: first.freeShippingThreshold,
+      shippingFee: resolved.shippingFee,
+      freeShippingThreshold: resolved.freeShippingThreshold,
       effectiveShipping: eff,
       gapToFreeShipping: gapToFree,
+      selectedShippingMethodId: resolved.methodId,
+      selectedShippingMethodLabel: resolved.methodLabel,
+      availableShippingMethods: available,
     });
   }
 
@@ -73,7 +183,16 @@ export function cartTotalShipping(summaries: VendorShippingSummary[]): number {
   return summaries.reduce((s, v) => s + v.effectiveShipping, 0);
 }
 
-export function cartGrandTotal(lines: CartLine[]): number {
-  const summaries = calcVendorShippingSummaries(lines);
+export function cartGrandTotalFromSummaries(
+  lines: CartLine[],
+  summaries: VendorShippingSummary[],
+): number {
   return cartTotalItemsSubtotal(lines) + cartTotalShipping(summaries);
+}
+
+/** @deprecated Prefer cartGrandTotalFromSummaries with explicit summaries */
+export function cartGrandTotal(lines: CartLine[]): number {
+  return cartTotalItemsSubtotal(lines) + cartTotalShipping(
+    calcVendorShippingSummaries(lines, {}, new Map()),
+  );
 }

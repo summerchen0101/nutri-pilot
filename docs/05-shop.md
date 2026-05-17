@@ -281,6 +281,14 @@ async function getShopProducts(userId: string, category?: string, filters?: stri
 | 列表 | 與商城首頁相同 2 欄商品卡版型；卡片角可取消收藏 |
 | 入口 | 商城首頁 `PageHeader` 右上角愛心連結至本頁 |
 
+### `/shop/cart`（購物車）
+
+| 區塊 | 說明 |
+|------|------|
+| 版型 | **整頁最外層**淺灰底（`bg-neutral-bg-secondary`，含捲動區與卡片間隙）；**頂欄**（[`StickyPageHeader`](../../src/components/layout/sticky-page-header.tsx)+進度列於 `afterHeader`）：預設 **透明無固定底線**，列表捲動區以 **`scrollContainerRef`** 驅動 **`StickyPageHeaderShell`** 同款升起態（半透明底／blur／細邊）；標題 **`text-foreground`**、「繼續逛」維持主色；廠商區塊內商品列與「配送與運費」為白底卡片；固定底欄頂端分隔線 **滿版寬**，欄內按鈕與金額維持 `max-w-sm` 置中 |
+| 側欄購物車 | `asideVariant="mutedBody"`：**aside** 淺灰底；**標題列**預設透明（無固定白底／無線），列表捲動後 **`elevatedHeader`** 升起（與 `StickyPageHeaderShell` 同款）；標題 **`text-foreground`**；**列表捲動區**左右 `px-4`；**結帳條**滿 aside 寬 |
+| 運送方式 | 資料來源 `vendor_shipping_methods`（每廠多選）；**預設**為該廠在目前商品小計下 **effective 運費最低** 之方式；點列開啟 Bottom Sheet「選擇運送方式」列出選項與各項 NT$；不提供門市自取（`store_pickup` 停用後不出現在選單） |
+
 ### `/shop` 頂欄補充
 
 | 元素 | 說明 |

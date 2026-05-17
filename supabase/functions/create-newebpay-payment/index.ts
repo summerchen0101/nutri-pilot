@@ -42,6 +42,17 @@ interface CheckoutBody {
   recipientPhone?: string;
   recipientAddressFull?: string;
   saveShippingToProfile?: boolean;
+  vendorShippingSelections?: Record<string, string>;
+}
+
+interface VendorShippingMethodRow {
+  id: string;
+  vendor_id: string;
+  code: string;
+  label: string;
+  shipping_fee: number | string | null;
+  free_shipping_threshold: number | string | null;
+  sort_order: number | string | null;
 }
 
 interface VendorRow {
@@ -78,6 +89,9 @@ interface CheckoutVendorSnapshot {
   effectiveShipping: number;
   freeShippingThreshold: number | null;
   lines: { variantId: string; qty: number; unitPrice: number }[];
+  shippingMethodId?: string | null;
+  shippingMethodLabel?: string | null;
+  shippingMethodCode?: string | null;
 }
 
 interface CheckoutSnapshot {
@@ -118,6 +132,148 @@ function effectiveShippingFee(
     return 0;
   }
   return shippingFee;
+}
+
+function normalizeSelectionMap(
+  raw: unknown,
+): Record<string, string> {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
+    return {};
+  }
+  const o: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (!k || typeof k !== "string") continue;
+    if (typeof v === "string" && v.trim().length > 0) {
+      o[k] = v.trim();
+    }
+  }
+  return o;
+}
+
+function sortMethodRows(rows: VendorShippingMethodRow[]): VendorShippingMethodRow[] {
+  return [...rows].sort((a, b) =>
+    num(a.sort_order) - num(b.sort_order) ||
+    String(a.code).localeCompare(String(b.code), "zh-Hant")
+  );
+}
+
+const STORE_PICKUP_SHIPPING_CODE = "store_pickup";
+
+function filterCheckoutMethodRows(
+  rows: VendorShippingMethodRow[],
+): VendorShippingMethodRow[] {
+  return rows.filter((r) => String(r.code) !== STORE_PICKUP_SHIPPING_CODE);
+}
+
+/** 與前台 `pickCheapestShippingMethod` 一致：effective 最低，平手依 sort_order、code */
+function pickCheapestMethodRow(
+  rowsSorted: VendorShippingMethodRow[],
+  itemsSubtotalRounded: number,
+): VendorShippingMethodRow {
+  let best = rowsSorted[0]!;
+  let bestEff = effectiveShippingFee(
+    itemsSubtotalRounded,
+    num(best.shipping_fee),
+    best.free_shipping_threshold == null ? null : num(best.free_shipping_threshold),
+  );
+
+  for (let i = 1; i < rowsSorted.length; i++) {
+    const row = rowsSorted[i]!;
+    const thr = row.free_shipping_threshold == null ?
+      null
+      : num(row.free_shipping_threshold);
+    const eff = effectiveShippingFee(
+      itemsSubtotalRounded,
+      num(row.shipping_fee),
+      thr,
+    );
+
+    if (eff < bestEff) {
+      best = row;
+      bestEff = eff;
+      continue;
+    }
+    if (eff !== bestEff) continue;
+
+    const orderCmp = num(row.sort_order) - num(best.sort_order);
+    if (
+      orderCmp < 0 ||
+      (orderCmp === 0 &&
+        String(row.code).localeCompare(String(best.code), "zh-Hant") < 0)
+    ) {
+      best = row;
+      bestEff = eff;
+    }
+  }
+
+  return best;
+}
+
+function resolveVendorShippingPrice(
+  vendorRowsSorted: VendorShippingMethodRow[],
+  requestedMethodId: string | undefined,
+  legacyShippingFee: number,
+  legacyFreeThreshold: number | null,
+  itemsSubtotalRounded: number,
+): {
+  shippingFee: number;
+  freeShippingThreshold: number | null;
+  methodId: string | null;
+  methodLabel: string | null;
+  methodCode: string | null;
+  error?: string;
+} {
+  if (vendorRowsSorted.length === 0) {
+    return {
+      shippingFee: legacyShippingFee,
+      freeShippingThreshold: legacyFreeThreshold,
+      methodId: null,
+      methodLabel: null,
+      methodCode: null,
+    };
+  }
+
+  const sortedAll = sortMethodRows(vendorRowsSorted);
+  const checkoutRows = filterCheckoutMethodRows(sortedAll);
+  const sorted =
+    checkoutRows.length > 0 ? checkoutRows : sortedAll;
+
+  const req =
+    typeof requestedMethodId === "string" && requestedMethodId.length > 0 ?
+      requestedMethodId
+    : undefined;
+
+  let picked: VendorShippingMethodRow;
+
+  if (req) {
+    const found = sortedAll.find((r) => String(r.id) === req);
+    if (!found) {
+      return {
+        shippingFee: legacyShippingFee,
+        freeShippingThreshold: legacyFreeThreshold,
+        methodId: null,
+        methodLabel: null,
+        methodCode: null,
+        error: "無效的運送方式",
+      };
+    }
+    picked = found;
+  } else {
+    picked = pickCheapestMethodRow(sorted, itemsSubtotalRounded);
+  }
+
+  const fee = num(picked.shipping_fee, legacyShippingFee);
+  const thr = picked.free_shipping_threshold == null ?
+    null
+    : num(picked.free_shipping_threshold);
+
+  return {
+    shippingFee: fee,
+    freeShippingThreshold: thr,
+    methodId: String(picked.id),
+    methodLabel: String(picked.label ?? ""),
+    methodCode: String(picked.code ?? ""),
+  };
 }
 
 function buildPublicOrderNo(): string {
@@ -291,20 +447,37 @@ Deno.serve(async (req) => {
     vendorMap.set(ln.vendorId, arr);
   }
 
+  const selectionMap = normalizeSelectionMap(body.vendorShippingSelections);
+
+  const vendorIds = [...vendorMap.keys()];
+  const { data: shippingMethodRows, error: smErr } = await supabase
+    .from("vendor_shipping_methods")
+    .select(
+      "id, vendor_id, code, label, shipping_fee, free_shipping_threshold, sort_order",
+    )
+    .in("vendor_id", vendorIds)
+    .eq("is_active", true);
+
+  if (smErr) {
+    return jsonResponse({ error: smErr.message }, 400);
+  }
+
+  const methodRows = (shippingMethodRows ?? []) as VendorShippingMethodRow[];
+
   const snapshotVendors: CheckoutVendorSnapshot[] = [];
   let itemsSubtotalAll = 0;
 
   for (const [, group] of vendorMap) {
     const vendorId = group[0]!.vendorId;
     const vendorName = group[0]!.vendorName;
-    const shippingFee = group[0]!.shippingFee;
-    const freeShippingThreshold = group[0]!.freeShippingThreshold;
+    const legacyShippingFee = group[0]!.shippingFee;
+    const legacyThr = group[0]!.freeShippingThreshold;
 
     let itemsSubtotal = 0;
-    const lines: { variantId: string; qty: number; unitPrice: number }[] = [];
+    const snapLines: { variantId: string; qty: number; unitPrice: number }[] = [];
     for (const ln of group) {
       itemsSubtotal += ln.unitPrice * ln.qty;
-      lines.push({
+      snapLines.push({
         variantId: ln.variantId,
         qty: ln.qty,
         unitPrice: ln.unitPrice,
@@ -312,20 +485,38 @@ Deno.serve(async (req) => {
     }
     itemsSubtotalAll += itemsSubtotal;
 
+    const vr = sortMethodRows(
+      methodRows.filter((r) => String(r.vendor_id) === vendorId),
+    );
+    const roundedSub = roundTwdAmt(itemsSubtotal);
+    const resolved = resolveVendorShippingPrice(
+      vr,
+      selectionMap[vendorId],
+      legacyShippingFee,
+      legacyThr,
+      roundedSub,
+    );
+    if (resolved.error) {
+      return jsonResponse({ error: resolved.error }, 422);
+    }
+
     const effectiveShipping = effectiveShippingFee(
-      itemsSubtotal,
-      shippingFee,
-      freeShippingThreshold,
+      roundedSub,
+      resolved.shippingFee,
+      resolved.freeShippingThreshold,
     );
 
     snapshotVendors.push({
       vendorId,
       vendorName,
-      itemsSubtotal: roundTwdAmt(itemsSubtotal),
-      shippingFee,
+      itemsSubtotal: roundedSub,
+      shippingFee: resolved.shippingFee,
       effectiveShipping: roundTwdAmt(effectiveShipping),
-      freeShippingThreshold,
-      lines,
+      freeShippingThreshold: resolved.freeShippingThreshold,
+      lines: snapLines,
+      shippingMethodId: resolved.methodId,
+      shippingMethodLabel: resolved.methodLabel,
+      shippingMethodCode: resolved.methodCode,
     });
   }
 

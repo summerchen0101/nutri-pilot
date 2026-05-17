@@ -3,18 +3,14 @@
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 
 import { startCheckout } from '@/app/(main)/shop/actions';
 import { Button } from '@/components/ui/button';
 import { HEADER_LEADING_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
 import { StickyPageHeader } from '@/components/layout/sticky-page-header';
-import {
-  calcVendorShippingSummaries,
-  cartGrandTotal,
-  cartTotalShipping,
-} from '@/lib/shop/vendor-shipping';
-import { cartTotalItemsSubtotal, useCartStore, type CartLine } from '@/lib/shop/cart-store';
+import { useCartDerived } from '@/lib/shop/use-cart-derived';
+import { useCartStore } from '@/lib/shop/cart-store';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 import { submitNewebpayMpgForm } from '@/lib/shop/submit-newebpay-mpg-form';
 
@@ -31,6 +27,18 @@ export function CheckoutClient({
 }: CheckoutClientProps) {
   const router = useRouter();
   const lines = useCartStore((s) => s.lines);
+  const vendorShippingSelections = useCartStore(
+    (s) => s.vendorShippingSelections,
+  );
+
+  const {
+    validLines,
+    summaries,
+    itemsSubtotal,
+    shippingTotal,
+    grandTotal,
+    hasLegacyLines,
+  } = useCartDerived();
 
   const [recipientName, setRecipientName] = useState(defaultRecipientName);
   const [recipientPhone, setRecipientPhone] = useState(defaultPhone);
@@ -40,30 +48,6 @@ export function CheckoutClient({
   const [saveShippingToProfile, setSaveShippingToProfile] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-
-  const validLines = useMemo(
-    () =>
-      lines.filter(
-        (l): l is CartLine =>
-          Boolean(l.vendorId && l.vendorName && typeof l.unitPrice === 'number'),
-      ),
-    [lines],
-  );
-
-  const summaries = useMemo(
-    () => calcVendorShippingSummaries(validLines),
-    [validLines],
-  );
-
-  const itemsSubtotal = useMemo(
-    () => cartTotalItemsSubtotal(validLines),
-    [validLines],
-  );
-  const shippingTotal = useMemo(
-    () => cartTotalShipping(summaries),
-    [summaries],
-  );
-  const grandTotal = useMemo(() => cartGrandTotal(validLines), [validLines]);
 
   useEffect(() => {
     if (lines.length === 0) {
@@ -82,8 +66,6 @@ export function CheckoutClient({
     qty: l.qty,
   }));
 
-  const hasLegacyLines = lines.length > 0 && validLines.length < lines.length;
-
   function pay() {
     setErr(null);
     if (!validLines.length) {
@@ -101,6 +83,7 @@ export function CheckoutClient({
     startTransition(async () => {
       const res = await startCheckout({
         items: itemsPayload,
+        vendorShippingSelections,
         recipientName: rn,
         recipientPhone: rp,
         recipientAddressFull: ra,
@@ -138,7 +121,7 @@ export function CheckoutClient({
         title="確認結帳"
         meta={
           <p className="text-caption text-muted-foreground">
-            宅配｜與全單相同收件地址
+            多廠依各自運送方式與免運門檻計費｜收件地址適用於全單宅配區段
           </p>
         }
       />
@@ -198,10 +181,17 @@ export function CheckoutClient({
         <h2 className="text-heading-section text-foreground">訂單明細</h2>
         <ul className="mt-3 space-y-4">
           {summaries.map((v) => (
-            <li key={v.vendorId} className="border-b-hairline border-border pb-4 last:border-0 last:pb-0">
+            <li
+              key={v.vendorId}
+              className="border-b-hairline border-border pb-4 last:border-0 last:pb-0">
               <p className="text-caption font-semibold text-primary">
                 {v.vendorName}
               </p>
+              {v.selectedShippingMethodLabel ?
+                <p className="mt-1 text-caption text-muted-foreground">
+                  運送：{v.selectedShippingMethodLabel}
+                </p>
+              : null}
               <ul className="mt-2 space-y-2">
                 {v.lines.map((line) => (
                   <li
@@ -260,11 +250,11 @@ export function CheckoutClient({
         </div>
       </section>
 
-      {err ? (
+      {err ?
         <p className="text-body text-[#E24B4A]" role="alert">
           {err}
         </p>
-      ) : null}
+      : null}
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <Link
@@ -274,7 +264,7 @@ export function CheckoutClient({
         </Link>
         <Button
           type="button"
-          className="sm:flex-1 bg-[#4C956C] text-white hover:bg-[#3A7A56] focus-visible:ring-[#4C956C]/25"
+          className="bg-[#4C956C] text-white hover:bg-[#3A7A56] focus-visible:ring-[#4C956C]/25 sm:flex-1"
           disabled={pending || !validLines.length || hasLegacyLines}
           onClick={pay}>
           {pending ? '處理中…' : '前往藍新付款'}

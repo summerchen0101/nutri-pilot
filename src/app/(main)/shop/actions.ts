@@ -15,6 +15,8 @@ export async function startCheckout(payload: {
   recipientPhone: string;
   recipientAddressFull: string;
   saveShippingToProfile?: boolean;
+  /** vendor_id → vendor_shipping_methods.id */
+  vendorShippingSelections?: Record<string, string>;
 }): Promise<{
   paymentUrl?: string;
   formFields?: Record<string, string>;
@@ -44,6 +46,7 @@ export async function startCheckout(payload: {
       },
       body: JSON.stringify({
         items: payload.items,
+        vendorShippingSelections: payload.vendorShippingSelections ?? {},
         recipientName: payload.recipientName,
         recipientPhone: payload.recipientPhone,
         recipientAddressFull: payload.recipientAddressFull,

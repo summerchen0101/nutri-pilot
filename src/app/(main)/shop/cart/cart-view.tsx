@@ -3,13 +3,15 @@
 import { Store, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
 
+import { CartCheckoutDock } from '@/app/(main)/shop/cart/cart-checkout-dock';
+import { CartCommerceSections } from '@/app/(main)/shop/cart/cart-commerce-sections';
 import { CartLineRow } from '@/app/(main)/shop/cart/cart-line-row';
+import { CartVendorShippingPicker } from '@/app/(main)/shop/cart/cart-vendor-shipping-picker';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { useCartStore } from '@/lib/shop/cart-store';
 import { useCartDerived } from '@/lib/shop/use-cart-derived';
+import { useCartStore } from '@/lib/shop/cart-store';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 
 export interface CartViewProps {
@@ -17,39 +19,32 @@ export interface CartViewProps {
   layout?: 'page' | 'panel';
   /** 與 `layout="page"` 併用：只渲染廠商列表，供全頁固定底欄 */
   embedded?: boolean;
+  /** 僅 `layout="panel"`：列表 `scrollTop` 供側欄標題列升起態 */
+  onPanelScrollTopChange?: (scrollTop: number) => void;
 }
 
-export function CartView({ layout = 'page', embedded = false }: CartViewProps) {
+export function CartView({
+  layout = 'page',
+  embedded = false,
+  onPanelScrollTopChange,
+}: CartViewProps) {
   const router = useRouter();
   const setQty = useCartStore((s) => s.setQty);
   const removeLine = useCartStore((s) => s.removeLine);
   const clear = useCartStore((s) => s.clear);
+  const setVendorShippingSelection = useCartStore(
+    (s) => s.setVendorShippingSelection,
+  );
   const closeCartPanel = useCartStore((s) => s.closeCartPanel);
 
   const {
     lines,
-    validLines,
     summaries,
-    itemsSubtotal,
-    shippingTotal,
-    grandTotal,
     hasLegacyLines,
+    shippingMethodsLoading,
+    shippingMethodsFailed,
+    vendorShippingSelections,
   } = useCartDerived();
-
-  const maxLeadTimeDays = useMemo(() => {
-    if (validLines.length === 0) return 0;
-    return Math.max(...validLines.map((l) => l.leadTimeDays));
-  }, [validLines]);
-
-  function goCheckout() {
-    closeCartPanel();
-    router.push('/shop/checkout');
-  }
-
-  function continueShopping() {
-    closeCartPanel();
-    router.push('/shop');
-  }
 
   if (lines.length === 0) {
     const empty = (
@@ -63,7 +58,12 @@ export function CartView({ layout = 'page', embedded = false }: CartViewProps) {
     if (layout === 'panel') {
       return (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto hide-scrollbar [-webkit-overflow-scrolling:touch]">
+          <div
+            className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-4 pt-3 pb-6 hide-scrollbar [-webkit-overflow-scrolling:touch]"
+            onScroll={(e) => {
+              onPanelScrollTopChange?.(e.currentTarget.scrollTop);
+            }}
+          >
             {empty}
           </div>
         </div>
@@ -77,10 +77,10 @@ export function CartView({ layout = 'page', embedded = false }: CartViewProps) {
     setQty(variantId, nextQty);
   }
 
-  const vendorBlocks = (
-    <div className="space-y-6">
+  const vendorsAndLines = (
+    <div className="space-y-8">
       {hasLegacyLines ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl bg-[var(--color-background-primary)] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-body text-amber-900">
             購物車含有舊版資料，請清空購物車後重新加入商品。
           </p>
@@ -99,34 +99,32 @@ export function CartView({ layout = 'page', embedded = false }: CartViewProps) {
       ) : null}
 
       {summaries.map((block) => (
-        <section
-          key={block.vendorId}
-          className="rounded-xl border-hairline border-border bg-card">
-          <div className="flex items-center gap-2 border-b-hairline border-border px-3 py-2.5">
+        <div key={block.vendorId} className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
             <Store className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <h2 className="min-w-0 flex-1 text-heading-section text-foreground">
               {block.vendorName}
             </h2>
           </div>
 
-          <ul className="divide-y-hairline divide-border px-3">
-            {block.lines.map((line) => (
-              <li key={line.variantId}>
-                <CartLineRow
-                  line={line}
-                  onQuantityChange={handleQuantityChange}
-                  onRemove={removeLine}
-                />
-              </li>
-            ))}
-          </ul>
+          {block.lines.map((line) => (
+            <div
+              key={line.variantId}
+              className="overflow-hidden rounded-xl bg-[var(--color-background-primary)] px-3">
+              <CartLineRow
+                line={line}
+                onQuantityChange={handleQuantityChange}
+                onRemove={removeLine}
+              />
+            </div>
+          ))}
 
-          <div className="space-y-2 border-t-hairline border-border bg-muted/30 px-3 py-3">
+          <div className="space-y-3 rounded-xl bg-[var(--color-background-primary)] px-3 py-3">
             <div className="flex items-start gap-2 text-body text-muted-foreground">
               <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-foreground">配送方式：宅配</p>
-                <p className="mt-0.5 text-caption">
+              <div className="min-w-0 flex-1 space-y-2">
+                <p className="text-heading-card text-foreground">配送與運費</p>
+                <p className="text-caption">
                   與全單相同收件地址；可於結帳頁或
                   <Link
                     href="/settings"
@@ -136,8 +134,29 @@ export function CartView({ layout = 'page', embedded = false }: CartViewProps) {
                   </Link>
                   編輯預設資料。
                 </p>
-                <p className="mt-2 tabular-nums text-foreground">
-                  小計 NT${' '}
+                {shippingMethodsLoading ?
+                  <p className="text-caption text-muted-foreground">
+                    載入運送方式…
+                  </p>
+                : null}
+                {shippingMethodsFailed ?
+                  <p className="text-caption text-[#E24B4A]">
+                    無法載入運送選項，已暫以商品加入時快照計算運費。
+                  </p>
+                : null}
+                <CartVendorShippingPicker
+                  ariaLabelSuffix={block.vendorName}
+                  methods={block.availableShippingMethods}
+                  selectedMethodId={
+                    vendorShippingSelections[block.vendorId] ?? null
+                  }
+                  itemsSubtotalRounded={block.itemsSubtotal}
+                  onSelectMethodId={(id) => {
+                    setVendorShippingSelection(block.vendorId, id);
+                  }}
+                />
+                <p className="pt-2 tabular-nums text-body text-foreground">
+                  商品小計 NT${' '}
                   {formatShopGroupedInteger(block.itemsSubtotal)}
                   <span className="mx-1.5 text-muted-foreground">·</span>
                   運費 NT${' '}
@@ -150,79 +169,45 @@ export function CartView({ layout = 'page', embedded = false }: CartViewProps) {
                       {formatShopGroupedInteger(block.gapToFreeShipping)} 享免運）
                     </span>
                   : block.effectiveShipping === 0 ?
-                    <span className="text-caption text-[#2D6B4A]"> （已達免運）</span>
+                    <span className="text-caption text-[#2D6B4A]">
+                      {' '}
+                      （已達免運）
+                    </span>
                   : null}
                 </p>
               </div>
             </div>
           </div>
-        </section>
+        </div>
       ))}
     </div>
   );
 
-  const shipNote =
-    maxLeadTimeDays > 0 ?
-      `約 ${maxLeadTimeDays} 個工作天起由廠商準備出貨`
-    : '出貨將於結帳後確認';
-
-  const checkoutFooter = (
-    <div className="space-y-3">
-      <p className="bg-[#1E212B] px-3 py-2 text-center text-caption text-white/95">
-        {shipNote}
-      </p>
-      <div className="space-y-2 rounded-xl border-hairline border-border px-3 py-3">
-        <div className="flex items-baseline justify-between gap-3 text-caption text-muted-foreground">
-          <span>商品小計</span>
-          <span className="tabular-nums text-foreground">
-            NT$ {formatShopGroupedInteger(itemsSubtotal)}
-          </span>
-        </div>
-        <div className="flex items-baseline justify-between gap-3 text-caption text-muted-foreground">
-          <span>運費合計</span>
-          <span className="tabular-nums text-foreground">
-            NT$ {formatShopGroupedInteger(shippingTotal)}
-          </span>
-        </div>
-        <div className="flex items-baseline justify-between gap-3 border-t-hairline border-border pt-2">
-          <span className="text-caption font-medium text-primary">訂單總計</span>
-          <span className="tabular-nums text-primary font-medium">
-            NT$ {formatShopGroupedInteger(grandTotal)}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Button
-          type="button"
-          className="w-full"
-          disabled={!validLines.length || hasLegacyLines}
-          onClick={goCheckout}>
-          繼續結帳
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={continueShopping}>
-          繼續購物
-        </Button>
-      </div>
-    </div>
+  const scrollBlock = (
+    <>
+      {vendorsAndLines}
+      <CartCommerceSections className="mt-6" />
+    </>
   );
 
   if (layout === 'page' && embedded) {
-    return vendorBlocks;
+    return scrollBlock;
   }
 
   if (layout === 'panel') {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto hide-scrollbar [-webkit-overflow-scrolling:touch]">
-          {vendorBlocks}
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 hide-scrollbar [-webkit-overflow-scrolling:touch]"
+          onScroll={(e) => {
+            onPanelScrollTopChange?.(e.currentTarget.scrollTop);
+          }}
+        >
+          {scrollBlock}
+          <div className="pb-6" aria-hidden />
         </div>
-        <div className="shrink-0 border-t-hairline border-border bg-[var(--color-background-primary)] pt-3">
-          {checkoutFooter}
+        <div className="w-full shrink-0 border-t-hairline border-[var(--color-border-secondary)] bg-[var(--color-background-primary)]">
+          <CartCheckoutDock variant="panel" />
         </div>
       </div>
     );

@@ -1125,6 +1125,50 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_shipping_methods: {
+        Row: {
+          code: string
+          created_at: string
+          free_shipping_threshold: number | null
+          id: string
+          is_active: boolean
+          label: string
+          shipping_fee: number
+          sort_order: number
+          vendor_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          free_shipping_threshold?: number | null
+          id?: string
+          is_active?: boolean
+          label: string
+          shipping_fee?: number
+          sort_order?: number
+          vendor_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          free_shipping_threshold?: number | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          shipping_fee?: number
+          sort_order?: number
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'vendor_shipping_methods_vendor_id_fkey'
+            columns: ['vendor_id']
+            isOneToOne: false
+            referencedRelation: 'vendors'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       vendor_users: {
         Row: {
           created_at: string

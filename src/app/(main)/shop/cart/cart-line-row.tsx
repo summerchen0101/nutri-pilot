@@ -25,7 +25,7 @@ export function CartLineRow({ line, onQuantityChange, onRemove }: CartLineRowPro
   }
 
   return (
-    <div className="flex gap-3 py-4">
+    <div className="flex gap-3 py-3">
       <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg bg-muted">
         {line.imageUrl ?
           <Image
@@ -51,9 +51,6 @@ export function CartLineRow({ line, onQuantityChange, onRemove }: CartLineRowPro
         {line.variantLabel ?
           <p className="mt-0.5 text-micro text-muted-foreground">{line.variantLabel}</p>
         : null}
-        <p className="mt-0.5 text-caption text-muted-foreground">
-          商品編號：{line.productId}
-        </p>
 
         <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
           <div className="flex flex-col gap-2">
