@@ -36,25 +36,31 @@ type CatalogRow = {
 function PointsToggle({
   pressed,
   onToggle,
+  disabled = false,
 }: {
   pressed: boolean;
   onToggle: () => void;
+  disabled?: boolean;
 }) {
+  const on = pressed && !disabled;
+
   return (
     <button
       type="button"
       role="switch"
-      aria-checked={pressed}
+      aria-checked={on}
+      disabled={disabled}
       onClick={onToggle}
       className={cn(
-        'relative h-7 w-11 shrink-0 rounded-full transition-colors',
-        pressed ? 'bg-primary' : 'bg-muted',
+        'flex h-7 w-11 shrink-0 items-center rounded-full px-0.5 transition-colors',
+        disabled ? 'cursor-not-allowed opacity-50' : null,
+        on ? 'bg-primary' : 'bg-[var(--shop-points-toggle-track-off)]',
       )}
     >
       <span
         className={cn(
-          'absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-neutral-bg-primary transition-transform duration-200 ease-out',
-          pressed ? 'translate-x-[18px]' : 'translate-x-0',
+          'h-6 w-6 shrink-0 rounded-full bg-neutral-bg-primary transition-[margin] duration-200 ease-out',
+          on ? 'ml-4' : 'ml-0',
         )}
         aria-hidden
       />
@@ -87,6 +93,14 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
     0,
     Math.floor(Number(pointsBalance) || 0),
   );
+
+  const canRedeemPoints = redeemablePoints > 0;
+
+  useEffect(() => {
+    if (!canRedeemPoints) {
+      setPointsApplyPreview(false);
+    }
+  }, [canRedeemPoints]);
 
   useEffect(() => {
     let cancelled = false;
@@ -204,7 +218,7 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
       <button
         type="button"
         onClick={() => setCouponSheetOpen(true)}
-        className="flex w-full items-center justify-between gap-3 rounded-xl bg-[var(--color-background-primary)] px-3 py-3.5 text-left transition-colors hover:bg-muted/35"
+        className="flex w-full items-center justify-between gap-3 rounded-xl bg-[var(--color-background-primary)] px-3 py-3.5 text-left transition-colors hover:bg-[var(--shop-field-surface)]"
       >
         <span className="text-heading-section text-foreground">優惠券與優惠碼</span>
         <span className="flex items-center gap-0.5 text-caption font-medium text-primary">
@@ -221,12 +235,15 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
               可折抵 {redeemablePoints} 點
             </p>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-2">
-            <PointsToggle
-              pressed={pointsApplyPreview}
-              onToggle={() => setPointsApplyPreview((p) => !p)}
-            />
-            <span className="text-caption tabular-nums text-muted-foreground">
+          <div className="flex w-11 shrink-0 flex-col items-stretch gap-2">
+            <div className="flex justify-center">
+              <PointsToggle
+                pressed={pointsApplyPreview}
+                disabled={!canRedeemPoints}
+                onToggle={() => setPointsApplyPreview((p) => !p)}
+              />
+            </div>
+            <span className="block text-center text-caption tabular-nums text-muted-foreground">
               −NT$
               {formatShopGroupedInteger(redeemablePoints)}
             </span>
@@ -258,7 +275,7 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
                 key={product.id}
                 className="flex w-[146px] shrink-0 flex-col overflow-hidden rounded-xl bg-[var(--color-background-primary)]"
               >
-                <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted">
+                <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-[var(--shop-field-surface)]">
                   {product.imageUrl ?
                     <Image
                       src={product.imageUrl}

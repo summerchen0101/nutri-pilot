@@ -26,7 +26,7 @@ export function CartLineRow({ line, onQuantityChange, onRemove }: CartLineRowPro
 
   return (
     <div className="flex gap-3 py-3">
-      <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg bg-muted">
+      <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg bg-[var(--shop-field-surface)]">
         {line.imageUrl ?
           <Image
             src={line.imageUrl}

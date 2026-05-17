@@ -189,9 +189,7 @@ export function CartView({ onPanelScrollTopChange }: CartViewProps) {
         {scrollBlock}
         <div className="pb-6" aria-hidden />
       </div>
-      <div className="w-full shrink-0 border-t-hairline border-[var(--color-border-secondary)] bg-[var(--color-background-primary)]">
-        <CartCheckoutDock />
-      </div>
+      <CartCheckoutDock />
     </div>
   );
 }

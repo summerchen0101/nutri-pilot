@@ -125,7 +125,7 @@ export function ShopRightSheet({
         aria-hidden={!open}
         className={cn(
           'relative flex h-full min-h-0 w-full max-w-md flex-col transition-transform duration-300 ease-out',
-          isMutedBody ? 'bg-neutral-bg-secondary' : 'bg-[var(--color-background-primary)]',
+          isMutedBody ? 'bg-[var(--shop-sheet-canvas)]' : 'bg-[var(--color-background-primary)]',
           open ? 'translate-x-0' : 'translate-x-full',
         )}
       >

@@ -29,38 +29,38 @@ export function CartCheckoutDock() {
     openCheckoutPanel();
   }
 
-  const outerClass = "overflow-hidden bg-[var(--color-background-primary)]";
-
-  const pbSafe = "pb-[max(0.75rem,env(safe-area-inset-bottom))]";
-
   return (
     <>
-      <div className={outerClass}>
-        <div className={`px-3 pt-3 ${pbSafe}`}>
-          <div className="flex flex-wrap items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 text-caption font-medium text-primary underline-offset-2 hover:underline"
-                onClick={() => setDetailOpen(true)}>
-                <span>結帳明細</span>
-                <Plus className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              </button>
-              <p className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
-                <span className="text-caption text-foreground">金額總計</span>
-                <span className="text-heading-screen font-semibold tabular-nums text-primary tracking-tight">
-                  NT$ {formatShopGroupedInteger(checkoutTotalIncludingShipping)}
-                </span>
-              </p>
-            </div>
-            <Button
+      <div className="w-full shrink-0 border-t-hairline border-border/60 bg-[var(--color-background-primary)] px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <button
               type="button"
-              className="min-h-11 min-w-[9rem] shrink-0"
-              disabled={!validLines.length || hasLegacyLines}
-              onClick={goCheckout}>
-              繼續結帳
-            </Button>
+              className="inline-flex items-center gap-1 text-caption font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              onClick={() => setDetailOpen(true)}
+            >
+              <span>結帳明細</span>
+              <Plus className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            </button>
+            <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0">
+              <span className="shrink-0 text-caption text-muted-foreground">
+                總計
+              </span>
+              <span className="min-w-0 text-heading-page tabular-nums text-foreground">
+                NT$ {formatShopGroupedInteger(checkoutTotalIncludingShipping)}
+              </span>
+            </div>
           </div>
+          <Button
+            type="button"
+            variant="default"
+            size="default"
+            className="min-w-[140px] shrink-0 px-5"
+            disabled={!validLines.length || hasLegacyLines}
+            onClick={goCheckout}
+          >
+            繼續結帳
+          </Button>
         </div>
       </div>
 

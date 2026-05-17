@@ -74,7 +74,7 @@ export function CartVendorShippingPicker({
     <>
       <button
         type="button"
-        className="flex w-full min-h-11 items-center justify-between gap-3 rounded-[10px] border-hairline border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
+        className="flex w-full min-h-11 items-center justify-between gap-3 rounded-[10px] border-hairline border-border bg-transparent px-3 py-2.5 text-left transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
         aria-label={`${ariaLabelSuffix}：選擇運送方式`}
         aria-expanded={sheetOpen}
         onClick={() => setSheetOpen(true)}>
@@ -110,7 +110,7 @@ export function CartVendorShippingPicker({
                   'flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] border px-3 py-2.5 text-left',
                   active ?
                     'border-primary bg-primary text-white'
-                  : 'border-border bg-card text-foreground',
+                  : 'border-hairline border-border bg-transparent text-foreground',
                 )}
                 onClick={() => {
                   onSelectMethodId(m.id);

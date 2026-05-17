@@ -36,7 +36,7 @@ export function ShopCheckoutPanel(): ReactNode {
     <ShopRightSheet
       open={open}
       onClose={closeCheckoutPanel}
-      title="確認結帳"
+      title="結帳"
       leading={<CheckoutPanelBackButton onBack={goBackToCart} />}
       asideVariant="mutedBody"
       elevatedHeader={elevatedHeader}

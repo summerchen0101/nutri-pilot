@@ -147,8 +147,17 @@
 
     /* Semantic neutral tokens (light mode) */
     --color-background-primary: #ffffff;
-    --color-background-secondary: #f7f8f6;
+    /* 側欄／卡片內格淺灰（略深於舊 #f7f8f6，與白卡反差較清楚） */
+    --color-background-secondary: #e8eae6;
     --color-background-tertiary: #f3f4f6;
+    /*
+     * 商城購物車／結帳右側欄（ShopRightSheet mutedBody）：不透明中性淺灰，避免與
+     * hsl(var(--muted))、bg-secondary 叠透明造成粉綠或與白卡對比不一。
+     */
+    --shop-sheet-canvas: #f2f2f2;
+    --shop-field-surface: #f5f5f5;
+    /* 購物車點數折抵 switch 關閉態軌道（略深於 field-surface） */
+    --shop-points-toggle-track-off: #e0e0e0;
     --color-text-primary: #1e212b;
     --color-text-secondary: #4a4f63;
     --color-text-tertiary: #9298a8;
