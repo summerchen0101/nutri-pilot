@@ -1291,6 +1291,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_orders_for_staff: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          public_order_no: string | null
+          status: string
+          total: number
+          created_at: string
+          buyer_email: string | null
+        }[]
+      }
+      admin_users_directory: {
+        Args: { p_limit?: number }
+        Returns: {
+          user_id: string
+          email: string | null
+          name: string
+          diet_method: string | null
+          updated_at: string | null
+        }[]
+      }
+      admin_user_email_for_staff: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
       get_monthly_ai_quota_used: {
         Args: { p_month: string }
         Returns: number

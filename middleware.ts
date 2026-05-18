@@ -1,6 +1,8 @@
 import { createServerClient, type SetAllCookies } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { adminHomeForRole } from '@/lib/admin/admin-home';
+
 type CookieRow = Parameters<SetAllCookies>[0][number];
 
 /** Longest prefix first so `/admin/products` wins over `/admin` if we add broader keys later. */
@@ -85,12 +87,20 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
+    if (pathname === '/admin') {
+      return NextResponse.redirect(
+        new URL(adminHomeForRole(role), request.url),
+      );
+    }
+
     const matchedPath = SORTED_ADMIN_PATHS.find((p) => pathname.startsWith(p));
     if (
       matchedPath &&
       !ROLE_ACCESS[matchedPath]?.includes(role)
     ) {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      return NextResponse.redirect(
+        new URL(adminHomeForRole(role), request.url),
+      );
     }
 
     return supabaseResponse;
@@ -118,6 +128,7 @@ export const config = {
     '/settings/:path*',
     '/onboarding',
     '/onboarding/:path*',
+    '/admin',
     '/admin/:path*',
   ],
 };

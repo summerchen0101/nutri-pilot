@@ -1,0 +1,96 @@
+'use client';
+
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { createClient } from '@/lib/supabase/client';
+
+export function AdminLoginForm() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>(
+    'idle',
+  );
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus('loading');
+    setMessage(null);
+
+    const supabase = createClient();
+    const redirectUrl = `${window.location.origin}/auth/callback?next=/admin`;
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+
+    if (error) {
+      setStatus('error');
+      setMessage(error.message);
+      return;
+    }
+
+    setStatus('sent');
+    setMessage('已寄出登入連結，請查收信箱（含垃圾信匣）。');
+  }
+
+  return (
+    <Card className="w-full max-w-md shadow-md">
+      <CardHeader className="space-y-1">
+        <h2 className="text-heading-screen text-foreground">主後台登入</h2>
+        <CardDescription>
+          輸入電子郵件，我們會寄送 Magic Link。登入後將依角色進入對應頁面。
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="admin-email" className="text-body font-medium text-slate-700">
+              Email
+            </label>
+            <Input
+              id="admin-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={status === 'loading'}
+            />
+          </div>
+          {message ? (
+            <p
+              className={`text-body ${status === 'error' ? 'text-red-600' : 'text-slate-600'}`}
+              role="status"
+            >
+              {message}
+            </p>
+          ) : null}
+        </CardContent>
+        <CardFooter className="flex flex-col gap-3 border-t border-slate-100 pt-6">
+          <Button
+            type="submit"
+            variant="default"
+            className="w-full"
+            disabled={status === 'loading'}
+          >
+            {status === 'loading' ? '寄送中…' : '寄送登入連結'}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
+  );
+}

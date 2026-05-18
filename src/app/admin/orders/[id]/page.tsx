@@ -1,0 +1,161 @@
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+
+import { OrderStatusUpdater } from '@/app/admin/orders/_components/order-status-updater';
+import { createClient } from '@/lib/supabase/server';
+
+export default async function AdminOrderDetailPage({
+  params,
+}: Readonly<{ params: { id: string } }>) {
+  const supabase = createClient();
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select(
+      `
+      id,
+      status,
+      total,
+      created_at,
+      public_order_no,
+      recipient_name,
+      recipient_phone,
+      recipient_address_full,
+      items:order_items(
+        id,
+        qty,
+        unit_price,
+        variant:product_variants(
+          label,
+          product:products(name)
+        )
+      ),
+      sub_orders:sub_orders(id, public_no, status, total, tracking_number)
+    `,
+    )
+    .eq('id', params.id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!order) {
+    notFound();
+  }
+
+  const itemsRaw = order.items;
+  const items = Array.isArray(itemsRaw) ? itemsRaw : [];
+
+  const subRaw = order.sub_orders;
+  const subOrders = Array.isArray(subRaw) ? subRaw : [];
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-8">
+      <Link
+        href="/admin/orders"
+        className="text-caption text-[#4C956C] hover:underline"
+      >
+        ← 訂單列表
+      </Link>
+
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-heading-screen text-foreground">訂單詳情</h1>
+          <p className="mt-1 font-mono text-caption text-slate-600">
+            {order.public_order_no ?? order.id}
+          </p>
+        </div>
+      </div>
+
+      <section className="rounded-xl border border-border bg-background p-4">
+        <h2 className="text-heading-section text-foreground">狀態</h2>
+        <div className="mt-4">
+          <OrderStatusUpdater orderId={order.id} currentStatus={order.status} />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-background p-4">
+        <h2 className="text-heading-section text-foreground">金額</h2>
+        <p className="mt-2 text-heading-page text-foreground">
+          NT${' '}
+          {Number(order.total).toLocaleString('zh-TW', {
+            minimumFractionDigits: 0,
+          })}
+        </p>
+        <p className="mt-2 text-caption text-slate-600">
+          建立：{new Date(order.created_at).toLocaleString('zh-TW')}
+        </p>
+      </section>
+
+      {(order.recipient_name || order.recipient_address_full) ? (
+        <section className="rounded-xl border border-border bg-background p-4">
+          <h2 className="text-heading-section text-foreground">收件資訊</h2>
+          <dl className="mt-3 space-y-2 text-body">
+            {order.recipient_name ? (
+              <div>
+                <dt className="text-caption text-slate-600">姓名</dt>
+                <dd>{order.recipient_name}</dd>
+              </div>
+            ) : null}
+            {order.recipient_phone ? (
+              <div>
+                <dt className="text-caption text-slate-600">電話</dt>
+                <dd>{order.recipient_phone}</dd>
+              </div>
+            ) : null}
+            {order.recipient_address_full ? (
+              <div>
+                <dt className="text-caption text-slate-600">地址</dt>
+                <dd>{order.recipient_address_full}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
+      ) : null}
+
+      <section className="rounded-xl border border-border bg-background p-4">
+        <h2 className="text-heading-section text-foreground">品項</h2>
+        <ul className="mt-3 divide-y divide-border">
+          {items.map((line) => {
+            const variant = line.variant as unknown as {
+              label?: string;
+              product?: { name: string } | { name: string }[] | null;
+            } | null;
+            const prod = variant?.product;
+            const productName = Array.isArray(prod) ? prod[0]?.name : prod?.name;
+            return (
+              <li key={line.id} className="py-3 text-body">
+                <span className="font-medium">
+                  {productName ?? '商品'} — {variant?.label ?? '規格'}
+                </span>
+                <span className="text-caption text-slate-600">
+                  {' '}
+                  ×{line.qty}（單價 {Number(line.unit_price).toLocaleString('zh-TW')}）
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {subOrders.length > 0 ? (
+        <section className="rounded-xl border border-border bg-background p-4">
+          <h2 className="text-heading-section text-foreground">子訂單</h2>
+          <ul className="mt-3 space-y-2 text-body">
+            {subOrders.map((s) => (
+              <li key={s.id}>
+                <span className="font-mono text-caption">{s.public_no}</span>
+                <span className="text-slate-600"> — {s.status}</span>
+                {s.tracking_number ? (
+                  <span className="text-caption text-slate-600">
+                    （物流：{s.tracking_number}）
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
+  );
+}
