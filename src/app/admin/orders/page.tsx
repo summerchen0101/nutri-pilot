@@ -1,5 +1,9 @@
 import Link from 'next/link';
 
+import {
+  adminListTableThClassName,
+  adminListTableTheadClassName,
+} from '@/app/admin/_lib/admin-list-table-classes';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/supabase';
 
@@ -24,14 +28,14 @@ export default async function AdminOrdersPage() {
 
       <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full min-w-[720px] text-left text-body">
-          <thead className="border-b border-border bg-secondary/40 text-caption uppercase tracking-wide text-slate-600">
+          <thead className={adminListTableTheadClassName}>
             <tr>
-              <th className="px-4 py-3 font-medium">訂單編號</th>
-              <th className="px-4 py-3 font-medium">買家</th>
-              <th className="px-4 py-3 font-medium">狀態</th>
-              <th className="px-4 py-3 font-medium">金額</th>
-              <th className="px-4 py-3 font-medium">建立時間</th>
-              <th className="px-4 py-3 font-medium"></th>
+              <th className={adminListTableThClassName}>訂單編號</th>
+              <th className={adminListTableThClassName}>買家</th>
+              <th className={adminListTableThClassName}>狀態</th>
+              <th className={adminListTableThClassName}>金額</th>
+              <th className={adminListTableThClassName}>建立時間</th>
+              <th className={adminListTableThClassName}></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">

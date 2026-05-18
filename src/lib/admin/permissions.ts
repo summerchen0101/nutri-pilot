@@ -1,4 +1,4 @@
-import type { AdminRole } from './get-role';
+import type { AdminRole } from './admin-role';
 
 type StaffAction =
   | 'product.delete'

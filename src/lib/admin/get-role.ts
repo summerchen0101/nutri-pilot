@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 
-export type AdminRole = 'super_admin' | 'editor' | 'cs';
+import type { AdminRole } from './admin-role';
+
+export type { AdminRole } from './admin-role';
 
 export async function getAdminRole(): Promise<AdminRole | null> {
   const supabase = createClient();

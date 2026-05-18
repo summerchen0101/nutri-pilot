@@ -1,5 +1,9 @@
 import Link from 'next/link';
 
+import {
+  adminListTableThClassName,
+  adminListTableTheadClassName,
+} from '@/app/admin/_lib/admin-list-table-classes';
 import { buttonVisualClassName } from '@/components/ui/button-visual';
 import { createClient } from '@/lib/supabase/server';
 
@@ -39,14 +43,14 @@ export default async function AdminProductsPage() {
 
       <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full min-w-[720px] text-left text-body">
-          <thead className="border-b border-border bg-secondary/40 text-caption uppercase tracking-wide text-slate-600">
+          <thead className={adminListTableTheadClassName}>
             <tr>
-              <th className="px-4 py-3 font-medium">名稱</th>
-              <th className="px-4 py-3 font-medium">品牌</th>
-              <th className="px-4 py-3 font-medium">分類</th>
-              <th className="px-4 py-3 font-medium">規格數</th>
-              <th className="px-4 py-3 font-medium">狀態</th>
-              <th className="px-4 py-3 font-medium"></th>
+              <th className={adminListTableThClassName}>名稱</th>
+              <th className={adminListTableThClassName}>品牌</th>
+              <th className={adminListTableThClassName}>分類</th>
+              <th className={adminListTableThClassName}>規格數</th>
+              <th className={adminListTableThClassName}>狀態</th>
+              <th className={adminListTableThClassName}></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
