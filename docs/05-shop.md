@@ -78,7 +78,7 @@ export function calcRecommendScore(
 ## 購物點（訂閱轉點）
 
 - **1 點 = 1 元（新台幣）** 折抵商城消費，實際發放／扣抵／餘額遞延以方案條款與後端為準。
-- 餘額欄位：`user_profiles.shop_points_balance`；流水：`user_shop_point_ledger`（`subscription_grant`、`order_redeem`、`admin_adjust`、`other`）；入帳列可填 **`expires_at`**（與下述批次一致）。
+- 餘額欄位：`user_profiles.shop_points_balance`（DB **不得為負**，見 migration `039_user_profiles_shop_points_balance_non_negative`）；流水：`user_shop_point_ledger`（`subscription_grant`、`order_redeem`、`admin_adjust`、`other`）；入帳列可填 **`expires_at`**（與下述批次一致）。
 - **分批與效期**：`user_shop_point_lots` 儲存每筆入帳之剩餘點數 **`amount_remaining`** 與 **`expires_at`**。折抵時應 **先到期先用（FIFO）**，並同步更新批次、`ledger`、`shop_points_balance`（建議單一交易或 RPC）。`/shop/settings` 頂部以 **`get_shop_points_next_expiry`** 顯示「最早到期且尚未過期」之批次加總與到期時間。
 - **過期處理**：若需自動核銷過期點數，需另實作排程／觸發器更新 lots 與餘額（顯示層僅反映目前 DB 狀態）。
 

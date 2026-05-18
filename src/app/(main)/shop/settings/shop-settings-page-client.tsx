@@ -7,6 +7,7 @@ import { FiChevronLeft } from 'react-icons/fi';
 
 import { ShopCommerceShortcutsCard } from '@/app/(main)/settings/_components/shop-commerce-shortcuts-card';
 import { ShopSettingsSheet } from '@/app/(main)/settings/_components/shop-settings-sheet';
+import { ShopCartHeaderAction } from '@/app/(main)/shop/shop-cart-header-action';
 import { HEADER_LEADING_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
 import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { SHOP_HEADER_SCROLL_ANCHOR_ID } from '@/lib/shop/constants';
@@ -58,6 +59,7 @@ export function ShopSettingsPageClient({
         leading={backLink}
         title="商城設定"
         spacing="compact"
+        action={<ShopCartHeaderAction />}
       />
 
       <div className="rounded-xl border-hairline border-border bg-card p-4">
