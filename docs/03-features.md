@@ -232,3 +232,64 @@ export function calcRecommendScore(
 - [ ] 個人設定內「我的訂閱」仍可依舊 DB 顯示歷史資料
 - [ ] 暫停 / 取消 / 改頻率（待藍新定期定額與 Edge 實作）
 - [x] 舊有 Stripe 同步邏輯已移除（改藍新後再實作訂閱）
+
+---
+
+## Phase 5：主後台深化（對齊 08-admin 未竟項）（Week 11+，依排程）
+
+> 細項盤點見 `docs/admin-gaps-2026-05-18.md`。`/admin/*` 路由骨架與商品／品牌／訂單／用戶／設定已就上線；本 Phase 收斂與 `docs/08-admin.md` 的行為、稽核與 BI 深度。  
+> **排程提示**：P5-1、P5-2 可與 P5-3 並行；P5-5 建議在 P5-4 至少有事件寫入 `product_events` 後再驗收（或先做空狀態占位）。
+
+### P5-1 訂單與退款（營運安全）
+
+- [ ] **狀態規則**：對齊 `docs/08-admin.md` 訂單管理（以 `paid` 為金流完成；`cs` / `super_admin` 可操作 `shipped`、`delivered`；限制將訂單任意改為與金流矛盾的狀態）。實作自 `src/app/admin/orders/_components/order-status-updater.tsx`、`src/app/admin/orders/actions.ts` 收斂。
+- [ ] **退款**：`super_admin` 專用占位——後台 UI + Server Action（或 Edge 占位）+ 與 `src/lib/admin/permissions.ts` 的 `order.refund` 一致；若短期不做 API，需在 UI 明示「人工於藍新處理」並記錄於 changelog（若契約與 08 有落差）。
+
+### P5-2 用戶管理
+
+- [ ] **註冊日**：用戶詳情顯示註冊時間（優先使用既有或可擴充的 staff RPC，避免暴露 raw `auth` 給前端）。參考 `src/app/admin/users/[id]/page.tsx`（目前已有 `admin_user_email_for_staff` 模式）。
+- [ ] **停用帳號**：`super_admin` 觸發停用／解禁（Edge + `auth.admin`，與 08 範例一致）；接線 `user.suspend`。
+
+### P5-3 BI 資料層（阻塞儀表板與漏斗）
+
+- [ ] **Migration**：新增 `product_events` 表（欄位與 CHECK 依 `docs/08-admin.md` DB 補充）；RLS／policy：允許 anon 寫入埋點、staff 讀取聚合（細節需與現有 `supabase/migrations/040_admin_rls_and_storage.sql` 風格一致）。
+- [ ] **RPC**：`get_daily_gmv(days int)`、`get_product_funnel(product_id, start_date, end_date)`（`SECURITY DEFINER`，僅限 service role 或由 policy 約束的 staff）。
+- [ ] **型別**：執行 `supabase gen types typescript` 更新 `src/types/supabase.ts`。
+
+### P5-4 前台與金流埋點（餵給 `product_events`）
+
+- [ ] 共用 `track` 模組（08 示意：`src/lib/analytics/track.ts`，fire-and-forget、靜默失敗）。
+- [ ] 商城列表 **impression**（IntersectionObserver，單次）。
+- [ ] 商品詳情 **click**（進入頁時；`source` query）。
+- [ ] 加入購物車 **add_to_cart**。
+- [ ] 藍新 Notify 訂單入庫 **`purchase`**（與 08「在 newebpay-notify 寫入」一致）。
+
+### P5-5 `/admin/dashboard` BI 儀表板
+
+- [ ] **super_admin**：本月 GMV／訂單數、過去 30 日每日 GMV（LineChart，專案已用 Recharts，見 `docs/01-stack.md`）、用戶行為摘要（依 08：如活躍用戶／打卡相關查詢）、訂閱／MRR 區塊可標「MVP 略過」若無表。
+- [ ] **super_admin + editor**：商品轉換漏斗、熱門商品 Top 10（資料來自 `product_events` + `orders` / `order_items` 等）。
+- [ ] **權限**：延續 `middleware.ts` 與「`cs` 進入 `/admin/dashboard` 時導向 `/admin/orders`」；`editor` 不看完整財務區塊（與 `docs/08-admin.md` 角色表一致）。
+
+---
+
+## Phase 6：營運模組（選做／P2）（Week 依需求）
+
+> 對應 `docs/admin-gaps-2026-05-18.md` §6–§7；建議在 Phase 5 核心 BI 可視後再排。
+
+### P6-1 公告後台
+
+- [ ] 新增 `/admin/announcements`（列表、新增／編輯、`is_active`、`published_at`）。
+- [ ] RLS／staff policy 與前台 `src/app/(main)/announcements/page.tsx` 讀取行為一致。
+
+### P6-2 稽核日誌
+
+- [ ] Migration：`admin_logs`（見 `docs/08-admin.md` DB 補充）。
+- [ ] 在關鍵 Action（角色變更、退款、停用、商品刪除等）寫入一筆。
+
+### P6-3 購物點手動異動（選）
+
+- [ ] `super_admin` 專用頁或表單：寫入 `user_shop_point_ledger`（與批次／到期邏輯一致）；建議依賴 P6-2 稽核。
+
+### P6-4 優惠券後台
+
+- [ ] 待 `/settings/coupons` 與 schema 定義後再開任務（現階段規格未定，保留 unchecked）。
