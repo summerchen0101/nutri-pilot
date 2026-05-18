@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation';
 
 import { OrderRefundPlaceholderCard } from '@/app/admin/orders/_components/order-refund-placeholder-card';
 import { OrderStatusUpdater } from '@/app/admin/orders/_components/order-status-updater';
+import { SubOrderLogisticsEditor } from '@/app/admin/orders/_components/sub-order-logistics-editor';
 import { allowedNextOrderStatuses } from '@/app/admin/orders/order-status-rules';
-import { getAdminRole } from '@/lib/admin';
+import { getAdminRole, staffCan } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function AdminOrderDetailPage({
@@ -32,7 +33,7 @@ export default async function AdminOrderDetailPage({
           product:products(name)
         )
       ),
-      sub_orders:sub_orders(id, public_no, status, total, tracking_number)
+      sub_orders:sub_orders(id, public_no, status, total, tracking_number, shipping_carrier, shipped_at)
     `,
     )
     .eq('id', params.id)
@@ -54,6 +55,7 @@ export default async function AdminOrderDetailPage({
 
   const subRaw = order.sub_orders;
   const subOrders = Array.isArray(subRaw) ? subRaw : [];
+  const canShip = staffCan(role, 'order.ship');
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -154,24 +156,26 @@ export default async function AdminOrderDetailPage({
         </ul>
       </section>
 
-      {subOrders.length > 0 ? (
-        <section className="rounded-xl border border-border bg-background p-4">
-          <h2 className="text-heading-section text-foreground">子訂單</h2>
-          <ul className="mt-3 space-y-2 text-body">
-            {subOrders.map((s) => (
-              <li key={s.id}>
-                <span className="font-mono text-caption">{s.public_no}</span>
-                <span className="text-slate-600"> — {s.status}</span>
-                {s.tracking_number ? (
-                  <span className="text-caption text-slate-600">
-                    （物流：{s.tracking_number}）
-                  </span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      {subOrders.length > 0 ?
+        canShip ?
+          <SubOrderLogisticsEditor orderId={order.id} subOrders={subOrders} />
+        : <section className="rounded-xl border border-border bg-background p-4">
+            <h2 className="text-heading-section text-foreground">子訂單</h2>
+            <ul className="mt-3 space-y-2 text-body">
+              {subOrders.map((s) => (
+                <li key={s.id}>
+                  <span className="font-mono text-caption">{s.public_no}</span>
+                  <span className="text-slate-600"> — {s.status}</span>
+                  {s.tracking_number ?
+                    <span className="text-caption text-slate-600">
+                      （物流：{s.tracking_number}）
+                    </span>
+                  : null}
+                </li>
+              ))}
+            </ul>
+          </section>
+      : null}
     </div>
   );
 }

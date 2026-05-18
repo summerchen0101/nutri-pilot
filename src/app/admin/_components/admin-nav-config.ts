@@ -1,6 +1,9 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Building2,
+  Coins,
+  CreditCard,
+  FileSpreadsheet,
   Headset,
   LayoutDashboard,
   Megaphone,
@@ -9,6 +12,7 @@ import {
   Settings,
   ShoppingCart,
   Store,
+  TicketPercent,
   Users,
 } from 'lucide-react';
 
@@ -59,6 +63,34 @@ const ANNOUNCEMENTS_ITEM: AdminNavItemConfig = {
   icon: Megaphone,
 };
 
+const PROMOTIONS_ITEM: AdminNavItemConfig = {
+  href: '/admin/promotions',
+  label: '優惠活動',
+  roles: ['super_admin', 'editor'],
+  icon: TicketPercent,
+};
+
+const REPORTS_ITEM: AdminNavItemConfig = {
+  href: '/admin/reports',
+  label: '報表',
+  roles: ['super_admin', 'editor'],
+  icon: FileSpreadsheet,
+};
+
+const FINANCE_PAYMENTS_ITEM: AdminNavItemConfig = {
+  href: '/admin/finance/payments',
+  label: '金流對帳',
+  roles: ['super_admin'],
+  icon: CreditCard,
+};
+
+const SHOP_POINTS_ITEM: AdminNavItemConfig = {
+  href: '/admin/shop-points',
+  label: '購物點',
+  roles: ['super_admin'],
+  icon: Coins,
+};
+
 const ORDER_ITEM: AdminNavItemConfig = {
   href: '/admin/orders',
   label: '訂單',
@@ -101,7 +133,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionConfig[] = [
     sectionLabel: '營運',
     railLabel: '營運',
     railIcon: Store,
-    items: [PRODUCT_ITEM, BRAND_ITEM, ANNOUNCEMENTS_ITEM],
+    items: [PRODUCT_ITEM, BRAND_ITEM, ANNOUNCEMENTS_ITEM, PROMOTIONS_ITEM],
   },
   {
     id: 'support',
@@ -115,7 +147,13 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionConfig[] = [
     sectionLabel: '系統',
     railLabel: '系統',
     railIcon: Settings,
-    items: [SETTINGS_ITEM, SETTINGS_AUDIT_ITEM],
+    items: [
+      SETTINGS_ITEM,
+      SETTINGS_AUDIT_ITEM,
+      REPORTS_ITEM,
+      FINANCE_PAYMENTS_ITEM,
+      SHOP_POINTS_ITEM,
+    ],
   },
 ];
 

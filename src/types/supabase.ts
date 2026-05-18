@@ -705,6 +705,125 @@ export type Database = {
           },
         ]
       }
+      promo_campaigns: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_kind: string
+          discount_value: number
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          min_order_total: number
+          show_in_member_app: boolean
+          starts_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_kind: string
+          discount_value: number
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          min_order_total?: number
+          show_in_member_app?: boolean
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_kind?: string
+          discount_value?: number
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          min_order_total?: number
+          show_in_member_app?: boolean
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          campaign_id: string
+          code: string
+          created_at: string
+          id: string
+          max_uses: number | null
+          uses_count: number
+        }
+        Insert: {
+          campaign_id: string
+          code: string
+          created_at?: string
+          id?: string
+          max_uses?: number | null
+          uses_count?: number
+        }
+        Update: {
+          campaign_id?: string
+          code?: string
+          created_at?: string
+          id?: string
+          max_uses?: number | null
+          uses_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'promo_codes_campaign_id_fkey'
+            columns: ['campaign_id']
+            isOneToOne: false
+            referencedRelation: 'promo_campaigns'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      promo_redemptions: {
+        Row: {
+          id: string
+          order_id: string | null
+          promo_code_id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          order_id?: string | null
+          promo_code_id: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          order_id?: string | null
+          promo_code_id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'promo_redemptions_promo_code_id_fkey'
+            columns: ['promo_code_id']
+            isOneToOne: false
+            referencedRelation: 'promo_codes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'promo_redemptions_order_id_fkey'
+            columns: ['order_id']
+            isOneToOne: false
+            referencedRelation: 'orders'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       shop_home_banners: {
         Row: {
           created_at: string
@@ -1356,6 +1475,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_shop_points: {
+        Args: {
+          p_delta: number
+          p_grant_expires_at?: string | null
+          p_note: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       admin_append_audit_log: {
         Args: {
           p_action: string

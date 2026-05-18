@@ -3,6 +3,7 @@
  */
 export const ADMIN_AUDIT_ACTIONS = {
   ORDER_STATUS_CHANGE: 'order.status_change',
+  SUB_ORDER_LOGISTICS_UPDATE: 'sub_order.logistics_update',
   PRODUCT_SAVE: 'product.save',
   PRODUCT_DELETE: 'product.delete',
   PRODUCT_IMAGE_UPDATE: 'product.image_update',
@@ -11,6 +12,9 @@ export const ADMIN_AUDIT_ACTIONS = {
   ANNOUNCEMENT_DELETE: 'announcement.delete',
   ADMIN_ROLE_ASSIGN: 'admin.role_assign',
   USER_SUSPEND: 'user.suspend',
+  PROMO_CAMPAIGN_SAVE: 'promo.campaign_save',
+  PROMO_CODE_SAVE: 'promo.code_save',
+  SHOP_POINTS_ADJUST: 'shop_points.adjust',
 } as const;
 
 export type AdminAuditAction =
@@ -18,8 +22,11 @@ export type AdminAuditAction =
 
 export const ADMIN_AUDIT_TARGET_TYPES = {
   ORDER: 'order',
+  SUB_ORDER: 'sub_order',
   PRODUCT: 'product',
   BRAND: 'brand',
   ANNOUNCEMENT: 'announcement',
   USER: 'user',
+  PROMO_CAMPAIGN: 'promo_campaign',
+  PROMO_CODE: 'promo_code',
 } as const;

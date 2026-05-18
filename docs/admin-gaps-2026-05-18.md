@@ -24,7 +24,7 @@
 | 08 路徑 | 實作檔案 | 狀態 |
 |---------|----------|------|
 | `/admin/login` | [src/app/admin/login/page.tsx](../src/app/admin/login/page.tsx) | 已有 |
-| `/admin/dashboard` | [src/app/admin/dashboard/page.tsx](../src/app/admin/dashboard/page.tsx) | **部分**（見 §3） |
+| `/admin/dashboard` | [src/app/admin/dashboard/page.tsx](../src/app/admin/dashboard/page.tsx) | **已對齊 Phase 5**：本月 GMV／訂單數、`get_daily_gmv` 折線圖、商品漏斗／熱門品（見 §3） |
 | `/admin/products` | [src/app/admin/products/page.tsx](../src/app/admin/products/page.tsx) | 已有 |
 | `/admin/products/new` | [src/app/admin/products/new/page.tsx](../src/app/admin/products/new/page.tsx) | 已有 |
 | `/admin/products/[id]` | [src/app/admin/products/[id]/page.tsx](../src/app/admin/products/[id]/page.tsx) | 已有 |
@@ -32,12 +32,12 @@
 | `/admin/brands/new` | [src/app/admin/brands/new/page.tsx](../src/app/admin/brands/new/page.tsx) | 已有 |
 | `/admin/brands/[id]` | [src/app/admin/brands/[id]/page.tsx](../src/app/admin/brands/[id]/page.tsx) | 已有 |
 | `/admin/orders` | [src/app/admin/orders/page.tsx](../src/app/admin/orders/page.tsx) | 已有 |
-| `/admin/orders/[id]` | [src/app/admin/orders/[id]/page.tsx](../src/app/admin/orders/[id]/page.tsx) | **部分**（見 §3） |
+| `/admin/orders/[id]` | [src/app/admin/orders/[id]/page.tsx](../src/app/admin/orders/[id]/page.tsx) | **部分**：狀態規則／退款占位已有；物流編輯／金流對帳另見 §6 擴充路由 |
 | `/admin/users` | [src/app/admin/users/page.tsx](../src/app/admin/users/page.tsx) | 已有 |
-| `/admin/users/[id]` | [src/app/admin/users/[id]/page.tsx](../src/app/admin/users/[id]/page.tsx) | **部分**（見 §3） |
+| `/admin/users/[id]` | [src/app/admin/users/[id]/page.tsx](../src/app/admin/users/[id]/page.tsx) | **大致完成**：註冊日 RPC、`super_admin` 停用／解禁（見 §3） |
 | `/admin/settings` | [src/app/admin/settings/page.tsx](../src/app/admin/settings/page.tsx) | 大致對齊（角色管理） |
 
-**結論**：08 列出的路由**骨架已齊**；主要缺口在 **dashboard 深度**、**訂單退款／狀態語意**、**用戶詳情／停用** 與 **§4 資料層**。
+**結論**：08 列出的路由**骨架已齊**；Phase 5 已補 **BI 資料層與儀表板**；剩餘主要在 **會員端訂單鏡像**、**物流／金流報表模組**、**折價／點數營運工具**（見 §6）。
 
 ---
 
@@ -47,10 +47,10 @@
 
 | 區域 | 08 要點 | 現況 |
 |------|---------|------|
-| **Dashboard** | 核心指標（**本月** GMV、訂單數等）、**30 天**銷售趨勢圖、用戶行為摘要、**商品轉換漏斗**（曝光→點擊→加購→購買）、熱門商品 Top 10、訂閱／MRR（可略） | 僅**商品數**、**全量** `status=paid` 訂單數與 GMV；無圖表、無漏斗、無時間維度、無訂閱區塊。實作：[src/app/admin/dashboard/page.tsx](../src/app/admin/dashboard/page.tsx)。`cs` 導向訂單，與 middleware 角色分流一致。 |
-| **BI 前置** | `product_events` 埋點 + `get_daily_gmv` + `get_product_funnel`（見 08 內 SQL／RPC 範例） | 程式內**無** `trackEvent`／`product_events` 寫入；migrations 與 `supabase.ts` **未見** `product_events` 表與兩個 RPC。 |
-| **訂單詳情** | 狀態流以 **paid → shipped → delivered** 為主，**shipped** 為主要手動步驟；**退款**僅 `super_admin`、規格為占位 | [order-status-updater.tsx](../src/app/admin/orders/_components/order-status-updater.tsx) 可選 `pending`～`cancelled` 全狀態，較 08 寬鬆。[src/lib/admin/permissions.ts](../src/lib/admin/permissions.ts) 已定義 `order.refund`，**admin 內無退款 UI／Action**。 |
-| **用戶詳情** | 姓名、Email、**註冊日**、飲食法、最近訂單；**僅 super_admin** 可**停用帳號** | [users/[id]/page.tsx](../src/app/admin/users/[id]/page.tsx) 有基本欄位、目標、最近訂單；**無註冊日**；**無停用**／`user.suspend` 未接 UI。 |
+| **Dashboard** | 核心指標（**本月** GMV、訂單數等）、**30 天**銷售趨勢圖、用戶行為摘要、**商品轉換漏斗**、熱門商品 Top 10、訂閱／MRR（可略） | **已實作**：本月 paid GMV／訂單數、過去 N 日 `get_daily_gmv` 圖表、漏斗 RPC + Top 10（[`dashboard/page.tsx`](../src/app/admin/dashboard/page.tsx)）。訂閱／MRR 仍可標 MVP 略過。`cs` 導向訂單。 |
+| **BI 前置** | `product_events` + `get_daily_gmv` + `get_product_funnel` | **已實作**：[`041_product_events_and_bi_rpcs.sql`](../supabase/migrations/041_product_events_and_bi_rpcs.sql)；前台／Notify 埋點見 [`src/lib/analytics/track.ts`](../src/lib/analytics/track.ts)。 |
+| **訂單詳情** | 狀態流、退款占位 | [`order-status-rules.ts`](../src/app/admin/orders/order-status-rules.ts) + [`OrderStatusUpdater`](../src/app/admin/orders/_components/order-status-updater.tsx) 限制轉移；[`OrderRefundPlaceholderCard`](../src/app/admin/orders/_components/order-refund-placeholder-card.tsx) 占位。**物流欄位編輯**、**金流對帳列表**為後續擴充（見 §6）。 |
+| **用戶詳情** | 註冊日、停用 | **已接**：註冊日 staff RPC、[`AdminUserSuspendPanel`](../src/app/admin/users/_components/admin-user-suspend-panel.tsx)。 |
 | **Settings** | 角色管理（Phase） | [AdminSetRoleForm](../src/app/admin/settings/_components/admin-set-role-form.tsx) 等已存在；需依部署清單維護 Edge `set-admin-role` 與第一位 admin 流程（見 [docs/changes/2026-05-18-admin-backend-rls-and-ui.md](changes/2026-05-18-admin-backend-rls-and-ui.md)）。 |
 
 ---
@@ -59,11 +59,11 @@
 
 | 項目 | 08 描述 | 專案現況 |
 |------|---------|----------|
-| `product_events` | BI 漏斗、埋點 | **未**出現在 `supabase/migrations`（全域搜尋無）與 `src/types/supabase.ts` |
-| `get_daily_gmv` | RPC 聚合每日 GMV | **未**見 migration／型別 |
-| `get_product_funnel` | RPC 依事件類型計數 | **未**見 migration／型別 |
-| `weekly_insights` | 08 範例與「週報洞察」 | **已**存在（如 `007_weekly_insights.sql`、型別表）；主要供前台 [docs/06-pages.md § `/analytics`](06-pages.md#analytics數據分析) **使用者週報**，**≠** 後台商品漏斗 |
-| `admin_logs` | 後台操作稽核（角色管理啟用後） | **未**見於型別／migrations |
+| `product_events` | BI 漏斗、埋點 | **已有**：migration `041_product_events_and_bi_rpcs.sql`、`src/types/supabase.ts` |
+| `get_daily_gmv` | RPC 聚合每日 GMV | **已有**（同上） |
+| `get_product_funnel` | RPC 依事件類型計數 | **已有**（同上） |
+| `weekly_insights` | 週報洞察 | **已**存在；供前台 Analytics，**≠** 後台商品漏斗 |
+| `admin_logs` | 後台稽核 | **已有**：[`044_admin_logs.sql`](../supabase/migrations/044_admin_logs.sql)、[`append-admin-audit-log.ts`](../src/lib/admin/append-admin-audit-log.ts) |
 
 ---
 
@@ -78,7 +78,7 @@ flowchart LR
   product_events_tbl -->|"funnel_Top10"| adminDash
 ```
 
-目前 **shopEvents → product_events** 尚無接線，故儀表板無法依 08 呈現漏斗與事件型 KPI。
+埋點與 RPC 已接線；若漏斗數字異常請檢查前台 `track` 呼叫與 Edge Notify 的 `purchase` 寫入。
 
 ---
 
@@ -92,7 +92,7 @@ flowchart LR
 |------------|------|----------|
 | `announcements` | [src/app/(main)/announcements/page.tsx](../src/app/(main)/announcements/page.tsx) 讀取已發布公告 | **`/admin/announcements`**（列表、建立／編輯、`is_active`、`published_at`）；需搭配 RLS／staff policy |
 | `user_shop_point_ledger`、`user_shop_point_lots` | [06-pages § `/settings`](06-pages.md#settings個人設定頁首標題我的) 點數與批次 | **選做**：`/admin/shop-points` 或訂單側工具——手動發放／沖帳（**僅 super_admin**、建議搭配 `admin_logs` 或稽核） |
-| `/settings/coupons` | 尚無可用券，占位 UI | **待**優惠券 domain schema 確定後再規劃 admin |
+| `/settings/coupons` | 公開活動摘要 | **已接**：`promo_campaigns.show_in_member_app`；結帳折抵後續擴充 |
 | `food_cache` | 飲食紀錄搜尋快取 | 08／06 未要求 MVP 後台；若需人工審核可另開 **低優先** 模組 |
 
 ### 6.2 不需一對一後台「頁面」的前台區塊（僅供對照）

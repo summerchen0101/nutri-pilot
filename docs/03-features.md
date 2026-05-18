@@ -289,8 +289,8 @@ export function calcRecommendScore(
 
 ### P6-3 購物點手動異動（選）
 
-- [ ] `super_admin` 專用頁或表單：寫入 `user_shop_point_ledger`（與批次／到期邏輯一致）；建議依賴 P6-2 稽核。
+- [x] `super_admin`：`/admin/shop-points` + RPC `admin_adjust_shop_points`（ledger／lots／餘額）；異動後寫 `admin_logs`（`shop_points.adjust`）。
 
 ### P6-4 優惠券後台
 
-- [ ] 待 `/settings/coupons` 與 schema 定義後再開任務（現階段規格未定，保留 unchecked）。
+- [x] Migration：`promo_campaigns`／`promo_codes`／`promo_redemptions`（`045_promo_shop_points_admin.sql`）；`/admin/promotions` CRUD；會員 `/settings/coupons` 顯示「公開檔」活動摘要。**結帳自動折抵／核銷寫入**仍待後續接單。

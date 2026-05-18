@@ -83,3 +83,92 @@ export async function updateOrderStatus(input: {
   revalidatePath(`/admin/orders/${input.orderId}`);
   return { ok: true };
 }
+
+export async function updateSubOrderLogistics(input: {
+  orderId: string;
+  subOrderId: string;
+  trackingNumber: string;
+  shippingCarrier: string;
+  shippedAt: string;
+}): Promise<{ ok: false; error: string } | { ok: true }> {
+  const role = await getAdminRole();
+  if (!role || !staffCan(role, 'order.ship')) {
+    return { ok: false, error: '沒有權限' };
+  }
+
+  const tracking =
+    input.trackingNumber.trim().length > 0 ?
+      input.trackingNumber.trim().slice(0, 120)
+    : null;
+  const carrier =
+    input.shippingCarrier.trim().length > 0 ?
+      input.shippingCarrier.trim().slice(0, 80)
+    : null;
+
+  let shippedAt: string | null = null;
+  const rawShipped = input.shippedAt.trim();
+  if (rawShipped.length > 0) {
+    const parsed = new Date(rawShipped);
+    if (Number.isNaN(parsed.getTime())) {
+      return { ok: false, error: '出貨時間格式不正確' };
+    }
+    shippedAt = parsed.toISOString();
+  }
+
+  const supabase = createClient();
+
+  const { data: sub, error: readErr } = await supabase
+    .from('sub_orders')
+    .select('id, order_id, tracking_number, shipping_carrier, shipped_at')
+    .eq('id', input.subOrderId)
+    .maybeSingle();
+
+  if (readErr) {
+    return { ok: false, error: readErr.message };
+  }
+  if (!sub || sub.order_id !== input.orderId) {
+    return { ok: false, error: '找不到子訂單' };
+  }
+
+  const { error: updErr } = await supabase
+    .from('sub_orders')
+    .update({
+      tracking_number: tracking,
+      shipping_carrier: carrier,
+      shipped_at: shippedAt,
+    })
+    .eq('id', input.subOrderId);
+
+  if (updErr) {
+    return { ok: false, error: updErr.message };
+  }
+
+  const audit = await appendAdminAuditLog({
+    action: ADMIN_AUDIT_ACTIONS.SUB_ORDER_LOGISTICS_UPDATE,
+    targetType: ADMIN_AUDIT_TARGET_TYPES.SUB_ORDER,
+    targetId: input.subOrderId,
+    metadata: {
+      order_id: input.orderId,
+      before: {
+        tracking_number: sub.tracking_number,
+        shipping_carrier: sub.shipping_carrier,
+        shipped_at: sub.shipped_at,
+      },
+      after: {
+        tracking_number: tracking,
+        shipping_carrier: carrier,
+        shipped_at: shippedAt,
+      },
+    },
+  });
+  if (!audit.ok) {
+    console.error(
+      'appendAdminAuditLog sub_order.logistics_update:',
+      audit.error,
+    );
+  }
+
+  revalidatePath(`/admin/orders/${input.orderId}`);
+  revalidatePath('/admin/orders');
+  return { ok: true };
+}
