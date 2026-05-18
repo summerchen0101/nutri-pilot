@@ -3,8 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, ShoppingCart } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import type { ShopProductRow } from "@/app/(main)/shop/shop-home-client";
+import { trackProductEvent } from "@/lib/analytics/track";
 import { catalogListStrikePrice } from "@/lib/shop/catalog-card-price";
 import { SHOP_CATEGORY_LABEL } from "@/lib/shop/constants";
 import { formatShopGroupedInteger } from "@/lib/shop/format-shop-number";
@@ -41,6 +43,28 @@ export function ShopCatalogProductCard({
   onToggleFavorite,
   onQuickAdd,
 }: Props) {
+  const cardRootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = cardRootRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            trackProductEvent(p.id, "impression", "recommendation");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.5 },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [p.id]);
+
   const detailHref = `/shop/${p.id}`;
   const minPrice =
     p.variants.length === 0 ?
@@ -57,6 +81,7 @@ export function ShopCatalogProductCard({
 
   return (
     <div
+      ref={cardRootRef}
       className={cn(
         "flex h-full min-h-0 flex-col overflow-hidden rounded-xl",
         "border-hairline border-border bg-card transition-colors hover:border-primary/40",

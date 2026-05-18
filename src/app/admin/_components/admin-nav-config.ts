@@ -3,7 +3,9 @@ import {
   Building2,
   Headset,
   LayoutDashboard,
+  Megaphone,
   Package,
+  ScrollText,
   Settings,
   ShoppingCart,
   Store,
@@ -50,6 +52,13 @@ const BRAND_ITEM: AdminNavItemConfig = {
   icon: Building2,
 };
 
+const ANNOUNCEMENTS_ITEM: AdminNavItemConfig = {
+  href: '/admin/announcements',
+  label: '公告',
+  roles: ['super_admin', 'editor'],
+  icon: Megaphone,
+};
+
 const ORDER_ITEM: AdminNavItemConfig = {
   href: '/admin/orders',
   label: '訂單',
@@ -71,6 +80,13 @@ const SETTINGS_ITEM: AdminNavItemConfig = {
   icon: Settings,
 };
 
+const SETTINGS_AUDIT_ITEM: AdminNavItemConfig = {
+  href: '/admin/settings/audit',
+  label: '稽核',
+  roles: ['super_admin'],
+  icon: ScrollText,
+};
+
 /** 後台側欄分組（與角色無關；顯示前請用 {@link filterAdminNavSections} 過濾） */
 export const ADMIN_NAV_SECTIONS: AdminNavSectionConfig[] = [
   {
@@ -85,7 +101,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionConfig[] = [
     sectionLabel: '營運',
     railLabel: '營運',
     railIcon: Store,
-    items: [PRODUCT_ITEM, BRAND_ITEM],
+    items: [PRODUCT_ITEM, BRAND_ITEM, ANNOUNCEMENTS_ITEM],
   },
   {
     id: 'support',
@@ -99,7 +115,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionConfig[] = [
     sectionLabel: '系統',
     railLabel: '系統',
     railIcon: Settings,
-    items: [SETTINGS_ITEM],
+    items: [SETTINGS_ITEM, SETTINGS_AUDIT_ITEM],
   },
 ];
 

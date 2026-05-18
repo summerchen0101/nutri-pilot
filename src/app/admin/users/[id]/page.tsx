@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { AdminUserSuspendPanel } from '@/app/admin/users/_components/admin-user-suspend-panel';
+import { getAdminRole, staffCan } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function AdminUserDetailPage({
@@ -8,6 +10,8 @@ export default async function AdminUserDetailPage({
 }: Readonly<{ params: { id: string } }>) {
   const supabase = createClient();
   const userId = params.id;
+
+  const role = await getAdminRole();
 
   const [{ data: profile, error: pErr }, { data: goals, error: gErr }, { data: orders, error: oErr }] =
     await Promise.all([
@@ -44,7 +48,24 @@ export default async function AdminUserDetailPage({
     throw new Error(eErr.message);
   }
 
+  const { data: registeredAtRaw, error: regErr } = await supabase.rpc(
+    'admin_user_registered_at_for_staff',
+    { p_user_id: userId },
+  );
+
+  if (regErr) {
+    throw new Error(regErr.message);
+  }
+
   const email = emailRaw ?? null;
+  let registeredDisplay: string | null = null;
+  if (registeredAtRaw) {
+    const d = new Date(registeredAtRaw);
+    registeredDisplay =
+      Number.isNaN(d.getTime()) ?
+        registeredAtRaw
+      : d.toLocaleString('zh-TW', { hour12: false });
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -72,6 +93,10 @@ export default async function AdminUserDetailPage({
             <dd>{email ?? '—'}</dd>
           </div>
           <div>
+            <dt className="text-caption text-slate-600">註冊日</dt>
+            <dd>{registeredDisplay ?? '—'}</dd>
+          </div>
+          <div>
             <dt className="text-caption text-slate-600">飲食法（檔案）</dt>
             <dd>{profile.diet_method ?? '—'}</dd>
           </div>
@@ -91,6 +116,10 @@ export default async function AdminUserDetailPage({
           ))}
         </ul>
       </section>
+
+      {staffCan(role, 'user.suspend') ? (
+        <AdminUserSuspendPanel targetUserId={userId} />
+      ) : null}
 
       <section className="rounded-xl border border-border bg-background p-4">
         <h2 className="text-heading-section text-foreground">最近訂單</h2>

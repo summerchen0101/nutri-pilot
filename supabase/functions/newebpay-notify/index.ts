@@ -127,6 +127,54 @@ async function maybeInsertSubOrders(
   }
 }
 
+async function insertPurchaseProductEvents(
+  admin: ReturnType<typeof createClient>,
+  userId: string,
+  orderId: string,
+): Promise<void> {
+  type OrderItemVariantRow = {
+    qty?: number | null;
+    variant: { product_id: string } | null;
+  };
+
+  const { data: rows, error } = await admin
+    .from("order_items")
+    .select(
+      `
+      qty,
+      variant:product_variants ( product_id )
+    `,
+    )
+    .eq("order_id", orderId);
+
+  if (error) {
+    console.error("[newebpay-notify] product_events fetch order_items", error);
+    return;
+  }
+
+  if (!rows?.length) return;
+
+  const events = [];
+
+  for (const rUnknown of rows as OrderItemVariantRow[]) {
+    const pid = rUnknown.variant?.product_id;
+    if (!pid) continue;
+    events.push({
+      user_id: userId,
+      product_id: pid,
+      event_type: "purchase",
+      source: "newebpay_notify",
+    });
+  }
+
+  if (events.length === 0) return;
+
+  const { error: evErr } = await admin.from("product_events").insert(events);
+  if (evErr) {
+    console.error("[newebpay-notify] product_events insert purchase", evErr);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
@@ -206,8 +254,10 @@ Deno.serve(async (req) => {
     return new Response("amount mismatch", { status: 422 });
   }
 
+  let transitionedToPaid = false;
+
   if (order.status === "pending") {
-    const { error: upErr } = await admin
+    const { data: updatedRow, error: upErr } = await admin
       .from("orders")
       .update({
         status: "paid",
@@ -215,12 +265,16 @@ Deno.serve(async (req) => {
         gateway_session_ref: tradeNo || null,
       })
       .eq("id", order.id)
-      .eq("status", "pending");
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
 
     if (upErr) {
       console.error("[newebpay-notify]", upErr);
       return new Response("update error", { status: 500 });
     }
+
+    transitionedToPaid = updatedRow != null;
   } else if (order.status !== "paid") {
     return new Response("order not payable", { status: 422 });
   }
@@ -236,6 +290,14 @@ Deno.serve(async (req) => {
   }
 
   await maybeInsertSubOrders(admin, orderAfter);
+
+  if (transitionedToPaid && order.user_id != null) {
+    await insertPurchaseProductEvents(
+      admin,
+      String(order.user_id),
+      String(order.id),
+    );
+  }
 
   return okBody();
 });

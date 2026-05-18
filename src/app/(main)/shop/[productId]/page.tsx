@@ -12,11 +12,24 @@ import {
 import { generateFitReasons } from '@/lib/shop/fit-reasons';
 import { getCachedAuthContext } from '@/lib/auth';
 
-interface PageProps {
-  params: { productId: string };
+function parseAnalyticsSource(raw: string | string[] | undefined): string {
+  if (typeof raw === 'string' && raw.trim().length > 0) return raw.trim();
+  if (
+    Array.isArray(raw)
+    && raw.length > 0
+    && typeof raw[0] === 'string'
+    && raw[0].trim().length > 0
+  )
+    return raw[0].trim();
+  return 'recommendation';
 }
 
-export default async function ShopProductPage({ params }: PageProps) {
+interface PageProps {
+  params: { productId: string };
+  searchParams?: Record<string, string | string[] | undefined>;
+}
+
+export default async function ShopProductPage({ params, searchParams }: PageProps) {
   const { supabase, user } = await getCachedAuthContext();
 
   if (!user) redirect("/login");
@@ -86,6 +99,8 @@ export default async function ShopProductPage({ params }: PageProps) {
     },
     { diet_method: profile.diet_method },
   );
+
+  const analyticsClickSource = parseAnalyticsSource(searchParams?.source);
 
   const { count: brandProductCountRaw } = await supabase
     .from('products')
@@ -210,6 +225,7 @@ export default async function ShopProductPage({ params }: PageProps) {
           variants: { price: number }[] | null;
         }>}
         initialIsFavorite={favoriteRow != null}
+        analyticsClickSource={analyticsClickSource}
       />
     </div>
   );

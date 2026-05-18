@@ -20,6 +20,7 @@ import { ShopAddToCartSheet } from "@/app/(main)/shop/_components/shop-add-to-ca
 import { ProductFavoriteDetailBarButton } from "@/app/(main)/shop/_components/product-favorite-controls";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { trackProductEvent } from "@/lib/analytics/track";
 import { variantListStrikePrice } from "@/lib/shop/catalog-card-price";
 import { SHOP_HEADER_SCROLL_ANCHOR_ID } from "@/lib/shop/constants";
 import {
@@ -92,6 +93,8 @@ export interface ProductDetailMaraisClientProps {
   };
   sameBrand: SameBrandProduct[];
   initialIsFavorite: boolean;
+  /** 詳情進入來源（對應 `?source=`）；用於 `click`／`add_to_cart` 埋點 */
+  analyticsClickSource: string;
 }
 
 function cnReason(type: "positive" | "info" | "caution", base: string): string {
@@ -166,6 +169,7 @@ export function ProductDetailMaraisClient({
   nutrition,
   sameBrand,
   initialIsFavorite,
+  analyticsClickSource,
 }: ProductDetailMaraisClientProps) {
   const [detailTab, setDetailTab] = useState<DetailTab>("intro");
   const [variantId, setVariantId] = useState(() =>
@@ -239,6 +243,10 @@ export function ProductDetailMaraisClient({
       ro.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    trackProductEvent(productId, "click", analyticsClickSource);
+  }, [productId, analyticsClickSource]);
 
   useEffect(() => {
     const syncDock = () => {
@@ -646,6 +654,7 @@ export function ProductDetailMaraisClient({
         vendor={vendor}
         selectedVariantId={variantId}
         onVariantIdChange={setVariantId}
+        eventSource={analyticsClickSource}
       />
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[42]">

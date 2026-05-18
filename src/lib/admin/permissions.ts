@@ -8,7 +8,9 @@ type StaffAction =
   | 'product.edit'
   | 'order.ship'
   | 'brand.manage'
-  | 'vendor.write';
+  | 'vendor.write'
+  | 'announcement.manage'
+  | 'announcement.delete';
 
 const PERMISSIONS: Record<StaffAction, AdminRole[]> = {
   'product.delete': ['super_admin'],
@@ -19,8 +21,14 @@ const PERMISSIONS: Record<StaffAction, AdminRole[]> = {
   'order.ship': ['super_admin', 'cs'],
   'brand.manage': ['super_admin', 'editor'],
   'vendor.write': ['super_admin'],
+  'announcement.manage': ['super_admin', 'editor'],
+  'announcement.delete': ['super_admin'],
 };
 
-export function staffCan(role: AdminRole, action: StaffAction): boolean {
+export function staffCan(
+  role: AdminRole | null | undefined,
+  action: StaffAction,
+): boolean {
+  if (!role) return false;
   return PERMISSIONS[action]?.includes(role) ?? false;
 }

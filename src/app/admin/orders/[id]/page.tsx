@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { OrderRefundPlaceholderCard } from '@/app/admin/orders/_components/order-refund-placeholder-card';
 import { OrderStatusUpdater } from '@/app/admin/orders/_components/order-status-updater';
+import { allowedNextOrderStatuses } from '@/app/admin/orders/order-status-rules';
+import { getAdminRole } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function AdminOrderDetailPage({
@@ -43,6 +46,9 @@ export default async function AdminOrderDetailPage({
     notFound();
   }
 
+  const role = await getAdminRole();
+  const transitions = allowedNextOrderStatuses(role, order.status ?? '');
+
   const itemsRaw = order.items;
   const items = Array.isArray(itemsRaw) ? itemsRaw : [];
 
@@ -70,9 +76,19 @@ export default async function AdminOrderDetailPage({
       <section className="rounded-xl border border-border bg-background p-4">
         <h2 className="text-heading-section text-foreground">狀態</h2>
         <div className="mt-4">
-          <OrderStatusUpdater orderId={order.id} currentStatus={order.status} />
+          <OrderStatusUpdater
+            orderId={order.id}
+            currentStatus={order.status}
+            allowedNext={transitions}
+          />
         </div>
       </section>
+
+      <OrderRefundPlaceholderCard
+        role={role}
+        orderNo={order.public_order_no ?? order.id}
+        financialStatus={order.status}
+      />
 
       <section className="rounded-xl border border-border bg-background p-4">
         <h2 className="text-heading-section text-foreground">金額</h2>

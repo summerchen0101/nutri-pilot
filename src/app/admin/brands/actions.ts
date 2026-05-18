@@ -2,6 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 
+import {
+  ADMIN_AUDIT_ACTIONS,
+  ADMIN_AUDIT_TARGET_TYPES,
+} from '@/lib/admin/admin-audit-actions';
+import { appendAdminAuditLog } from '@/lib/admin/append-admin-audit-log';
 import { getAdminRole, staffCan } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
 import { makeBrandSlugBase } from '@/utils/admin-slug';
@@ -42,6 +47,15 @@ export async function saveBrand(input: {
     if (error) {
       return { ok: false, error: error.message };
     }
+    const audit = await appendAdminAuditLog({
+      action: ADMIN_AUDIT_ACTIONS.BRAND_SAVE,
+      targetType: ADMIN_AUDIT_TARGET_TYPES.BRAND,
+      targetId: input.id,
+      metadata: { was_create: false },
+    });
+    if (!audit.ok) {
+      console.error('appendAdminAuditLog brand.save:', audit.error);
+    }
     revalidatePath('/admin/brands');
     revalidatePath(`/admin/brands/${input.id}`);
     return { ok: true, id: input.id };
@@ -57,6 +71,17 @@ export async function saveBrand(input: {
     return { ok: false, error: error?.message ?? '建立失敗' };
   }
 
+  const newBrandId = inserted.id as string;
+  const audit = await appendAdminAuditLog({
+    action: ADMIN_AUDIT_ACTIONS.BRAND_SAVE,
+    targetType: ADMIN_AUDIT_TARGET_TYPES.BRAND,
+    targetId: newBrandId,
+    metadata: { was_create: true },
+  });
+  if (!audit.ok) {
+    console.error('appendAdminAuditLog brand.save:', audit.error);
+  }
+
   revalidatePath('/admin/brands');
-  return { ok: true, id: inserted.id };
+  return { ok: true, id: newBrandId };
 }

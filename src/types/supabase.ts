@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_logs: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       ai_usage_events: {
         Row: {
           billing_month: string
@@ -515,6 +545,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      product_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          product_id: string
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          product_id: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          product_id?: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_variants: {
         Row: {
@@ -1291,6 +1356,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_append_audit_log: {
+        Args: {
+          p_action: string
+          p_metadata?: Json
+          p_target_id?: string | null
+          p_target_type?: string | null
+        }
+        Returns: undefined
+      }
+      admin_user_registered_at_for_staff: {
+        Args: { p_user_id: string }
+        Returns: string | null
+      }
       admin_orders_for_staff: {
         Args: { p_limit?: number }
         Returns: {
@@ -1315,6 +1393,24 @@ export type Database = {
       admin_user_email_for_staff: {
         Args: { p_user_id: string }
         Returns: string
+      }
+      get_daily_gmv: {
+        Args: { p_days: number }
+        Returns: {
+          day: string
+          gmv: number
+        }[]
+      }
+      get_product_funnel: {
+        Args: {
+          p_product_id: string | null
+          p_start_date: string
+          p_end_date: string
+        }
+        Returns: {
+          event_type: string
+          funnel_count: number
+        }[]
       }
       get_monthly_ai_quota_used: {
         Args: { p_month: string }

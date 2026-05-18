@@ -20,6 +20,7 @@ import {
   SHOP_VARIANT_PILL_INACTIVE_CLASS,
   SHOP_VARIANT_PILL_PRIMARY_CLASS,
 } from '@/lib/shop/variant-pill-classes';
+import { trackProductEvent, type ProductAnalyticsSource } from '@/lib/analytics/track';
 import { cn } from '@/lib/utils/cn';
 
 export interface ShopAddToCartSheetVariant {
@@ -52,6 +53,8 @@ export interface ShopAddToCartSheetProps {
   selectedVariantId?: string;
   /** 外部變更選中規格（多規格時） */
   onVariantIdChange?: (variantId: string) => void;
+  /** 商城埋點 `add_to_cart` 的來源標籤 */
+  eventSource?: ProductAnalyticsSource;
 }
 
 const SHEET_PANEL = cn(
@@ -67,6 +70,7 @@ export function ShopAddToCartSheet({
   vendor,
   selectedVariantId,
   onVariantIdChange,
+  eventSource = 'recommendation',
 }: ShopAddToCartSheetProps) {
   const addLine = useCartStore((s) => s.addLine);
   const openCartPanel = useCartStore((s) => s.openCartPanel);
@@ -161,6 +165,7 @@ export function ShopAddToCartSheet({
     });
     onClose();
     openCartPanel();
+    trackProductEvent(product.id, 'add_to_cart', eventSource);
   }
 
   if (!open && !present) return null;

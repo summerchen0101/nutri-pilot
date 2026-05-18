@@ -1,5 +1,5 @@
 /**
- * 僅 super_admin 可指派／移除後台角色。
+ * super_admin：停用／解禁一般使用者（auth ban_duration）
  * Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
@@ -18,17 +18,8 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-const VALID_ROLES = ["super_admin", "editor", "cs"] as const;
-
-function parseRole(raw: unknown): (typeof VALID_ROLES)[number] | null | undefined {
-  if (raw === null) return null;
-  if (raw === "") return null;
-  if (typeof raw !== "string") return undefined;
-  if (VALID_ROLES.includes(raw as (typeof VALID_ROLES)[number])) {
-    return raw as (typeof VALID_ROLES)[number];
-  }
-  return undefined;
-}
+/** ~100 年的暫時性「長期停用」；解禁時改為 ban_duration:none */
+const LONG_SUSPEND_DURATION = "876000h";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -68,7 +59,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Forbidden" }, 403);
   }
 
-  let body: { targetUserId?: unknown; role?: unknown };
+  let body: { targetUserId?: unknown; suspend?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -77,14 +68,20 @@ Deno.serve(async (req) => {
 
   const targetUserId =
     typeof body.targetUserId === "string" ? body.targetUserId.trim() : "";
+  const suspend =
+    typeof body.suspend === "boolean"
+      ? body.suspend
+      : undefined;
 
   if (!targetUserId) {
     return jsonResponse({ error: "targetUserId required" }, 422);
   }
+  if (suspend === undefined) {
+    return jsonResponse({ error: "suspend (boolean) required" }, 422);
+  }
 
-  const nextRole = parseRole(body.role);
-  if (nextRole === undefined) {
-    return jsonResponse({ error: "Invalid role" }, 422);
+  if (targetUserId === user.id) {
+    return jsonResponse({ error: "無法對自己的帳號執行停用" }, 422);
   }
 
   const serviceClient = createClient(url, serviceKey);
@@ -96,43 +93,39 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "User not found" }, 404);
   }
 
-  const prevMeta = { ...(targetData.user.app_metadata ?? {}) } as Record<
-    string,
-    unknown
-  >;
-
-  if (nextRole === null) {
-    delete prevMeta.admin_role;
-  } else {
-    prevMeta.admin_role = nextRole;
+  if (targetData.user.app_metadata?.admin_role === "super_admin") {
+    return jsonResponse(
+      {
+        error:
+          "無法對其他 super_admin 帳號套用停用／解禁動作（請改由身分存取控管另行處理）",
+      },
+      422,
+    );
   }
 
   const { error: updErr } = await serviceClient.auth.admin.updateUserById(
     targetUserId,
-    { app_metadata: prevMeta },
+    {
+      ban_duration: suspend ? LONG_SUSPEND_DURATION : "none",
+    },
   );
 
   if (updErr) {
     return jsonResponse({ error: updErr.message }, 500);
   }
 
-  const prevRoleRaw = targetData.user.app_metadata?.admin_role;
-  const previous_role =
-    typeof prevRoleRaw === "string" ? prevRoleRaw : null;
-  const meta = {
-    previous_role,
-    next_role: nextRole,
-  };
-
   const { error: auditErr } = await userClient.rpc("admin_append_audit_log", {
-    p_action: "admin.role_assign",
+    p_action: "user.suspend",
     p_target_type: "user",
     p_target_id: targetUserId,
-    p_metadata: meta,
+    p_metadata: { suspend },
   });
   if (auditErr) {
     console.error("admin_append_audit_log:", auditErr.message);
   }
 
-  return jsonResponse({ ok: true });
+  return jsonResponse({
+    ok: true,
+    suspended: suspend,
+  });
 });

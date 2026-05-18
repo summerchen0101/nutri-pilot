@@ -3,6 +3,11 @@
 import { revalidatePath } from 'next/cache';
 
 import type { ProductSavePayload, VariantSaveLine } from '@/app/admin/products/types';
+import {
+  ADMIN_AUDIT_ACTIONS,
+  ADMIN_AUDIT_TARGET_TYPES,
+} from '@/lib/admin/admin-audit-actions';
+import { appendAdminAuditLog } from '@/lib/admin/append-admin-audit-log';
 import { getAdminRole, staffCan } from '@/lib/admin';
 import {
   PRODUCT_CATEGORIES,
@@ -155,6 +160,16 @@ export async function saveProduct(
       return synced;
     }
 
+    const audit = await appendAdminAuditLog({
+      action: ADMIN_AUDIT_ACTIONS.PRODUCT_SAVE,
+      targetType: ADMIN_AUDIT_TARGET_TYPES.PRODUCT,
+      targetId: payload.id,
+      metadata: { was_create: false },
+    });
+    if (!audit.ok) {
+      console.error('appendAdminAuditLog product.save:', audit.error);
+    }
+
     revalidatePath('/admin/products');
     revalidatePath(`/admin/products/${payload.id}`);
     return { ok: true, id: payload.id };
@@ -181,6 +196,16 @@ export async function saveProduct(
     return synced;
   }
 
+  const auditCreated = await appendAdminAuditLog({
+    action: ADMIN_AUDIT_ACTIONS.PRODUCT_SAVE,
+    targetType: ADMIN_AUDIT_TARGET_TYPES.PRODUCT,
+    targetId: inserted.id,
+    metadata: { was_create: true },
+  });
+  if (!auditCreated.ok) {
+    console.error('appendAdminAuditLog product.save:', auditCreated.error);
+  }
+
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${inserted.id}`);
   return { ok: true, id: inserted.id };
@@ -205,6 +230,19 @@ export async function updateProductImageUrl(
     return { ok: false, error: error.message };
   }
 
+  const auditImg = await appendAdminAuditLog({
+    action: ADMIN_AUDIT_ACTIONS.PRODUCT_IMAGE_UPDATE,
+    targetType: ADMIN_AUDIT_TARGET_TYPES.PRODUCT,
+    targetId: productId,
+    metadata: {},
+  });
+  if (!auditImg.ok) {
+    console.error(
+      'appendAdminAuditLog product.image_update:',
+      auditImg.error,
+    );
+  }
+
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${productId}`);
   return { ok: true };
@@ -225,6 +263,17 @@ export async function deleteProduct(
     return { ok: false, error: error.message };
   }
 
+  const audit = await appendAdminAuditLog({
+    action: ADMIN_AUDIT_ACTIONS.PRODUCT_DELETE,
+    targetType: ADMIN_AUDIT_TARGET_TYPES.PRODUCT,
+    targetId: productId,
+    metadata: {},
+  });
+  if (!audit.ok) {
+    console.error('appendAdminAuditLog product.delete:', audit.error);
+  }
+
   revalidatePath('/admin/products');
   return { ok: true };
 }
+
