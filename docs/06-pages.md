@@ -15,7 +15,7 @@
 | 熱量圓環卡 | `food_log_items` 加總 | 今日攝取對 `user_goals.daily_cal_target` 顯示為「最高」；環色：未接近為綠、接近最高（約 ≥90% 且未超）為橘、超過為紅並滿環；進度條含碳水／蛋白質／脂肪及鈉（鈉以固定參考上線示意，無個別化上限欄） |
 | 體重卡 | `vital_logs`（最新一筆） | 今日或最近體重 + BMI 計算值；**點擊**前往 `/log?date=今日&tab=body` 調整體重（與紀錄頁體重卡相同） |
 | 今日餐食卡 | `food_logs` | 四餐記錄摘要（早中晚+點心），有未記錄的顯示提示 |
-| AI 今日建議 | 伺服端自動：近 7 日紀錄（結束於 Taipei「今日」曆日）+ 對齊「飲食與脈絡」「健康與目標」；`dashboard_daily_insights` 以 Taipei **每日 04:00** 換線的「建議週期」為快取鍵（`insight_date`） | Suspense + `DashboardDailyInsightDeferred` → `DashboardInsightFab`：**右下角浮動燈泡鈕**，點擊開 `BottomSheetShell` 顯示建議全文（預載仍於 defer 完成）。新週期未讀（`localStorage`）或本次請求剛寫入快取（`justGenerated`）時外圈輕量提醒動效；開啟抽層後標記已讀。同一週期僅產生／呼叫模型一次，其餘讀快取（見 `docs/04-ai-engine.md`） |
+| AI 今日建議 | 伺服端自動：近 7 日紀錄（結束於 Taipei「今日」曆日）+ 對齊「飲食與脈絡」「健康與目標」；`dashboard_daily_insights` 以 Taipei **每日 04:00** 換線的「建議週期」為快取鍵（`insight_date`） | Suspense + `DashboardDailyInsightDeferred` → `DashboardInsightFab`：**Header 燈泡 icon**（AI 精靈左側），點擊開 `BottomSheetShell` 顯示建議全文（預載仍於 defer 完成）。新週期未讀（`localStorage`）或本次請求剛寫入快取（`justGenerated`）時 icon 右上角綠點；開啟抽層後標記已讀。同一週期僅產生／呼叫模型一次，其餘讀快取（見 `docs/04-ai-engine.md`） |
 
 ### 資料查詢（Server Component）
 

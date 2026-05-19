@@ -3,6 +3,7 @@
 import { Lightbulb } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { HEADER_ACTION_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
 import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import { cn } from '@/lib/utils/cn';
 
@@ -62,11 +63,14 @@ export function DashboardInsightFab({
         type="button"
         aria-label="今日建議"
         onClick={markSeenOpenSheet}
-        className={cn(
-          'fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] right-4 z-[45] flex h-14 w-14 shrink-0 touch-manipulation items-center justify-center rounded-full border-hairline border-primary/30 bg-primary-light text-primary transition-transform active:scale-[0.97]',
-          showCue && 'ring-2 ring-primary/45 ring-offset-2 ring-offset-background animate-pulse',
-        )}>
-        <Lightbulb className="h-6 w-6" strokeWidth={1.8} aria-hidden />
+        className={cn('relative', HEADER_ACTION_ICON_CLASS)}>
+        <Lightbulb className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden />
+        {showCue ? (
+          <span
+            className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary"
+            aria-hidden
+          />
+        ) : null}
       </button>
 
       <BottomSheetShell

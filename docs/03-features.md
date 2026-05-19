@@ -160,7 +160,7 @@ export function calcRecommendScore(
 - [x] 熱量圓環（今日攝取 / 目標，三大營養素進度條）
 - [x] 體重卡（今日體重 + BMI）
 - [x] 今日飲食摘要
-- [x] AI 今日建議：Suspense 預載 + 右下角浮動入口，點擊底部抽層顯示全文；新週期未讀／剛產出時輕量提醒動效
+- [x] AI 今日建議：Suspense 預載 + Header 燈泡 icon 入口，點擊底部抽層顯示全文；新週期未讀／剛產出時 icon 右上角綠點
 
 ### P2-4 體重快速輸入
 

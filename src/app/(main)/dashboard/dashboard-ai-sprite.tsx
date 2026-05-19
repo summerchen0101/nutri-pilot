@@ -20,6 +20,7 @@ import {
   HEADER_ACTION_ICON_CLASS,
 } from '@/components/layout/header-action-icon-styles';
 import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
+import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
 import { useDashboardAiSprite } from '@/hooks/use-dashboard-ai-sprite';
 import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
@@ -291,7 +292,7 @@ export function DashboardAiSprite({
     <button
       type="button"
       aria-label="AI 精靈快速紀錄"
-      className={HEADER_ACTION_ICON_CLASS}
+      className={cn(HEADER_ACTION_ICON_CLASS, 'text-primary')}
       onClick={() => onSheetOpenChange(true)}>
       <Sparkles className="h-[18px] w-[18px]" aria-hidden />
     </button>

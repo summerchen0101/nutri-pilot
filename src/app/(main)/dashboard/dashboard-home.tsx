@@ -59,8 +59,7 @@ function CalorieRingBlock({
   const ringR = 36;
   const circumference = 2 * Math.PI * ringR;
   const target = targetKcal != null && targetKcal > 0 ? targetKcal : 0;
-  let ratio =
-    target > 0 && todayKcal > 0 ? Math.min(1, todayKcal / target) : 0;
+  let ratio = target > 0 && todayKcal > 0 ? Math.min(1, todayKcal / target) : 0;
   if (target > 0 && todayKcal > target) ratio = 1;
 
   let ringStroke = "#4C956C";
@@ -387,11 +386,11 @@ export function WeeklyPopularBrandsRail({
   );
 }
 
-/** 與 `DashboardInsightFab` 浮動鈕同位置，避免 Suspense 時版面跳動 */
+/** 與 `DashboardInsightFab` header icon 同尺寸，避免 Suspense 時版面跳動 */
 export function DashboardInsightSkeleton() {
   return (
     <div
-      className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] right-4 z-[45] h-14 w-14 shrink-0 animate-pulse rounded-full border-hairline border-border bg-muted/60"
+      className="pointer-events-none h-9 w-9 shrink-0 animate-pulse rounded-[10px] bg-muted/60"
       aria-hidden
     />
   );
@@ -487,6 +486,7 @@ export function DashboardHome({
               sheetOpen={aiSpriteOpen}
               onSheetOpenChange={setAiSpriteOpen}
             />
+            {insightSlot ?? null}
             <Link
               href="/announcements"
               aria-label="公告"
@@ -515,7 +515,9 @@ export function DashboardHome({
             <FiAward className="h-3 w-3 shrink-0 opacity-90" aria-hidden />
             <span className="inline-flex items-center gap-0.5">
               <span>已達成</span>
-              <span className="font-bold tabular-nums">{mealCompleteStreakDays}</span>
+              <span className="font-bold tabular-nums">
+                {mealCompleteStreakDays}
+              </span>
               <span>日</span>
             </span>
           </span>
@@ -643,8 +645,6 @@ export function DashboardHome({
           showQuickAdds
         />
       </section>
-
-      {insightSlot ?? null}
 
       <SectionCard>
         <div className="flex items-center justify-between gap-2">
