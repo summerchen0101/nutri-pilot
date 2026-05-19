@@ -6,6 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
 import { billingMonthTaipei, tokensToAiQuotaUnits } from "../_shared/token-usage-to-ai-quota.ts";
 import { anthropicVision } from "../_shared/anthropic-vision.ts";
+import { enrichLabelGuardReport } from "../_shared/label-guard-enrich.ts";
 import {
   buildLabelGuardReportPrompt,
   TW_ALLERGEN_CATEGORY_KEYS,
@@ -172,6 +173,7 @@ Deno.serve(async (req) => {
     obj.disclaimer_required = true;
     obj.safety_score = clampScore(obj.safety_score);
     obj.allergens_tw14 = normalizeAllergensTw14(obj.allergens_tw14);
+    enrichLabelGuardReport(obj);
 
     await admin
       .from("label_guard_jobs")

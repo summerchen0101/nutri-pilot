@@ -6,6 +6,7 @@ import {
   resolveAlertKeywordExplanation,
   resolveRiskItemExplanation,
 } from '@/lib/food/label-guard-lookups';
+import { sortRiskItemsByTier } from '@/lib/food/label-guard-enrich';
 import {
   audienceSegmentLabelZh,
   safetyScoreTextClass,
@@ -39,6 +40,8 @@ export function LabelGuardReportBody({
   onOpenDetail,
   className,
 }: LabelGuardReportBodyProps) {
+  const sortedRiskItems = sortRiskItemsByTier(report.risk_items);
+
   return (
     <div
       className={cn(
@@ -114,11 +117,13 @@ export function LabelGuardReportBody({
         </div>
       ) : null}
 
-      {report.risk_items.length > 0 ? (
+      {sortedRiskItems.length > 0 ? (
         <div>
-          <p className="text-[11px] font-medium text-muted-foreground">成分與風險分級</p>
+          <p className="text-[11px] font-medium text-muted-foreground">
+            成分、添加物與風險分級
+          </p>
           <ul className="mt-2 space-y-2">
-            {report.risk_items.map((r, i) => (
+            {sortedRiskItems.map((r, i) => (
               <li key={`${r.name}-${i}`}>
                 <button
                   type="button"
