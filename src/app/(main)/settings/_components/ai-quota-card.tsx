@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles } from 'lucide-react';
-
 import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import { Button } from '@/components/ui/button';
 import { SectionCard } from '@/components/ui/section-card';
@@ -35,7 +33,7 @@ export function AiQuotaCard({
   return (
     <>
       <SectionCard>
-        <SectionHeading icon={Sparkles} variant="nested" className="mb-2">
+        <SectionHeading variant="nested" className="mb-2">
           使用額度
         </SectionHeading>
         <p className="text-caption text-muted-foreground">

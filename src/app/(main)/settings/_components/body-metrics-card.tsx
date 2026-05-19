@@ -2,7 +2,6 @@
 
 import type { MouseEvent } from 'react';
 import { useState } from 'react';
-import { Ruler } from 'lucide-react';
 import { FaInfoCircle } from 'react-icons/fa';
 
 import { SettingsRow } from '@/app/(main)/settings/_components/settings-row';
@@ -76,7 +75,7 @@ export function BodyMetricsCard({
 
   return (
     <SectionCard>
-      <SectionHeading icon={Ruler} variant="nested" className="mb-1">
+      <SectionHeading variant="nested" className="mb-1">
         身體數據
       </SectionHeading>
       <SettingsRow label="身高" value={heightDisplay} onClick={onEdit} />

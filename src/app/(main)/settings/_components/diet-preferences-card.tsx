@@ -1,5 +1,3 @@
-import { Utensils } from 'lucide-react';
-
 import { SettingsRow } from '@/app/(main)/settings/_components/settings-row';
 import { SETTINGS_DIET_PREFERENCES_ANCHOR_ID } from '@/app/(main)/settings/_lib/settings-anchors';
 import { SectionCard } from '@/components/ui/section-card';
@@ -22,7 +20,7 @@ export function DietPreferencesCard({
 }: DietPreferencesCardProps) {
   return (
     <SectionCard id={SETTINGS_DIET_PREFERENCES_ANCHOR_ID}>
-      <SectionHeading icon={Utensils} variant="nested" className="mb-1">
+      <SectionHeading variant="nested" className="mb-1">
         飲食偏好
       </SectionHeading>
       <SettingsRow label="飲食方式" value={dietMethodText} onClick={onEditMethod} />

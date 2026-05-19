@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronUp, FileText } from "lucide-react";
+import { ChevronUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
@@ -162,7 +162,7 @@ export function PersonalContextCard({
 
   return (
     <SectionCard>
-      <SectionHeading icon={FileText} variant="nested" className="mb-1">
+      <SectionHeading variant="nested" className="mb-1">
         健康脈絡
       </SectionHeading>
       <p className="text-caption leading-snug text-muted-foreground">

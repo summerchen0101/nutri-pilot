@@ -1,5 +1,3 @@
-import { Target } from 'lucide-react';
-
 import { SettingsRow } from '@/app/(main)/settings/_components/settings-row';
 import { SectionCard } from '@/components/ui/section-card';
 import { SectionHeading } from '@/components/ui/section-heading';
@@ -33,7 +31,7 @@ export function GoalSettingsCard({
 }: GoalSettingsCardProps) {
   return (
     <SectionCard>
-      <SectionHeading icon={Target} variant="nested" className="mb-1">
+      <SectionHeading variant="nested" className="mb-1">
         飲控目標
       </SectionHeading>
       <SettingsRow label="目標類型" value={goalTypeText} onClick={onOpenGoalType} />
