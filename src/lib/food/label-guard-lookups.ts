@@ -1,3 +1,7 @@
+import {
+  formatAdditiveCatalogBody,
+  hasAdditiveCatalogEntry,
+} from '@/lib/food/label-guard-additive-catalog';
 import type { TwAllergenCategoryKey } from '@/lib/food/label-guard-report';
 
 const FALLBACK_EXPLANATION_BODY =
@@ -117,6 +121,20 @@ const ALERT_KEYWORD_BODY: Record<string, string> = {
   磷酸鹽:
     '常用於加工食品；腎功能異常者磷負荷需特別留意，請依醫囑調整。',
   MSG: '即麩酸鈉調味；少數人可能自覺不耐，可依個人感受調整。',
+  麩酸鈉:
+    '即味精主成分，屬調味劑；少數人可能自覺不耐，可依感受與標示調整份量。',
+  麥芽糊精:
+    '澱粉水解物，常作填充或載體；控糖或糖尿病者宜留意對血糖之影響。',
+  色素:
+    '用於調色之食用色素，種類以標示為準；敏感體質或幼童可依需求選擇。',
+  食用色素:
+    '同色素，請依成分表辨識具體色素名稱並遵循適量原則。',
+  香料:
+    '調香用途，可能為天然或複合配方；過敏者宜詳讀標示。',
+  人工香料:
+    '合成調香物質，敏感體質可留意個人反應。',
+  天然香料:
+    '來源可能為植物萃取等，仍建議過敏者詳讀標示。',
   棕櫚:
     '棕櫚相關油脂飽和脂肪較高，建議適量並注意整體油脂型態與份量。',
 };
@@ -186,12 +204,14 @@ export function resolveAlertKeywordExplanation(kw: string): {
   body: string;
 } {
   const title = kw.trim();
+  const catalogBody = formatAdditiveCatalogBody(kw);
+  if (catalogBody) return { title, body: catalogBody };
   const body = tryExplainByKeywordTable(kw) ?? FALLBACK_EXPLANATION_BODY;
   return { title, body };
 }
 
 export function canOpenAlertKeywordDetail(kw: string): boolean {
-  return tryExplainByKeywordTable(kw) !== null;
+  return hasAdditiveCatalogEntry(kw) || tryExplainByKeywordTable(kw) !== null;
 }
 
 export function resolveRiskItemExplanation(
@@ -199,6 +219,8 @@ export function resolveRiskItemExplanation(
   plainLanguage: string,
 ): { title: string; body: string } {
   const title = name.trim();
+  const catalogBody = formatAdditiveCatalogBody(name);
+  if (catalogBody) return { title, body: catalogBody };
   const fromTable = tryExplainByKeywordTable(name);
   const trimmedPlain = plainLanguage.trim();
   if (fromTable) return { title, body: fromTable };

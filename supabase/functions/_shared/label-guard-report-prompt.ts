@@ -72,7 +72,10 @@ ${
      · 漂白劑：過氧化苯甲醯（麵粉類）
      · 品質改良劑：磷酸鹽類（焦磷酸鹽等）
      · 甜味劑：阿斯巴甜、蔗糖素、糖精、醋磺內酯鉀
-   - 成分表含多項添加物時，alert_keywords 至少含 1 個類別詞（如「防腐劑」「增色劑」）與 1～2 個具名成分（仍維持 alert_keywords 總數 3–12）。
+     · 香料／人工香料：香料、天然香料、乙基香蘭素等（以成分表原文為準）
+     · 填充／載體：麥芽糊精
+   - 必掃關鍵詞（成分表有出現者須反映）：味精、麩酸鈉、麥芽糊精、調味劑、抗氧化劑、色素／著色劑／增色劑、人工香料、香料。
+   - 成分表含多項添加物時，alert_keywords 至少含 1 個類別詞與 1～2 個具名成分；label_name_details 須逐項列出該類在包裝上可讀之所有化學名（例：match_key「調味劑」、label_names「麩酸鈉」「5'-次黃嘌呤核苷酸二鈉」；match_key「麥芽糊精」、label_names「麥芽糊精」）。
 4. 高鈉（讀營養標示「鈉」欄，非醫療診斷）：
    - 每 100g 或每 100ml 鈉 ≥ 600mg → alert_keywords 必含「高鈉」或「高鈉含量」，且 risk_items 一筆 tier=watch、name 為「高鈉」；plain_language 帶可讀數值（例：每份鈉約 980mg，接近一般成人一日參考量 2400mg 的比例，高血壓或限鈉者宜控份量）。
    - 僅標示每份鈉且每份 ≥ 600mg，或泡麵／醬料／加工肉等明顯偏高 → 同上。
@@ -90,6 +93,12 @@ ${
    若圖片未提及該類，detected 為 false；detail 可簡述依據或 null。
 9. safety_score：0–100 整數；依 high/medium/watch 項目數量與嚴重度加權扣分（100 為理想、越低表示越需留意）。此為推估，非認證或醫療判定。
 10. summary_note：可選，一句總結（若無則 null）。
+11. label_name_details（必填陣列，可為 []）：與畫面上會出現的警示／風險／過敏原項目對齊，供使用者查看「本次包裝上可讀文字」。
+   - 每筆：{ "match_key": string, "label_names": string[] }
+   - match_key 須與 alert_keywords 某一項、risk_items[].name、或過敏原中文標籤（芒果、花生、蛋、牛乳／乳製品、堅果類、芝麻、含麩質之穀物、大豆、魚類、軟體類／貝類、甲殼類、芹菜、芥末、亞硫酸鹽／二氧化硫）一致。
+   - label_names 僅能來自成分表、營養標示、過敏警語之可讀原文（成分化學名、警語摘錄、鈉數值等）；看不清勿捏造，給 []。
+   - 範例：{ "match_key": "調味劑", "label_names": ["麩酸鈉","5'-次黃嘌呤核苷酸二鈉"] }；{ "match_key": "味精", "label_names": ["麩酸鈉"] }；{ "match_key": "麥芽糊精", "label_names": ["麥芽糊精"] }；{ "match_key": "色素", "label_names": ["檸檬黃","日落黃"] }；{ "match_key": "高鈉", "label_names": ["每份鈉 980mg"] }；{ "match_key": "花生", "label_names": ["本產品含花生及其製品"] }。
+   - 每筆 label_names 最多 12 項。
 
 請只回傳一個 JSON 物件（不要 markdown），鍵如下：
 {
@@ -99,6 +108,7 @@ ${
   "risk_items": [{ "name": string, "tier": "high" | "medium" | "watch" | "low", "plain_language": string }],
   "audience_advice": [{ "segment": "child" | "elderly" | "pregnant_lactation" | "allergy" | "general_adult", "summary": string }],
   "allergens_tw14": [{ "category_key": string, "detected": boolean, "detail": string | null }],
+  "label_name_details": [{ "match_key": string, "label_names": string[] }],
   "summary_note": string | null,
   "disclaimer_required": true
 }`;

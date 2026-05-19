@@ -43,6 +43,14 @@ export const ADDITIVE_ALERT_ALIASES = [
   "MSG",
   "人工色素",
   "人工甜味劑",
+  "色素",
+  "食用色素",
+  "麩酸鈉",
+  "麥芽糊精",
+  "香料",
+  "人工香料",
+  "天然香料",
+  "鮮味劑",
 ] as const;
 
 const HIGH_SODIUM_RISK_PLAIN =

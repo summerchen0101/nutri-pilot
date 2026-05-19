@@ -2,6 +2,8 @@
  * 標示守衛報告後處理；須與 supabase/functions/_shared/label-guard-enrich.ts 同步。
  */
 
+import { getAdditiveCatalogAliases } from '@/lib/food/label-guard-additive-catalog';
+
 export const HIGH_SODIUM_THRESHOLD_MG = 600;
 
 export const DAILY_SODIUM_REF_MG = 2400;
@@ -44,6 +46,18 @@ export const ADDITIVE_ALERT_ALIASES = [
   'MSG',
   '人工色素',
   '人工甜味劑',
+  '色素',
+  '食用色素',
+  '麩酸鈉',
+  '麥芽糊精',
+  '香料',
+  '人工香料',
+  '天然香料',
+] as const;
+
+const MERGED_ADDITIVE_ALIASES = [
+  ...ADDITIVE_ALERT_ALIASES,
+  ...getAdditiveCatalogAliases(),
 ] as const;
 
 const TIER_RANK: Record<string, number> = {
@@ -157,7 +171,7 @@ function pushAlertKeyword(keywords: string[], term: string): void {
 function matchAdditiveAlias(text: string): string | null {
   const n = normalizeForMatch(text);
   let best: { len: number; term: string } | null = null;
-  for (const term of ADDITIVE_ALERT_ALIASES) {
+  for (const term of MERGED_ADDITIVE_ALIASES) {
     const nt = normalizeForMatch(term);
     if (!nt) continue;
     if (n.includes(nt) || nt.includes(n)) {

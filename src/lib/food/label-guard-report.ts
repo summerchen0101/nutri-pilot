@@ -62,6 +62,12 @@ export type LabelGuardAllergenRow = {
   detail: string | null;
 };
 
+/** 對應 UI 項目與包裝上可讀的具名成分／數值摘錄 */
+export type LabelGuardLabelNames = {
+  match_key: string;
+  label_names: string[];
+};
+
 export type LabelGuardReport = {
   _kind: 'label_guard_report';
   safety_score: number;
@@ -71,6 +77,8 @@ export type LabelGuardReport = {
   allergens_tw14: LabelGuardAllergenRow[];
   summary_note: string | null;
   disclaimer_required: boolean;
+  /** 與警示 chip、風險列、過敏原列對齊；舊報告可無此欄 */
+  label_name_details?: LabelGuardLabelNames[];
 };
 
 const AUDIENCE_LABEL_ZH: Record<AudienceSegment, string> = {
@@ -187,6 +195,28 @@ export function parseLabelGuardReportJson(
     );
   }
 
+  const label_name_details: LabelGuardLabelNames[] = [];
+  if (Array.isArray(o.label_name_details)) {
+    for (const row of o.label_name_details) {
+      if (!row || typeof row !== 'object') continue;
+      const r = row as Record<string, unknown>;
+      const match_key = String(r.match_key ?? '').trim();
+      if (!match_key) continue;
+      const label_names: string[] = [];
+      if (Array.isArray(r.label_names)) {
+        for (const x of r.label_names) {
+          const s = String(x ?? '').trim();
+          if (s) label_names.push(s.slice(0, 80));
+          if (label_names.length >= 12) break;
+        }
+      }
+      label_name_details.push({
+        match_key: match_key.slice(0, 80),
+        label_names,
+      });
+    }
+  }
+
   return {
     _kind: 'label_guard_report',
     safety_score: clampScore(o.safety_score),
@@ -199,6 +229,8 @@ export function parseLabelGuardReportJson(
         ? null
         : String(o.summary_note).trim().slice(0, 500) || null,
     disclaimer_required: true,
+    label_name_details:
+      label_name_details.length > 0 ? label_name_details : undefined,
   };
 }
 

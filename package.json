@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "npx tsx --test src/lib/food/label-guard-lookups.test.ts"
+    "test": "npx tsx --test src/lib/food/label-guard-lookups.test.ts src/lib/food/label-guard-label-names.test.ts src/lib/food/label-guard-additive-catalog.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

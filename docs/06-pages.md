@@ -90,7 +90,7 @@ export default async function DashboardPage() {
 
 ## `/guard`（食品安全守衛 · 食品標示智慧分析）
 
-獨立於紀錄頁：上傳至 `label-guard-photos` → `label-guard-request` → QStash → `label-guard-analyze`，結果寫入 `label_guard_jobs`，前端 Realtime／輪詢顯示安全分數、警示關鍵字（含食品添加物類別／具名成分與高鈉推估，可點開說明）、族群建議、成分／添加物風險分級與 14 類過敏矩陣（非醫療診斷）。底部導覽「守衛」進入；數據分析頁 `/analytics` 仍可由總覽等連結進入。結果卡可「儲存到個人紀錄」：預設名稱為 `YYYY-MM-DD 分數分`（可修改），每位使用者最多 5 筆，超過時阻擋並提示先刪除舊紀錄。頁首右上角提供「食品安全分析紀錄」入口（icon）至 `/guard/records`。
+獨立於紀錄頁：上傳至 `label-guard-photos` → `label-guard-request` → QStash → `label-guard-analyze`，結果寫入 `label_guard_jobs`，前端 Realtime／輪詢顯示安全分數、警示關鍵字（含食品添加物；點 chip 見條列常見成分說明，點 (i) 另見本次包裝摘錄）、族群建議、成分／添加物風險分級（同樣支援條列說明與 (i)）與 14 類過敏矩陣（陽性列可點 (i)，非醫療診斷）。底部導覽「守衛」進入；數據分析頁 `/analytics` 仍可由總覽等連結進入。結果卡可「儲存到個人紀錄」：預設名稱為 `YYYY-MM-DD 分數分`（可修改），每位使用者最多 5 筆，超過時阻擋並提示先刪除舊紀錄。頁首右上角提供「食品安全分析紀錄」入口（icon）至 `/guard/records`。
 
 ## `/guard/records`（食品安全分析紀錄）
 
