@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { FoodLogDayList } from '@/app/(main)/log/_components/food-log-day-list';
+import { LogDayKcalSummary } from '@/app/(main)/log/_components/log-day-kcal-summary';
 import { LogVitalsReadonly } from '@/app/(main)/log/_components/log-vitals-readonly';
 import type { LogVitalSnapshot } from '@/app/(main)/log/_components/log-vitals-card';
 import {
@@ -15,10 +16,7 @@ import {
 } from '@/app/(main)/log/log-section-tabs';
 import type { FoodLogSnapshot } from '@/app/(main)/log/log-food-snapshot';
 import { totalDayKcalFromLogs } from '@/app/(main)/log/log-food-snapshot';
-import {
-  LOG_FOOD_LIST_TITLE,
-  LOG_KCAL_INTAKE_LABEL,
-} from '@/lib/log/log-date-label';
+import { LOG_FOOD_LIST_TITLE } from '@/lib/log/log-date-label';
 
 export interface LogHistoryDayClientProps {
   date: string;
@@ -48,27 +46,10 @@ export function LogHistoryDayClient({
       />
 
       {sectionTab === 'food' ? (
-        <div className="rounded-xl bg-card px-4 py-3">
-          <div className="flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground">當日攝取</p>
-              <p className="tabular-nums text-heading-page leading-tight text-foreground">
-                {Math.round(dayTotal)}
-                <span className="text-[13px] font-normal text-muted-foreground">
-                  {' '}
-                  kcal
-                </span>
-              </p>
-            </div>
-            <div className="text-right">
-              {dailyCalTarget != null ? (
-                <p className="text-[11px] text-muted-foreground">
-                  目標 {Math.round(Number(dailyCalTarget))} kcal
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </div>
+        <LogDayKcalSummary
+          consumedKcal={dayTotal}
+          dailyCalTarget={dailyCalTarget}
+        />
       ) : null}
 
       {sectionTab === 'food' ? (

@@ -55,7 +55,7 @@ export function formatLogDateHeading(
   return base;
 }
 
-export function formatLogHistorySummaryLine(row: {
+export type LogHistorySummaryRow = {
   kcalTotal: number;
   foodEntryCount: number;
   mealsWithLogs: string[];
@@ -63,19 +63,30 @@ export function formatLogHistorySummaryLine(row: {
   activityCount: number;
   weightKg: number | null;
   hasWaterOrSleep: boolean;
-}): string {
-  const parts: string[] = [];
+};
+
+export type LogHistorySummaryPart =
+  | { kind: 'kcal'; kcalTotal: number; mealHint: string }
+  | { kind: 'text'; text: string };
+
+export function buildLogHistorySummaryParts(
+  row: LogHistorySummaryRow,
+): LogHistorySummaryPart[] {
+  const parts: LogHistorySummaryPart[] = [];
 
   if (row.foodEntryCount > 0 || row.kcalTotal > 0) {
     const mealHint =
       row.mealsWithLogs.length > 0
         ? ` · ${row.mealsWithLogs.join('、')}`
         : '';
-    parts.push(`${row.kcalTotal.toLocaleString('zh-TW')} kcal${mealHint}`);
+    parts.push({ kind: 'kcal', kcalTotal: row.kcalTotal, mealHint });
   }
 
   if (row.activityCount > 0) {
-    parts.push(`運動 ${row.activityMinutes} 分`);
+    parts.push({
+      kind: 'text',
+      text: `運動 ${row.activityMinutes} 分`,
+    });
   }
 
   if (row.weightKg != null && Number.isFinite(row.weightKg)) {
@@ -83,10 +94,24 @@ export function formatLogHistorySummaryLine(row: {
       row.weightKg % 1 === 0
         ? String(row.weightKg)
         : row.weightKg.toFixed(1);
-    parts.push(`體重 ${w} kg`);
+    parts.push({ kind: 'text', text: `體重 ${w} kg` });
   } else if (row.hasWaterOrSleep) {
-    parts.push('水分／睡眠');
+    parts.push({ kind: 'text', text: '水分／睡眠' });
   }
 
-  return parts.length > 0 ? parts.join(' · ') : '有紀錄';
+  return parts;
+}
+
+export function formatLogHistorySummaryLine(row: LogHistorySummaryRow): string {
+  const parts = buildLogHistorySummaryParts(row);
+  if (parts.length === 0) return '有紀錄';
+
+  return parts
+    .map((part) => {
+      if (part.kind === 'kcal') {
+        return `${part.kcalTotal.toLocaleString('zh-TW')} kcal${part.mealHint}`;
+      }
+      return part.text;
+    })
+    .join(' · ');
 }

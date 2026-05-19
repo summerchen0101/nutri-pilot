@@ -84,7 +84,7 @@ export default async function DashboardPage() {
 | 拍照餐點 | 上傳 `food-photos` → `ai-photo-request` → `ai-photo-analyze` → 確認營養卡 |
 | 運動分頁 | 手寫入 `activity_logs`；當日列表、刪除；類型與分鐘、估熱與備註（選填） |
 | 今日記錄列表 | 飲食分頁下依餐次分組，可刪除 |
-| 熱量加總 | 僅 **飲食分頁**顯示：今日四餐總熱量 vs 目標 |
+| 熱量加總 | 僅 **飲食分頁**顯示：當日四餐總熱量 vs 目標；總熱量數字色與 Dashboard 圓環一致（≥90% 且未超為橘 `#EF9F27`、超過為紅 `#E24B4A`）；`/log/history` 列表摘要 kcal 同規則 |
 
 ---
 

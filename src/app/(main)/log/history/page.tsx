@@ -1,15 +1,13 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { LogHistoryDaySummary } from '@/app/(main)/log/_components/log-history-day-summary';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { getCachedAuthContext } from '@/lib/auth';
 import { buildLogHistoryDayRows } from '@/lib/log/build-log-history-summaries';
-import {
-  formatLogDateHeading,
-  formatLogHistorySummaryLine,
-} from '@/lib/log/log-date-label';
+import { formatLogDateHeading } from '@/lib/log/log-date-label';
 import { todayLocalISODate } from '@/lib/onboarding/date';
 
 function historyRowHref(
@@ -47,8 +45,18 @@ export default async function LogHistoryPage() {
 
   const rangeStart = profileMeta?.updated_at?.slice(0, 10) ?? today;
 
-  const [{ data: foodRows, error: foodErr }, { data: activityRows, error: actErr }, { data: vitalRows, error: vitalErr }] =
-    await Promise.all([
+  const [
+    { data: goal, error: goalErr },
+    { data: foodRows, error: foodErr },
+    { data: activityRows, error: actErr },
+    { data: vitalRows, error: vitalErr },
+  ] = await Promise.all([
+      supabase
+        .from('user_goals')
+        .select('daily_cal_target')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle(),
       supabase
         .from('food_logs')
         .select(
@@ -75,9 +83,12 @@ export default async function LogHistoryPage() {
         .lte('date', today),
     ]);
 
+  if (goalErr) throw new Error(goalErr.message);
   if (foodErr) throw new Error(foodErr.message);
   if (actErr) throw new Error(actErr.message);
   if (vitalErr) throw new Error(vitalErr.message);
+
+  const dailyCalTarget = goal?.daily_cal_target ?? null;
 
   const rows = buildLogHistoryDayRows({
     foodRows: foodRows ?? [],
@@ -114,7 +125,6 @@ export default async function LogHistoryPage() {
           {rows.map((row) => {
             const href = historyRowHref(row.date, row.mode);
             const cta = historyRowCtaLabel(row.mode);
-            const summary = formatLogHistorySummaryLine(row);
             return (
               <Card key={row.date} className="min-w-0 overflow-hidden">
                 <div className="flex min-h-[44px] items-center gap-2 pr-2">
@@ -126,9 +136,10 @@ export default async function LogHistoryPage() {
                       <span className="text-[15px] font-medium leading-normal text-foreground">
                         {formatLogDateHeading(row.date, today)}
                       </span>
-                      <p className="text-caption leading-normal text-muted-foreground">
-                        {summary}
-                      </p>
+                      <LogHistoryDaySummary
+                        row={row}
+                        dailyCalTarget={dailyCalTarget}
+                      />
                     </div>
                   </Link>
                   <Link

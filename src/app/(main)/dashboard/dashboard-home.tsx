@@ -21,6 +21,10 @@ import {
 import { StickyPageHeader } from "@/components/layout/sticky-page-header";
 import { SectionCard } from "@/components/ui/section-card";
 import { SectionHeading } from "@/components/ui/section-heading";
+import {
+  getCalorieIntakeRingStroke,
+  getCalorieIntakeStatus,
+} from "@/lib/calorie/calorie-intake-status";
 import { macroTargetsFromKcal } from "@/lib/dashboard/macro-targets";
 import { cn } from "@/lib/utils/cn";
 
@@ -36,8 +40,6 @@ export type DashboardMealRow = {
   recordHref: string;
 };
 
-/** ≥ 最高熱量此比例視為「接近最高」，外環改橘色（未超過時） */
-const CALORIE_NEAR_MAX_RATIO = 0.9;
 /** 鈉橫條參考上限（mg）；介面示意用 */
 const DASHBOARD_SODIUM_MAX_REF_MG = 2400;
 
@@ -62,16 +64,9 @@ function CalorieRingBlock({
   let ratio = target > 0 && todayKcal > 0 ? Math.min(1, todayKcal / target) : 0;
   if (target > 0 && todayKcal > target) ratio = 1;
 
-  let ringStroke = "#4C956C";
-  if (target > 0 && todayKcal > target) ringStroke = "#E24B4A";
-  else if (
-    target > 0 &&
-    todayKcal > 0 &&
-    todayKcal <= target &&
-    todayKcal >= target * CALORIE_NEAR_MAX_RATIO
-  ) {
-    ringStroke = "#EF9F27";
-  }
+  const ringStroke = getCalorieIntakeRingStroke(
+    getCalorieIntakeStatus(todayKcal, targetKcal),
+  );
 
   const t = targetKcal != null && targetKcal > 0 ? targetKcal : 0;
   const m = t > 0 ? macroTargetsFromKcal(t) : { carb: 0, protein: 0, fat: 0 };
