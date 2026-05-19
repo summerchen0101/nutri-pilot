@@ -344,6 +344,18 @@ export function GuardLabelClient() {
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id);
 
+    async function insertSavedReport(): Promise<{ error: string | null }> {
+      const { error: insertErr } = await supabase
+        .from("label_guard_saved_reports")
+        .insert({
+          user_id: user.id,
+          job_id: activeJobId,
+          name,
+          report_json: report as unknown as Json,
+        });
+      return { error: insertErr?.message ?? null };
+    }
+
     if (countErr) {
       setSaving(false);
       setSaveError(countErr.message);
@@ -351,23 +363,52 @@ export function GuardLabelClient() {
     }
 
     if ((count ?? 0) >= MAX_LABEL_GUARD_SAVED_REPORTS) {
-      setSaving(false);
-      setSaveError("最多 5 筆，請先刪除舊紀錄");
-      return;
+      const { data: oldest, error: oldestErr } = await supabase
+        .from("label_guard_saved_reports")
+        .select("id, name, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (oldestErr) {
+        setSaving(false);
+        setSaveError(oldestErr.message);
+        return;
+      }
+
+      if (!oldest) {
+        setSaving(false);
+        setSaveError("無法取得最舊紀錄");
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `個人紀錄已滿（5/5）。是否覆蓋最舊的紀錄「${oldest.name}」？此動作無法復原。`,
+      );
+
+      if (!confirmed) {
+        setSaving(false);
+        return;
+      }
+
+      const { error: deleteErr } = await supabase
+        .from("label_guard_saved_reports")
+        .delete()
+        .eq("id", oldest.id);
+
+      if (deleteErr) {
+        setSaving(false);
+        setSaveError(deleteErr.message);
+        return;
+      }
     }
 
-    const { error: insertErr } = await supabase
-      .from("label_guard_saved_reports")
-      .insert({
-        user_id: user.id,
-        job_id: activeJobId,
-        name,
-        report_json: report as unknown as Json,
-      });
+    const { error: insertError } = await insertSavedReport();
 
     setSaving(false);
-    if (insertErr) {
-      setSaveError(insertErr.message);
+    if (insertError) {
+      setSaveError(insertError);
       return;
     }
 
