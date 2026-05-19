@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { FiCamera } from "react-icons/fi";
 
+import { usePendingAnalysisJobsStore } from "@/lib/ai/pending-analysis-jobs-store";
+import { createSignedStoragePreviewUrl } from "@/lib/ai/signed-storage-preview-url";
+import { isTerminalJobStatus } from "@/lib/ai/watch-analysis-job";
 import { compressImageForUpload } from "@/lib/food/compress-image-for-upload";
 import { invokeLabelGuardRequestFromBrowser } from "@/lib/food/invoke-label-guard-request";
 import { LabelGuardReportBody } from "@/components/guard/label-guard-report-body";
@@ -11,10 +14,6 @@ import {
   MAX_LABEL_GUARD_SAVED_NAME_LENGTH,
   MAX_LABEL_GUARD_SAVED_REPORTS,
 } from "@/lib/food/label-guard-saved";
-import {
-  parseLabelGuardReportJson,
-  type LabelGuardReport,
-} from "@/lib/food/label-guard-report";
 import { createClient } from "@/lib/supabase/client";
 import { BottomSheetShell } from "@/components/ui/bottom-sheet-shell";
 import type { Json } from "@/types/supabase";
@@ -40,42 +39,22 @@ function buildDefaultSavedName(safetyScore: number): string {
   return `${getTodayYmd()} ${safetyScore}分`;
 }
 
-function applyGuardJobUpdate(
-  row: {
-    status?: string;
-    result_json?: Json | null;
-    error_message?: string | null;
-  },
-  setters: {
-    setJobStatus: (s: string | null) => void;
-    setReport: (v: LabelGuardReport | null) => void;
-    setReportError: (s: string | null) => void;
-  },
-) {
-  const st = row.status ?? "";
-  setters.setJobStatus(st);
-  if (st === "ready") {
-    const parsed = parseLabelGuardReportJson(row.result_json ?? null);
-    setters.setReport(parsed);
-    setters.setReportError(parsed ? null : "無法解析分析結果");
-    return;
-  }
-  if (st === "error") {
-    setters.setReportError(row.error_message ?? "分析失敗");
-    setters.setReport(null);
-  }
-}
-
 export function GuardLabelClient() {
   const [busy, setBusy] = useState(false);
-  const [hint, setHint] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<string | null>(null);
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const previewRef = useRef<string | null>(null);
-  const [report, setReport] = useState<LabelGuardReport | null>(null);
-  const [reportError, setReportError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const guardPending = usePendingAnalysisJobsStore((s) => s.guard);
+  const startGuardJob = usePendingAnalysisJobsStore((s) => s.startGuardJob);
+  const patchGuardFromRow = usePendingAnalysisJobsStore((s) => s.patchGuardFromRow);
+  const clearGuard = usePendingAnalysisJobsStore((s) => s.clearGuard);
+
+  const previewUrl = guardPending?.previewUrl ?? null;
+  const report = guardPending?.report ?? null;
+  const hint = guardPending?.hint ?? null;
+  const reportError = guardPending?.error ?? localError;
+  const jobStatus = guardPending?.status ?? null;
+  const activeJobId = guardPending?.jobId || null;
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailTitle, setDetailTitle] = useState("");
   const [detailBody, setDetailBody] = useState("");
@@ -85,137 +64,43 @@ export function GuardLabelClient() {
   const [saveHint, setSaveHint] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const applyUpdate = useCallback(
-    (row: {
-      status?: string;
-      result_json?: Json | null;
-      error_message?: string | null;
-    }) => {
-      applyGuardJobUpdate(row, {
-        setJobStatus,
-        setReport,
-        setReportError,
-      });
-    },
-    [],
-  );
-
   useEffect(() => {
-    return () => {
-      if (previewRef.current) {
-        URL.revokeObjectURL(previewRef.current);
-        previewRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!activeJobId) return;
-
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`label-guard-job-${activeJobId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "label_guard_jobs",
-          filter: `id=eq.${activeJobId}`,
-        },
-        (payload) => {
-          applyUpdate(
-            payload.new as {
-              status?: string;
-              result_json?: Json | null;
-              error_message?: string | null;
-            },
-          );
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [activeJobId, applyUpdate]);
-
-  useEffect(() => {
-    if (!activeJobId) return;
-
-    const supabase = createClient();
+    if (!guardPending?.storagePath || guardPending.previewUrl) return;
     let cancelled = false;
-    let attempts = 0;
-    const maxAttempts = 120;
-    const intervalMs = 1500;
-
-    async function pollOnce(): Promise<boolean> {
-      const { data: row } = await supabase
-        .from("label_guard_jobs")
-        .select("status,result_json,error_message")
-        .eq("id", activeJobId)
-        .maybeSingle();
-
-      if (cancelled || !row) return false;
-
-      const st = row.status ?? "";
-      applyUpdate(row);
-      return st === "ready" || st === "error";
-    }
-
-    let iv: number | undefined;
-
-    iv = window.setInterval(() => {
-      void (async () => {
-        attempts++;
-        const done = await pollOnce();
-        if (done || attempts >= maxAttempts) {
-          if (iv !== undefined) window.clearInterval(iv);
-        }
-      })();
-    }, intervalMs);
-
-    void pollOnce().then((done) => {
-      if (done && iv !== undefined) window.clearInterval(iv);
+    void createSignedStoragePreviewUrl(
+      "label-guard-photos",
+      guardPending.storagePath,
+    ).then((url) => {
+      if (cancelled || !url) return;
+      usePendingAnalysisJobsStore.getState().setGuardPreviewUrl(url, false);
     });
-
     return () => {
       cancelled = true;
-      if (iv !== undefined) window.clearInterval(iv);
     };
-  }, [activeJobId, applyUpdate]);
+  }, [guardPending?.storagePath, guardPending?.previewUrl]);
 
-  function clearPreview() {
-    if (previewRef.current) {
-      URL.revokeObjectURL(previewRef.current);
-      previewRef.current = null;
-    }
-    setPreviewUrl(null);
+  function resetGuardUi() {
+    setLocalError(null);
+    clearGuard();
   }
 
   async function onFile(file: File | null) {
     if (!file) return;
-    setReportError(null);
-    setReport(null);
     setSaveEditorOpen(false);
     setSavedName("");
     setSaveHint(null);
     setSaveError(null);
-    setHint(null);
-    setJobStatus(null);
-    setActiveJobId(null);
-    clearPreview();
+    setLocalError(null);
+    clearGuard();
 
     const objectUrl = URL.createObjectURL(file);
-    previewRef.current = objectUrl;
-    setPreviewUrl(objectUrl);
 
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setReportError("未登入");
+      setLocalError("未登入");
       return;
     }
 
@@ -225,7 +110,7 @@ export function GuardLabelClient() {
       uploadFile = await compressImageForUpload(file);
     } catch (e) {
       setBusy(false);
-      setReportError(e instanceof Error ? e.message : "圖片處理失敗");
+      setLocalError(e instanceof Error ? e.message : "圖片處理失敗");
       return;
     }
 
@@ -260,7 +145,7 @@ export function GuardLabelClient() {
 
     if (upErr) {
       setBusy(false);
-      setReportError(upErr.message);
+      setLocalError(upErr.message);
       return;
     }
 
@@ -268,34 +153,39 @@ export function GuardLabelClient() {
     setBusy(false);
 
     if (inv.error) {
-      setReportError(inv.error);
+      setLocalError(inv.error);
       return;
     }
 
-    if (inv.hint) setHint(inv.hint);
-    const jid = inv.jobId ?? null;
-    setActiveJobId(jid);
-    setJobStatus("pending");
-
-    if (jid) {
-      const { data: row } = await supabase
-        .from("label_guard_jobs")
-        .select("status,result_json,error_message")
-        .eq("id", jid)
-        .maybeSingle();
-
-      if (row) applyUpdate(row);
+    const jid = inv.jobId;
+    if (!jid) {
+      setLocalError("未回傳 jobId");
+      return;
     }
+
+    startGuardJob({
+      jobId: jid,
+      storagePath: path,
+      previewUrl: objectUrl,
+      previewIsBlob: true,
+      hint: inv.hint ?? null,
+      initialStatus: "pending",
+    });
+
+    const { data: row } = await supabase
+      .from("label_guard_jobs")
+      .select("status,result_json,error_message")
+      .eq("id", jid)
+      .maybeSingle();
+
+    if (row) patchGuardFromRow(row);
   }
 
   const waiting =
     !!previewUrl &&
     !report &&
     (busy ||
-      (!!activeJobId &&
-        jobStatus !== null &&
-        jobStatus !== "ready" &&
-        jobStatus !== "error"));
+      (!!activeJobId && !!jobStatus && !isTerminalJobStatus(jobStatus)));
 
   function openDetailSheet(title: string, body: string) {
     setDetailTitle(title);
@@ -339,17 +229,19 @@ export function GuardLabelClient() {
       return;
     }
 
+    const userId = user.id;
+
     const { count, error: countErr } = await supabase
       .from("label_guard_saved_reports")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     async function insertSavedReport(): Promise<{ error: string | null }> {
       const { error: insertErr } = await supabase
         .from("label_guard_saved_reports")
         .insert({
-          user_id: user.id,
-          job_id: activeJobId,
+          user_id: userId,
+          job_id: activeJobId || null,
           name,
           report_json: report as unknown as Json,
         });
@@ -503,11 +395,7 @@ export function GuardLabelClient() {
                 variant="outline"
                 className="w-full border-hairline"
                 onClick={() => {
-                  clearPreview();
-                  setReport(null);
-                  setActiveJobId(null);
-                  setJobStatus(null);
-                  setReportError(null);
+                  resetGuardUi();
                 }}>
                 清除並重新拍攝
               </Button>

@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import { PendingAnalysisJobsHost } from '@/components/ai/pending-analysis-jobs-host';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { ShopBottomNav } from '@/components/layout/shop-bottom-nav';
 import {
@@ -43,6 +44,7 @@ export function MainAppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
+      <PendingAnalysisJobsHost />
       <div className={contentPaddingClass}>
         {children}
       </div>

@@ -43,12 +43,17 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { SectionHeading } from "@/components/ui/section-heading";
+import {
+  usePendingAnalysisJobsStore,
+  type LogMealTab,
+} from "@/lib/ai/pending-analysis-jobs-store";
+import { createSignedStoragePreviewUrl } from "@/lib/ai/signed-storage-preview-url";
+import { isTerminalJobStatus } from "@/lib/ai/watch-analysis-job";
 import { compressImageForUpload } from "@/lib/food/compress-image-for-upload";
 import { invokeAiPhotoRequestFromBrowser } from "@/lib/food/invoke-photo-request";
 import type { ManualFoodAnalysisResult } from "@/lib/food/manual-food-analysis-result";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
-import type { Json } from "@/types/supabase";
 
 export interface LogItemSnapshot {
   id: string;
@@ -82,42 +87,6 @@ const MEAL_LABEL: Record<string, string> = {
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
 
 type MealType = (typeof MEAL_ORDER)[number];
-
-/** 拍照 job 回傳（物件或陣列）→ 與手動 AI 相同結構；UI 只使用第一筆。 */
-function parsePhotoJobResult(
-  json: Json | null,
-): ManualFoodAnalysisResult | null {
-  if (json == null) return null;
-  const rows: unknown[] = Array.isArray(json) ? json : [json];
-  for (const row of rows) {
-    if (!row || typeof row !== "object") continue;
-    const o = row as Record<string, unknown>;
-    const name = String(o.name ?? "").trim();
-    if (!name) continue;
-    const quantity_g = Math.round(Number(o.quantity_g ?? 0));
-    const qd = String(o.quantity_description ?? "").trim();
-    const fiberRaw = o.fiber_g;
-    const sodiumRaw = o.sodium_mg;
-    return {
-      name,
-      quantity_g: quantity_g > 0 ? quantity_g : 100,
-      quantity_description: qd || (quantity_g > 0 ? `${quantity_g}g` : "1份"),
-      calories: Math.round(Number(o.calories ?? 0)),
-      protein_g: Math.round(Number(o.protein_g ?? 0)),
-      carb_g: Math.round(Number(o.carb_g ?? 0)),
-      fat_g: Math.round(Number(o.fat_g ?? 0)),
-      fiber_g:
-        fiberRaw === null || fiberRaw === undefined || fiberRaw === ""
-          ? null
-          : Math.round(Number(fiberRaw)),
-      sodium_mg:
-        sodiumRaw === null || sodiumRaw === undefined || sodiumRaw === ""
-          ? null
-          : Math.round(Number(sodiumRaw)),
-    };
-  }
-  return null;
-}
 
 function roundMacroG(n: number): number {
   return Math.round(Number(n));
@@ -337,15 +306,23 @@ export function LogClient({
   const [addBusy, setAddBusy] = useState(false);
 
   const [photoBusy, setPhotoBusy] = useState(false);
-  const [photoError, setPhotoError] = useState<string | null>(null);
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<string | null>(null);
-  const [photoResult, setPhotoResult] =
-    useState<ManualFoodAnalysisResult | null>(null);
-  const [photoHint, setPhotoHint] = useState<string | null>(null);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
-  const photoPreviewUrlRef = useRef<string | null>(null);
+  const [photoLocalError, setPhotoLocalError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const photoPending = usePendingAnalysisJobsStore((s) => s.photo);
+  const startPhotoJob = usePendingAnalysisJobsStore((s) => s.startPhotoJob);
+  const patchPhotoFromRow = usePendingAnalysisJobsStore((s) => s.patchPhotoFromRow);
+  const setPhotoStagingResult = usePendingAnalysisJobsStore(
+    (s) => s.setPhotoStagingResult,
+  );
+  const clearPhoto = usePendingAnalysisJobsStore((s) => s.clearPhoto);
+
+  const photoPreviewUrl = photoPending?.previewUrl ?? null;
+  const photoResult = photoPending?.result ?? null;
+  const photoHint = photoPending?.hint ?? null;
+  const photoError = photoPending?.error ?? photoLocalError;
+  const jobStatus = photoPending?.status ?? null;
+  const activeJobId = photoPending?.jobId || null;
 
   const [dayLogs, setDayLogs] = useState(initialLogs);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
@@ -357,112 +334,30 @@ export function LogClient({
 
   const todayTotal = useMemo(() => totalDayKcalFromLogs(dayLogs), [dayLogs]);
 
-  const applyPhotoJobUpdate = useCallback(
-    (row: {
-      status?: string;
-      result_json?: Json | null;
-      error_message?: string | null;
-    }) => {
-      const st = row.status ?? "";
-      setJobStatus(st);
-      if (st === "ready") {
-        const one = parsePhotoJobResult(row.result_json ?? null);
-        setPhotoResult(one);
-        setPhotoError(null);
-        return;
-      }
-      if (st === "error") {
-        setPhotoError(row.error_message ?? "辨識失敗");
-        setPhotoResult(null);
-      }
-    },
-    [],
-  );
+  useEffect(() => {
+    if (!photoPending?.jobId && !photoPending?.result) return;
+    setInputMode("photo");
+  }, [photoPending?.jobId, photoPending?.result]);
 
   useEffect(() => {
-    return () => {
-      if (photoPreviewUrlRef.current) {
-        URL.revokeObjectURL(photoPreviewUrlRef.current);
-        photoPreviewUrlRef.current = null;
-      }
-    };
-  }, []);
+    const tab = photoPending?.context.mealTab;
+    if (tab) setMealTab(tab);
+  }, [photoPending?.context.mealTab]);
 
   useEffect(() => {
-    if (!activeJobId) return;
-
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`photo-job-${activeJobId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "photo_analysis_jobs",
-          filter: `id=eq.${activeJobId}`,
-        },
-        (payload) => {
-          applyPhotoJobUpdate(
-            payload.new as {
-              status?: string;
-              result_json?: Json | null;
-              error_message?: string | null;
-            },
-          );
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [activeJobId, applyPhotoJobUpdate]);
-
-  useEffect(() => {
-    if (!activeJobId) return;
-
-    const supabase = createClient();
+    if (!photoPending?.storagePath || photoPending.previewUrl) return;
     let cancelled = false;
-    let attempts = 0;
-    const maxAttempts = 120;
-    const intervalMs = 1500;
-
-    async function pollOnce(): Promise<boolean> {
-      const { data: row } = await supabase
-        .from("photo_analysis_jobs")
-        .select("status,result_json,error_message")
-        .eq("id", activeJobId)
-        .maybeSingle();
-
-      if (cancelled || !row) return false;
-
-      const st = row.status ?? "";
-      applyPhotoJobUpdate(row);
-      return st === "ready" || st === "error";
-    }
-
-    let iv: number | undefined;
-
-    iv = window.setInterval(() => {
-      void (async () => {
-        attempts++;
-        const done = await pollOnce();
-        if (done || attempts >= maxAttempts) {
-          if (iv !== undefined) window.clearInterval(iv);
-        }
-      })();
-    }, intervalMs);
-
-    void pollOnce().then((done) => {
-      if (done && iv !== undefined) window.clearInterval(iv);
+    void createSignedStoragePreviewUrl(
+      "food-photos",
+      photoPending.storagePath,
+    ).then((url) => {
+      if (cancelled || !url) return;
+      usePendingAnalysisJobsStore.getState().setPhotoPreviewUrl(url, false);
     });
-
     return () => {
       cancelled = true;
-      if (iv !== undefined) window.clearInterval(iv);
     };
-  }, [activeJobId, applyPhotoJobUpdate]);
+  }, [photoPending?.storagePath, photoPending?.previewUrl]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, FoodLogSnapshot[]>();
@@ -564,14 +459,14 @@ export function LogClient({
         result: manual,
       }));
     } else {
-      setPhotoError(null);
+      setPhotoLocalError(null);
       setPhotoBusy(false);
-      setPhotoHint("已從常用項目帶入，可調整後確認");
-      setActiveJobId(null);
-      setJobStatus(null);
-      clearLocalPhotoPreview();
       if (fileInputRef.current) fileInputRef.current.value = "";
-      setPhotoResult(manual);
+      setPhotoStagingResult({
+        result: manual,
+        hint: "已從常用項目帶入，可調整後確認",
+        context: { date, mealTab: mealTab as LogMealTab },
+      });
     }
   }
 
@@ -584,43 +479,25 @@ export function LogClient({
     refresh();
   }
 
-  function clearLocalPhotoPreview() {
-    if (photoPreviewUrlRef.current) {
-      URL.revokeObjectURL(photoPreviewUrlRef.current);
-      photoPreviewUrlRef.current = null;
-    }
-    setPhotoPreviewUrl(null);
-  }
-
   function resetPhotoResultForReselect() {
-    setPhotoError(null);
+    setPhotoLocalError(null);
     setPhotoBusy(false);
-    setPhotoHint(null);
-    setJobStatus(null);
-    setActiveJobId(null);
-    setPhotoResult(null);
-    clearLocalPhotoPreview();
+    clearPhoto();
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   async function onPhotoFile(file: File | null) {
     if (!file) return;
-    setPhotoError(null);
-    setPhotoResult(null);
-    setPhotoHint(null);
-    setJobStatus(null);
-    setActiveJobId(null);
-    clearLocalPhotoPreview();
+    setPhotoLocalError(null);
+    clearPhoto();
     const objectUrl = URL.createObjectURL(file);
-    photoPreviewUrlRef.current = objectUrl;
-    setPhotoPreviewUrl(objectUrl);
 
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setPhotoError("未登入");
+      setPhotoLocalError("未登入");
       return;
     }
 
@@ -630,7 +507,7 @@ export function LogClient({
       uploadFile = await compressImageForUpload(file);
     } catch (e) {
       setPhotoBusy(false);
-      setPhotoError(e instanceof Error ? e.message : "圖片處理失敗");
+      setPhotoLocalError(e instanceof Error ? e.message : "圖片處理失敗");
       return;
     }
 
@@ -665,7 +542,7 @@ export function LogClient({
 
     if (upErr) {
       setPhotoBusy(false);
-      setPhotoError(upErr.message);
+      setPhotoLocalError(upErr.message);
       return;
     }
 
@@ -673,31 +550,42 @@ export function LogClient({
     setPhotoBusy(false);
 
     if (inv.error) {
-      setPhotoError(inv.error);
+      setPhotoLocalError(inv.error);
       return;
     }
 
-    if (inv.hint) setPhotoHint(inv.hint);
-    const jid = inv.jobId ?? null;
-    setActiveJobId(jid);
-    setJobStatus("pending");
-
-    if (jid) {
-      const { data: row } = await supabase
-        .from("photo_analysis_jobs")
-        .select("status,result_json,error_message")
-        .eq("id", jid)
-        .maybeSingle();
-
-      if (row) applyPhotoJobUpdate(row);
+    const jid = inv.jobId;
+    if (!jid) {
+      setPhotoLocalError("未回傳 jobId");
+      return;
     }
+
+    startPhotoJob({
+      jobId: jid,
+      storagePath: path,
+      previewUrl: objectUrl,
+      previewIsBlob: true,
+      hint: inv.hint ?? null,
+      context: { date, mealTab: mealTab as LogMealTab },
+      initialStatus: "pending",
+    });
+
+    const { data: row } = await supabase
+      .from("photo_analysis_jobs")
+      .select("status,result_json,error_message")
+      .eq("id", jid)
+      .maybeSingle();
+
+    if (row) patchPhotoFromRow(row);
   }
 
   async function onConfirmPhoto(edited: ManualFoodAnalysisResult) {
     setAddBusy(true);
+    const confirmMeal = photoPending?.context.mealTab ?? mealTab;
+    const confirmDate = photoPending?.context.date ?? date;
     const err = await confirmPhotoItemsAction({
-      mealType: mealTab,
-      date,
+      mealType: confirmMeal,
+      date: confirmDate,
       items: [
         {
           name: edited.name,
@@ -713,13 +601,11 @@ export function LogClient({
     });
     setAddBusy(false);
     if (err.error) {
-      setPhotoError(err.error);
+      setPhotoLocalError(err.error);
       return;
     }
-    setPhotoResult(null);
-    clearLocalPhotoPreview();
-    setActiveJobId(null);
-    setJobStatus(null);
+    clearPhoto();
+    setPhotoLocalError(null);
     refresh();
   }
 
@@ -734,9 +620,8 @@ export function LogClient({
     !photoResult &&
     (photoBusy ||
       (!!activeJobId &&
-        jobStatus !== null &&
-        jobStatus !== "ready" &&
-        jobStatus !== "error"));
+        !!jobStatus &&
+        !isTerminalJobStatus(jobStatus)));
 
   const mealPillPrimary =
     "min-h-9 h-9 shrink-0 rounded-full px-4 py-0 text-[13px] font-medium border-hairline border-transparent";
