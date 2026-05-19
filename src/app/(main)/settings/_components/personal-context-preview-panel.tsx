@@ -264,7 +264,7 @@ export function PersonalContextPreviewPanel({
             size="sm"
             disabled={pending}
             onClick={onCancelPreview}>
-            取消
+            清除預覽
           </Button>
         </div>
       ) : null}

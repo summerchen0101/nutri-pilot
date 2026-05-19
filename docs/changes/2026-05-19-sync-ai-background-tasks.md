@@ -9,6 +9,7 @@
 - 完成且不在原場景時 toast：精靈為「非 `/dashboard` 或 Sheet 已關」；脈絡為「非 `/settings`」。
 - 回到總覽／設定可還原輸入、解析結果或預覽；`sessionStorage` 保留進行中／`ready` 未處理狀態。
 - 仍為 **client 同步 API**，未改 QStash／job 表（與拍照／守衛 Queue 不同）。
+- 不套用時提供明確操作：AI 精靈「清除／取消」、飲食脈絡「清除預覽／取消／清除（錯誤態）」，皆只清 store 預覽、不寫入 DB。
 
 ## 原因／後續
 

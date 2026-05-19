@@ -129,6 +129,15 @@ export function PersonalContextCard({
           onClick={runAnalyze}>
           {analyzePending ? "整理中…" : "整理成重點"}
         </Button>
+        {analyzePending ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={runCancelPreview}>
+            取消
+          </Button>
+        ) : null}
 
         {saved != null ? (
           <Button
@@ -239,9 +248,18 @@ export function PersonalContextCard({
         />
       ) : null}
 
-      {error ? (
-        <p className="mt-2 text-caption text-destructive">{error}</p>
-      ) : null}
+      {error && !preview ?
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <p className="text-caption text-destructive">{error}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={runCancelPreview}>
+            清除
+          </Button>
+        </div>
+      : null}
     </SectionCard>
   );
 }

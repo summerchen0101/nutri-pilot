@@ -172,7 +172,7 @@ export function DashboardAiSprite({
   const setSpriteSheetOpen = usePendingAnalysisJobsStore((s) => s.setSpriteSheetOpen);
   const clearQuickLog = usePendingAnalysisJobsStore((s) => s.clearQuickLog);
 
-  const { busy: interpretBusy, error, result, interpret, reset } =
+  const { busy: interpretBusy, error, result, interpret } =
     useDashboardAiSprite();
 
   const message = quickLog?.message ?? draftMessage;
@@ -220,6 +220,13 @@ export function DashboardAiSprite({
     setCommitError(null);
     stopSpeech();
   }, [onSheetOpenChange, stopSpeech]);
+
+  const discardInterpret = useCallback(() => {
+    clearQuickLog();
+    setDraftMessage('');
+    setCommitError(null);
+    stopSpeech();
+  }, [clearQuickLog, stopSpeech]);
 
   const stopSpeechListening = useCallback(() => {
     try {
@@ -373,13 +380,32 @@ export function DashboardAiSprite({
               </>
             : '解析'}
           </Button>
+          {interpretBusy ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={commitBusy}
+              onClick={discardInterpret}>
+              取消
+            </Button>
+          ) : null}
         </div>
 
-        {error ? (
-          <p className="mt-3 text-caption text-[#E24B4A]" role="alert">
-            {error}
-          </p>
-        ) : null}
+        {error && !result?.entries.length ?
+          <div className="mt-3 space-y-2">
+            <p className="text-caption text-[#E24B4A]" role="alert">
+              {error}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={discardInterpret}>
+              清除
+            </Button>
+          </div>
+        : null}
 
         {result?.entries.length ?
           <section className="mt-4 space-y-2 rounded-xl border-hairline border-[#B5D4F4] bg-[#E6F1FB] p-3.5">
@@ -421,12 +447,8 @@ export function DashboardAiSprite({
                 type="button"
                 variant="outline"
                 disabled={commitBusy || interpretBusy}
-                onClick={() => {
-                  setCommitError(null);
-                  setDraftMessage(quickLog?.message ?? draftMessage);
-                  reset();
-                }}>
-                重選解析
+                onClick={discardInterpret}>
+                清除
               </Button>
             </div>
           </section>
