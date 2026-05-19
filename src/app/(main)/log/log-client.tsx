@@ -10,14 +10,9 @@ import {
   type ChangeEvent,
 } from "react";
 import { UtensilsCrossed } from "lucide-react";
-import {
-  FiActivity,
-  FiCamera,
-  FiCoffee,
-  FiTrash2,
-  FiUser,
-} from "react-icons/fi";
+import { FiCamera } from "react-icons/fi";
 
+import { FoodLogDayList } from "@/app/(main)/log/_components/food-log-day-list";
 import {
   LogVitalsCard,
   type LogVitalSnapshot,
@@ -33,6 +28,20 @@ import {
   ActivityLogSection,
   type ActivityLogRow,
 } from "@/app/(main)/log/activity-log-section";
+import {
+  MEAL_LABEL,
+  MEAL_ORDER,
+  logItemToManualResult,
+  totalDayKcalFromLogs,
+  type FoodLogSnapshot,
+  type LogItemSnapshot,
+} from "@/app/(main)/log/log-food-snapshot";
+import {
+  LogSectionTabs,
+  type LogSectionTab,
+} from "@/app/(main)/log/log-section-tabs";
+import type { LogDateMode } from "@/lib/log/log-date-policy";
+import { getLogFoodListTitle } from "@/lib/log/log-date-label";
 import { NutritionResultCard } from "@/components/food/NutritionResultCard";
 import { Button } from "@/components/ui/button";
 import { BottomSheetShell } from "@/components/ui/bottom-sheet-shell";
@@ -55,57 +64,9 @@ import type { ManualFoodAnalysisResult } from "@/lib/food/manual-food-analysis-r
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
 
-export interface LogItemSnapshot {
-  id: string;
-  name: string;
-  quantity_g: number;
-  calories: number;
-  carb_g: number;
-  protein_g: number;
-  fat_g: number;
-  fiber_g: number | null;
-  sodium_mg: number | null;
-  brand: string | null;
-  is_verified: boolean | null;
-}
-
-export interface FoodLogSnapshot {
-  id: string;
-  meal_type: string;
-  method: string;
-  logged_at: string | null;
-  food_log_items: LogItemSnapshot[] | null;
-}
-
-const MEAL_LABEL: Record<string, string> = {
-  breakfast: "早餐",
-  lunch: "午餐",
-  dinner: "晚餐",
-  snack: "點心",
-};
-
-const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
+export type { FoodLogSnapshot, LogItemSnapshot, LogSectionTab };
 
 type MealType = (typeof MEAL_ORDER)[number];
-
-function roundMacroG(n: number): number {
-  return Math.round(Number(n));
-}
-
-function logItemToManualResult(it: LogItemSnapshot): ManualFoodAnalysisResult {
-  const q = Math.round(Number(it.quantity_g));
-  return {
-    name: it.name,
-    quantity_g: q > 0 ? q : 1,
-    quantity_description: "",
-    calories: Math.round(Number(it.calories)),
-    protein_g: Math.round(Number(it.protein_g)),
-    carb_g: Math.round(Number(it.carb_g)),
-    fat_g: Math.round(Number(it.fat_g)),
-    fiber_g: it.fiber_g,
-    sodium_mg: it.sodium_mg,
-  };
-}
 
 function ItemMacrosMutedLine(props: {
   calories: number;
@@ -114,9 +75,9 @@ function ItemMacrosMutedLine(props: {
   fat_g: number;
 }) {
   const kcal = Math.round(Number(props.calories));
-  const c = roundMacroG(props.carb_g);
-  const p = roundMacroG(props.protein_g);
-  const f = roundMacroG(props.fat_g);
+  const c = Math.round(Number(props.carb_g));
+  const p = Math.round(Number(props.protein_g));
+  const f = Math.round(Number(props.fat_g));
   return (
     <span className="inline-flex flex-wrap items-baseline gap-x-1 text-[11px] font-normal leading-snug text-muted-foreground">
       <span className="tabular-nums">{kcal}</span>
@@ -131,146 +92,16 @@ function ItemMacrosMutedLine(props: {
   );
 }
 
-function TrashIcon(props: { className?: string }) {
-  return <FiTrash2 className={props.className} aria-hidden />;
-}
-
-function secondaryExpandable(it: LogItemSnapshot): boolean {
-  const fiberEmpty =
-    it.fiber_g === null || roundMacroG(Number(it.fiber_g)) === 0;
-  const sodiumEmpty =
-    it.sodium_mg === null || roundMacroG(Number(it.sodium_mg)) === 0;
-  return !fiberEmpty || !sodiumEmpty;
-}
-
-function formatFiber(it: LogItemSnapshot): string {
-  if (it.fiber_g === null) return "—";
-  return `${roundMacroG(Number(it.fiber_g))}g`;
-}
-
-function formatSodium(it: LogItemSnapshot): string {
-  if (it.sodium_mg === null) return "—";
-  return `${roundMacroG(Number(it.sodium_mg))}mg`;
-}
-
-function LogItemNutrition({ item }: { item: LogItemSnapshot }) {
-  const [open, setOpen] = useState(false);
-  const showMore = secondaryExpandable(item);
-
-  return (
-    <div className="mt-1 space-y-0">
-      <div>
-        <ItemMacrosMutedLine
-          calories={item.calories}
-          carb_g={item.carb_g}
-          protein_g={item.protein_g}
-          fat_g={item.fat_g}
-        />
-      </div>
-      {showMore ? (
-        <>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen((v) => !v);
-            }}
-            className="mt-0.5 block text-left text-[11px] font-normal leading-snug text-muted-foreground transition-opacity hover:opacity-80">
-            {open ? "收合 ‹" : "更多 ›"}
-          </button>
-          <div
-            className="overflow-hidden transition-[max-height] duration-[150ms] ease-[ease]"
-            style={{ maxHeight: open ? 96 : 0 }}>
-            <p className="pt-1 text-[11px] font-normal leading-snug text-muted-foreground">
-              纖維 {formatFiber(item)} · 鈉 {formatSodium(item)}
-            </p>
-          </div>
-        </>
-      ) : null}
-    </div>
-  );
-}
-
-function totalDayKcalFromLogs(logs: FoodLogSnapshot[]): number {
-  let t = 0;
-  for (const log of logs) {
-    for (const it of log.food_log_items ?? []) {
-      t += Number(it.calories);
-    }
-  }
-  return t;
-}
-
-function patchLogItemInLogs(
-  logs: FoodLogSnapshot[],
-  itemId: string,
-  patch: Partial<LogItemSnapshot>,
-): FoodLogSnapshot[] {
-  return logs.map((log) => ({
-    ...log,
-    food_log_items:
-      log.food_log_items?.map((row) =>
-        row.id === itemId ? { ...row, ...patch } : row,
-      ) ?? null,
-  }));
-}
-
-export type LogSectionTab = "food" | "activity" | "body";
-
 interface LogClientProps {
   date: string;
   dailyCalTarget: number | null;
   initialLogs: FoodLogSnapshot[];
-  /** URL `meal_type`，無預填時用來選預設餐次 Tab */
   initialMealTab?: MealType | null;
-  /** URL `tab`：飲食 / 運動 / 其他（`body`） */
   sectionTab?: LogSectionTab;
   initialActivities?: ActivityLogRow[];
   initialVital: LogVitalSnapshot;
   isLogToday: boolean;
-}
-
-function LogSectionTabs({
-  date,
-  active,
-}: {
-  date: string;
-  active: LogSectionTab;
-}) {
-  const router = useRouter();
-
-  function go(tab: LogSectionTab) {
-    const p = new URLSearchParams();
-    p.set("date", date);
-    p.set("tab", tab);
-    router.replace(`/log?${p.toString()}`);
-  }
-
-  const tabBtn = (tab: LogSectionTab, label: string, Icon: typeof FiCoffee) => (
-    <button
-      key={tab}
-      type="button"
-      role="tab"
-      aria-selected={active === tab}
-      onClick={() => go(tab)}
-      className={cn(
-        "flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 py-2 text-[13px] font-medium transition-colors",
-        active === tab
-          ? "bg-primary text-white"
-          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-      )}>
-      <Icon className="h-4 w-4 shrink-0" aria-hidden />
-      <span>{label}</span>
-    </button>
-  );
-
-  return (
-    <div className="flex w-full gap-2" role="tablist" aria-label="紀錄類別">
-      {tabBtn("food", "飲食", FiCoffee)}
-      {tabBtn("activity", "運動", FiActivity)}
-      {tabBtn("body", "其他", FiUser)}
-    </div>
-  );
+  logDateMode: LogDateMode;
 }
 
 export function LogClient({
@@ -282,7 +113,9 @@ export function LogClient({
   initialActivities = [],
   initialVital,
   isLogToday,
+  logDateMode,
 }: LogClientProps) {
+  const canEditFood = logDateMode === 'today' || logDateMode === 'yesterday_editable';
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -324,15 +157,10 @@ export function LogClient({
   const jobStatus = photoPending?.status ?? null;
   const activeJobId = photoPending?.jobId || null;
 
-  const [dayLogs, setDayLogs] = useState(initialLogs);
-  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
-  const [editSaving, setEditSaving] = useState(false);
-
-  useEffect(() => {
-    setDayLogs(initialLogs);
-  }, [initialLogs]);
-
-  const todayTotal = useMemo(() => totalDayKcalFromLogs(dayLogs), [dayLogs]);
+  const todayTotal = useMemo(
+    () => totalDayKcalFromLogs(initialLogs),
+    [initialLogs],
+  );
 
   useEffect(() => {
     if (!photoPending?.jobId && !photoPending?.result) return;
@@ -359,62 +187,9 @@ export function LogClient({
     };
   }, [photoPending?.storagePath, photoPending?.previewUrl]);
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, FoodLogSnapshot[]>();
-    for (const k of MEAL_ORDER) map.set(k, []);
-    for (const log of dayLogs) {
-      const key = log.meal_type in MEAL_LABEL ? log.meal_type : "snack";
-      const arr = map.get(key);
-      if (arr) arr.push(log);
-    }
-    return map;
-  }, [dayLogs]);
-
   const refresh = useCallback(() => {
     router.refresh();
   }, [router]);
-
-  const handleSaveEditedItem = useCallback(
-    async (itemId: string, edited: ManualFoodAnalysisResult) => {
-      setEditSaving(true);
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("food_log_items")
-        .update({
-          name: edited.name.trim() || "未命名",
-          quantity_g: edited.quantity_g,
-          calories: edited.calories,
-          protein_g: edited.protein_g,
-          carb_g: edited.carb_g,
-          fat_g: edited.fat_g,
-          fiber_g: edited.fiber_g,
-          sodium_mg: edited.sodium_mg,
-        })
-        .eq("id", itemId);
-
-      setEditSaving(false);
-      if (error) {
-        setActionError(error.message);
-        return;
-      }
-
-      setDayLogs((prev) =>
-        patchLogItemInLogs(prev, itemId, {
-          name: edited.name.trim() || "未命名",
-          quantity_g: edited.quantity_g,
-          calories: edited.calories,
-          protein_g: edited.protein_g,
-          carb_g: edited.carb_g,
-          fat_g: edited.fat_g,
-          fiber_g: edited.fiber_g,
-          sodium_mg: edited.sodium_mg,
-        }),
-      );
-      setExpandedItemId(null);
-      setActionError(null);
-    },
-    [],
-  );
 
   useEffect(() => {
     const m = searchParams.get("meal_type");
@@ -644,7 +419,9 @@ export function LogClient({
         <div className="rounded-xl bg-card px-4 py-3">
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground">今日已攝取</p>
+              <p className="text-[11px] text-muted-foreground">
+                當日已攝取
+              </p>
               <p className="tabular-nums text-heading-page leading-tight text-foreground">
                 {Math.round(todayTotal)}
                 <span className="text-[13px] font-normal text-muted-foreground">
@@ -669,7 +446,7 @@ export function LogClient({
         </div>
       ) : null}
 
-      {sectionTab === "food" ? (
+      {sectionTab === "food" && canEditFood ? (
         <Card className="min-w-0 max-w-full overflow-hidden">
           <CardHeader className="pb-2">
             <SectionHeading
@@ -851,110 +628,14 @@ export function LogClient({
         <ActivityLogSection date={date} rows={initialActivities} />
       ) : null}
 
-      {sectionTab === "food" ? (
-        <div className="space-y-2.5">
-          <h2 className="text-[15px] font-medium text-foreground">今日紀錄</h2>
-          <div className="space-y-3">
-            {MEAL_ORDER.map((m) => {
-              const mealLogs = grouped.get(m) ?? [];
-              return (
-                <section key={m}>
-                  <h3 className="text-[13px] font-medium text-foreground">
-                    {MEAL_LABEL[m]}
-                  </h3>
-                  {mealLogs.length === 0 ? (
-                    <p className="mt-1 text-[13px] text-muted-foreground">
-                      尚無紀錄
-                    </p>
-                  ) : (
-                    <ul className="mt-2 space-y-2.5">
-                      {mealLogs.map((log) => (
-                        <li key={log.id}>
-                          <div className="flex overflow-hidden rounded-xl bg-card">
-                            <div className="min-w-0 flex-1 divide-y-hairline divide-border">
-                              {(log.food_log_items ?? []).map((it) => (
-                                <div key={it.id} className="flex flex-col">
-                                  <div
-                                    role="button"
-                                    tabIndex={0}
-                                    className="flex w-full cursor-pointer gap-2 p-3 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-[#4C956C]/20"
-                                    onClick={() =>
-                                      setExpandedItemId((prev) =>
-                                        prev === it.id ? null : it.id,
-                                      )
-                                    }
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        setExpandedItemId((prev) =>
-                                          prev === it.id ? null : it.id,
-                                        );
-                                      }
-                                    }}>
-                                    <span
-                                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary"
-                                      aria-hidden
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                      <div className="text-[13px] font-medium text-foreground">
-                                        {it.name}{" "}
-                                        <span className="text-[11px] font-normal text-muted-foreground">
-                                          {Math.round(Number(it.quantity_g))}g
-                                        </span>
-                                      </div>
-                                      <LogItemNutrition item={it} />
-                                    </div>
-                                  </div>
-                                  <div
-                                    className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-                                    style={{
-                                      maxHeight:
-                                        expandedItemId === it.id ? 1400 : 0,
-                                    }}>
-                                    {expandedItemId === it.id ? (
-                                      <div className="rounded-b-xl border-t border-border bg-card p-4">
-                                        <NutritionResultCard
-                                          key={`${it.id}-${it.calories}-${it.quantity_g}`}
-                                          embedded
-                                          editMode
-                                          editBusy={editSaving}
-                                          result={logItemToManualResult(it)}
-                                          onCancel={() =>
-                                            setExpandedItemId(null)
-                                          }
-                                          onConfirm={(edited) =>
-                                            void handleSaveEditedItem(
-                                              it.id,
-                                              edited,
-                                            )
-                                          }
-                                        />
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <button
-                              type="button"
-                              className="shrink-0 self-stretch px-3 py-3 text-muted-foreground transition-colors hover:text-destructive"
-                              aria-label="刪除此筆紀錄"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                void onDeleteLog(log.id);
-                              }}>
-                              <TrashIcon className="mx-auto h-4 w-4" />
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-              );
-            })}
-          </div>
-        </div>
+      {sectionTab === 'food' ? (
+        <FoodLogDayList
+          logs={initialLogs}
+          listTitle={getLogFoodListTitle()}
+          onDeleteLog={onDeleteLog}
+          onItemSaved={refresh}
+          onActionError={setActionError}
+        />
       ) : null}
 
       {sectionTab === "food" ? (

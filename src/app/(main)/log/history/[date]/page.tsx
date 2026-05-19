@@ -1,67 +1,37 @@
 import { redirect } from 'next/navigation';
 
+import { LogHistoryDayClient } from '@/app/(main)/log/history/log-history-day-client';
 import type { ActivityLogRow } from '@/app/(main)/log/activity-log-section';
 import type { LogVitalSnapshot } from '@/app/(main)/log/_components/log-vitals-card';
-import { LogClient } from '@/app/(main)/log/log-client';
 import type { FoodLogSnapshot } from '@/app/(main)/log/log-food-snapshot';
 import { normalizeLogItems } from '@/app/(main)/log/log-normalize';
-import type { LogSectionTab } from '@/app/(main)/log/log-section-tabs';
+import { HeaderBackButton } from '@/components/layout/header-back-button';
+import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { getCachedAuthContext } from '@/lib/auth';
 import { getLogDateMode, isoDateOk } from '@/lib/log/log-date-policy';
+import { formatLogDateHeading } from '@/lib/log/log-date-label';
 import { todayLocalISODate } from '@/lib/onboarding/date';
 import { getCachedUserProfileCoreRow } from '@/lib/user-profile/cached-core-profile';
 
-function parseMealType(
-  raw: string | undefined,
-): 'breakfast' | 'lunch' | 'dinner' | 'snack' | undefined {
-  if (
-    raw === 'breakfast' ||
-    raw === 'lunch' ||
-    raw === 'dinner' ||
-    raw === 'snack'
-  ) {
-    return raw;
-  }
-  return undefined;
-}
-
-function parseSectionTab(raw: string | undefined): LogSectionTab {
-  if (raw === 'activity' || raw === 'food' || raw === 'body') return raw;
-  return 'food';
-}
-
-export async function LogPageContent({
-  searchParams,
+export default async function LogHistoryDayPage({
+  params,
 }: {
-  searchParams?: {
-    date?: string;
-    meal_type?: string;
-    tab?: string;
-  };
+  params: { date: string };
 }) {
   const { supabase, user } = await getCachedAuthContext();
 
   if (!user) redirect('/login');
 
-  const rawDate = searchParams?.date;
-  const dateParam =
-    typeof rawDate === 'string' && isoDateOk(rawDate) ? rawDate : undefined;
+  const date = params.date;
+  if (!isoDateOk(date)) redirect('/log/history');
 
-  const initialMealTab = parseMealType(searchParams?.meal_type);
-  const sectionTab = parseSectionTab(
-    typeof searchParams?.tab === 'string' ? searchParams.tab : undefined,
-  );
+  const today = todayLocalISODate();
+  const mode = getLogDateMode(date, today);
 
-  const activeDate = dateParam ?? todayLocalISODate();
-
-  const todayIso = todayLocalISODate();
-  const logDateMode = getLogDateMode(activeDate, todayIso);
-
-  if (logDateMode === 'readonly') {
-    redirect(`/log/history/${activeDate}`);
+  if (mode === 'today') redirect('/log');
+  if (mode === 'yesterday_editable') {
+    redirect(`/log?date=${encodeURIComponent(date)}`);
   }
-
-  const isLogToday = logDateMode === 'today';
 
   const [
     { data: goal },
@@ -101,7 +71,7 @@ export async function LogPageContent({
     `,
       )
       .eq('user_id', user.id)
-      .eq('date', activeDate)
+      .eq('date', date)
       .order('logged_at', { ascending: false }),
     supabase
       .from('activity_logs')
@@ -109,37 +79,31 @@ export async function LogPageContent({
         'id, logged_date, activity_type, duration_minutes, calories_est, notes',
       )
       .eq('user_id', user.id)
-      .eq('logged_date', activeDate)
+      .eq('logged_date', date)
       .order('created_at', { ascending: false }),
     supabase
       .from('vital_logs')
       .select('weight_kg, water_ml, sleep_hours')
       .eq('user_id', user.id)
-      .eq('date', activeDate)
+      .eq('date', date)
       .maybeSingle(),
     getCachedUserProfileCoreRow(supabase, user.id),
     supabase
       .from('vital_logs')
       .select('weight_kg')
       .eq('user_id', user.id)
-      .lt('date', activeDate)
+      .lt('date', date)
       .not('weight_kg', 'is', null)
       .order('date', { ascending: false })
       .limit(1)
       .maybeSingle(),
   ]);
 
-  if (vitalErr) {
-    throw new Error(vitalErr.message);
-  }
-  if (profileErr) {
-    throw new Error(profileErr.message);
-  }
-  if (priorWeightErr) {
-    throw new Error(priorWeightErr.message);
-  }
+  if (vitalErr) throw new Error(vitalErr.message);
+  if (profileErr) throw new Error(profileErr.message);
+  if (priorWeightErr) throw new Error(priorWeightErr.message);
 
-  const initialLogs: FoodLogSnapshot[] = (rows ?? []).map((row) => ({
+  const logs: FoodLogSnapshot[] = (rows ?? []).map((row) => ({
     id: row.id,
     meal_type: row.meal_type,
     method: row.method,
@@ -147,19 +111,14 @@ export async function LogPageContent({
     food_log_items: normalizeLogItems(row.food_log_items),
   }));
 
-  const initialActivities: ActivityLogRow[] = (activityRows ?? []).map(
-    (r) => ({
-      id: r.id,
-      logged_date: r.logged_date,
-      activity_type: r.activity_type,
-      duration_minutes: r.duration_minutes,
-      calories_est:
-        r.calories_est != null ? Number(r.calories_est) : null,
-      notes: r.notes ?? null,
-    }),
-  );
-
-
+  const activities: ActivityLogRow[] = (activityRows ?? []).map((r) => ({
+    id: r.id,
+    logged_date: r.logged_date,
+    activity_type: r.activity_type,
+    duration_minutes: r.duration_minutes,
+    calories_est: r.calories_est != null ? Number(r.calories_est) : null,
+    notes: r.notes ?? null,
+  }));
 
   const loggedWeightKg =
     vitalRow?.weight_kg != null ? Number(vitalRow.weight_kg) : null;
@@ -170,13 +129,11 @@ export async function LogPageContent({
       weightPrefillKg = Number(priorWeightRow.weight_kg);
     } else if (profile?.weight_kg != null) {
       const w = Number(profile.weight_kg);
-      if (Number.isFinite(w)) {
-        weightPrefillKg = w;
-      }
+      if (Number.isFinite(w)) weightPrefillKg = w;
     }
   }
 
-  const initialVital: LogVitalSnapshot = {
+  const vital: LogVitalSnapshot = {
     weightKg: loggedWeightKg,
     weightPrefillKg,
     waterMl:
@@ -189,17 +146,30 @@ export async function LogPageContent({
         : null,
   };
 
+  const hasAnyData =
+    logs.length > 0 ||
+    activities.length > 0 ||
+    vital.weightKg != null ||
+    vital.waterMl > 0 ||
+    vital.sleepHours != null;
+
+  if (!hasAnyData) redirect('/log/history');
+
   return (
-    <LogClient
-      date={activeDate}
-      dailyCalTarget={goal?.daily_cal_target ?? null}
-      initialLogs={initialLogs}
-      initialMealTab={initialMealTab}
-      sectionTab={sectionTab}
-      initialActivities={initialActivities}
-      initialVital={initialVital}
-      isLogToday={isLogToday}
-      logDateMode={logDateMode}
-    />
+    <div className="space-y-3">
+      <StickyPageHeader
+        leading={<HeaderBackButton />}
+        title={formatLogDateHeading(date, today)}
+        spacing="compact"
+      />
+      <p className="text-caption text-muted-foreground">僅供查看，無法修改</p>
+      <LogHistoryDayClient
+        date={date}
+        dailyCalTarget={goal?.daily_cal_target ?? null}
+        logs={logs}
+        activities={activities}
+        vital={vital}
+      />
+    </div>
   );
 }

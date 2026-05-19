@@ -29,6 +29,8 @@ type Props = {
   showQuickAdds?: boolean;
   /** 指定 `vital_logs.date`；未設定時沿用今日（儀表板） */
   forDateIso?: string;
+  /** embedded 標題列；預設「今日飲水」 */
+  waterTitle?: string;
 };
 
 function formatMl(n: number): string {
@@ -41,6 +43,7 @@ export function DashboardWaterGrid({
   waterTargetMl,
   showQuickAdds = false,
   forDateIso,
+  waterTitle = '今日飲水',
 }: Props) {
   const router = useRouter();
   const [waterMl, setWaterMl] = useState(initialWaterMl);
@@ -87,7 +90,7 @@ export function DashboardWaterGrid({
       )}>
       {showHeader ? (
         <div className="mb-0.5 flex items-start justify-between gap-2">
-          <p className="text-[15px] font-medium text-foreground">今日飲水</p>
+          <p className="text-[15px] font-medium text-foreground">{waterTitle}</p>
           <p className="shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
             {formatMl(waterMl)} / {formatMl(target)} ml · {pct}%
           </p>
@@ -105,7 +108,7 @@ export function DashboardWaterGrid({
       <div
         className={cn('grid grid-cols-12 gap-1')}
         role="group"
-        aria-label="今日喝水量，點格子設定杯數">
+        aria-label={`${waterTitle}，點格子設定杯數`}>
         {Array.from({ length: GRID_CELLS }, (_, i) => {
           const isFull = i < filledFull;
           const isPartial = i === filledFull && partialRatio > 0;

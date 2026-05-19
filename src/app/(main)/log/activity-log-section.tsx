@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ACTIVITY_TYPE_LABEL } from '@/lib/activity/activity-type-labels';
+import { LOG_ACTIVITY_LIST_TITLE } from '@/lib/log/log-date-label';
 import type { ActivityType } from '@/lib/activity/activity-types';
 import { KCAL_PER_MINUTE } from '@/lib/activity/kcal-per-minute';
 import { showSuccessMessage } from '@/lib/ui/app-message-store';
@@ -39,9 +40,11 @@ const QUICK_DURATION_MINUTES = [15, 30, 45, 60, 90] as const;
 export function ActivityLogSection({
   date,
   rows,
+  readOnly = false,
 }: {
   date: string;
   rows: ActivityLogRow[];
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -108,6 +111,52 @@ export function ActivityLogSection({
     "h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-hairline border-transparent";
   const mealPillInactive =
     "h-10 shrink-0 rounded-full px-4 text-[13px] font-medium border-hairline border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground";
+
+  if (readOnly) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="text-[15px] font-medium text-foreground">
+            {LOG_ACTIVITY_LIST_TITLE}
+          </h2>
+          <p className="text-[11px] text-muted-foreground">
+            合計{' '}
+            <span className="tabular-nums font-medium text-foreground">
+              {dayTotalMin}
+            </span>{' '}
+            分鐘
+          </p>
+        </div>
+        {rows.length === 0 ? (
+          <p className="text-[13px] text-muted-foreground">尚無紀錄</p>
+        ) : (
+          <ul className="space-y-2">
+            {rows.map((r) => (
+              <li key={r.id} className="rounded-xl bg-card px-3 py-2.5">
+                <p className="text-[13px] font-medium text-foreground">
+                  {ACTIVITY_TYPE_LABEL[r.activity_type as ActivityType] ??
+                    r.activity_type}
+                  <span className="ml-1.5 text-[11px] font-normal tabular-nums text-muted-foreground">
+                    {r.duration_minutes} 分鐘
+                  </span>
+                </p>
+                {r.calories_est != null ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    估 {Math.round(Number(r.calories_est))} kcal
+                  </p>
+                ) : null}
+                {r.notes ? (
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {r.notes}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -222,7 +271,7 @@ export function ActivityLogSection({
       <div className="space-y-2">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="text-[15px] font-medium text-foreground">
-            {date} 的運動
+            {LOG_ACTIVITY_LIST_TITLE}
           </h2>
           <p className="text-[11px] text-muted-foreground">
             合計{" "}

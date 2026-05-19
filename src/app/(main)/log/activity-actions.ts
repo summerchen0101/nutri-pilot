@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { ACTIVITY_TYPES, type ActivityType } from '@/lib/activity/activity-types';
+import { logDateMutationError } from '@/lib/log/log-date-policy';
 import { createClient } from '@/lib/supabase/server';
 
 export type { ActivityType };
@@ -35,6 +36,9 @@ export async function insertActivityLogAction(input: {
   } = await supabase.auth.getUser();
   if (!user) return { error: '未登入' };
 
+  const dateErr = logDateMutationError(input.loggedDate);
+  if (dateErr) return { error: dateErr };
+
   const { error } = await supabase.from('activity_logs').insert({
     user_id: user.id,
     logged_date: input.loggedDate,
@@ -51,6 +55,7 @@ export async function insertActivityLogAction(input: {
   revalidatePath('/log');
   revalidatePath('/dashboard');
   revalidatePath('/analytics');
+  revalidatePath('/log/history');
   return {};
 }
 
@@ -63,6 +68,18 @@ export async function deleteActivityLogAction(
   } = await supabase.auth.getUser();
   if (!user) return { error: '未登入' };
 
+  const { data: row } = await supabase
+    .from('activity_logs')
+    .select('logged_date')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!row) return { error: '找不到紀錄' };
+
+  const dateErr = logDateMutationError(row.logged_date);
+  if (dateErr) return { error: dateErr };
+
   const { error } = await supabase
     .from('activity_logs')
     .delete()
@@ -73,5 +90,6 @@ export async function deleteActivityLogAction(
   revalidatePath('/log');
   revalidatePath('/dashboard');
   revalidatePath('/analytics');
+  revalidatePath('/log/history');
   return {};
 }

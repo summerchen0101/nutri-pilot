@@ -10,6 +10,7 @@ import {
   setSleepHoursForDateAction,
 } from "@/app/(main)/log/vitals-actions";
 import { Button } from "@/components/ui/button";
+import { getLogWaterSectionTitle } from "@/lib/log/log-date-label";
 import { cn } from "@/lib/utils/cn";
 
 /** 與儀表板首頁預設飲水目標一致（待 Schema 個人化後替換） */
@@ -281,6 +282,7 @@ export function LogVitalsCard({
             waterTargetMl={LOG_PAGE_WATER_TARGET_ML}
             showQuickAdds
             forDateIso={dateIso}
+            waterTitle={getLogWaterSectionTitle()}
           />
 
           <div>

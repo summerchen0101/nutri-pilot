@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { logDateMutationError } from '@/lib/log/log-date-policy';
 import { todayLocalISODate } from '@/lib/onboarding/date';
 import { syncProfileAndGoalsFromWeightKg } from '@/lib/vitals';
 import { createClient } from '@/lib/supabase/server';
@@ -16,6 +17,7 @@ function isoDateOk(s: string): boolean {
 
 function revalidateAfterVitalChange(forDateIso: string) {
   revalidatePath('/log');
+  revalidatePath('/log/history');
   if (forDateIso === todayLocalISODate()) {
     revalidatePath('/dashboard');
   }
@@ -85,6 +87,9 @@ export async function setWaterMlForDateAction(
   } = await supabase.auth.getUser();
   if (!user) return { error: '未登入' };
 
+  const dateErr = logDateMutationError(dateIso);
+  if (dateErr) return { error: dateErr };
+
   const totalMl = Math.round(totalMlRaw);
   if (!Number.isFinite(totalMl) || totalMl < 0 || totalMl > 8000) {
     return { error: '請輸入合理水量（0–8000 ml）' };
@@ -127,6 +132,9 @@ export async function setSleepHoursForDateAction(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: '未登入' };
+
+  const dateErr = logDateMutationError(dateIso);
+  if (dateErr) return { error: dateErr };
 
   const sleepHours = round1(sleepHoursRaw);
   if (!Number.isFinite(sleepHours) || sleepHours < 0 || sleepHours > 24) {

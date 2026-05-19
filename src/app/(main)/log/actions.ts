@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { logDateMutationError } from '@/lib/log/log-date-policy';
 import { createClient } from '@/lib/supabase/server';
 
 function enqueueAiEstimateFoodCacheInsert(
@@ -65,6 +66,9 @@ export async function addFoodFromAiAnalysisAction(input: {
   } = await supabase.auth.getUser();
   if (!user) return { error: '未登入' };
 
+  const dateErr = logDateMutationError(input.date);
+  if (dateErr) return { error: dateErr };
+
   const q = Number(input.quantity_g);
   if (!Number.isFinite(q) || q <= 0) {
     return { error: '份量無效' };
@@ -115,6 +119,7 @@ export async function addFoodFromAiAnalysisAction(input: {
 
   revalidatePath('/log');
   revalidatePath('/dashboard');
+  revalidatePath('/log/history');
   return {};
 }
 
@@ -127,16 +132,22 @@ export async function deleteFoodLogAction(logId: string): Promise<{ error?: stri
 
   const { data: row } = await supabase
     .from('food_logs')
-    .select('user_id')
+    .select('user_id, date')
     .eq('id', logId)
     .maybeSingle();
 
   if (!row || row.user_id !== user.id) return { error: '無權限' };
+  if (!row.date) return { error: '找不到紀錄' };
+
+  const dateErr = logDateMutationError(row.date);
+  if (dateErr) return { error: dateErr };
 
   const { error } = await supabase.from('food_logs').delete().eq('id', logId);
   if (error) return { error: error.message };
 
   revalidatePath('/log');
+  revalidatePath('/dashboard');
+  revalidatePath('/log/history');
   return {};
 }
 
@@ -160,6 +171,9 @@ export async function confirmPhotoItemsAction(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: '未登入' };
+
+  const dateErr = logDateMutationError(input.date);
+  if (dateErr) return { error: dateErr };
 
   if (!input.items.length) return { error: '沒有可寫入的項目' };
 
@@ -196,6 +210,72 @@ export async function confirmPhotoItemsAction(input: {
   if (itemErr) return { error: itemErr.message };
 
   revalidatePath('/log');
+  revalidatePath('/log/history');
+  return {};
+}
+
+export async function updateFoodLogItemAction(input: {
+  itemId: string;
+  name: string;
+  quantity_g: number;
+  calories: number;
+  carb_g: number;
+  protein_g: number;
+  fat_g: number;
+  fiber_g: number | null;
+  sodium_mg: number | null;
+}): Promise<{ error?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: '未登入' };
+
+  const { data: itemRow, error: itemReadErr } = await supabase
+    .from('food_log_items')
+    .select('id, log_id')
+    .eq('id', input.itemId)
+    .maybeSingle();
+
+  if (itemReadErr) return { error: itemReadErr.message };
+  if (!itemRow) return { error: '找不到項目' };
+
+  const { data: logRow, error: logReadErr } = await supabase
+    .from('food_logs')
+    .select('user_id, date')
+    .eq('id', itemRow.log_id)
+    .maybeSingle();
+
+  if (logReadErr) return { error: logReadErr.message };
+  if (!logRow || logRow.user_id !== user.id) return { error: '無權限' };
+
+  const dateErr = logDateMutationError(logRow.date);
+  if (dateErr) return { error: dateErr };
+
+  const q = Number(input.quantity_g);
+  if (!Number.isFinite(q) || q <= 0) return { error: '份量無效' };
+
+  const { error } = await supabase
+    .from('food_log_items')
+    .update({
+      name: input.name.trim() || '未命名',
+      quantity_g: q,
+      calories: Math.round(Number(input.calories)),
+      protein_g: Math.round(Number(input.protein_g)),
+      carb_g: Math.round(Number(input.carb_g)),
+      fat_g: Math.round(Number(input.fat_g)),
+      fiber_g:
+        input.fiber_g == null ? null : Math.round(Number(input.fiber_g)),
+      sodium_mg:
+        input.sodium_mg == null ? null : Math.round(Number(input.sodium_mg)),
+    })
+    .eq('id', input.itemId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/log');
+  revalidatePath('/dashboard');
+  revalidatePath('/log/history');
   return {};
 }
 
