@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import {
   Flame,
   Megaphone,
@@ -35,21 +35,6 @@ export type DashboardMealRow = {
   kcal: number | null;
   recordHref: string;
 };
-
-/** 僅「首次操作」里程碑：不視為「達成紀錄」以顯示首屏提示 */
-const FIRST_STEP_MILESTONE_KEYS = new Set([
-  "first_meal",
-  "first_activity",
-  "first_weight",
-]);
-
-function shouldShowNoAchievementLine(
-  streakDays: number,
-  milestoneChips: { key: string }[],
-): boolean {
-  if (streakDays >= 1) return false;
-  return !milestoneChips.some((m) => !FIRST_STEP_MILESTONE_KEYS.has(m.key));
-}
 
 /** ≥ 最高熱量此比例視為「接近最高」，外環改橘色（未超過時） */
 const CALORIE_NEAR_MAX_RATIO = 0.9;
@@ -212,7 +197,10 @@ export type DashboardHomeProps = {
   /** 最近兩筆 vital 體重差（kg）；僅在至少兩筆皆有體重時有值 */
   weightDeltaKg: number | null;
   profileBmi: number | null;
-  streakDays: number;
+  /** 自昨天起連續「早中晚皆有紀錄」的天數 */
+  mealCompleteStreakDays: number;
+  /** 昨日未達完整三餐時顯示的激勵小語（server 隨機抽選） */
+  streakZeroMotivation: string | null;
   /** 今日 `food_log_items` 熱量加總 */
   todayKcal: number;
   targetKcal: number | null;
@@ -235,8 +223,6 @@ export type DashboardHomeProps = {
   /** Suspense 串流：本週人氣品牌 */
   popularBrandsSlot?: ReactNode;
   hasUnreadAnnouncements: boolean;
-  /** 最近解鎖的里程碑（已依時間倒序截斷） */
-  milestoneChips: { key: string; label: string }[];
   /** 今日 `vital_logs.water_ml` 加總（無紀錄為 0） */
   waterMlToday: number;
   /** 飲水目標（ml，僅 UI；日後可改為使用者設定） */
@@ -451,7 +437,8 @@ export function DashboardHome({
   latestWeightDate,
   weightDeltaKg,
   profileBmi,
-  streakDays,
+  mealCompleteStreakDays,
+  streakZeroMotivation,
   todayKcal,
   targetKcal,
   carbG,
@@ -464,7 +451,6 @@ export function DashboardHome({
   promoBanner,
   popularBrandsSlot,
   hasUnreadAnnouncements,
-  milestoneChips,
   waterMlToday,
   waterTargetMl,
   activityMinutesToday,
@@ -483,6 +469,11 @@ export function DashboardHome({
     (m) => m.kcal != null && Number.isFinite(m.kcal),
   );
 
+  const [aiSpriteOpen, setAiSpriteOpen] = useState(false);
+  const openAiSprite = useCallback(() => {
+    setAiSpriteOpen(true);
+  }, []);
+
   return (
     <div className="space-y-3">
       <StickyPageHeader
@@ -493,6 +484,8 @@ export function DashboardHome({
             <DashboardAiSprite
               todayIsoDate={todayIsoDate}
               waterMlKnownToday={waterMlToday}
+              sheetOpen={aiSpriteOpen}
+              onSheetOpenChange={setAiSpriteOpen}
             />
             <Link
               href="/announcements"
@@ -517,24 +510,28 @@ export function DashboardHome({
       />
 
       <section className="flex items-center justify-between gap-2">
-        {streakDays >= 1 ? (
+        {mealCompleteStreakDays >= 1 ? (
           <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium leading-none text-white">
             <FiAward className="h-3 w-3 shrink-0 opacity-90" aria-hidden />
             <span className="inline-flex items-center gap-0.5">
-              <span>連續</span>
-              <span className="font-bold tabular-nums">{streakDays}</span>
-              <span>天達成！</span>
-            </span>
-          </span>
-        ) : shouldShowNoAchievementLine(streakDays, milestoneChips) ? (
-          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium leading-none text-white">
-            <FiAward className="h-3 w-3 shrink-0 opacity-90" aria-hidden />
-            <span className="inline-flex items-center gap-0.5">
-              尚未有達成紀錄
+              <span>已達成</span>
+              <span className="font-bold tabular-nums">{mealCompleteStreakDays}</span>
+              <span>日</span>
             </span>
           </span>
         ) : (
-          <div className="min-w-0 flex-1" />
+          <button
+            type="button"
+            onClick={openAiSprite}
+            aria-label="開啟 AI 精靈快速紀錄"
+            className="inline-flex min-w-0 max-w-[min(100%,14rem)] shrink cursor-pointer items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-left text-[11px] font-medium leading-snug text-white transition-colors hover:opacity-90">
+            <Sparkles
+              className="h-3 w-3 shrink-0 opacity-90"
+              strokeWidth={1.8}
+              aria-hidden
+            />
+            <span className="min-w-0">{streakZeroMotivation}</span>
+          </button>
         )}
         <p className="shrink-0 text-right text-[13px] text-muted-foreground">
           {dateLabel}

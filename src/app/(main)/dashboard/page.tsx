@@ -12,14 +12,15 @@ import {
   DashboardDailyInsightDeferred,
 } from '@/app/(main)/dashboard/dashboard-insight-stream';
 import {
-  aggregateKcalByDate,
   buildMealRows,
-  computeGoalMetStreak,
+  buildMealTypesByDate,
+  computeMealCompleteStreakFromYesterday,
   hasUnreadAnnouncementsForUser,
   normalizeDashboardUserName,
   summarizeActivityTypesForToday,
   sumNutrientsFromLogs,
 } from '@/app/(main)/dashboard/dashboard-helpers';
+import { pickRandomStreakZeroMessage } from '@/lib/dashboard/streak-zero-messages';
 import {
   DashboardPopularBrandsDeferred,
   DashboardRecommendedProductsDeferred,
@@ -27,10 +28,7 @@ import {
 import { getCachedAuthContext } from '@/lib/auth';
 import { getCachedUserProfileCoreRow } from '@/lib/user-profile';
 import { round1 } from '@/lib/food/nutrition';
-import {
-  MILESTONE_LABELS,
-  syncUserMilestones,
-} from '@/lib/milestones/sync-user-milestones';
+import { syncUserMilestones } from '@/lib/milestones/sync-user-milestones';
 import { DIET_METHOD_OPTIONS } from '@/lib/onboarding/constants';
 import { addCalendarDaysISO, todayLocalISODate } from '@/lib/onboarding/date';
 
@@ -108,18 +106,6 @@ export default async function DashboardPage() {
 
   await syncUserMilestones(supabase, user.id);
 
-  const { data: milestoneRows } = await supabase
-    .from('user_milestones')
-    .select('milestone_key, unlocked_at')
-    .eq('user_id', user.id)
-    .order('unlocked_at', { ascending: false })
-    .limit(6);
-
-  const milestoneChips = (milestoneRows ?? []).map((r) => ({
-    key: r.milestone_key,
-    label: MILESTONE_LABELS[r.milestone_key] ?? r.milestone_key,
-  }));
-
   const waterMlRaw = todayVitalRow?.water_ml;
   const waterMlToday =
     waterMlRaw != null && Number.isFinite(Number(waterMlRaw)) ?
@@ -164,11 +150,13 @@ export default async function DashboardPage() {
     profile.diet_method ??
     '目前飲食設定';
 
-  const kcalByDate = aggregateKcalByDate(streakFoodRows ?? []);
-  const streakDays =
-    targetKcal != null && targetKcal > 0 ?
-      computeGoalMetStreak(today, targetKcal, kcalByDate)
-    : 0;
+  const mealTypesByDate = buildMealTypesByDate(streakFoodRows ?? []);
+  const mealCompleteStreakDays = computeMealCompleteStreakFromYesterday(
+    today,
+    mealTypesByDate,
+  );
+  const streakZeroMotivation =
+    mealCompleteStreakDays < 1 ? pickRandomStreakZeroMessage() : null;
 
   let activityMinutesToday = 0;
   let activityKcalEstToday = 0;
@@ -194,7 +182,8 @@ export default async function DashboardPage() {
     latestWeightDate,
     weightDeltaKg,
     profileBmi: profile.bmi != null ? Number(profile.bmi) : null,
-    streakDays,
+    mealCompleteStreakDays,
+    streakZeroMotivation,
     todayKcal: nutrientTotals.kcal,
     targetKcal,
     carbG: nutrientTotals.carb,
@@ -229,7 +218,6 @@ export default async function DashboardPage() {
       </Suspense>
     ),
     hasUnreadAnnouncements,
-    milestoneChips,
     waterMlToday,
     waterTargetMl: DASHBOARD_WATER_TARGET_ML,
     activityMinutesToday,

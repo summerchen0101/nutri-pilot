@@ -171,6 +171,54 @@ export function computeGoalMetStreak(
   return streak;
 }
 
+const MEAL_COMPLETE_REQUIRED = ['breakfast', 'lunch', 'dinner'] as const;
+
+type MealTypeFoodLogRow = {
+  date: string | null;
+  meal_type: string;
+  food_log_items: unknown[] | null;
+};
+
+/** 依 date 彙總「有至少一項 food_log_items」的 meal_type */
+export function buildMealTypesByDate(
+  rows: MealTypeFoodLogRow[],
+): Map<string, Set<string>> {
+  const map = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const d = row.date;
+    if (!d) continue;
+    const items = row.food_log_items ?? [];
+    if (items.length === 0) continue;
+    const meals = map.get(d) ?? new Set<string>();
+    meals.add(row.meal_type);
+    map.set(d, meals);
+  }
+  return map;
+}
+
+export function isCompleteMealDay(
+  date: string,
+  mealTypesByDate: Map<string, Set<string>>,
+): boolean {
+  const meals = mealTypesByDate.get(date);
+  if (!meals) return false;
+  return MEAL_COMPLETE_REQUIRED.every((type) => meals.has(type));
+}
+
+/** 自昨天起往前連續「早中晚皆有紀錄」的天數；今天不計入 */
+export function computeMealCompleteStreakFromYesterday(
+  today: string,
+  mealTypesByDate: Map<string, Set<string>>,
+): number {
+  let streak = 0;
+  let cursor = addCalendarDaysISO(today, -1);
+  while (isCompleteMealDay(cursor, mealTypesByDate)) {
+    streak++;
+    cursor = addCalendarDaysISO(cursor, -1);
+  }
+  return streak;
+}
+
 export function sumMealKcal(
   logs: {
     food_log_items: { calories: number | string }[] | null;

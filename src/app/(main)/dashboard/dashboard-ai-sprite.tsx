@@ -150,12 +150,15 @@ async function commitQuickLogEntries(
 export function DashboardAiSprite({
   todayIsoDate,
   waterMlKnownToday = null,
+  sheetOpen,
+  onSheetOpenChange,
 }: {
   todayIsoDate: string;
   waterMlKnownToday?: number | null;
+  sheetOpen: boolean;
+  onSheetOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [commitBusy, setCommitBusy] = useState(false);
   const [commitError, setCommitError] = useState<string | null>(null);
@@ -166,6 +169,7 @@ export function DashboardAiSprite({
     useDashboardAiSprite();
 
   const recRef = useRef<SpeechRecoInstance | null>(null);
+  const prevSheetOpenRef = useRef(false);
 
   useEffect(() => {
     setSpeechSupported(pickSpeechRecoCtor() != null);
@@ -194,10 +198,17 @@ export function DashboardAiSprite({
     recRef.current = null;
   }, [reset]);
 
+  useEffect(() => {
+    if (sheetOpen && !prevSheetOpenRef.current) {
+      resetAll();
+    }
+    prevSheetOpenRef.current = sheetOpen;
+  }, [sheetOpen, resetAll]);
+
   const handleClose = useCallback(() => {
-    setSheetOpen(false);
+    onSheetOpenChange(false);
     resetAll();
-  }, [resetAll]);
+  }, [onSheetOpenChange, resetAll]);
 
   const stopSpeechListening = useCallback(() => {
     try {
@@ -281,10 +292,7 @@ export function DashboardAiSprite({
       type="button"
       aria-label="AI 精靈快速紀錄"
       className={HEADER_ACTION_ICON_CLASS}
-      onClick={() => {
-        resetAll();
-        setSheetOpen(true);
-      }}>
+      onClick={() => onSheetOpenChange(true)}>
       <Sparkles className="h-[18px] w-[18px]" aria-hidden />
     </button>
   );
