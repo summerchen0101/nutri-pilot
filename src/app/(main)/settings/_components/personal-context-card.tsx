@@ -12,6 +12,7 @@ import {
 import { SectionCard } from "@/components/ui/section-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Button } from "@/components/ui/button";
+import { usePendingAnalysisJobsStore } from "@/lib/ai/pending-analysis-jobs-store";
 import type { PersonalContextFacets } from "@/lib/personal-context/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -23,47 +24,47 @@ export function PersonalContextCard({
   initialFacets,
 }: PersonalContextCardProps) {
   const router = useRouter();
-  const [draft, setDraft] = useState("");
-  const [preview, setPreview] = useState<PersonalContextFacets | null>(null);
   const [saved, setSaved] = useState<PersonalContextFacets | null>(
     initialFacets,
   );
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [confirmPending, startConfirmTransition] = useTransition();
   const [draftEditorOpen, setDraftEditorOpen] = useState(false);
+
+  const personalContext = usePendingAnalysisJobsStore((s) => s.personalContext);
+  const startPersonalContextAnalyze = usePendingAnalysisJobsStore(
+    (s) => s.startPersonalContextAnalyze,
+  );
+  const setPersonalContextDraft = usePendingAnalysisJobsStore(
+    (s) => s.setPersonalContextDraft,
+  );
+  const setPersonalContextPreview = usePendingAnalysisJobsStore(
+    (s) => s.setPersonalContextPreview,
+  );
+  const clearPersonalContextTask = usePendingAnalysisJobsStore(
+    (s) => s.clearPersonalContextTask,
+  );
+
+  const analyzePending = personalContext?.status === "pending";
+  const preview = personalContext?.preview ?? null;
+  const error = personalContext?.error ?? localError;
+  const draft = personalContext?.draft ?? "";
+
+  const pending = analyzePending || confirmPending;
 
   useEffect(() => {
     setSaved(initialFacets);
   }, [initialFacets]);
 
   function runAnalyze() {
-    setError(null);
-    startTransition(async () => {
-      const res = await fetch("/api/ai/personal-context/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: draft }),
-      });
-      const data = (await res.json()) as {
-        error?: string;
-        facets?: PersonalContextFacets;
-      };
-      if (!res.ok) {
-        setError(data.error ?? "整理失敗");
-        return;
-      }
-      if (!data.facets) {
-        setError("回傳資料異常");
-        return;
-      }
-      setPreview(data.facets);
-    });
+    setLocalError(null);
+    startPersonalContextAnalyze(draft);
   }
 
   function runConfirm() {
     if (!preview) return;
-    setError(null);
-    startTransition(async () => {
+    setLocalError(null);
+    startConfirmTransition(async () => {
       const res = await fetch("/api/ai/personal-context/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,36 +72,34 @@ export function PersonalContextCard({
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "儲存失敗");
+        setLocalError(data.error ?? "儲存失敗");
         return;
       }
       setSaved(preview);
-      setPreview(null);
-      setDraft("");
+      clearPersonalContextTask();
       setDraftEditorOpen(false);
       router.refresh();
     });
   }
 
   function runCancelPreview() {
-    setPreview(null);
-    setError(null);
+    clearPersonalContextTask();
+    setLocalError(null);
   }
 
   function runClear() {
-    setError(null);
-    startTransition(async () => {
+    setLocalError(null);
+    startConfirmTransition(async () => {
       const res = await fetch("/api/ai/personal-context/clear", {
         method: "POST",
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "清除失敗");
+        setLocalError(data.error ?? "清除失敗");
         return;
       }
       setSaved(null);
-      setPreview(null);
-      setDraft("");
+      clearPersonalContextTask();
       setDraftEditorOpen(false);
       router.refresh();
     });
@@ -114,7 +113,7 @@ export function PersonalContextCard({
       <textarea
         id="personal-context-draft"
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => setPersonalContextDraft(e.target.value)}
         rows={5}
         placeholder="例如：家族有糖尿病，醫師建議控制澱粉；目前備孕，較在意葉酸與生食..."
         className={cn(
@@ -128,7 +127,7 @@ export function PersonalContextCard({
           size="sm"
           disabled={pending || draft.trim().length < 8}
           onClick={runAnalyze}>
-          {pending ? "整理中…" : "整理成重點"}
+          {analyzePending ? "整理中…" : "整理成重點"}
         </Button>
 
         {saved != null ? (
@@ -236,7 +235,7 @@ export function PersonalContextCard({
           pending={pending}
           onConfirm={runConfirm}
           onCancelPreview={runCancelPreview}
-          onPreviewChange={setPreview}
+          onPreviewChange={setPersonalContextPreview}
         />
       ) : null}
 

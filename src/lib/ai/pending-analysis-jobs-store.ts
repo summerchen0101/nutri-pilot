@@ -9,6 +9,8 @@ import {
   type LabelGuardReport,
 } from '@/lib/food/label-guard-report';
 import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
+import type { PersonalContextFacets } from '@/lib/personal-context/types';
+import type { QuickLogValidatedEntry } from '@/lib/quick-log/types';
 import { createClient } from '@/lib/supabase/client';
 import type { Json } from '@/types/supabase';
 
@@ -19,6 +21,35 @@ import {
 import type { AnalysisJobRow } from './watch-analysis-job';
 
 export type LogMealTab = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export type SyncAiTaskStatus = 'idle' | 'pending' | 'ready' | 'error';
+
+export type QuickLogInterpretResult = {
+  summaryZh: string | null;
+  entries: QuickLogValidatedEntry[];
+};
+
+export type QuickLogPending = {
+  status: SyncAiTaskStatus;
+  message: string;
+  referenceDateIso: string;
+  waterMlKnownToday: number | null;
+  result: QuickLogInterpretResult | null;
+  error: string | null;
+  requestId: number;
+};
+
+export type PersonalContextPending = {
+  status: SyncAiTaskStatus;
+  draft: string;
+  preview: PersonalContextFacets | null;
+  error: string | null;
+  requestId: number;
+};
+
+export function isSyncTaskTerminal(status: SyncAiTaskStatus): boolean {
+  return status === 'ready' || status === 'error';
+}
 
 export type PhotoPendingJob = {
   jobId: string;
@@ -53,9 +84,20 @@ type PersistedGuard = Pick<
   'jobId' | 'storagePath' | 'status' | 'hint'
 >;
 
+type PersistedQuickLog = Omit<QuickLogPending, 'status'> & {
+  status: 'pending' | 'ready' | 'error';
+};
+
+type PersistedPersonalContext = Omit<PersonalContextPending, 'status'> & {
+  status: 'pending' | 'ready' | 'error';
+};
+
 type PendingAnalysisJobsState = {
   photo: PhotoPendingJob | null;
   guard: GuardPendingJob | null;
+  quickLog: QuickLogPending | null;
+  personalContext: PersonalContextPending | null;
+  spriteSheetOpen: boolean;
   startPhotoJob: (params: {
     jobId: string;
     storagePath: string;
@@ -87,6 +129,18 @@ type PendingAnalysisJobsState = {
   clearPhoto: () => void;
   clearGuard: () => void;
   hydrateFromDb: () => Promise<void>;
+  setSpriteSheetOpen: (open: boolean) => void;
+  setQuickLogMessage: (message: string) => void;
+  startQuickLogInterpret: (opts: {
+    message: string;
+    referenceDateIso: string;
+    waterMlKnownToday?: number | null;
+  }) => void;
+  clearQuickLog: () => void;
+  setPersonalContextDraft: (draft: string) => void;
+  startPersonalContextAnalyze: (draft: string) => void;
+  setPersonalContextPreview: (preview: PersonalContextFacets) => void;
+  clearPersonalContextTask: () => void;
 };
 
 function revokeBlobPreview(job: { previewUrl: string | null; previewIsBlob: boolean }) {
@@ -109,6 +163,220 @@ export const usePendingAnalysisJobsStore = create<PendingAnalysisJobsState>()(
     (set, get) => ({
       photo: null,
       guard: null,
+      quickLog: null,
+      personalContext: null,
+      spriteSheetOpen: false,
+
+      setSpriteSheetOpen: (open) => {
+        set({ spriteSheetOpen: open });
+      },
+
+      setQuickLogMessage: (message) => {
+        const ql = get().quickLog;
+        if (!ql) return;
+        set({ quickLog: { ...ql, message } });
+      },
+
+      startQuickLogInterpret: (opts) => {
+        const requestId = (get().quickLog?.requestId ?? 0) + 1;
+        const message = opts.message.trim();
+        set({
+          quickLog: {
+            status: 'pending',
+            message,
+            referenceDateIso: opts.referenceDateIso,
+            waterMlKnownToday: opts.waterMlKnownToday ?? null,
+            result: null,
+            error: null,
+            requestId,
+          },
+        });
+
+        void (async () => {
+          try {
+            const res = await fetch('/api/ai/quick-log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                message,
+                referenceDateIso: opts.referenceDateIso,
+                ...(opts.waterMlKnownToday != null ?
+                  { waterMlKnownToday: opts.waterMlKnownToday }
+                : {}),
+              }),
+            });
+
+            const dataUnknown: unknown = await res.json().catch(() => null);
+            const data =
+              dataUnknown && typeof dataUnknown === 'object' ?
+                (dataUnknown as Record<string, unknown>)
+              : {};
+
+            if (get().quickLog?.requestId !== requestId) return;
+
+            if (!res.ok) {
+              const msg =
+                typeof data.error === 'string' ?
+                  data.error
+                : '解析失敗，請稍後再試';
+              set({
+                quickLog: {
+                  ...get().quickLog!,
+                  status: 'error',
+                  error: msg,
+                  result: null,
+                },
+              });
+              return;
+            }
+
+            const summaryRaw = data.summaryZh;
+            const summaryZh =
+              typeof summaryRaw === 'string' && summaryRaw.trim() ?
+                summaryRaw.trim().slice(0, 500)
+              : null;
+
+            const entries = data.entries;
+            if (!Array.isArray(entries)) {
+              set({
+                quickLog: {
+                  ...get().quickLog!,
+                  status: 'error',
+                  error: '回傳格式異常',
+                  result: null,
+                },
+              });
+              return;
+            }
+
+            set({
+              quickLog: {
+                ...get().quickLog!,
+                status: 'ready',
+                error: null,
+                result: {
+                  summaryZh,
+                  entries: entries as QuickLogValidatedEntry[],
+                },
+              },
+            });
+          } catch {
+            if (get().quickLog?.requestId !== requestId) return;
+            set({
+              quickLog: {
+                ...get().quickLog!,
+                status: 'error',
+                error: '網路錯誤，請稍後再試',
+                result: null,
+              },
+            });
+          }
+        })();
+      },
+
+      clearQuickLog: () => {
+        set({ quickLog: null });
+      },
+
+      setPersonalContextDraft: (draft) => {
+        const pc = get().personalContext;
+        if (pc) {
+          set({ personalContext: { ...pc, draft } });
+          return;
+        }
+        set({
+          personalContext: {
+            status: 'idle',
+            draft,
+            preview: null,
+            error: null,
+            requestId: 0,
+          },
+        });
+      },
+
+      startPersonalContextAnalyze: (draft) => {
+        const trimmed = draft.trim();
+        const requestId = (get().personalContext?.requestId ?? 0) + 1;
+        set({
+          personalContext: {
+            status: 'pending',
+            draft: trimmed,
+            preview: null,
+            error: null,
+            requestId,
+          },
+        });
+
+        void (async () => {
+          try {
+            const res = await fetch('/api/ai/personal-context/analyze', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: trimmed }),
+            });
+            const data = (await res.json()) as {
+              error?: string;
+              facets?: PersonalContextFacets;
+            };
+
+            if (get().personalContext?.requestId !== requestId) return;
+
+            if (!res.ok) {
+              set({
+                personalContext: {
+                  ...get().personalContext!,
+                  status: 'error',
+                  error: data.error ?? '整理失敗',
+                  preview: null,
+                },
+              });
+              return;
+            }
+
+            if (!data.facets) {
+              set({
+                personalContext: {
+                  ...get().personalContext!,
+                  status: 'error',
+                  error: '回傳資料異常',
+                  preview: null,
+                },
+              });
+              return;
+            }
+
+            set({
+              personalContext: {
+                ...get().personalContext!,
+                status: 'ready',
+                error: null,
+                preview: data.facets,
+              },
+            });
+          } catch {
+            if (get().personalContext?.requestId !== requestId) return;
+            set({
+              personalContext: {
+                ...get().personalContext!,
+                status: 'error',
+                error: '網路錯誤，請稍後再試',
+                preview: null,
+              },
+            });
+          }
+        })();
+      },
+
+      setPersonalContextPreview: (preview) => {
+        const pc = get().personalContext;
+        if (!pc) return;
+        set({ personalContext: { ...pc, preview } });
+      },
+
+      clearPersonalContextTask: () => {
+        set({ personalContext: null });
+      },
 
       startPhotoJob: ({
         jobId,
@@ -358,11 +626,38 @@ export const usePendingAnalysisJobsStore = create<PendingAnalysisJobsState>()(
               hint: state.guard.hint,
             } satisfies PersistedGuard)
           : null,
+        quickLog:
+          state.quickLog &&
+          (state.quickLog.status === 'pending' || state.quickLog.status === 'ready')
+            ? ({
+                status: state.quickLog.status,
+                message: state.quickLog.message,
+                referenceDateIso: state.quickLog.referenceDateIso,
+                waterMlKnownToday: state.quickLog.waterMlKnownToday,
+                result: state.quickLog.result,
+                error: state.quickLog.error,
+                requestId: state.quickLog.requestId,
+              } satisfies PersistedQuickLog)
+            : null,
+        personalContext:
+          state.personalContext &&
+          (state.personalContext.status === 'pending' ||
+            state.personalContext.status === 'ready')
+            ? ({
+                status: state.personalContext.status,
+                draft: state.personalContext.draft,
+                preview: state.personalContext.preview,
+                error: state.personalContext.error,
+                requestId: state.personalContext.requestId,
+              } satisfies PersistedPersonalContext)
+            : null,
       }),
       merge: (persisted, current) => {
         const p = persisted as {
           photo?: PersistedPhoto | null;
           guard?: PersistedGuard | null;
+          quickLog?: PersistedQuickLog | null;
+          personalContext?: PersistedPersonalContext | null;
         } | null;
         if (!p) return current;
 
@@ -386,6 +681,8 @@ export const usePendingAnalysisJobsStore = create<PendingAnalysisJobsState>()(
                 error: null,
               }
             : null,
+          quickLog: p.quickLog ?? null,
+          personalContext: p.personalContext ?? null,
         };
       },
       onRehydrateStorage: () => (state) => {

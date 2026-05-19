@@ -23,6 +23,7 @@ import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
 import { useDashboardAiSprite } from '@/hooks/use-dashboard-ai-sprite';
+import { usePendingAnalysisJobsStore } from '@/lib/ai/pending-analysis-jobs-store';
 import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
 import type { QuickLogValidatedEntry } from '@/lib/quick-log/types';
 
@@ -160,17 +161,31 @@ export function DashboardAiSprite({
   onSheetOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const [message, setMessage] = useState('');
+  const [draftMessage, setDraftMessage] = useState('');
   const [commitBusy, setCommitBusy] = useState(false);
   const [commitError, setCommitError] = useState<string | null>(null);
   const [speechListening, setSpeechListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
 
+  const quickLog = usePendingAnalysisJobsStore((s) => s.quickLog);
+  const setQuickLogMessage = usePendingAnalysisJobsStore((s) => s.setQuickLogMessage);
+  const setSpriteSheetOpen = usePendingAnalysisJobsStore((s) => s.setSpriteSheetOpen);
+  const clearQuickLog = usePendingAnalysisJobsStore((s) => s.clearQuickLog);
+
   const { busy: interpretBusy, error, result, interpret, reset } =
     useDashboardAiSprite();
 
+  const message = quickLog?.message ?? draftMessage;
+
+  const updateMessage = useCallback(
+    (next: string) => {
+      if (quickLog) setQuickLogMessage(next);
+      else setDraftMessage(next);
+    },
+    [quickLog, setQuickLogMessage],
+  );
+
   const recRef = useRef<SpeechRecoInstance | null>(null);
-  const prevSheetOpenRef = useRef(false);
 
   useEffect(() => {
     setSpeechSupported(pickSpeechRecoCtor() != null);
@@ -186,10 +201,11 @@ export function DashboardAiSprite({
     };
   }, []);
 
-  const resetAll = useCallback(() => {
-    setMessage('');
-    setCommitError(null);
-    reset();
+  useEffect(() => {
+    setSpriteSheetOpen(sheetOpen);
+  }, [sheetOpen, setSpriteSheetOpen]);
+
+  const stopSpeech = useCallback(() => {
     setSpeechListening(false);
     try {
       recRef.current?.stop();
@@ -197,19 +213,13 @@ export function DashboardAiSprite({
       /* ignore */
     }
     recRef.current = null;
-  }, [reset]);
-
-  useEffect(() => {
-    if (sheetOpen && !prevSheetOpenRef.current) {
-      resetAll();
-    }
-    prevSheetOpenRef.current = sheetOpen;
-  }, [sheetOpen, resetAll]);
+  }, []);
 
   const handleClose = useCallback(() => {
     onSheetOpenChange(false);
-    resetAll();
-  }, [onSheetOpenChange, resetAll]);
+    setCommitError(null);
+    stopSpeech();
+  }, [onSheetOpenChange, stopSpeech]);
 
   const stopSpeechListening = useCallback(() => {
     try {
@@ -233,7 +243,7 @@ export function DashboardAiSprite({
     r.addEventListener('result', (ev: Event) => {
       const line = transcriptFromResultEvent(ev);
       if (!line) return;
-      setMessage((prev) => (prev ? `${prev} ${line}` : line));
+      updateMessage(message ? `${message} ${line}` : line);
     });
     r.addEventListener(
       'error',
@@ -254,7 +264,7 @@ export function DashboardAiSprite({
       setSpeechListening(false);
       recRef.current = null;
     }
-  }, [stopSpeechListening]);
+  }, [message, stopSpeechListening, updateMessage]);
 
   const toggleSpeech = useCallback(() => {
     if (speechListening) stopSpeechListening();
@@ -279,6 +289,8 @@ export function DashboardAiSprite({
     const out = await commitQuickLogEntries(result.entries);
     setCommitBusy(false);
     if (out.ok) {
+      clearQuickLog();
+      setDraftMessage('');
       handleClose();
       router.refresh();
       return;
@@ -286,7 +298,7 @@ export function DashboardAiSprite({
     setCommitError(
       `第 ${out.index + 1} 筆寫入失敗：${out.message}（先前已成功寫入的項目仍保留，請至「每日紀錄」確認並手動調整未完成項目。）`,
     );
-  }, [handleClose, result?.entries, router]);
+  }, [clearQuickLog, handleClose, result?.entries, router]);
 
   const headerButton = (
     <button
@@ -315,7 +327,7 @@ export function DashboardAiSprite({
             id="ai-sprite-input"
             rows={4}
             value={message}
-            onChange={(ev) => setMessage(ev.target.value)}
+            onChange={(ev) => updateMessage(ev.target.value)}
             disabled={interpretBusy || commitBusy}
             placeholder="例：午餐吃了雞腿便當；跑步 40 分鐘"
             className="w-full resize-none rounded-[10px] border-hairline border-[#378ADD]/50 bg-[#F5FAFF] p-3 text-body leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
@@ -411,6 +423,7 @@ export function DashboardAiSprite({
                 disabled={commitBusy || interpretBusy}
                 onClick={() => {
                   setCommitError(null);
+                  setDraftMessage(quickLog?.message ?? draftMessage);
                   reset();
                 }}>
                 重選解析
