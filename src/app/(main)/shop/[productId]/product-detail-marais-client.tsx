@@ -27,6 +27,7 @@ import {
   formatShopGroupedDecimal,
   formatShopGroupedInteger,
 } from "@/lib/shop/format-shop-number";
+import { getDietTagLabel } from "@/lib/shop/diet-tag-label";
 import {
   getPreferredSelectableVariantId,
   isVariantSelectable,
@@ -134,7 +135,7 @@ function BadgeRow({
         <span
           key={t}
           className="rounded-full bg-primary px-2.5 py-0.5 text-caption font-medium text-white">
-          {t}
+          {getDietTagLabel(t)}
         </span>
       ))}
     </div>
@@ -289,7 +290,7 @@ export function ProductDetailMaraisClient({
   return (
     <>
       <section className="overflow-hidden rounded-xl bg-card">
-        <div className="relative aspect-[4/3] w-full bg-muted">
+        <div className="relative aspect-square w-full bg-muted">
           {imageUrl ? (
             <Image
               src={imageUrl}

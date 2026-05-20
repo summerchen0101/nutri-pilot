@@ -36,7 +36,7 @@ export function ShopSubpageLoadingSkeleton({
 export function ShopProductDetailLoadingSkeleton() {
   return (
     <div
-      className={cn('space-y-4 pb-6', STICKY_PAGE_HEADER_TOP_SAFE_CLASS)}
+      className={cn('space-y-2 pb-6', STICKY_PAGE_HEADER_TOP_SAFE_CLASS)}
       aria-busy
       aria-label="載入商品詳情"
     >
@@ -71,9 +71,12 @@ export function CommerceShortcutLoadingSkeleton({
       aria-busy
       aria-label={ariaLabel}
     >
-      <div className="flex items-center gap-2">
-        <div className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-muted/80" />
-        <div className="h-6 w-24 animate-pulse rounded-lg bg-muted/80" />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="h-9 w-9 shrink-0 animate-pulse rounded-lg bg-muted/80" />
+          <div className="h-6 w-24 animate-pulse rounded-lg bg-muted/80" />
+        </div>
+        <div className="h-6 w-16 shrink-0 animate-pulse rounded-lg bg-muted/70" />
       </div>
       <div className="h-10 w-full animate-pulse rounded-lg bg-muted/60" />
       <div className="space-y-2">

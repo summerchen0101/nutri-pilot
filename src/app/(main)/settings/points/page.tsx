@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { labelShopPointReason } from "@/app/(main)/settings/_lib/point-ledger-labels";
+import { ShopHeaderPointsTitle } from "@/app/(main)/shop/_components/shop-header-points-title";
 import { HeaderBackButton } from "@/components/layout/header-back-button";
 import { StickyPageHeader } from "@/components/layout/sticky-page-header";
 import { getCachedAuthContext } from "@/lib/auth";
@@ -25,18 +25,32 @@ export default async function SettingsPointsHistoryPage() {
 
   if (!user) redirect("/login");
 
-  const { data: rows, error } = await supabase
-    .from("user_shop_point_ledger")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(100);
+  const [
+    { data: rows, error: ledgerError },
+    { data: profile, error: profileError },
+  ] = await Promise.all([
+    supabase
+      .from("user_shop_point_ledger")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("user_profiles")
+      .select("shop_points_balance")
+      .eq("user_id", user.id)
+      .single(),
+  ]);
 
-  if (error) {
-    throw new Error(error.message);
+  if (ledgerError) {
+    throw new Error(ledgerError.message);
+  }
+  if (profileError) {
+    throw new Error(profileError.message);
   }
 
   const list = (rows ?? []) as Tables<"user_shop_point_ledger">[];
+  const shopPointsBalance = Number(profile.shop_points_balance ?? 0);
 
   return (
     <div className="space-y-4 pb-6">
@@ -45,6 +59,9 @@ export default async function SettingsPointsHistoryPage() {
         title="點數紀錄"
         leading={<HeaderBackButton />}
         spacing="compact"
+        action={
+          <ShopHeaderPointsTitle balance={shopPointsBalance} asLink={false} />
+        }
       />
       <p className="text-caption leading-relaxed text-muted-foreground">
         1 點可折抵 1

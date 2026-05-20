@@ -167,9 +167,10 @@ export default async function ShopProductPage({ params, searchParams }: PageProp
   const detailA11yTitle = `${productNameStr}，購物金餘額 ${shopPointsBalance.toLocaleString('zh-TW')} 元`;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-2">
       <StickyPageHeader
         anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
+        shellClassName="mb-0"
         spacing="compact"
         leading={<HeaderBackButton />}
         title={detailA11yTitle}
