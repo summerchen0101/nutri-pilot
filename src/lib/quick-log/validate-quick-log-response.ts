@@ -180,7 +180,9 @@ function validateSleepRow(row: Record<string, unknown>): QuickLogSleepProposal |
   return { kind: 'sleep', dateIso, sleepHours: round1 };
 }
 
-function validateEntry(raw: unknown): QuickLogValidatedEntry | null {
+export function validateQuickLogEntry(
+  raw: unknown,
+): QuickLogValidatedEntry | null {
   if (!isRecord(raw)) return null;
 
   const kind = asString(raw.kind);
@@ -200,6 +202,40 @@ function validateEntry(raw: unknown): QuickLogValidatedEntry | null {
     default:
       return null;
   }
+}
+
+const ENTRY_KIND_LABEL: Record<string, string> = {
+  food: '飲食',
+  activity: '運動',
+  weight: '體重',
+  water: '飲水',
+  sleep: '睡眠',
+};
+
+export function validateQuickLogEntriesList(
+  entries: QuickLogValidatedEntry[],
+  summaryZh: string | null,
+): ValidateQuickLogResult {
+  if (entries.length < 1) {
+    return { ok: false, error: '至少需保留一筆紀錄' };
+  }
+
+  const validated: QuickLogValidatedEntry[] = [];
+  for (let i = 0; i < entries.length; i += 1) {
+    const row = validateQuickLogEntry(entries[i]);
+    if (!row) {
+      const kind = isRecord(entries[i]) ? asString(entries[i].kind) : null;
+      const label =
+        kind && ENTRY_KIND_LABEL[kind] ? ENTRY_KIND_LABEL[kind] : '紀錄';
+      return {
+        ok: false,
+        error: `第 ${i + 1} 筆（${label}）欄位不正確，請檢查日期、數值與必填項目`,
+      };
+    }
+    validated.push(row);
+  }
+
+  return { ok: true, summaryZh, entries: validated };
 }
 
 export function validateQuickLogClaudePayload(
@@ -224,7 +260,7 @@ export function validateQuickLogClaudePayload(
   let firstInvalidIdx: number | null = null;
 
   for (let i = 0; i < entriesRaw.length; i += 1) {
-    const validated = validateEntry(entriesRaw[i]);
+    const validated = validateQuickLogEntry(entriesRaw[i]);
     if (!validated) {
       firstInvalidIdx = firstInvalidIdx ?? i + 1;
       continue;

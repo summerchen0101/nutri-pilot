@@ -140,6 +140,13 @@ type PendingAnalysisJobsState = {
     imageMediaType?: ClaudeImageMediaType;
   }) => void;
   clearQuickLog: () => void;
+  setQuickLogPreviewResult: (result: QuickLogInterpretResult) => void;
+  startQuickLogRevise: (opts: {
+    revisionInstruction: string;
+    referenceDateIso: string;
+    currentEntries: QuickLogValidatedEntry[];
+    waterMlKnownToday?: number | null;
+  }) => void;
   setPersonalContextDraft: (draft: string) => void;
   startPersonalContextAnalyze: (draft: string) => void;
   setPersonalContextPreview: (preview: PersonalContextFacets) => void;
@@ -285,6 +292,114 @@ export const usePendingAnalysisJobsStore = create<PendingAnalysisJobsState>()(
 
       clearQuickLog: () => {
         set({ quickLog: null });
+      },
+
+      setQuickLogPreviewResult: (result) => {
+        const ql = get().quickLog;
+        if (!ql || ql.status !== 'ready') return;
+        set({
+          quickLog: {
+            ...ql,
+            result,
+            error: null,
+          },
+        });
+      },
+
+      startQuickLogRevise: (opts) => {
+        const ql = get().quickLog;
+        if (!ql || ql.status !== 'ready' || !ql.result) return;
+
+        const requestId = ql.requestId + 1;
+        const revisionInstruction = opts.revisionInstruction.trim();
+
+        set({
+          quickLog: {
+            ...ql,
+            status: 'pending',
+            error: null,
+            requestId,
+          },
+        });
+
+        void (async () => {
+          try {
+            const res = await fetch('/api/ai/quick-log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                referenceDateIso: opts.referenceDateIso,
+                revisionInstruction,
+                currentEntries: opts.currentEntries,
+                ...(opts.waterMlKnownToday != null ?
+                  { waterMlKnownToday: opts.waterMlKnownToday }
+                : {}),
+              }),
+            });
+
+            const dataUnknown: unknown = await res.json().catch(() => null);
+            const data =
+              dataUnknown && typeof dataUnknown === 'object' ?
+                (dataUnknown as Record<string, unknown>)
+              : {};
+
+            if (get().quickLog?.requestId !== requestId) return;
+
+            if (!res.ok) {
+              const msg =
+                typeof data.error === 'string' ?
+                  data.error
+                : '修正失敗，請稍後再試';
+              set({
+                quickLog: {
+                  ...get().quickLog!,
+                  status: 'error',
+                  error: msg,
+                },
+              });
+              return;
+            }
+
+            const summaryRaw = data.summaryZh;
+            const summaryZh =
+              typeof summaryRaw === 'string' && summaryRaw.trim() ?
+                summaryRaw.trim().slice(0, 500)
+              : null;
+
+            const entries = data.entries;
+            if (!Array.isArray(entries)) {
+              set({
+                quickLog: {
+                  ...get().quickLog!,
+                  status: 'error',
+                  error: '回傳格式異常',
+                },
+              });
+              return;
+            }
+
+            set({
+              quickLog: {
+                ...get().quickLog!,
+                status: 'ready',
+                error: null,
+                result: {
+                  summaryZh,
+                  entries: entries as QuickLogValidatedEntry[],
+                },
+              },
+            });
+          } catch {
+            if (get().quickLog?.requestId !== requestId) return;
+            set({
+              quickLog: {
+                ...get().quickLog!,
+                status: 'error',
+                error: '網路錯誤，請稍後再試',
+              },
+            });
+          }
+        })();
       },
 
       setPersonalContextDraft: (draft) => {

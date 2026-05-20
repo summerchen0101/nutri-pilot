@@ -10,6 +10,7 @@ import {
 } from 'react';
 
 import { DashboardAiSpriteInput } from '@/app/(main)/dashboard/dashboard-ai-sprite-input';
+import { DashboardAiSpritePreview } from '@/app/(main)/dashboard/dashboard-ai-sprite-preview';
 import { addFoodFromAiAnalysisAction } from '@/app/(main)/log/actions';
 import { insertActivityLogAction } from '@/app/(main)/log/activity-actions';
 import {
@@ -26,15 +27,7 @@ import { Button } from '@/components/ui/button';
 import { useDashboardAiSprite } from '@/hooks/use-dashboard-ai-sprite';
 import type { ClaudeImagePayload } from '@/lib/ai/image-file-to-claude-payload';
 import { usePendingAnalysisJobsStore } from '@/lib/ai/pending-analysis-jobs-store';
-import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
 import type { QuickLogValidatedEntry } from '@/lib/quick-log/types';
-
-const MEAL_LABEL_ZH: Record<string, string> = {
-  breakfast: '早餐',
-  lunch: '午餐',
-  dinner: '晚餐',
-  snack: '點心',
-};
 
 interface SpeechRecoInstance extends EventTarget {
   lang: string;
@@ -60,25 +53,6 @@ function transcriptFromResultEvent(ev: Event): string {
   const first = unk.results?.[0];
   const t = first?.[0]?.transcript;
   return typeof t === 'string' ? t.trim() : '';
-}
-
-function formatEntryPreview(e: QuickLogValidatedEntry): string {
-  switch (e.kind) {
-    case 'food':
-      return `${MEAL_LABEL_ZH[e.mealType] ?? e.mealType} · ${e.name}（約 ${e.calories} kcal）`;
-    case 'activity':
-      return `${activityTypeLabelZh(e.activityType)} · ${e.durationMinutes} 分鐘`;
-    case 'weight':
-      return `體重 ${e.weightKg} kg`;
-    case 'water':
-      return `飲水 ${e.waterMlTotal} ml（當日總量）`;
-    case 'sleep':
-      return `睡眠 ${e.sleepHours} 小時`;
-    default: {
-      const _x: never = e;
-      return String(_x);
-    }
-  }
 }
 
 async function commitQuickLogEntries(
@@ -174,13 +148,14 @@ export function DashboardAiSprite({
   );
   const [imageProcessing, setImageProcessing] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [isEditingPreview, setIsEditingPreview] = useState(false);
 
   const quickLog = usePendingAnalysisJobsStore((s) => s.quickLog);
   const setQuickLogMessage = usePendingAnalysisJobsStore((s) => s.setQuickLogMessage);
   const setSpriteSheetOpen = usePendingAnalysisJobsStore((s) => s.setSpriteSheetOpen);
   const clearQuickLog = usePendingAnalysisJobsStore((s) => s.clearQuickLog);
 
-  const { busy: interpretBusy, error, result, interpret } =
+  const { busy: interpretBusy, error, result, isReady, interpret, revise } =
     useDashboardAiSprite();
 
   const message = quickLog?.message ?? draftMessage;
@@ -188,6 +163,7 @@ export function DashboardAiSprite({
   const canInterpret =
     (message.trim().length > 0 || hasAttachedImage) &&
     !imageProcessing;
+  const inputsDisabled = interpretBusy || commitBusy || isEditingPreview;
 
   const clearAttachedImage = useCallback(() => {
     if (previewUrl?.startsWith('blob:')) {
@@ -239,6 +215,7 @@ export function DashboardAiSprite({
   const handleClose = useCallback(() => {
     onSheetOpenChange(false);
     setCommitError(null);
+    setIsEditingPreview(false);
     stopSpeech();
     clearAttachedImage();
   }, [clearAttachedImage, onSheetOpenChange, stopSpeech]);
@@ -247,6 +224,7 @@ export function DashboardAiSprite({
     clearQuickLog();
     setDraftMessage('');
     setCommitError(null);
+    setIsEditingPreview(false);
     stopSpeech();
     clearAttachedImage();
   }, [clearAttachedImage, clearQuickLog, stopSpeech]);
@@ -371,7 +349,7 @@ export function DashboardAiSprite({
         <DashboardAiSpriteInput
           message={message}
           onMessageChange={updateMessage}
-          disabled={interpretBusy || commitBusy}
+          disabled={inputsDisabled}
           previewUrl={previewUrl}
           onPreviewUrlChange={setPreviewUrl}
           imagePayload={imagePayload}
@@ -388,7 +366,7 @@ export function DashboardAiSprite({
               type="button"
               variant={speechListening ? 'default' : 'outline'}
               size="sm"
-              disabled={interpretBusy || commitBusy}
+              disabled={inputsDisabled}
               onClick={toggleSpeech}
               aria-pressed={speechListening}
               className="gap-1.5">
@@ -412,7 +390,7 @@ export function DashboardAiSprite({
             type="button"
             variant="outline"
             size="sm"
-            disabled={interpretBusy || commitBusy || !canInterpret}
+            disabled={inputsDisabled || !canInterpret}
             onClick={() => void onInterpret()}>
             {interpretBusy ?
               <>
@@ -449,50 +427,20 @@ export function DashboardAiSprite({
         : null}
 
         {result?.entries.length ?
-          <section className="mt-4 space-y-2 rounded-xl border-hairline border-[#B5D4F4] bg-[#E6F1FB] p-3.5">
-            {result.summaryZh ?
-              <p className="text-body text-[#2D6B4A]">{result.summaryZh}</p>
-            : null}
-            <p className="text-heading-card text-foreground">
-              預覽（共 {result.entries.length} 筆）
-            </p>
-            <ul className="space-y-2">
-              {result.entries.map((e, idx) => (
-                <li
-                  key={`${e.kind}-${idx}-${formatEntryPreview(e).slice(0, 12)}`}
-                  className="flex gap-2 text-body text-foreground">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                  <span>{formatEntryPreview(e)}</span>
-                </li>
-              ))}
-            </ul>
-            {commitError ?
-              <p className="text-caption text-[#E24B4A]" role="alert">
-                {commitError}
-              </p>
-            : null}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="default"
-                disabled={commitBusy}
-                onClick={() => void onCommit()}>
-                {commitBusy ?
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                    寫入中
-                  </>
-                : '確認寫入'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={commitBusy || interpretBusy}
-                onClick={discardInterpret}>
-                清除
-              </Button>
-            </div>
-          </section>
+          <DashboardAiSpritePreview
+            result={result}
+            referenceDateIso={todayIsoDate}
+            waterMlKnownToday={waterMlKnownToday}
+            commitBusy={commitBusy}
+            interpretBusy={interpretBusy}
+            isReady={isReady}
+            reviseError={error}
+            commitError={commitError}
+            onCommit={() => void onCommit()}
+            onDiscard={discardInterpret}
+            onRevise={revise}
+            onEditingChange={setIsEditingPreview}
+          />
         : null}
       </BottomSheetShell>
     </>

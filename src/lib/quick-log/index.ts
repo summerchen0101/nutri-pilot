@@ -9,5 +9,7 @@ export type {
 } from '@/lib/quick-log/types';
 export {
   validateQuickLogClaudePayload,
+  validateQuickLogEntry,
+  validateQuickLogEntriesList,
   type ValidateQuickLogResult,
 } from '@/lib/quick-log/validate-quick-log-response';

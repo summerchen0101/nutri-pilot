@@ -5,6 +5,7 @@ import type { ClaudeImageMediaType } from '@/lib/ai/image-file-to-claude-payload
 import type { ClaudeTokenUsage } from '@/lib/ai/token-usage-to-ai-quota';
 import { insertAiUsageEvent } from '@/lib/ai/record-ai-usage';
 import { buildQuickLogIntentPrompt } from '@/lib/ai/prompts/quick-log-intent';
+import { buildQuickLogRevisePrompt } from '@/lib/ai/prompts/quick-log-revise';
 import { personalFacetsToPromptBrief } from '@/lib/personal-context/facets-to-prompt-brief';
 import {
   personalContextFacetsHasContent,
@@ -21,6 +22,7 @@ type ClaudeQuickLogShape = {
 };
 
 const MAX_IMAGE_BASE64_CHARS = 2_800_000;
+const MAX_REVISION_INSTRUCTION_CHARS = 500;
 
 const ALLOWED_IMAGE_MEDIA: ClaudeImageMediaType[] = [
   'image/jpeg',
@@ -49,6 +51,33 @@ function parseImagePayload(rec: Record<string, unknown>): {
     imageBase64: raw,
     imageMediaType: mediaRaw as ClaudeImageMediaType,
   };
+}
+
+function parseRevisionPayload(rec: Record<string, unknown>): {
+  revisionInstruction: string;
+  currentEntries: unknown[];
+} | null {
+  const revisionInstruction =
+    typeof rec.revisionInstruction === 'string' ?
+      rec.revisionInstruction.trim().slice(0, MAX_REVISION_INSTRUCTION_CHARS)
+    : '';
+  const rawEntries = rec.currentEntries;
+  if (!Array.isArray(rawEntries) || rawEntries.length < 1) {
+    return null;
+  }
+  for (const item of rawEntries) {
+    if (
+      typeof item !== 'object' ||
+      item === null ||
+      typeof (item as Record<string, unknown>).kind !== 'string'
+    ) {
+      return null;
+    }
+  }
+  if (revisionInstruction.length < 1) {
+    return null;
+  }
+  return { revisionInstruction, currentEntries: rawEntries };
 }
 
 export async function POST(req: Request) {
@@ -89,17 +118,19 @@ export async function POST(req: Request) {
     }
   }
 
-  const imagePayload = parseImagePayload(rec);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(referenceDateIso)) {
+    return NextResponse.json({ error: '參考日期格式不正確' }, { status: 422 });
+  }
 
-  if (message.length < 1 && !imagePayload) {
+  const revisionPayload = parseRevisionPayload(rec);
+  const imagePayload = parseImagePayload(rec);
+  const isReviseMode = revisionPayload != null;
+
+  if (!isReviseMode && message.length < 1 && !imagePayload) {
     return NextResponse.json(
       { error: '請輸入描述或附上照片' },
       { status: 422 },
     );
-  }
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(referenceDateIso)) {
-    return NextResponse.json({ error: '參考日期格式不正確' }, { status: 422 });
   }
 
   const { data: profileRow } = await supabase
@@ -116,20 +147,29 @@ export async function POST(req: Request) {
       personalFacetsToPromptBrief(storedFacets)
     : '';
 
-  const prompt = buildQuickLogIntentPrompt({
-    referenceDateIso,
-    userMessage: message,
-    waterMlKnownToday,
-    hasAttachedImage: imagePayload != null,
-    personalFacetsBrief: personalFacetsBrief || undefined,
-  });
+  const prompt =
+    isReviseMode ?
+      buildQuickLogRevisePrompt({
+        referenceDateIso,
+        waterMlKnownToday,
+        currentEntriesJson: JSON.stringify(revisionPayload.currentEntries),
+        revisionInstruction: revisionPayload.revisionInstruction,
+        personalFacetsBrief: personalFacetsBrief || undefined,
+      })
+    : buildQuickLogIntentPrompt({
+        referenceDateIso,
+        userMessage: message,
+        waterMlKnownToday,
+        hasAttachedImage: imagePayload != null,
+        personalFacetsBrief: personalFacetsBrief || undefined,
+      });
 
   let parsed: ClaudeQuickLogShape;
   let usage: ClaudeTokenUsage | null = null;
   try {
     const out = await callClaudeJSON<ClaudeQuickLogShape>(
       prompt,
-      imagePayload ?? undefined,
+      isReviseMode ? undefined : (imagePayload ?? undefined),
     );
     parsed = out.data;
     usage = out.usage;
