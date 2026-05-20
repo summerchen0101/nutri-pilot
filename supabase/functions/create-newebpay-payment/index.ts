@@ -661,7 +661,6 @@ Deno.serve(async (req) => {
     Email: payerEmail.slice(0, 50),
     ReturnURL: returnUrl,
     NotifyURL: notifyUrl,
-    LoginType: 0,
     CREDIT: 1,
   };
 

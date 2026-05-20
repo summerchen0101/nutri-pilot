@@ -69,6 +69,7 @@ Supabase Edge Functions（後端邏輯）
 |--------------|---------|------|
 | `create-newebpay-payment` | 前端經 Server Action（使用者 JWT）| 建立 `pending` 訂單與明細、回傳 `paymentUrl` + `formFields`（POST 至 MPG） |
 | `newebpay-notify` | 藍新伺服器 POST | 驗證 `TradeSha`、解密 `TradeInfo`，付款成功時將訂單改為 `paid` |
+| `newebpay-query-trade` | 後台 super_admin（Server Action + JWT）| 手冊 4.3 單筆交易查詢，比對 TradeStatus |
 
 **`create-newebpay-payment` 輸入**（JSON）：
 ```json

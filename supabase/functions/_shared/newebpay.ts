@@ -74,3 +74,26 @@ export function buildSortedTradeQueryString(
     .map((k) => `${k}=${encodeURIComponent(String(data[k]))}`)
     .join("&");
 }
+
+/** 單筆交易查詢 CheckValue（手冊 4.1.6） */
+export function mpgQueryCheckValue(
+  merchantId: string,
+  merchantOrderNo: string,
+  amt: number,
+  hashKey: string,
+  hashIv: string,
+): string {
+  const query = buildSortedTradeQueryString({
+    Amt: amt,
+    MerchantID: merchantId,
+    MerchantOrderNo: merchantOrderNo,
+  });
+  const payload = `IV=${hashIv}&${query}&Key=${hashKey}`;
+  return createHash("sha256").update(payload).digest("hex").toUpperCase();
+}
+
+export function queryTradeInfoUrl(newebpayEnv: string | undefined): string {
+  return newebpayEnv === "production" ?
+      "https://core.newebpay.com/API/QueryTradeInfo"
+    : "https://ccore.newebpay.com/API/QueryTradeInfo";
+}

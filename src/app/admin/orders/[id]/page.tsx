@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { OrderNewebpayQueryPanel } from '@/app/admin/orders/_components/order-newebpay-query-panel';
+import { OrderPaymentInfoCard } from '@/app/admin/orders/_components/order-payment-info-card';
 import { OrderRefundPlaceholderCard } from '@/app/admin/orders/_components/order-refund-placeholder-card';
 import { OrderStatusUpdater } from '@/app/admin/orders/_components/order-status-updater';
 import { SubOrderLogisticsEditor } from '@/app/admin/orders/_components/sub-order-logistics-editor';
@@ -21,6 +23,11 @@ export default async function AdminOrderDetailPage({
       total,
       created_at,
       public_order_no,
+      merchant_order_no,
+      gateway_trade_no,
+      payment_gateway,
+      items_subtotal,
+      shipping_total,
       recipient_name,
       recipient_phone,
       recipient_address_full,
@@ -56,6 +63,8 @@ export default async function AdminOrderDetailPage({
   const subRaw = order.sub_orders;
   const subOrders = Array.isArray(subRaw) ? subRaw : [];
   const canShip = staffCan(role, 'order.ship');
+  const canViewFinance = staffCan(role, 'analytics.finance');
+  const canQueryNewebpay = role === 'super_admin';
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -86,24 +95,30 @@ export default async function AdminOrderDetailPage({
         </div>
       </section>
 
+      <OrderPaymentInfoCard
+        orderId={order.id}
+        publicOrderNo={order.public_order_no}
+        merchantOrderNo={order.merchant_order_no}
+        gatewayTradeNo={order.gateway_trade_no}
+        paymentGateway={order.payment_gateway}
+        itemsSubtotal={order.items_subtotal}
+        shippingTotal={order.shipping_total}
+        total={Number(order.total)}
+        createdAt={order.created_at}
+        canViewFinance={canViewFinance}
+      />
+
+      {canQueryNewebpay ?
+        <OrderNewebpayQueryPanel orderId={order.id} />
+      : null}
+
       <OrderRefundPlaceholderCard
         role={role}
         orderNo={order.public_order_no ?? order.id}
         financialStatus={order.status}
+        merchantOrderNo={order.merchant_order_no}
+        gatewayTradeNo={order.gateway_trade_no}
       />
-
-      <section className="rounded-xl border border-border bg-background p-4">
-        <h2 className="text-heading-section text-foreground">金額</h2>
-        <p className="mt-2 text-heading-page text-foreground">
-          NT${' '}
-          {Number(order.total).toLocaleString('zh-TW', {
-            minimumFractionDigits: 0,
-          })}
-        </p>
-        <p className="mt-2 text-caption text-slate-600">
-          建立：{new Date(order.created_at).toLocaleString('zh-TW')}
-        </p>
-      </section>
 
       {(order.recipient_name || order.recipient_address_full) ? (
         <section className="rounded-xl border border-border bg-background p-4">
@@ -166,6 +181,13 @@ export default async function AdminOrderDetailPage({
                 <li key={s.id}>
                   <span className="font-mono text-caption">{s.public_no}</span>
                   <span className="text-slate-600"> — {s.status}</span>
+                  <span className="text-caption text-slate-600">
+                    {' '}
+                    NT${' '}
+                    {Number(s.total).toLocaleString('zh-TW', {
+                      minimumFractionDigits: 0,
+                    })}
+                  </span>
                   {s.tracking_number ?
                     <span className="text-caption text-slate-600">
                       （物流：{s.tracking_number}）

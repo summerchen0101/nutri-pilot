@@ -66,6 +66,14 @@ export async function updateOrderStatus(input: {
     return { ok: false, error: error.message };
   }
 
+  if (input.status === 'shipped') {
+    await supabase
+      .from('sub_orders')
+      .update({ status: 'shipped' })
+      .eq('order_id', input.orderId)
+      .eq('status', 'confirmed');
+  }
+
   const audit = await appendAdminAuditLog({
     action: ADMIN_AUDIT_ACTIONS.ORDER_STATUS_CHANGE,
     targetType: ADMIN_AUDIT_TARGET_TYPES.ORDER,
@@ -73,6 +81,10 @@ export async function updateOrderStatus(input: {
     metadata: {
       from_status: existing.status,
       to_status: input.status,
+      ...(input.status === 'cancelled'
+        && existing.status !== 'pending'
+        ? { reason: 'manual_refund_via_newebpay' as const }
+        : {}),
     },
   });
   if (!audit.ok) {
@@ -82,6 +94,54 @@ export async function updateOrderStatus(input: {
   revalidatePath('/admin/orders');
   revalidatePath(`/admin/orders/${input.orderId}`);
   return { ok: true };
+}
+
+export async function queryNewebpayTrade(input: {
+  orderId: string;
+}): Promise<
+  | { ok: false; error: string }
+  | { ok: true; data: unknown }
+> {
+  const role = await getAdminRole();
+  if (!role || role !== 'super_admin') {
+    return { ok: false, error: '沒有權限' };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const token = session?.access_token;
+  if (!token) {
+    return { ok: false, error: '請重新登入' };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+  if (!baseUrl) {
+    return { ok: false, error: '環境設定缺少 NEXT_PUBLIC_SUPABASE_URL' };
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/functions/v1/newebpay-query-trade`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ orderId: input.orderId }),
+    });
+    const data = (await res.json()) as { error?: string; ok?: boolean; newebpay?: unknown };
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? `查詢失敗（${res.status}）` };
+    }
+    return { ok: true, data };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : '無法連線查詢',
+    };
+  }
 }
 
 export async function updateSubOrderLogistics(input: {

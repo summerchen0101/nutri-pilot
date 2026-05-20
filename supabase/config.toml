@@ -22,5 +22,8 @@ verify_jwt = false
 [functions.newebpay-notify]
 verify_jwt = false
 
+[functions.newebpay-query-trade]
+verify_jwt = false
+
 [functions.admin-suspend-user]
 verify_jwt = false

@@ -1501,7 +1501,13 @@ export type Database = {
         Returns: string | null
       }
       admin_orders_for_staff: {
-        Args: { p_limit?: number }
+        Args: {
+          p_limit?: number
+          p_status?: string | null
+          p_start?: string | null
+          p_end?: string | null
+          p_search?: string | null
+        }
         Returns: {
           id: string
           public_order_no: string | null

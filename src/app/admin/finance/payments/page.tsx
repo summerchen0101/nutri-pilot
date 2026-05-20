@@ -24,8 +24,11 @@ export default async function AdminFinancePaymentsPage({
     typeof searchParams.end === 'string' ? searchParams.end : undefined;
   const range = parseAdminReportRange({ start: startRaw, end: endRaw });
 
+  const orderParam =
+    typeof searchParams.order === 'string' ? searchParams.order.trim() : undefined;
+
   const supabase = createClient();
-  const { data: rows, error } = await supabase
+  let query = supabase
     .from('orders')
     .select(
       `
@@ -45,6 +48,14 @@ export default async function AdminFinancePaymentsPage({
     .lt('created_at', range.endExclusiveIso)
     .order('created_at', { ascending: false })
     .limit(PAGE_SIZE);
+
+  if (orderParam) {
+    query = query.or(
+      `public_order_no.eq.${orderParam},merchant_order_no.eq.${orderParam}`,
+    );
+  }
+
+  const { data: rows, error } = await query;
 
   if (error) {
     throw new Error(error.message);
@@ -66,9 +77,8 @@ export default async function AdminFinancePaymentsPage({
       <div>
         <h1 className="text-heading-screen text-foreground">金流對帳</h1>
         <p className="mt-1 text-caption text-slate-600">
-          訂單付款與藍新欄位摘要（依建立時間 UTC 篩選）。完整退款流程請於藍新後台核對；本頁狀態與{' '}
-          <code className="rounded bg-secondary px-1">orders.status</code>{' '}
-          一致。
+          訂單付款與藍新欄位摘要（依建立時間 UTC 篩選）。「藍新交易序號」即手冊
+          TradeNo。pending 表示 Notify 尚未入帳；完整退款請於藍新後台核對。
         </p>
       </div>
 
@@ -126,7 +136,14 @@ export default async function AdminFinancePaymentsPage({
           </thead>
           <tbody>
             {list.map((r) => (
-              <tr key={r.id} className="odd:bg-background even:bg-secondary/40">
+              <tr
+                key={r.id}
+                className={
+                  r.status === 'pending' ?
+                    'bg-amber-50/80 odd:bg-amber-50/80 even:bg-amber-50/60'
+                  : 'odd:bg-background even:bg-secondary/40'
+                }
+              >
                 <td className="border-b border-border px-3 py-2 text-caption whitespace-nowrap">
                   {r.created_at ?
                     new Date(r.created_at).toISOString().slice(0, 16).replace('T', ' ')
@@ -149,7 +166,11 @@ export default async function AdminFinancePaymentsPage({
                 <td className="border-b border-border px-3 py-2 text-caption">
                   {r.payment_gateway}
                 </td>
-                <td className="border-b border-border px-3 py-2 text-caption">{r.status}</td>
+                <td className="border-b border-border px-3 py-2 text-caption">
+                  {r.status === 'pending' ?
+                    <span className="font-medium text-amber-800">pending（未入帳）</span>
+                  : r.status}
+                </td>
                 <td className="border-b border-border px-3 py-2 text-end tabular-nums">
                   {Number(r.total).toLocaleString('zh-TW')}
                 </td>
