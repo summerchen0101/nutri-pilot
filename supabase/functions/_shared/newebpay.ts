@@ -1,6 +1,7 @@
 /**
  * 藍新 MPG AES / TradeSha（與官方 Node 範例一致：TradeSha = SHA256 大寫 hex）
  */
+import { Buffer } from "node:buffer";
 import {
   createCipheriv,
   createDecipheriv,
