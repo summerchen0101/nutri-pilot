@@ -67,6 +67,7 @@ export function mapSupabaseProductToShopRow(
     cert_tags: (p.cert_tags as string[] | null) ?? null,
     avg_rating: p.avg_rating == null ? null : Number(p.avg_rating),
     score,
+    sort_order: Number(p.sort_order ?? 0),
     brand,
     variants: normalizeShopVariants(p.variants),
   };

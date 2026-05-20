@@ -105,6 +105,65 @@ async function syncVariants(
   return { ok: true };
 }
 
+async function nextProductSortOrder(
+  supabase: ReturnType<typeof createClient>,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('sort_order')
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data?.sort_order ?? -1) + 1;
+}
+
+export async function reorderProducts(
+  orderedIds: string[],
+): Promise<{ ok: false; error: string } | { ok: true }> {
+  const role = await getAdminRole();
+  if (!role || !staffCan(role, 'product.edit')) {
+    return { ok: false, error: '沒有權限' };
+  }
+
+  if (orderedIds.length === 0) {
+    return { ok: true };
+  }
+
+  const supabase = createClient();
+
+  for (let index = 0; index < orderedIds.length; index += 1) {
+    const id = orderedIds[index];
+    const { error } = await supabase
+      .from('products')
+      .update({ sort_order: index })
+      .eq('id', id);
+
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+  }
+
+  const audit = await appendAdminAuditLog({
+    action: ADMIN_AUDIT_ACTIONS.PRODUCT_SAVE,
+    targetType: ADMIN_AUDIT_TARGET_TYPES.PRODUCT,
+    targetId: orderedIds[0],
+    metadata: { reorder: true, count: orderedIds.length },
+  });
+  if (!audit.ok) {
+    console.error('appendAdminAuditLog product.reorder:', audit.error);
+  }
+
+  revalidatePath('/admin/products');
+  revalidatePath('/shop');
+  revalidatePath('/dashboard');
+  return { ok: true };
+}
+
 export async function saveProduct(
   payload: ProductSavePayload,
 ): Promise<{ ok: false; error: string } | { ok: true; id: string }> {
@@ -172,10 +231,13 @@ export async function saveProduct(
 
     revalidatePath('/admin/products');
     revalidatePath(`/admin/products/${payload.id}`);
+    revalidatePath('/shop');
+    revalidatePath('/dashboard');
     return { ok: true, id: payload.id };
   }
 
   const slug = makeUniqueSlugBase(payload.name);
+  const sortOrder = await nextProductSortOrder(supabase);
 
   const { data: inserted, error: insErr } = await supabase
     .from('products')
@@ -183,6 +245,7 @@ export async function saveProduct(
       ...rowBase,
       slug,
       avg_rating: 0,
+      sort_order: sortOrder,
     })
     .select('id')
     .single();
@@ -208,6 +271,8 @@ export async function saveProduct(
 
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${inserted.id}`);
+  revalidatePath('/shop');
+  revalidatePath('/dashboard');
   return { ok: true, id: inserted.id };
 }
 

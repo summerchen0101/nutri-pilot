@@ -643,6 +643,7 @@ export type Database = {
           serving_size_g: number
           slug: string
           sodium_mg: number | null
+          sort_order: number
           sugar_g: number | null
         }
         Insert: {
@@ -668,6 +669,7 @@ export type Database = {
           serving_size_g: number
           slug: string
           sodium_mg?: number | null
+          sort_order?: number
           sugar_g?: number | null
         }
         Update: {
@@ -693,6 +695,7 @@ export type Database = {
           serving_size_g?: number
           slug?: string
           sodium_mg?: number | null
+          sort_order?: number
           sugar_g?: number | null
         }
         Relationships: [

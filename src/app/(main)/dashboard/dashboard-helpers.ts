@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { DashboardHomeProps } from '@/app/(main)/dashboard/dashboard-home';
+import { compareByAdminSortOrder } from '@/lib/shop/compare-product-display-order';
 import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
 import { addCalendarDaysISO } from '@/lib/onboarding/date';
 
@@ -35,7 +36,7 @@ export function normalizeDashboardUserName(value: unknown): string | null {
 
 export function buildRecommendedProducts({
   products,
-  scores,
+  scores: _scores,
   dietMethod,
   usePersonalizedScores = true,
 }: {
@@ -43,6 +44,7 @@ export function buildRecommendedProducts({
     id: string;
     name: string;
     image_url: string | null;
+    sort_order?: number;
     protein_g: number;
     sugar_g: number | null;
     diet_tags: string[] | null;
@@ -60,14 +62,12 @@ export function buildRecommendedProducts({
   price: number;
   reason: string | null;
 }> {
-  const scoreMap = usePersonalizedScores
-    ? new Map(scores.map((row) => [row.product_id, Number(row.score)]))
-    : new Map<string, number>();
-  const ranked = [...products].sort((a, b) => {
-    const scoreDiff = (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0);
-    if (scoreDiff !== 0) return scoreDiff;
-    return Number(b.avg_rating ?? 0) - Number(a.avg_rating ?? 0);
-  });
+  const ranked = [...products].sort((a, b) =>
+    compareByAdminSortOrder(
+      { sort_order: a.sort_order ?? 0, name: a.name },
+      { sort_order: b.sort_order ?? 0, name: b.name },
+    ),
+  );
   return ranked
     .filter((row) => (row.variants ?? []).length > 0)
     .slice(0, 6)

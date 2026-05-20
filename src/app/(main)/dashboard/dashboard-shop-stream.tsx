@@ -32,6 +32,7 @@ export async function DashboardRecommendedProductsDeferred({
       id,
       name,
       image_url,
+      sort_order,
       protein_g,
       sugar_g,
       diet_tags,

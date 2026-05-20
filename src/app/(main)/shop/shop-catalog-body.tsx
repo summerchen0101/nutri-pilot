@@ -40,6 +40,7 @@ export async function ShopCatalogBody() {
       name,
       slug,
       image_url,
+      sort_order,
       category,
       calories,
       protein_g,

@@ -25,6 +25,7 @@ type CatalogRow = {
   id: string;
   name: string;
   image_url: string | null;
+  sort_order: number;
   protein_g: number;
   sugar_g: number | null;
   diet_tags: string[] | null;
@@ -139,6 +140,7 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
             id,
             name,
             image_url,
+            sort_order,
             protein_g,
             sugar_g,
             diet_tags,

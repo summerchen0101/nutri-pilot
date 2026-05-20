@@ -9,6 +9,7 @@ import { ShopCatalogProductCard } from '@/app/(main)/shop/shop-catalog-product-c
 import { toggleProductFavorite } from '@/app/(main)/shop/favorite-actions';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
+import { compareByAdminSortOrder } from '@/lib/shop/compare-product-display-order';
 import {
   type ShopCatalogSortMode,
   useShopCatalogUiStore,
@@ -27,6 +28,7 @@ export interface ShopProductRow {
   cert_tags: string[] | null;
   avg_rating: number | null;
   score: number;
+  sort_order: number;
   brand: {
     id: string;
     name: string;
@@ -72,43 +74,49 @@ function minVariantPrice(
   return Math.min(...variants.map((v) => v.price));
 }
 
+function withAdminSortTiebreaker(
+  primary: number,
+  a: ShopProductRow,
+  b: ShopProductRow,
+): number {
+  if (primary !== 0) return primary;
+  return compareByAdminSortOrder(a, b);
+}
+
 function compareCatalogProducts(
   a: ShopProductRow,
   b: ShopProductRow,
   effectiveSort: ShopCatalogSortMode,
-  usePersonalizedScores: boolean,
 ): number {
   switch (effectiveSort) {
     case 'personalized': {
-      if (usePersonalizedScores) {
-        const scoreDiff = b.score - a.score;
-        if (scoreDiff !== 0) return scoreDiff;
-      }
-      return Number(b.avg_rating ?? 0) - Number(a.avg_rating ?? 0);
+      return compareByAdminSortOrder(a, b);
     }
     case 'rating': {
-      return Number(b.avg_rating ?? 0) - Number(a.avg_rating ?? 0);
+      return withAdminSortTiebreaker(
+        Number(b.avg_rating ?? 0) - Number(a.avg_rating ?? 0),
+        a,
+        b,
+      );
     }
     case 'price_asc': {
       const pa = minVariantPrice(a.variants);
       const pb = minVariantPrice(b.variants);
-      if (pa == null && pb == null) return 0;
+      if (pa == null && pb == null) return compareByAdminSortOrder(a, b);
       if (pa == null) return 1;
       if (pb == null) return -1;
-      if (pa !== pb) return pa - pb;
-      return a.name.localeCompare(b.name);
+      return withAdminSortTiebreaker(pa - pb, a, b);
     }
     case 'price_desc': {
       const pa = minVariantPrice(a.variants);
       const pb = minVariantPrice(b.variants);
-      if (pa == null && pb == null) return 0;
+      if (pa == null && pb == null) return compareByAdminSortOrder(a, b);
       if (pa == null) return 1;
       if (pb == null) return -1;
-      if (pa !== pb) return pb - pa;
-      return a.name.localeCompare(b.name);
+      return withAdminSortTiebreaker(pb - pa, a, b);
     }
     default: {
-      return 0;
+      return compareByAdminSortOrder(a, b);
     }
   }
 }
@@ -179,9 +187,7 @@ export function ShopHomeClient({
         'rating'
       : sortMode;
 
-    list.sort((a, b) =>
-      compareCatalogProducts(a, b, effectiveSort, usePersonalizedScores),
-    );
+    list.sort((a, b) => compareCatalogProducts(a, b, effectiveSort));
 
     return list;
   }, [
