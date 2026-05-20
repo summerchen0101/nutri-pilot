@@ -16,6 +16,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      keyframes: {
+        'loading-dot': {
+          '0%, 80%, 100%': { transform: 'translateY(0)' },
+          '40%': { transform: 'translateY(-5px)' },
+        },
+      },
+      animation: {
+        'loading-dot': 'loading-dot 0.9s ease-in-out infinite',
+      },
       fontFamily: {
         /** 由商城 layout 注入 `next/font` 的 `--font-shop-serif` */
         serif: ["var(--font-shop-serif)", "Georgia", "Noto Serif TC", "serif"],

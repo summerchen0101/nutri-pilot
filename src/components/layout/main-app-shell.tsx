@@ -5,7 +5,9 @@ import type { ReactNode } from 'react';
 
 import { PendingAnalysisJobsHost } from '@/components/ai/pending-analysis-jobs-host';
 import { BottomNav } from '@/components/layout/bottom-nav';
+import { NavigationLoadingOverlay } from '@/components/layout/navigation-loading-overlay';
 import { ShopBottomNav } from '@/components/layout/shop-bottom-nav';
+import { useNavigationLoading } from '@/hooks/use-navigation-loading';
 import {
   isShopCheckoutFunnelPathname,
   isShopCommerceShortcutPathname,
@@ -26,6 +28,7 @@ function shouldUseCompactBottomPadding(pathname: string): boolean {
 
 export function MainAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { isNavigating } = useNavigationLoading();
   const minimalBottomPadding =
     isShopProductDetailPathname(pathname) || isShopCheckoutFunnelPathname(pathname);
   const compactBottomPadding = shouldUseCompactBottomPadding(pathname);
@@ -41,10 +44,15 @@ export function MainAppShell({ children }: { children: ReactNode }) {
     !shouldHideAllBottomNavPathname(pathname);
   const showMainBottomNav =
     !isShopRoutePathname(pathname) && !isShopCommerceShortcutPathname(pathname);
+  const hasBottomNav = showShopBottomNav || showMainBottomNav;
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
       <PendingAnalysisJobsHost />
+      <NavigationLoadingOverlay
+        isVisible={isNavigating}
+        hasBottomNav={hasBottomNav}
+      />
       <div className={contentPaddingClass}>
         {children}
       </div>
