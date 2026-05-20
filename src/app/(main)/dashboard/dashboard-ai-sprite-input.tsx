@@ -139,7 +139,6 @@ export function DashboardAiSpriteInput({
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           className="hidden"
           onChange={(ev) => void handleFileChange(ev)}
         />
@@ -147,7 +146,7 @@ export function DashboardAiSpriteInput({
           type="button"
           disabled={disabled || imageProcessing}
           onClick={() => fileInputRef.current?.click()}
-          aria-label="附加照片"
+          aria-label="附加照片（相簿或拍照）"
           className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg text-[#378ADD] transition-colors hover:bg-[#E6F1FB] disabled:opacity-40">
           <ImagePlus className="h-[18px] w-[18px]" aria-hidden />
         </button>
