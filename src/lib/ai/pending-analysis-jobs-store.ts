@@ -10,6 +10,7 @@ import {
 } from '@/lib/food/label-guard-report';
 import type { ManualFoodAnalysisResult } from '@/lib/food/manual-food-analysis-result';
 import type { PersonalContextFacets } from '@/lib/personal-context/types';
+import type { ClaudeImageMediaType } from '@/lib/ai/image-file-to-claude-payload';
 import type { QuickLogValidatedEntry } from '@/lib/quick-log/types';
 import { createClient } from '@/lib/supabase/client';
 import type { Json } from '@/types/supabase';
@@ -135,6 +136,8 @@ type PendingAnalysisJobsState = {
     message: string;
     referenceDateIso: string;
     waterMlKnownToday?: number | null;
+    imageBase64?: string;
+    imageMediaType?: ClaudeImageMediaType;
   }) => void;
   clearQuickLog: () => void;
   setPersonalContextDraft: (draft: string) => void;
@@ -202,6 +205,12 @@ export const usePendingAnalysisJobsStore = create<PendingAnalysisJobsState>()(
                 referenceDateIso: opts.referenceDateIso,
                 ...(opts.waterMlKnownToday != null ?
                   { waterMlKnownToday: opts.waterMlKnownToday }
+                : {}),
+                ...(opts.imageBase64 ?
+                  {
+                    imageBase64: opts.imageBase64,
+                    imageMediaType: opts.imageMediaType ?? 'image/jpeg',
+                  }
                 : {}),
               }),
             });

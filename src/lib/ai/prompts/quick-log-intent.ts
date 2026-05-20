@@ -12,6 +12,8 @@ export function buildQuickLogIntentPrompt(input: {
   referenceDateIso: string;
   userMessage: string;
   waterMlKnownToday: number | null;
+  /** 使用者是否附上餐點／食物照片 */
+  hasAttachedImage?: boolean;
   /** 由 `personalFacetsToPromptBrief` 產生；空字串則略過 */
   personalFacetsBrief?: string;
 }): string {
@@ -26,6 +28,20 @@ export function buildQuickLogIntentPrompt(input: {
     input.personalFacetsBrief && input.personalFacetsBrief.trim().length > 0 ?
       `\n${input.personalFacetsBrief.trim()}\n`
     : '';
+
+  const imageRules =
+    input.hasAttachedImage ?
+      `
+12. **附圖**：使用者附上餐點／食物照片。請辨識照片中所有可見食物，與文字描述（若有）合併估算；多品項拆成多筆 food entries。
+13. **僅照片、無文字**：依參考日 ${input.referenceDateIso} 與畫面內容推斷 mealType（早餐／午餐／晚餐／點心）；不得臆造照片中看不見的食物。
+14. 附圖時仍適用「一事實一筆」；非飲食類（運動、體重等）僅在使用者文字明確提及時才輸出。
+`
+    : '';
+
+  const userInputBlock =
+    input.hasAttachedImage && safeMsg.length < 1 ?
+      '使用者僅附上照片，無文字描述。'
+    : `使用者輸入：\n「${safeMsg || '（空白）'}」`;
 
   return `
 你是 Nutri Pilot 健康紀錄助手。使用者用繁體中文（台灣）描述飲食、運動或生活數據。
@@ -47,7 +63,7 @@ ${activitySlugListForPrompt()}
 9. 若資訊不足或無法安全估算，請回傳空 entries，並在 summary_zh 簡短說明缺少什麼。
 10. 不要臆造使用者沒提到的項目。
 11. 若有個人化脈絡區塊，估熱量／食材時可溫和留意（仍不得臆造未提及的食物）。
-
+${imageRules}
 請只回傳 JSON（物件），格式如下（欄位名稱與類型請嚴格遵守）：
 {
   "summary_zh": "對使用者的簡短說明（可為 null）",
@@ -91,7 +107,6 @@ ${activitySlugListForPrompt()}
   ]
 }
 
-使用者輸入：
-「${safeMsg || '（空白）'}」
+${userInputBlock}
 `.trim();
 }

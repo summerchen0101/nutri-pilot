@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { callClaudeJSON } from '@/lib/ai/claude';
+import type { ClaudeImageMediaType } from '@/lib/ai/image-file-to-claude-payload';
 import type { ClaudeTokenUsage } from '@/lib/ai/token-usage-to-ai-quota';
 import { insertAiUsageEvent } from '@/lib/ai/record-ai-usage';
 import { buildQuickLogIntentPrompt } from '@/lib/ai/prompts/quick-log-intent';
@@ -18,6 +19,37 @@ type ClaudeQuickLogShape = {
   summaryZh?: string | null;
   entries?: unknown[];
 };
+
+const MAX_IMAGE_BASE64_CHARS = 2_800_000;
+
+const ALLOWED_IMAGE_MEDIA: ClaudeImageMediaType[] = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+];
+
+function parseImagePayload(rec: Record<string, unknown>): {
+  imageBase64: string;
+  imageMediaType: ClaudeImageMediaType;
+} | null {
+  const raw =
+    typeof rec.imageBase64 === 'string' ? rec.imageBase64.trim() : '';
+  if (raw.length < 1) return null;
+  if (raw.length > MAX_IMAGE_BASE64_CHARS) {
+    return null;
+  }
+  const mediaRaw =
+    typeof rec.imageMediaType === 'string' ?
+      rec.imageMediaType.trim()
+    : 'image/jpeg';
+  if (!ALLOWED_IMAGE_MEDIA.includes(mediaRaw as ClaudeImageMediaType)) {
+    return null;
+  }
+  return {
+    imageBase64: raw,
+    imageMediaType: mediaRaw as ClaudeImageMediaType,
+  };
+}
 
 export async function POST(req: Request) {
   const supabase = createClient();
@@ -57,8 +89,13 @@ export async function POST(req: Request) {
     }
   }
 
-  if (message.length < 1) {
-    return NextResponse.json({ error: '請輸入要紀錄的內容' }, { status: 422 });
+  const imagePayload = parseImagePayload(rec);
+
+  if (message.length < 1 && !imagePayload) {
+    return NextResponse.json(
+      { error: '請輸入描述或附上照片' },
+      { status: 422 },
+    );
   }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(referenceDateIso)) {
@@ -83,13 +120,17 @@ export async function POST(req: Request) {
     referenceDateIso,
     userMessage: message,
     waterMlKnownToday,
+    hasAttachedImage: imagePayload != null,
     personalFacetsBrief: personalFacetsBrief || undefined,
   });
 
   let parsed: ClaudeQuickLogShape;
   let usage: ClaudeTokenUsage | null = null;
   try {
-    const out = await callClaudeJSON<ClaudeQuickLogShape>(prompt);
+    const out = await callClaudeJSON<ClaudeQuickLogShape>(
+      prompt,
+      imagePayload ?? undefined,
+    );
     parsed = out.data;
     usage = out.usage;
   } catch (e) {

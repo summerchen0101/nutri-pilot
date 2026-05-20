@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 
+import type { ClaudeImageMediaType } from '@/lib/ai/image-file-to-claude-payload';
 import { usePendingAnalysisJobsStore } from '@/lib/ai/pending-analysis-jobs-store';
 
 export function useDashboardAiSprite() {
@@ -20,6 +21,8 @@ export function useDashboardAiSprite() {
       message: string;
       referenceDateIso: string;
       waterMlKnownToday?: number | null;
+      imageBase64?: string;
+      imageMediaType?: ClaudeImageMediaType;
     }) => {
       startQuickLogInterpret(opts);
     },

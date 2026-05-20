@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 
+import { DashboardAiSpriteInput } from '@/app/(main)/dashboard/dashboard-ai-sprite-input';
 import { addFoodFromAiAnalysisAction } from '@/app/(main)/log/actions';
 import { insertActivityLogAction } from '@/app/(main)/log/activity-actions';
 import {
@@ -23,6 +24,7 @@ import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
 import { useDashboardAiSprite } from '@/hooks/use-dashboard-ai-sprite';
+import type { ClaudeImagePayload } from '@/lib/ai/image-file-to-claude-payload';
 import { usePendingAnalysisJobsStore } from '@/lib/ai/pending-analysis-jobs-store';
 import { activityTypeLabelZh } from '@/lib/activity/activity-type-labels';
 import type { QuickLogValidatedEntry } from '@/lib/quick-log/types';
@@ -166,6 +168,12 @@ export function DashboardAiSprite({
   const [commitError, setCommitError] = useState<string | null>(null);
   const [speechListening, setSpeechListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imagePayload, setImagePayload] = useState<ClaudeImagePayload | null>(
+    null,
+  );
+  const [imageProcessing, setImageProcessing] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const quickLog = usePendingAnalysisJobsStore((s) => s.quickLog);
   const setQuickLogMessage = usePendingAnalysisJobsStore((s) => s.setQuickLogMessage);
@@ -176,6 +184,19 @@ export function DashboardAiSprite({
     useDashboardAiSprite();
 
   const message = quickLog?.message ?? draftMessage;
+  const hasAttachedImage = imagePayload != null;
+  const canInterpret =
+    (message.trim().length > 0 || hasAttachedImage) &&
+    !imageProcessing;
+
+  const clearAttachedImage = useCallback(() => {
+    if (previewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(null);
+    setImagePayload(null);
+    setImageError(null);
+  }, [previewUrl]);
 
   const updateMessage = useCallback(
     (next: string) => {
@@ -219,14 +240,16 @@ export function DashboardAiSprite({
     onSheetOpenChange(false);
     setCommitError(null);
     stopSpeech();
-  }, [onSheetOpenChange, stopSpeech]);
+    clearAttachedImage();
+  }, [clearAttachedImage, onSheetOpenChange, stopSpeech]);
 
   const discardInterpret = useCallback(() => {
     clearQuickLog();
     setDraftMessage('');
     setCommitError(null);
     stopSpeech();
-  }, [clearQuickLog, stopSpeech]);
+    clearAttachedImage();
+  }, [clearAttachedImage, clearQuickLog, stopSpeech]);
 
   const stopSpeechListening = useCallback(() => {
     try {
@@ -280,14 +303,26 @@ export function DashboardAiSprite({
 
   const onInterpret = useCallback(async () => {
     const m = message.trim();
-    if (!m) return;
+    if (!m && !imagePayload) return;
     setCommitError(null);
     await interpret({
       message: m,
       referenceDateIso: todayIsoDate,
       waterMlKnownToday,
+      ...(imagePayload ?
+        {
+          imageBase64: imagePayload.imageBase64,
+          imageMediaType: imagePayload.imageMediaType,
+        }
+      : {}),
     });
-  }, [interpret, message, todayIsoDate, waterMlKnownToday]);
+  }, [
+    imagePayload,
+    interpret,
+    message,
+    todayIsoDate,
+    waterMlKnownToday,
+  ]);
 
   const onCommit = useCallback(async () => {
     if (!result?.entries.length) return;
@@ -298,6 +333,7 @@ export function DashboardAiSprite({
     if (out.ok) {
       clearQuickLog();
       setDraftMessage('');
+      clearAttachedImage();
       handleClose();
       router.refresh();
       return;
@@ -305,7 +341,13 @@ export function DashboardAiSprite({
     setCommitError(
       `第 ${out.index + 1} 筆寫入失敗：${out.message}（先前已成功寫入的項目仍保留，請至「每日紀錄」確認並手動調整未完成項目。）`,
     );
-  }, [clearQuickLog, handleClose, result?.entries, router]);
+  }, [
+    clearAttachedImage,
+    clearQuickLog,
+    handleClose,
+    result?.entries,
+    router,
+  ]);
 
   const headerButton = (
     <button
@@ -323,23 +365,22 @@ export function DashboardAiSprite({
 
       <BottomSheetShell open={sheetOpen} title="AI 精靈" onClose={handleClose}>
         <p className="mb-3 text-caption text-muted-foreground">
-          用一句話描述飲食、運動或體重／飲水／睡眠，解析後預覽再確認寫入。
+          用一句話或餐點照片描述飲食、運動或體重／飲水／睡眠，解析後預覽再確認寫入。
         </p>
 
-        <div className="space-y-2">
-          <label htmlFor="ai-sprite-input" className="sr-only">
-            快速紀錄內容
-          </label>
-          <textarea
-            id="ai-sprite-input"
-            rows={4}
-            value={message}
-            onChange={(ev) => updateMessage(ev.target.value)}
-            disabled={interpretBusy || commitBusy}
-            placeholder="例：午餐吃了雞腿便當；跑步 40 分鐘"
-            className="w-full resize-none rounded-[10px] border-hairline border-[#378ADD]/50 bg-[#F5FAFF] p-3 text-body leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
-          />
-        </div>
+        <DashboardAiSpriteInput
+          message={message}
+          onMessageChange={updateMessage}
+          disabled={interpretBusy || commitBusy}
+          previewUrl={previewUrl}
+          onPreviewUrlChange={setPreviewUrl}
+          imagePayload={imagePayload}
+          onImagePayloadChange={setImagePayload}
+          imageProcessing={imageProcessing}
+          onImageProcessingChange={setImageProcessing}
+          imageError={imageError}
+          onImageErrorChange={setImageError}
+        />
 
         <div className="mt-3 flex flex-wrap gap-2">
           {speechSupported ? (
@@ -371,7 +412,7 @@ export function DashboardAiSprite({
             type="button"
             variant="outline"
             size="sm"
-            disabled={interpretBusy || commitBusy || !message.trim()}
+            disabled={interpretBusy || commitBusy || !canInterpret}
             onClick={() => void onInterpret()}>
             {interpretBusy ?
               <>
