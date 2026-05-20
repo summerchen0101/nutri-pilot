@@ -28,6 +28,10 @@ import { useDashboardAiSprite } from '@/hooks/use-dashboard-ai-sprite';
 import type { ClaudeImagePayload } from '@/lib/ai/image-file-to-claude-payload';
 import { usePendingAnalysisJobsStore } from '@/lib/ai/pending-analysis-jobs-store';
 import type { QuickLogValidatedEntry } from '@/lib/quick-log/types';
+import {
+  QUICK_LOG_UNRECOGNIZABLE_HINT,
+  QUICK_LOG_UNRECOGNIZABLE_TITLE,
+} from '@/lib/quick-log/messages';
 
 interface SpeechRecoInstance extends EventTarget {
   lang: string;
@@ -164,6 +168,16 @@ export function DashboardAiSprite({
     (message.trim().length > 0 || hasAttachedImage) &&
     !imageProcessing;
   const inputsDisabled = interpretBusy || commitBusy || isEditingPreview;
+  const hasEmptyInterpretResult =
+    isReady && result != null && result.entries.length === 0;
+  const emptySummaryZh =
+    hasEmptyInterpretResult && result?.summaryZh ?
+      result.summaryZh.trim()
+    : null;
+  const showEmptyAiSummary =
+    emptySummaryZh != null &&
+    emptySummaryZh !== QUICK_LOG_UNRECOGNIZABLE_TITLE &&
+    emptySummaryZh !== QUICK_LOG_UNRECOGNIZABLE_HINT;
 
   const clearAttachedImage = useCallback(() => {
     if (previewUrl?.startsWith('blob:')) {
@@ -411,10 +425,33 @@ export function DashboardAiSprite({
           ) : null}
         </div>
 
-        {error && !result?.entries.length ?
+        {error && !result?.entries.length && !hasEmptyInterpretResult ?
           <div className="mt-3 space-y-2">
             <p className="text-caption text-[#E24B4A]" role="alert">
               {error}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={discardInterpret}>
+              清除
+            </Button>
+          </div>
+        : null}
+
+        {hasEmptyInterpretResult ?
+          <div
+            className="mt-3 space-y-2 rounded-xl border-hairline border-[#B5D4F4] bg-[#E6F1FB] p-3.5"
+            role="status">
+            <p className="text-body font-medium text-foreground">
+              {QUICK_LOG_UNRECOGNIZABLE_TITLE}
+            </p>
+            {showEmptyAiSummary ?
+              <p className="text-body text-foreground">{emptySummaryZh}</p>
+            : null}
+            <p className="text-caption text-muted-foreground">
+              {QUICK_LOG_UNRECOGNIZABLE_HINT}
             </p>
             <Button
               type="button"

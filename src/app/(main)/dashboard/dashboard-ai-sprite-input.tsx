@@ -106,7 +106,7 @@ export function DashboardAiSpriteInput({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
-            alt="已選擇的餐點照片"
+            alt="已選擇的照片"
             className="h-28 w-full object-cover"
           />
           <button
@@ -130,7 +130,7 @@ export function DashboardAiSpriteInput({
           value={message}
           onChange={(ev) => onMessageChange(ev.target.value)}
           disabled={disabled || imageProcessing}
-          placeholder="例：早餐吃這些；午餐雞腿便當；跑步 40 分鐘"
+          placeholder="例：早餐吃這些；跑步 40 分鐘；體重計 65.2 kg；睡眠 App 截圖"
           className={cn(
             'w-full resize-none rounded-[10px] border-hairline border-[#378ADD]/50 bg-[#F5FAFF] p-3 pr-10 pb-10 text-body leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-primary',
           )}
@@ -163,7 +163,7 @@ export function DashboardAiSpriteInput({
       : null}
       {!imageProcessing && hasImage ?
         <p className="text-caption text-muted-foreground">
-          已附加照片，可搭配文字或直接解析
+          已附加照片，可辨識餐點、運動、體重等紀錄；建議搭配文字說明
         </p>
       : null}
     </div>

@@ -1,4 +1,5 @@
 import { ACTIVITY_TYPE_LABEL } from '@/lib/activity/activity-type-labels';
+import { QUICK_LOG_UNRECOGNIZABLE_PROMPT_HINT } from '@/lib/quick-log/messages';
 
 function activitySlugListForPrompt(): string {
   return (
@@ -12,7 +13,7 @@ export function buildQuickLogIntentPrompt(input: {
   referenceDateIso: string;
   userMessage: string;
   waterMlKnownToday: number | null;
-  /** 使用者是否附上餐點／食物照片 */
+  /** 使用者是否附上健康紀錄相關照片 */
   hasAttachedImage?: boolean;
   /** 由 `personalFacetsToPromptBrief` 產生；空字串則略過 */
   personalFacetsBrief?: string;
@@ -32,9 +33,15 @@ export function buildQuickLogIntentPrompt(input: {
   const imageRules =
     input.hasAttachedImage ?
       `
-12. **附圖**：使用者附上餐點／食物照片。請辨識照片中所有可見食物，與文字描述（若有）合併估算；多品項拆成多筆 food entries。
-13. **僅照片、無文字**：依參考日 ${input.referenceDateIso} 與畫面內容推斷 mealType（早餐／午餐／晚餐／點心）；不得臆造照片中看不見的食物。
-14. 附圖時仍適用「一事實一筆」；非飲食類（運動、體重等）僅在使用者文字明確提及時才輸出。
+12. **附圖**：使用者附上健康紀錄相關照片。請依畫面與文字（若有）合併判斷紀錄類型，一事實一筆：
+    - **food**：可見餐點／食物；多品項拆多筆；估算營養。
+    - **activity**：跑步機／穿戴裝置／運動 App 截圖、可推斷運動的場景（球場、健身房等）；讀取或可合理推斷 durationMinutes、activityType。
+    - **weight**：體重計可讀數字。
+    - **water**：飲水 App 截圖、瓶身 ml 標示（可讀時）。
+    - **sleep**：睡眠 App／手環睡眠摘要截圖。
+13. **照片 + 文字**：合併判斷；文字可補足照片看不清的數值（例：「昨晚睡 7 小時」+ 睡眠截圖）。
+14. **僅照片、無文字**：只輸出畫面可直接讀到或可合理推斷的紀錄；飲食依參考日 ${input.referenceDateIso} 推 mealType；不得臆造看不見的食物或數值。
+15. **無關或無法安全估算**（風景、自拍、模糊、與健康紀錄無關）：回傳空 entries。${QUICK_LOG_UNRECOGNIZABLE_PROMPT_HINT}
 `
     : '';
 

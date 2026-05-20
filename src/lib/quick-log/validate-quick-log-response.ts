@@ -269,11 +269,13 @@ export function validateQuickLogClaudePayload(
   }
 
   if (entries.length === 0) {
-    const hint =
-      firstInvalidIdx != null
-        ? `（第 ${firstInvalidIdx} 筆起無法解析為有效紀錄）`
-        : '';
-    return { ok: false, error: `沒有可寫入的紀錄。${hint}` };
+    if (firstInvalidIdx == null) {
+      return { ok: true, summaryZh, entries: [] };
+    }
+    return {
+      ok: false,
+      error: `沒有可寫入的紀錄。（第 ${firstInvalidIdx} 筆起無法解析為有效紀錄）`,
+    };
   }
 
   if (firstInvalidIdx != null) {

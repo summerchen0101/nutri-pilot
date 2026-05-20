@@ -8,6 +8,10 @@ export type {
   MealType,
 } from '@/lib/quick-log/types';
 export {
+  QUICK_LOG_UNRECOGNIZABLE_HINT,
+  QUICK_LOG_UNRECOGNIZABLE_TITLE,
+} from '@/lib/quick-log/messages';
+export {
   validateQuickLogClaudePayload,
   validateQuickLogEntry,
   validateQuickLogEntriesList,
