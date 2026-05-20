@@ -47,7 +47,7 @@ export function MainAppShell({ children }: { children: ReactNode }) {
   const hasBottomNav = showShopBottomNav || showMainBottomNav;
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
+    <div className="relative min-h-screen overflow-x-clip">
       <PendingAnalysisJobsHost />
       <NavigationLoadingOverlay
         isVisible={isNavigating}

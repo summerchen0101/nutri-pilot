@@ -20,6 +20,7 @@ export function ShopPageHeader({ shopPointsBalance = 0 }: ShopPageHeaderProps) {
       anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
       title="健康商城"
       spacing="compact"
+      shellClassName="bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/90"
       action={
         <div className="flex shrink-0 items-center justify-end gap-1">
           <div
