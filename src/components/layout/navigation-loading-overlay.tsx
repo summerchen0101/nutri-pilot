@@ -2,10 +2,6 @@
 
 import { cn } from '@/lib/utils/cn';
 
-/** 與 BottomNav / ShopBottomNav 高度對齊：pt-2 + nav + pb safe-area */
-const BOTTOM_NAV_RESERVE_CLASS =
-  'bottom-[calc(4.5rem+env(safe-area-inset-bottom))]';
-
 const DOT_DELAYS_MS = [0, 150, 300] as const;
 
 function NavigationLoadingDots() {
@@ -29,20 +25,17 @@ function NavigationLoadingDots() {
 
 interface NavigationLoadingOverlayProps {
   isVisible: boolean;
-  hasBottomNav: boolean;
 }
 
 export function NavigationLoadingOverlay({
   isVisible,
-  hasBottomNav,
 }: NavigationLoadingOverlayProps) {
   return (
     <div
       aria-busy={isVisible}
       aria-hidden={!isVisible}
       className={cn(
-        'fixed inset-x-0 top-0 z-30 flex items-center justify-center bg-background/80 transition-opacity duration-150 ease-out',
-        hasBottomNav ? BOTTOM_NAV_RESERVE_CLASS : 'bottom-0',
+        'fixed inset-0 z-[50] flex items-center justify-center bg-background/80 transition-opacity duration-150 ease-out',
         isVisible ?
           'pointer-events-auto opacity-100'
         : 'pointer-events-none opacity-0',

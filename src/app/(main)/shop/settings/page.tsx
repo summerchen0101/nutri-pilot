@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { ShopSettingsPageClient } from '@/app/(main)/shop/settings/shop-settings-page-client';
 import { dietMethodLabel } from '@/app/(main)/settings/_lib/formatters';
 import { getCachedAuthContext } from '@/lib/auth';
+import { formatTaipeiDateTime } from '@/lib/datetime/format-taipei-datetime';
 
 export default async function ShopSettingsPage() {
   const { supabase, user } = await getCachedAuthContext();
@@ -27,6 +28,7 @@ export default async function ShopSettingsPage() {
   const dietMethod = (profile.diet_method as string) ?? 'mediterranean';
   const shopPointsBalance = Number(profile.shop_points_balance ?? 0);
   const nextExpiry = nextExpiryRows?.[0];
+  const nextExpiryAt = nextExpiry?.expires_at ?? null;
 
   return (
     <ShopSettingsPageClient
@@ -36,7 +38,7 @@ export default async function ShopSettingsPage() {
       }
       shopPointsBalance={shopPointsBalance}
       nextExpiringPoints={nextExpiry != null ? Number(nextExpiry.points) : null}
-      nextExpiryAt={nextExpiry?.expires_at ?? null}
+      nextExpiryAtLabel={formatTaipeiDateTime(nextExpiryAt)}
     />
   );
 }

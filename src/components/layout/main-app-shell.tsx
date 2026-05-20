@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { PendingAnalysisJobsHost } from '@/components/ai/pending-analysis-jobs-host';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { NavigationLoadingOverlay } from '@/components/layout/navigation-loading-overlay';
+import { NavigationLoadingProvider } from '@/components/layout/navigation-loading-provider';
 import { ShopBottomNav } from '@/components/layout/shop-bottom-nav';
 import { useNavigationLoading } from '@/hooks/use-navigation-loading';
 import {
@@ -26,7 +27,7 @@ function shouldUseCompactBottomPadding(pathname: string): boolean {
   return false;
 }
 
-export function MainAppShell({ children }: { children: ReactNode }) {
+function MainAppShellInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { isNavigating } = useNavigationLoading();
   const minimalBottomPadding =
@@ -44,15 +45,11 @@ export function MainAppShell({ children }: { children: ReactNode }) {
     !shouldHideAllBottomNavPathname(pathname);
   const showMainBottomNav =
     !isShopRoutePathname(pathname) && !isShopCommerceShortcutPathname(pathname);
-  const hasBottomNav = showShopBottomNav || showMainBottomNav;
 
   return (
     <div className="relative min-h-screen overflow-x-clip">
       <PendingAnalysisJobsHost />
-      <NavigationLoadingOverlay
-        isVisible={isNavigating}
-        hasBottomNav={hasBottomNav}
-      />
+      <NavigationLoadingOverlay isVisible={isNavigating} />
       <div className={contentPaddingClass}>
         {children}
       </div>
@@ -62,5 +59,13 @@ export function MainAppShell({ children }: { children: ReactNode }) {
         <BottomNav />
       : null}
     </div>
+  );
+}
+
+export function MainAppShell({ children }: { children: ReactNode }) {
+  return (
+    <NavigationLoadingProvider>
+      <MainAppShellInner>{children}</MainAppShellInner>
+    </NavigationLoadingProvider>
   );
 }

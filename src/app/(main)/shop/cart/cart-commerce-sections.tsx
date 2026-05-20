@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { buildRecommendedProducts } from '@/app/(main)/dashboard/dashboard-helpers';
 import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import { Button } from '@/components/ui/button';
+import { useStartNavigationLoading } from '@/hooks/use-navigation-loading';
 import { createClient } from '@/lib/supabase/client';
 import { useCartStore } from '@/lib/shop/cart-store';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
@@ -75,6 +76,7 @@ export interface CartCommerceSectionsProps {
 
 export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
   const router = useRouter();
+  const startNavigationLoading = useStartNavigationLoading();
   const closeCartPanel = useCartStore((s) => s.closeCartPanel);
   const lines = useCartStore((s) => s.lines);
   const [couponSheetOpen, setCouponSheetOpen] = useState(false);
@@ -212,6 +214,7 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
   function goCouponsSettings() {
     setCouponSheetOpen(false);
     closeCartPanel();
+    startNavigationLoading();
     router.push('/settings/coupons');
   }
 
@@ -303,6 +306,7 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
                     className="mt-auto w-full shrink-0"
                     onClick={() => {
                       closeCartPanel();
+                      startNavigationLoading();
                       router.push(`/shop/${product.id}`);
                     }}
                   >

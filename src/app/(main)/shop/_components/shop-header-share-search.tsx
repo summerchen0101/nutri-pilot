@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 import { SHOP_HEADER_ICON_BUTTON_CLASS } from '@/app/(main)/shop/_components/shop-header-icon-styles';
+import { useStartNavigationLoading } from '@/hooks/use-navigation-loading';
 import { useShopCatalogUiStore } from '@/lib/shop/shop-catalog-ui-store';
 import { showSuccessMessage } from '@/lib/ui/app-message-store';
 import { cn } from '@/lib/utils/cn';
@@ -59,6 +60,7 @@ export function ShopHeaderShareButton({
 export function ShopCatalogSearchButton() {
   const pathname = usePathname();
   const router = useRouter();
+  const startNavigationLoading = useStartNavigationLoading();
   const isCatalogHome = pathname === '/shop' || pathname === '/shop/';
   const query = useShopCatalogUiStore((s) => s.catalogSearchQuery);
   const setQuery = useShopCatalogUiStore((s) => s.setCatalogSearchQuery);
@@ -83,6 +85,7 @@ export function ShopCatalogSearchButton() {
         className={SHOP_HEADER_ICON_BUTTON_CLASS}
         onClick={() => {
           openOverlay();
+          startNavigationLoading();
           router.push('/shop');
         }}
       >

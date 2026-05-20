@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 
 import { cn } from '@/lib/utils/cn';
@@ -8,6 +9,7 @@ interface SettingsRowProps {
   /** 顯示在標題右側（如說明按鈕）；若置於互動列內請在按鈕 onClick 內 stopPropagation */
   labelAccessory?: ReactNode;
   value?: string;
+  href?: string;
   onClick?: () => void;
   valueClassName?: string;
   trailing?: ReactNode;
@@ -19,13 +21,15 @@ export function SettingsRow({
   label,
   labelAccessory,
   value,
+  href,
   onClick,
   valueClassName,
   trailing,
   danger,
   withBorder = true,
 }: SettingsRowProps) {
-  const isInteractive = typeof onClick === 'function';
+  const isLink = typeof href === 'string' && href.length > 0;
+  const isInteractive = isLink || typeof onClick === 'function';
 
   const rowClass = cn(
     'flex w-full items-center justify-between border-0 border-b-hairline py-3 text-left',
@@ -72,6 +76,14 @@ export function SettingsRow({
       </div>
     </>
   );
+
+  if (isLink) {
+    return (
+      <Link href={href} className={rowClass}>
+        {inner}
+      </Link>
+    );
+  }
 
   if (isInteractive) {
     return (

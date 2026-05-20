@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { FiChevronLeft } from 'react-icons/fi';
 
@@ -17,19 +16,7 @@ interface ShopSettingsPageClientProps {
   personalizeFromDietInitial: boolean;
   shopPointsBalance: number;
   nextExpiringPoints: number | null;
-  nextExpiryAt: string | null;
-}
-
-function formatExpiryDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString('zh-TW', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  nextExpiryAtLabel: string | null;
 }
 
 export function ShopSettingsPageClient({
@@ -37,9 +24,8 @@ export function ShopSettingsPageClient({
   personalizeFromDietInitial,
   shopPointsBalance,
   nextExpiringPoints,
-  nextExpiryAt,
+  nextExpiryAtLabel,
 }: ShopSettingsPageClientProps) {
-  const router = useRouter();
   const [shopSettingsOpen, setShopSettingsOpen] = useState(false);
 
   const backLink = (
@@ -72,11 +58,11 @@ export function ShopSettingsPageClient({
         </div>
         <div className="mt-3 border-t-hairline border-border pt-3">
           <p className="text-caption text-muted-foreground">即將到期</p>
-          {nextExpiringPoints != null && nextExpiryAt != null ? (
+          {nextExpiringPoints != null && nextExpiryAtLabel != null ? (
             <>
               <p className="mt-0.5 text-body font-medium text-foreground">
                 {nextExpiringPoints.toLocaleString('zh-TW')} 點 · 到期{' '}
-                {formatExpiryDateTime(nextExpiryAt)}
+                {nextExpiryAtLabel}
               </p>
               <p className="mt-1 text-caption leading-relaxed text-muted-foreground">
                 為「最早到期那一批」的加總；折抵時採先到期先用（FIFO）。實際以條款與系統為準。
@@ -95,17 +81,8 @@ export function ShopSettingsPageClient({
       </div>
 
       <ShopCommerceShortcutsCard
-        onMyOrders={() => {
-          router.push('/settings/orders');
-        }}
         onShippingAddresses={() => {
           setShopSettingsOpen(true);
-        }}
-        onMemberPoints={() => {
-          router.push('/settings/points');
-        }}
-        onCoupons={() => {
-          router.push('/settings/coupons');
         }}
       />
 
