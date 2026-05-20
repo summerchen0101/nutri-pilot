@@ -13,6 +13,7 @@ import {
 import { FiAward, FiBell, FiHeadphones } from "react-icons/fi";
 
 import { DashboardAiSprite } from "@/app/(main)/dashboard/dashboard-ai-sprite";
+import { DashboardMealRecordStreakSheet } from "@/app/(main)/dashboard/dashboard-meal-record-streak-sheet";
 import { DashboardWaterGrid } from "@/app/(main)/dashboard/dashboard-water-grid";
 import {
   HEADER_ACTION_ICON_CLASS,
@@ -464,8 +465,15 @@ export function DashboardHome({
   );
 
   const [aiSpriteOpen, setAiSpriteOpen] = useState(false);
+  const [streakSheetOpen, setStreakSheetOpen] = useState(false);
   const openAiSprite = useCallback(() => {
     setAiSpriteOpen(true);
+  }, []);
+  const openStreakSheet = useCallback(() => {
+    setStreakSheetOpen(true);
+  }, []);
+  const closeStreakSheet = useCallback(() => {
+    setStreakSheetOpen(false);
   }, []);
 
   return (
@@ -506,16 +514,20 @@ export function DashboardHome({
 
       <section className="flex items-center justify-between gap-2">
         {mealCompleteStreakDays >= 1 ? (
-          <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium leading-none text-white">
+          <button
+            type="button"
+            onClick={openStreakSheet}
+            aria-label={`查看連續紀錄獎勵，已連續紀錄 ${mealCompleteStreakDays} 日`}
+            className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium leading-none text-white transition-colors hover:opacity-90">
             <FiAward className="h-3 w-3 shrink-0 opacity-90" aria-hidden />
             <span className="inline-flex items-center gap-0.5">
-              <span>已達成</span>
+              <span>已連續紀錄</span>
               <span className="font-bold tabular-nums">
                 {mealCompleteStreakDays}
               </span>
               <span>日</span>
             </span>
-          </span>
+          </button>
         ) : (
           <button
             type="button"
@@ -534,6 +546,12 @@ export function DashboardHome({
           {dateLabel}
         </p>
       </section>
+
+      <DashboardMealRecordStreakSheet
+        open={streakSheetOpen}
+        onClose={closeStreakSheet}
+        streakDays={mealCompleteStreakDays}
+      />
 
       <CalorieRingBlock
         todayKcal={todayKcal}

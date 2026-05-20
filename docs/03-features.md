@@ -156,7 +156,7 @@ export function calcRecommendScore(
 
 ### P2-3 Dashboard
 
-- [x] 問候語 + 今日日期 + 連續打卡 badge
+- [x] 問候語 + 今日日期 + 三餐完整連續紀錄 badge（可開 7/14/30 獎勵 sheet）
 - [x] 熱量圓環（今日攝取 / 目標，三大營養素進度條）
 - [x] 體重卡（今日體重 + BMI）
 - [x] 今日飲食摘要
