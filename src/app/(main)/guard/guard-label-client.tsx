@@ -353,7 +353,7 @@ export function GuardLabelClient() {
               <img
                 src={previewUrl}
                 alt="標籤預覽"
-                className="max-h-56 w-full object-contain"
+                className="h-48 w-full object-cover"
               />
               <button
                 type="button"

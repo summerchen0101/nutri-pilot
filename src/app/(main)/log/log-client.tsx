@@ -525,16 +525,10 @@ export function LogClient({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex w-full flex-col items-center gap-2 rounded-xl border-hairline border-dashed border-white/25 bg-primary py-8 text-white transition-colors active:bg-primary-dark">
-                    <FiCamera
-                      className="h-8 w-8 shrink-0 text-white"
-                      aria-hidden
-                    />
-                    <span className="text-[13px] font-medium text-white">
-                      拍照或選擇相片
-                    </span>
-                    <span className="text-[11px] text-white/70">
-                      支援 JPG、PNG
+                    className="flex w-full flex-col items-center gap-2 rounded-xl border-hairline border-dashed border-primary bg-transparent py-8 text-primary transition-opacity active:opacity-90">
+                    <FiCamera className="h-8 w-8 shrink-0" aria-hidden />
+                    <span className="text-[13px] font-medium">
+                      拍攝或選擇相片
                     </span>
                   </button>
                 ) : photoPreviewUrl && !photoResult ? (
@@ -548,7 +542,7 @@ export function LogClient({
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="absolute right-2 top-2 rounded-full bg-[#1E212B]/70 px-3 py-1 text-[11px] text-white transition-opacity hover:opacity-90">
+                      className="absolute right-2 top-2 rounded-full bg-[#1E212B]/70 px-3 py-1 text-[11px] text-white">
                       重新選擇
                     </button>
                   </div>
@@ -564,20 +558,10 @@ export function LogClient({
                 ) : null}
 
                 {photoWaitingAnalysis ? (
-                  <div className="space-y-3 rounded-xl bg-card p-4">
-                    <div className="animate-pulse space-y-2">
-                      <div className="h-4 w-1/3 rounded-full bg-neutral-border-tertiary" />
-                      <div className="h-3 w-1/2 rounded-full bg-neutral-border-tertiary" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 animate-pulse">
-                      <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
-                      <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
-                      <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
-                      <div className="h-20 rounded-xl bg-neutral-border-tertiary" />
-                    </div>
-                    <div className="h-10 animate-pulse rounded-[10px] bg-neutral-border-tertiary" />
-                    <p className="text-center text-[11px] text-neutral-text-tertiary">
-                      AI 辨識中，請稍候...
+                  <div className="space-y-2 rounded-xl bg-card p-4">
+                    <div className="animate-pulse h-4 w-1/3 rounded-full bg-muted" />
+                    <p className="text-center text-[11px] text-muted-foreground">
+                      AI 辨識中…
                     </p>
                   </div>
                 ) : null}
