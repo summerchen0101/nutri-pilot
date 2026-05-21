@@ -260,6 +260,11 @@ export async function buildShopCheckout(
     return { ok: false, error: nameErr, status: 422 };
   }
 
+  const checkoutVendorId = trimReq(body.checkoutVendorId);
+  if (!checkoutVendorId) {
+    return { ok: false, error: "請選擇要結帳的廠商", status: 422 };
+  }
+
   const items = body.items;
   if (!items?.length) {
     return { ok: false, error: "items required", status: 400 };
@@ -338,6 +343,13 @@ export async function buildShopCheckout(
       };
     }
     const vendor = normalizeVendor(v.product!.brand!.vendor)!;
+    if (vendor.id !== checkoutVendorId) {
+      return {
+        ok: false,
+        error: "購物車含非本次結帳廠商的商品",
+        status: 422,
+      };
+    }
     linesComputed.push({
       variantId: v.id,
       qty,
@@ -479,10 +491,17 @@ export async function buildShopCheckout(
   for (const v of snapshotVendors) {
     const mapping = resolveLogisticsFromVendorCode(v.shippingMethodCode)!;
     const isCod = isCvsCodShippingCodeEdge(v.shippingMethodCode);
+    let subType = mapping.logisticsSubType;
+    if (mapping.logisticsType === "HOME") {
+      const homeSub = trimReq(body.homeLogisticsSubType);
+      if (homeSub === "TCAT" || homeSub === "POST") {
+        subType = homeSub;
+      }
+    }
     logisticsByVendor[v.vendorId] = {
       logisticsType: mapping.logisticsType,
-      logisticsSubType: mapping.logisticsSubType,
-      completed: mapping.logisticsType === "HOME" ? false : false,
+      logisticsSubType: subType,
+      completed: false,
       storeSelected: false,
       logisticsCreated: false,
       isCollection: isCod ? "Y" : "N",

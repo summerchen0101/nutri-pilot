@@ -210,9 +210,9 @@ ECPAY_LOGISTICS_HASH_IV=<後台介接資訊>
 
 ### 5.2 物流 V1 — CheckMacValue（MD5）
 
-步驟與金流類似（排序、HashKey/HashIV 包裹、.NET UrlEncode），但雜湊為 **MD5** 大寫 hex。
+排序 → HashKey/HashIV 包裹 → .NET UrlEncode → **toLowerCase** → **MD5** → 大寫 hex（見 [綠界 7424](https://developers.ecpay.com.tw/7424/)）。與金流 SHA256 流程類似，但物流為 MD5。
 
-參考：`src/lib/ecpay-logistics.ts` — `generateEcpayLogisticsCheckMacValue`
+參考：`supabase/functions/_shared/ecpay-logistics.ts` — `generateEcpayLogisticsCheckMacValue`、`verifyEcpayLogisticsCheckMacValue`
 
 V1 `Express/Create` 等：Content-Type 為 **application/x-www-form-urlencoded**，勿誤用 JSON。
 
@@ -287,7 +287,7 @@ client-return 典型步驟：解析暫存結果 → `CreateByTempTrade` → 查�
 ### 物流 C2C
 
 1. 設定寄件人與 `ECPAY_LOGISTICS_*`（測試用 `2000933`）
-2. `RedirectToLogisticsSelection`（V2 JSON 信封）開啟選店
+2. 結帳超商：`Express/map`（V1 form POST）；勿用 V2 `RedirectToLogisticsSelection`（會進物流選擇頁）
 3. `ClientReplyURL` 收到結果後 `CreateByTempTrade` + 查詢
 4. `ServerReplyURL` 接收貨態更新
 5. `LogisticsSubType` 使用 `*C2C`；`logistics_type` 區分 `CVS` / `HOME`

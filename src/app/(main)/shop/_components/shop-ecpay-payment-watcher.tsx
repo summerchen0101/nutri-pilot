@@ -14,6 +14,7 @@ import {
   subscribeEcpayReturnMessage,
 } from '@/lib/shop/ecpay-payment-return-channel';
 import { useCartStore } from '@/lib/shop/cart-store';
+import { fetchOrderCheckoutVendorId } from '@/lib/shop/order-logistics-snapshot';
 import { createClient } from '@/lib/supabase/client';
 
 const POLL_MS = 2000;
@@ -71,28 +72,32 @@ export function ShopEcpayPaymentWatcher() {
 
     let cancelled = false;
 
-    const completePaid = () => {
-      const key = `paid:${orderId}`;
+    const goSuccess = async (paymentPending: boolean) => {
+      const key = paymentPending ? `pending:${orderId}` : `paid:${orderId}`;
       if (handledRef.current === key) return;
       handledRef.current = key;
-      logEcpayCheckout('PaymentWatcher → success (paid)', { orderId });
+      logEcpayCheckout(
+        paymentPending
+          ? 'PaymentWatcher → success (pending)'
+          : 'PaymentWatcher → success (paid)',
+        { orderId },
+      );
       clearEcpayPaymentSessionOrderId();
       resetFlow();
       closeCheckoutPanel();
-      window.location.assign('/shop/success');
+      const vendorId = await fetchOrderCheckoutVendorId(orderId);
+      const q = new URLSearchParams({ order_id: orderId });
+      if (paymentPending) q.set('paymentPending', '1');
+      if (vendorId) q.set('vendor_id', vendorId);
+      window.location.assign(`/shop/success?${q.toString()}`);
+    };
+
+    const completePaid = () => {
+      void goSuccess(false);
     };
 
     const completePending = () => {
-      const key = `pending:${orderId}`;
-      if (handledRef.current === key) return;
-      handledRef.current = key;
-      logEcpayCheckout('PaymentWatcher → success (pending)', { orderId });
-      clearEcpayPaymentSessionOrderId();
-      resetFlow();
-      closeCheckoutPanel();
-      window.location.assign(
-        `/shop/success?paymentPending=1&order_id=${encodeURIComponent(orderId)}`,
-      );
+      void goSuccess(true);
     };
 
     const tick = async () => {

@@ -14,6 +14,7 @@ import { cartTotalItemsSubtotal, useCartStore, type CartLine } from '@/lib/shop/
 
 export function useCartDerived() {
   const lines = useCartStore((s) => s.lines);
+  const checkoutVendorId = useCartStore((s) => s.checkoutVendorId);
   const vendorShippingSelections = useCartStore(
     (s) => s.vendorShippingSelections,
   );
@@ -79,6 +80,22 @@ export function useCartDerived() {
     [validLines, vendorShippingSelections, methodsByVendor],
   );
 
+  const selectedSummary = useMemo(
+    () =>
+      checkoutVendorId ?
+        summaries.find((s) => s.vendorId === checkoutVendorId) ?? null
+      : null,
+    [summaries, checkoutVendorId],
+  );
+
+  const selectedValidLines = useMemo(
+    () =>
+      checkoutVendorId ?
+        validLines.filter((l) => l.vendorId === checkoutVendorId)
+      : [],
+    [validLines, checkoutVendorId],
+  );
+
   const itemsSubtotal = useMemo(
     () => cartTotalItemsSubtotal(validLines),
     [validLines],
@@ -92,6 +109,19 @@ export function useCartDerived() {
     [validLines, summaries],
   );
 
+  const selectedItemsSubtotal = useMemo(
+    () => cartTotalItemsSubtotal(selectedValidLines),
+    [selectedValidLines],
+  );
+  const selectedShippingTotal = useMemo(
+    () => (selectedSummary ? selectedSummary.effectiveShipping : 0),
+    [selectedSummary],
+  );
+  const selectedGrandTotal = useMemo(
+    () => selectedItemsSubtotal + selectedShippingTotal,
+    [selectedItemsSubtotal, selectedShippingTotal],
+  );
+
   const hasLegacyLines = lines.length > 0 && validLines.length < lines.length;
 
   const maxLeadTimeDays = useMemo(() => {
@@ -99,14 +129,26 @@ export function useCartDerived() {
     return Math.max(...validLines.map((l) => l.leadTimeDays));
   }, [validLines]);
 
+  useEffect(() => {
+    if (vendorIds.length === 1 && !checkoutVendorId) {
+      useCartStore.getState().setCheckoutVendorId(vendorIds[0]!);
+    }
+  }, [vendorIds, checkoutVendorId]);
+
   return {
     lines,
+    checkoutVendorId,
     vendorShippingSelections,
     validLines,
+    selectedValidLines,
     summaries,
+    selectedSummary,
     itemsSubtotal,
     shippingTotal,
     grandTotal,
+    selectedItemsSubtotal,
+    selectedShippingTotal,
+    selectedGrandTotal,
     hasLegacyLines,
     maxLeadTimeDays,
     shippingMethodsLoading,

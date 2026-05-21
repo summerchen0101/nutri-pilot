@@ -13,8 +13,8 @@ import { FiChevronLeft } from "react-icons/fi";
 
 import {
   getCheckoutShippingDefaults,
-  startCheckout,
 } from "@/app/(main)/shop/actions";
+import { CheckoutHomeDeliverySection } from "@/app/(main)/shop/checkout/_components/checkout-home-delivery-section";
 import { CheckoutLegalHint } from "@/app/(main)/shop/checkout/_components/checkout-legal-hint";
 import { CheckoutPanelFooter } from "@/app/(main)/shop/checkout/_components/checkout-panel-footer";
 import { CheckoutPaymentBreakdownCard } from "@/app/(main)/shop/checkout/_components/checkout-payment-breakdown-card";
@@ -23,29 +23,24 @@ import { CheckoutShippingSummaryCard } from "@/app/(main)/shop/checkout/_compone
 import { CheckoutVendorRecipientEditSheet } from "@/app/(main)/shop/checkout/_components/checkout-vendor-recipient-edit-sheet";
 import { HEADER_LEADING_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
 import { useCartStore } from "@/lib/shop/cart-store";
-import { isCvsShippingCode } from "@/lib/shop/shipping-method-kind";
 import { consumeEcpayCheckoutReturnError } from "@/lib/shop/ecpay-checkout-return-error";
 import { consumeEcpayResumeOrderId } from "@/lib/shop/ecpay-checkout-resume";
-import {
-  ECPAY_LOGISTICS_POPUP_NAME,
-  openEcpayPopup,
-  showPopupMessage,
-} from "@/lib/shop/ecpay-popup-form";
-import { useEcpayCheckoutFlow } from "@/lib/shop/use-ecpay-checkout-flow";
-import { validateEcpayRecipientName } from "@/lib/shop/validate-ecpay-recipient-name";
 import { logEcpayCheckout } from "@/lib/shop/ecpay-checkout-debug";
-import { isCheckoutSnapshotLike } from "@/lib/shop/build-remaining-logistics-queue";
-import { createClient } from "@/lib/supabase/client";
 import { useCartDerived } from "@/lib/shop/use-cart-derived";
+import { useSingleVendorCheckoutFlow } from "@/lib/shop/use-single-vendor-checkout-flow";
+import { isCvsCodShippingCode } from "@/lib/shop/shipping-method-kind";
+import { validateEcpayRecipientName } from "@/lib/shop/validate-ecpay-recipient-name";
 
 export interface CheckoutClientProps {
-  /** 供父層 `ShopRightSheet` 的 `elevatedHeader` 使用 */
   onBodyScrollTopChange?: (scrollTop: number) => void;
 }
 
 export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
   const router = useRouter();
-  const lines = useCartStore((s) => s.lines);
+  const checkoutVendorId = useCartStore((s) => s.checkoutVendorId);
+  const setLastCheckedOutVendorId = useCartStore(
+    (s) => s.setLastCheckedOutVendorId,
+  );
   const isCheckoutPanelOpen = useCartStore((s) => s.isCheckoutPanelOpen);
   const closeCheckoutPanel = useCartStore((s) => s.closeCheckoutPanel);
   const openCartPanel = useCartStore((s) => s.openCartPanel);
@@ -54,11 +49,12 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
   );
 
   const {
-    validLines,
+    selectedValidLines,
+    selectedSummary,
     summaries,
-    itemsSubtotal,
-    shippingTotal,
-    grandTotal,
+    selectedItemsSubtotal,
+    selectedShippingTotal,
+    selectedGrandTotal,
     hasLegacyLines,
   } = useCartDerived();
 
@@ -66,40 +62,17 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
   const [recipientPhone, setRecipientPhone] = useState("");
   const [recipientAddressFull, setRecipientAddressFull] = useState("");
   const [saveShippingToProfile, setSaveShippingToProfile] = useState(false);
-  const [cvsStoreNameByVendor, setCvsStoreNameByVendor] = useState<
-    Record<string, string>
-  >({});
   const [editingVendorId, setEditingVendorId] = useState<string | null>(null);
-
-  const {
-    phase,
-    statusMessage,
-    pendingPaymentOrderId,
-    startEcpayFlow,
-    resumeEcpayCheckout,
-    openPayment,
-  } = useEcpayCheckoutFlow({
-    onPaid: (orderId) => {
-      logEcpayCheckout("CheckoutClient onPaid → /shop/success", { orderId });
-      closeCheckoutPanel();
-      router.push("/shop/success");
-      router.refresh();
-    },
-    onPendingPayment: (orderId) => {
-      logEcpayCheckout("CheckoutClient onPendingPayment → success", {
-        orderId,
-      });
-      closeCheckoutPanel();
-      router.push(`/shop/success?paymentPending=1&order_id=${orderId}`);
-    },
-    onError: (message) => {
-      logEcpayCheckout("CheckoutClient onError", { message });
-      setErr(message);
-    },
-  });
   const [err, setErr] = useState<string | null>(null);
   const [defaultsLoading, setDefaultsLoading] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [defaultsReady, setDefaultsReady] = useState(false);
+  const [resumeOrderId, setResumeOrderId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+
+  const displaySummaries = useMemo(
+    () => (selectedSummary ? [selectedSummary] : []),
+    [selectedSummary],
+  );
 
   const editingSummary = useMemo(() => {
     if (!editingVendorId) return null;
@@ -113,24 +86,65 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     [onBodyScrollTopChange],
   );
 
+  const handleComplete = useCallback(
+    (orderId: string) => {
+      const vid = checkoutVendorId ?? "";
+      logEcpayCheckout("CheckoutClient complete → success", { orderId, vid });
+      if (vid) setLastCheckedOutVendorId(vid);
+      closeCheckoutPanel();
+      const q = new URLSearchParams({ order_id: orderId });
+      if (vid) q.set("vendor_id", vid);
+      router.push(`/shop/success?${q.toString()}`);
+      router.refresh();
+    },
+    [checkoutVendorId, closeCheckoutPanel, router, setLastCheckedOutVendorId],
+  );
+
+  const flow = useSingleVendorCheckoutFlow({
+    checkoutVendorId,
+    selectedSummary,
+    selectedValidLines,
+    vendorShippingSelections,
+    recipientName,
+    recipientPhone,
+    recipientAddressFull,
+    saveShippingToProfile,
+    isPanelOpen: isCheckoutPanelOpen,
+    recipientDefaultsReady: defaultsReady,
+    resumeOrderId,
+    onComplete: handleComplete,
+    onError: setErr,
+  });
+
+  const handleSelectCvsStore = useCallback(() => {
+    void (async () => {
+      setErr(null);
+      const ok = await flow.ensureOrder();
+      if (ok) void flow.openStoreMap();
+    })();
+  }, [flow]);
+
   useEffect(() => {
-    if (!isCheckoutPanelOpen) return;
+    if (!isCheckoutPanelOpen) {
+      setResumeOrderId(null);
+      return;
+    }
     const returnErr = consumeEcpayCheckoutReturnError();
     if (returnErr) setErr(returnErr);
+    const resume = consumeEcpayResumeOrderId();
+    if (resume) setResumeOrderId(resume);
   }, [isCheckoutPanelOpen]);
 
   useEffect(() => {
-    if (!isCheckoutPanelOpen) return;
-    const resumeOrderId = consumeEcpayResumeOrderId();
-    if (!resumeOrderId) return;
-    void resumeEcpayCheckout(resumeOrderId);
-  }, [isCheckoutPanelOpen, resumeEcpayCheckout]);
-
-  useEffect(() => {
-    if (!isCheckoutPanelOpen || lines.length === 0) return;
+    if (!isCheckoutPanelOpen) {
+      setDefaultsReady(false);
+      return;
+    }
+    if (selectedValidLines.length === 0) return;
 
     let cancelled = false;
     setDefaultsLoading(true);
+    setDefaultsReady(false);
     void (async () => {
       const res = await getCheckoutShippingDefaults();
       if (cancelled) return;
@@ -148,154 +162,137 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
       setRecipientName(res.defaultRecipientName);
       setRecipientPhone(res.defaultPhone);
       setRecipientAddressFull(res.defaultAddressFull);
+      setDefaultsReady(true);
+      setErr((prev) =>
+        prev === "請填寫收件人姓名與聯絡電話" ? null : prev,
+      );
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [isCheckoutPanelOpen, lines.length, closeCheckoutPanel, router]);
+  }, [
+    isCheckoutPanelOpen,
+    selectedValidLines.length,
+    closeCheckoutPanel,
+    router,
+  ]);
 
   useEffect(() => {
-    if (!isCheckoutPanelOpen || lines.length > 0) return;
+    if (!isCheckoutPanelOpen || selectedValidLines.length > 0) return;
     closeCheckoutPanel();
     openCartPanel();
-  }, [isCheckoutPanelOpen, lines.length, closeCheckoutPanel, openCartPanel]);
-
-  useEffect(() => {
-    if (!pendingPaymentOrderId) return;
-    let cancelled = false;
-    void (async () => {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("orders")
-        .select("checkout_snapshot")
-        .eq("id", pendingPaymentOrderId)
-        .maybeSingle();
-      if (cancelled || !data) return;
-      const snap = data.checkout_snapshot;
-      if (!isCheckoutSnapshotLike(snap)) return;
-      const names: Record<string, string> = {};
-      for (const v of snap.vendors ?? []) {
-        const draft = snap.logisticsByVendor?.[v.vendorId];
-        const name =
-          draft != null &&
-          typeof draft === "object" &&
-          "cvsStoreName" in draft &&
-          typeof (draft as { cvsStoreName?: string }).cvsStoreName === "string" ?
-            (draft as { cvsStoreName: string }).cvsStoreName
-          : "";
-        if (name.trim()) names[v.vendorId] = name.trim();
-      }
-      setCvsStoreNameByVendor(names);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [pendingPaymentOrderId]);
-
-  const itemsPayload = validLines.map((l) => ({
-    variantId: l.variantId,
-    qty: l.qty,
-  }));
+  }, [
+    isCheckoutPanelOpen,
+    selectedValidLines.length,
+    closeCheckoutPanel,
+    openCartPanel,
+  ]);
 
   function goBackToCart() {
     closeCheckoutPanel();
     openCartPanel();
   }
 
-  function confirmPayment() {
-    const orderId = pendingPaymentOrderId?.trim() ?? "";
-    if (!orderId) {
-      setErr("找不到訂單，請重新送出");
-      return;
-    }
-    setErr(null);
-    void openPayment(orderId);
-  }
+  function handleFooterSubmit() {
+    startTransition(() => {
+      void (async () => {
+        setErr(null);
+        if (!defaultsReady) return;
 
-  function pay() {
-    setErr(null);
-    if (!validLines.length) {
-      setErr("購物車無有效品項，請重新加入商品");
-      return;
-    }
-    const rn = recipientName.trim();
-    const rp = recipientPhone.trim();
-    const ra = recipientAddressFull.trim();
-    if (!rn || !rp) {
-      setErr("請填寫收件人姓名與聯絡電話");
-      return;
-    }
-
-    const nameErr = validateEcpayRecipientName(rn);
-    if (nameErr) {
-      setErr(nameErr);
-      return;
-    }
-
-    let anyNeedsAddress = false;
-    for (const s of summaries) {
-      if (!isCvsShippingCode(s.selectedShippingMethodCode)) {
-        anyNeedsAddress = true;
-      }
-    }
-    if (anyNeedsAddress && !ra) {
-      setErr("請填寫收件地址（訂單含宅配運送）");
-      return;
-    }
-
-    const logisticsPopup = openEcpayPopup(ECPAY_LOGISTICS_POPUP_NAME);
-    if (!logisticsPopup) {
-      setErr("請允許彈出視窗以完成物流設定");
-      return;
-    }
-    showPopupMessage(logisticsPopup, "正在建立訂單…");
-
-    startTransition(async () => {
-      const res = await startCheckout({
-        items: itemsPayload,
-        vendorShippingSelections,
-        recipientName: rn,
-        recipientPhone: rp,
-        recipientAddressFull: ra,
-        saveShippingToProfile,
-      });
-      if (res.error) {
-        try {
-          logisticsPopup.close();
-        } catch {
-          /* ignore */
+        const rn = recipientName.trim();
+        const rp = recipientPhone.trim();
+        if (!rn || !rp) {
+          setErr("請填寫收件人姓名與聯絡電話");
+          return;
         }
-        setErr(res.error);
-        return;
-      }
-      if (res.orderId && res.logisticsQueue) {
-        await startEcpayFlow(res.orderId, res.logisticsQueue, logisticsPopup);
-      } else {
-        try {
-          logisticsPopup.close();
-        } catch {
-          /* ignore */
+        const nameErr = validateEcpayRecipientName(rn);
+        if (nameErr) {
+          setErr(nameErr);
+          return;
         }
-        setErr("建單回傳缺少參數");
-      }
+
+        if (!flow.orderId) {
+          const created = await flow.ensureOrder();
+          if (!created) return;
+        }
+
+        if (flow.isCod) {
+          if (!flow.storeReady) {
+            void flow.openStoreMap();
+          }
+          return;
+        }
+
+        if (flow.isCvs) {
+          if (!flow.storeReady) {
+            void flow.openStoreMap();
+            return;
+          }
+          await flow.goToPayment();
+          return;
+        }
+
+        if (flow.isHome) {
+          await flow.confirmHomeAndPay();
+          return;
+        }
+
+        setErr("無法判斷運送方式");
+      })();
     });
   }
 
-  if (lines.length === 0) {
+  if (!checkoutVendorId || selectedValidLines.length === 0) {
     return null;
   }
 
-  const canSubmit = validLines.length > 0 && !hasLegacyLines;
-  const isPaymentReady = phase === "paymentReady";
-  const footerPending =
-    pending ||
-    phase === "logistics" ||
-    phase === "payment" ||
-    phase === "polling";
-  const footerCanSubmit = isPaymentReady
-    ? Boolean(pendingPaymentOrderId)
-    : canSubmit && phase === "idle";
+  const recipientFilled =
+    defaultsReady &&
+    recipientName.trim().length > 0 &&
+    recipientPhone.trim().length > 0;
+
+  const loading =
+    defaultsLoading ||
+    !defaultsReady ||
+    flow.phase === "loading" ||
+    flow.phase === "confirmingHome" ||
+    flow.phase === "paying" ||
+    flow.phase === "awaitingLogistics";
+
+  const footerLabel = (() => {
+    if (flow.isCod) {
+      return flow.storeReady ? "完成（物流建立中）" : "選擇取貨門市";
+    }
+    if (flow.isCvs) {
+      return flow.storeReady ? "前往付款" : "選擇取貨門市";
+    }
+    if (flow.isHome) {
+      return "確認地址並前往付款";
+    }
+    return "送出";
+  })();
+
+  const footerCanSubmit = (() => {
+    if (
+      hasLegacyLines ||
+      !recipientFilled ||
+      flow.phase === "awaitingLogistics" ||
+      flow.phase === "loading" ||
+      flow.phase === "selectingStore"
+    ) {
+      return false;
+    }
+    if (flow.isCod) return !flow.storeReady;
+    if (flow.isCvs) return true;
+    if (flow.isHome) return false;
+    return false;
+  })();
+
+  const cvsStoreNames: Record<string, string> = {};
+  if (checkoutVendorId && flow.draft?.cvsStoreName) {
+    cvsStoreNames[checkoutVendorId] = flow.draft.cvsStoreName;
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -306,17 +303,13 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
         recipientPhone={recipientPhone}
         recipientAddressFull={recipientAddressFull}
         saveShippingToProfile={saveShippingToProfile}
-        cvsStoreNameByVendor={cvsStoreNameByVendor}
+        cvsStoreNameByVendor={cvsStoreNames}
         onClose={() => setEditingVendorId(null)}
         onSave={(patch) => {
           setRecipientName(patch.recipientName);
           setRecipientPhone(patch.recipientPhone);
           setRecipientAddressFull(patch.recipientAddressFull);
           setSaveShippingToProfile(patch.saveShippingToProfile);
-          setCvsStoreNameByVendor((prev) => ({
-            ...prev,
-            [patch.vendorId]: patch.cvsStoreName,
-          }));
         }}
       />
 
@@ -336,29 +329,53 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
             ) : null}
 
             <CheckoutShippingSummaryCard
-              summaries={summaries}
+              summaries={displaySummaries}
               recipientName={recipientName}
               recipientPhone={recipientPhone}
               recipientAddressFull={recipientAddressFull}
-              cvsStoreNameByVendor={cvsStoreNameByVendor}
+              cvsStoreNameByVendor={cvsStoreNames}
               onChangeShipping={goBackToCart}
               onEditVendor={(vendorId) => setEditingVendorId(vendorId)}
+              onSelectCvsStore={flow.isCvs ? handleSelectCvsStore : undefined}
+              cvsStoreSelecting={flow.phase === "selectingStore"}
+              cvsStoreSelectDisabled={
+                !defaultsReady ||
+                flow.phase === "loading" ||
+                !recipientFilled
+              }
             />
 
-            <CheckoutPaymentMethodCard />
+            {flow.isHome ? (
+              <CheckoutHomeDeliverySection
+                homeSubType={flow.homeSubType}
+                onHomeSubTypeChange={flow.setHomeSubType}
+                recipientAddressFull={recipientAddressFull}
+                onAddressSelected={(addr) => setRecipientAddressFull(addr)}
+                confirming={flow.phase === "confirmingHome"}
+                onConfirmHome={() => void flow.confirmHomeAndPay()}
+              />
+            ) : null}
+
+            {!flow.isHome ? (
+              <CheckoutPaymentMethodCard
+                isCod={isCvsCodShippingCode(
+                  selectedSummary?.selectedShippingMethodCode ?? null,
+                )}
+              />
+            ) : null}
 
             <CheckoutPaymentBreakdownCard
-              summaries={summaries}
-              itemsSubtotal={itemsSubtotal}
-              shippingTotal={shippingTotal}
-              grandTotal={grandTotal}
+              summaries={displaySummaries}
+              itemsSubtotal={selectedItemsSubtotal}
+              shippingTotal={selectedShippingTotal}
+              grandTotal={selectedGrandTotal}
             />
 
             <CheckoutLegalHint />
 
-            {statusMessage ? (
+            {flow.statusMessage ? (
               <p className="text-body text-muted-foreground" role="status">
-                {statusMessage}
+                {flow.statusMessage}
               </p>
             ) : null}
 
@@ -370,11 +387,11 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
           </div>
 
           <CheckoutPanelFooter
-            grandTotal={grandTotal}
-            pending={footerPending}
+            grandTotal={selectedGrandTotal}
+            pending={loading}
             canSubmit={footerCanSubmit}
-            submitLabel={isPaymentReady ? "前往付款" : "送出訂單"}
-            onSubmit={isPaymentReady ? confirmPayment : pay}
+            submitLabel={footerLabel}
+            onSubmit={handleFooterSubmit}
           />
         </>
       )}

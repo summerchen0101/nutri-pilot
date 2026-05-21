@@ -17,6 +17,30 @@ function pruneVendorShippingSelections(
   return next;
 }
 
+function pruneCheckoutVendorId(
+  checkoutVendorId: string | null,
+  lines: CartLine[],
+): string | null {
+  if (!checkoutVendorId) return null;
+  const has = lines.some((l) => l.vendorId === checkoutVendorId);
+  return has ? checkoutVendorId : null;
+}
+
+function applyLinesUpdate(
+  lines: CartLine[],
+  vendorShippingSelections: Record<string, string>,
+  checkoutVendorId: string | null,
+): Pick<CartState, 'lines' | 'vendorShippingSelections' | 'checkoutVendorId'> {
+  return {
+    lines,
+    vendorShippingSelections: pruneVendorShippingSelections(
+      vendorShippingSelections,
+      lines,
+    ),
+    checkoutVendorId: pruneCheckoutVendorId(checkoutVendorId, lines),
+  };
+}
+
 export interface CartLine {
   variantId: string;
   productId: string;
@@ -40,6 +64,10 @@ interface CartState {
   lines: CartLine[];
   /** 每廠商目前選擇的 `vendor_shipping_methods.id` */
   vendorShippingSelections: Record<string, string>;
+  /** 本次要結帳的廠商（單選） */
+  checkoutVendorId: string | null;
+  /** 最近完成結帳的廠商，供 success 頁局部清空購物車 */
+  lastCheckedOutVendorId: string | null;
   isCartPanelOpen: boolean;
   isCheckoutPanelOpen: boolean;
   openCartPanel: () => void;
@@ -50,6 +78,9 @@ interface CartState {
   setQty: (variantId: string, qty: number) => void;
   removeLine: (variantId: string) => void;
   setVendorShippingSelection: (vendorId: string, methodId: string) => void;
+  setCheckoutVendorId: (vendorId: string | null) => void;
+  removeLinesByVendor: (vendorId: string) => void;
+  setLastCheckedOutVendorId: (vendorId: string | null) => void;
   clear: () => void;
 }
 
@@ -58,6 +89,8 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       lines: [],
       vendorShippingSelections: {},
+      checkoutVendorId: null,
+      lastCheckedOutVendorId: null,
       isCartPanelOpen: false,
       isCheckoutPanelOpen: false,
       openCartPanel: () => set({ isCartPanelOpen: true }),
@@ -82,13 +115,13 @@ export const useCartStore = create<CartState>()(
               }
             : l,
           );
-          set({
-            lines: nextLines,
-            vendorShippingSelections: pruneVendorShippingSelections(
-              get().vendorShippingSelections,
+          set(
+            applyLinesUpdate(
               nextLines,
+              get().vendorShippingSelections,
+              get().checkoutVendorId,
             ),
-          });
+          );
           return;
         }
         const nextLines = [
@@ -108,46 +141,46 @@ export const useCartStore = create<CartState>()(
             imageUrl: line.imageUrl ?? null,
           },
         ];
-        set({
-          lines: nextLines,
-          vendorShippingSelections: pruneVendorShippingSelections(
-            get().vendorShippingSelections,
+        set(
+          applyLinesUpdate(
             nextLines,
+            get().vendorShippingSelections,
+            get().checkoutVendorId,
           ),
-        });
+        );
       },
       setQty: (variantId, qty) => {
         if (qty < 1) {
           const nextLines = get().lines.filter((l) => l.variantId !== variantId);
-          set({
-            lines: nextLines,
-            vendorShippingSelections: pruneVendorShippingSelections(
-              get().vendorShippingSelections,
+          set(
+            applyLinesUpdate(
               nextLines,
+              get().vendorShippingSelections,
+              get().checkoutVendorId,
             ),
-          });
+          );
           return;
         }
         const nextLines = get().lines.map((l) =>
           l.variantId === variantId ? { ...l, qty } : l,
         );
-        set({
-          lines: nextLines,
-          vendorShippingSelections: pruneVendorShippingSelections(
-            get().vendorShippingSelections,
+        set(
+          applyLinesUpdate(
             nextLines,
+            get().vendorShippingSelections,
+            get().checkoutVendorId,
           ),
-        });
+        );
       },
       removeLine: (variantId) => {
         const nextLines = get().lines.filter((l) => l.variantId !== variantId);
-        set({
-          lines: nextLines,
-          vendorShippingSelections: pruneVendorShippingSelections(
-            get().vendorShippingSelections,
+        set(
+          applyLinesUpdate(
             nextLines,
+            get().vendorShippingSelections,
+            get().checkoutVendorId,
           ),
-        });
+        );
       },
       setVendorShippingSelection: (vendorId, methodId) =>
         set({
@@ -156,7 +189,25 @@ export const useCartStore = create<CartState>()(
             [vendorId]: methodId,
           },
         }),
-      clear: () => set({ lines: [], vendorShippingSelections: {} }),
+      setCheckoutVendorId: (vendorId) => set({ checkoutVendorId: vendorId }),
+      removeLinesByVendor: (vendorId) => {
+        const nextLines = get().lines.filter((l) => l.vendorId !== vendorId);
+        const nextSelections = { ...get().vendorShippingSelections };
+        delete nextSelections[vendorId];
+        set({
+          ...applyLinesUpdate(nextLines, nextSelections, get().checkoutVendorId),
+          checkoutVendorId:
+            get().checkoutVendorId === vendorId ? null : get().checkoutVendorId,
+        });
+      },
+      setLastCheckedOutVendorId: (vendorId) =>
+        set({ lastCheckedOutVendorId: vendorId }),
+      clear: () =>
+        set({
+          lines: [],
+          vendorShippingSelections: {},
+          checkoutVendorId: null,
+        }),
     }),
     {
       name: 'nutri-guard-shop-cart-v3',
@@ -178,6 +229,7 @@ export const useCartStore = create<CartState>()(
       partialize: (state) => ({
         lines: state.lines,
         vendorShippingSelections: state.vendorShippingSelections,
+        checkoutVendorId: state.checkoutVendorId,
       }),
     },
   ),

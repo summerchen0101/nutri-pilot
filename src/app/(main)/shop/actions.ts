@@ -67,28 +67,34 @@ export async function getCheckoutShippingDefaults(): Promise<GetCheckoutShipping
   };
 }
 
-export interface LogisticsQueueItem {
-  vendorId: string;
-  vendorName: string;
-  logisticsType: 'CVS' | 'HOME';
-  logisticsSubType: string;
-}
+export type StartCheckoutResult =
+  | {
+      ok: true;
+      orderId: string;
+      vendorId: string;
+      shippingMethodCode: string | null;
+      paymentTotal: number;
+    }
+  | { ok: false; error: string };
 
 export async function startCheckout(payload: {
+  checkoutVendorId: string;
   items: { variantId: string; qty: number }[];
   recipientName: string;
   recipientPhone: string;
   recipientAddressFull: string;
   saveShippingToProfile?: boolean;
   vendorShippingSelections?: Record<string, string>;
-}): Promise<{
-  orderId?: string;
-  logisticsQueue?: LogisticsQueueItem[];
-  error?: string;
-}> {
+  homeLogisticsSubType?: 'TCAT' | 'POST';
+}): Promise<StartCheckoutResult> {
+  const vendorId = payload.checkoutVendorId?.trim() ?? '';
+  if (!vendorId) {
+    return { ok: false, error: '請先選擇要結帳的廠商' };
+  }
+
   const nameErr = validateEcpayRecipientName(payload.recipientName);
   if (nameErr) {
-    return { error: nameErr };
+    return { ok: false, error: nameErr };
   }
 
   const supabase = createClient();
@@ -98,12 +104,12 @@ export async function startCheckout(payload: {
 
   const token = session?.access_token;
   if (!token) {
-    return { error: '請先登入' };
+    return { ok: false, error: '請先登入' };
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
   if (!baseUrl) {
-    return { error: '環境設定缺少 NEXT_PUBLIC_SUPABASE_URL' };
+    return { ok: false, error: '環境設定缺少 NEXT_PUBLIC_SUPABASE_URL' };
   }
 
   try {
@@ -114,32 +120,135 @@ export async function startCheckout(payload: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        checkoutVendorId: vendorId,
         items: payload.items,
         vendorShippingSelections: payload.vendorShippingSelections ?? {},
         recipientName: payload.recipientName,
         recipientPhone: payload.recipientPhone,
         recipientAddressFull: payload.recipientAddressFull,
         saveShippingToProfile: payload.saveShippingToProfile === true,
+        homeLogisticsSubType: payload.homeLogisticsSubType,
       }),
     });
     const data = (await res.json()) as {
       orderId?: string;
-      logisticsQueue?: LogisticsQueueItem[];
+      vendorId?: string;
+      shippingMethodCode?: string | null;
+      paymentTotal?: number;
       error?: string;
     };
     if (!res.ok) {
-      return { error: data.error ?? `結帳建立失敗（${res.status}）` };
+      return { ok: false, error: data.error ?? `結帳建立失敗（${res.status}）` };
     }
-    if (!data.orderId || !data.logisticsQueue) {
-      return { error: '建單回傳缺少參數' };
+    if (!data.orderId) {
+      return { ok: false, error: '建單回傳缺少 orderId' };
     }
     return {
+      ok: true,
       orderId: data.orderId,
-      logisticsQueue: data.logisticsQueue,
+      vendorId: data.vendorId ?? vendorId,
+      shippingMethodCode: data.shippingMethodCode ?? null,
+      paymentTotal:
+        typeof data.paymentTotal === 'number' ? data.paymentTotal : 0,
     };
   } catch (e) {
     return {
+      ok: false,
       error: e instanceof Error ? e.message : '無法連線建立結帳',
+    };
+  }
+}
+
+export async function updateCheckoutOrderShipping(payload: {
+  orderId: string;
+  recipientName: string;
+  recipientPhone: string;
+  recipientAddressFull: string;
+  saveShippingToProfile?: boolean;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const nameErr = validateEcpayRecipientName(payload.recipientName);
+  if (nameErr) {
+    return { ok: false, error: nameErr };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, error: '請先登入' };
+  }
+
+  const { error } = await supabase
+    .from('orders')
+    .update({
+      recipient_name: payload.recipientName.trim(),
+      recipient_phone: payload.recipientPhone.trim(),
+      recipient_address_full: payload.recipientAddressFull.trim() || null,
+    })
+    .eq('id', payload.orderId)
+    .eq('user_id', user.id)
+    .eq('status', 'pending');
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  if (payload.saveShippingToProfile) {
+    await supabase
+      .from('user_profiles')
+      .update({
+        shipping_recipient_name: payload.recipientName.trim(),
+        shipping_phone: payload.recipientPhone.trim(),
+        shipping_address_full: payload.recipientAddressFull.trim() || null,
+      })
+      .eq('user_id', user.id);
+  }
+
+  return { ok: true };
+}
+
+export async function markHomeLogisticsForCheckout(payload: {
+  orderId: string;
+  vendorId: string;
+  homeLogisticsSubType: 'TCAT' | 'POST';
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) {
+    return { ok: false, error: '請先登入' };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+  if (!baseUrl) {
+    return { ok: false, error: '環境設定缺少 NEXT_PUBLIC_SUPABASE_URL' };
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/functions/v1/ecpay-mark-home-logistics`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        orderId: payload.orderId,
+        vendorId: payload.vendorId,
+        homeLogisticsSubType: payload.homeLogisticsSubType,
+      }),
+    });
+    const data = (await res.json()) as { ok?: boolean; error?: string };
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? `宅配設定失敗（${res.status}）` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : '無法連線宅配設定',
     };
   }
 }

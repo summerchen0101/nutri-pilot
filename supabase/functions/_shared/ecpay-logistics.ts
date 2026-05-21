@@ -141,8 +141,27 @@ export function generateEcpayLogisticsCheckMacValue(
     .sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
 
   const query = keys.map((k) => `${k}=${params[k] ?? ""}`).join("&");
-  const raw = dotNetUrlEncode(`HashKey=${hashKey}&${query}&HashIV=${hashIv}`);
-  return createHash("md5").update(raw).digest("hex").toUpperCase();
+  const encoded = dotNetUrlEncode(
+    `HashKey=${hashKey}&${query}&HashIV=${hashIv}`,
+  );
+  // 綠界物流 MD5：URL encode 後須轉小寫再雜湊（見 developers.ecpay.com.tw/7424）
+  return createHash("md5").update(encoded.toLowerCase()).digest("hex")
+    .toUpperCase();
+}
+
+export function verifyEcpayLogisticsCheckMacValue(
+  params: Record<string, string>,
+  hashKey: string,
+  hashIv: string,
+): boolean {
+  const received = params.CheckMacValue ?? "";
+  if (!received) return false;
+  const expected = generateEcpayLogisticsCheckMacValue(
+    params,
+    hashKey,
+    hashIv,
+  );
+  return received === expected;
 }
 
 export interface EcpayLogisticsV2Result {

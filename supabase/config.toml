@@ -28,6 +28,9 @@ verify_jwt = false
 [functions.ecpay-logistics-map-return]
 verify_jwt = false
 
+[functions.ecpay-mark-home-logistics]
+verify_jwt = false
+
 [functions.ecpay-logistics-return]
 verify_jwt = false
 

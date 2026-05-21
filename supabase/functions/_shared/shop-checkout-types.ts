@@ -5,11 +5,15 @@ export interface LineInput {
 
 export interface CheckoutBody {
   items?: LineInput[];
+  /** 本次結帳僅此一廠商 */
+  checkoutVendorId?: string;
   recipientName?: string;
   recipientPhone?: string;
   recipientAddressFull?: string;
   saveShippingToProfile?: boolean;
   vendorShippingSelections?: Record<string, string>;
+  /** 宅配結帳頁選擇 TCAT | POST */
+  homeLogisticsSubType?: string;
 }
 
 export interface VendorShippingMethodRow {

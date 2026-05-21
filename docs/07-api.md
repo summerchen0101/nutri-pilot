@@ -68,7 +68,7 @@ Supabase Edge Functions（後端邏輯）
 | Function 名稱 | 觸發方式 | 說明 |
 |--------------|---------|------|
 | `create-shop-order` | Server Action + JWT | 建立 `pending` 訂單、回傳 `orderId` + `logisticsQueue` |
-| `ecpay-logistics-selection` | GET popup + JWT | 導向綠界 V2 門市／宅配選擇 |
+| `ecpay-logistics-selection` | GET `?format=json` + JWT | 超商 V1 `Express/map` bridge（`{ action, fields }` 含 MD5 `CheckMacValue`）；宅配 `skipMap` |
 | `ecpay-logistics-client-return` | 綠界 POST | 暫存單轉正式物流、更新 `checkout_snapshot` |
 | `ecpay-logistics-return` | 綠界 POST | 物流貨態回寫 `sub_orders` |
 | `ecpay-checkout` | GET popup + JWT | AIO V5 付款表單 HTML |

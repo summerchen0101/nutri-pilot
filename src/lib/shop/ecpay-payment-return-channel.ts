@@ -52,11 +52,14 @@ export function parseShopCheckoutReturnUrl(href: string): string | null {
     if (url.origin !== window.location.origin) return null;
 
     const params = url.searchParams;
-    if (
-      params.get('checkout') === '1' &&
-      (params.get('paymentDone') === '1' || params.get('paymentFailed') === '1')
-    ) {
-      return `${url.pathname}${url.search}`;
+    if (params.get('checkout') === '1') {
+      if (
+        params.get('paymentDone') === '1' ||
+        params.get('paymentFailed') === '1' ||
+        params.get('logisticsDone') === '1'
+      ) {
+        return `${url.pathname}${url.search}`;
+      }
     }
 
     if (url.pathname.startsWith('/shop/success')) {

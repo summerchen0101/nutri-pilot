@@ -28,7 +28,8 @@ import {
   ECPAY_PAYMENT_POPUP_NAME,
   openEcpayPopup,
   showPopupMessage,
-  submitBridgeToNamedPopup,
+  submitLogisticsMapBridgeToNamedPopup,
+  submitPaymentBridgeToNamedPopup,
 } from '@/lib/shop/ecpay-popup-form';
 import { waitForVendorLogisticsCompleted } from '@/lib/shop/wait-for-logistics-completed';
 import { waitForOrderPaid } from '@/lib/shop/wait-for-order-paid';
@@ -103,7 +104,7 @@ function submitBridgeByName(
   if (!bridge.ok) {
     throw new Error(bridge.error);
   }
-  submitBridgeToNamedPopup(popupName, bridge);
+  submitLogisticsMapBridgeToNamedPopup(popupName, bridge);
 }
 
 export function useEcpayCheckoutFlow(options: {
@@ -355,7 +356,8 @@ export function useEcpayCheckoutFlow(options: {
             redirectUrl: bridge.redirectUrl,
           });
         }
-        submitBridgeToNamedPopup(ECPAY_PAYMENT_POPUP_NAME, bridge);
+        showPopupMessage(popup, '載入付款頁…');
+        submitPaymentBridgeToNamedPopup(ECPAY_PAYMENT_POPUP_NAME, bridge);
       } catch (e) {
         logEcpayCheckout('openPayment bridge error', {
           orderId,

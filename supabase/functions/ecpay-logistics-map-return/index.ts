@@ -149,8 +149,8 @@ Deno.serve(async (req) => {
   return new Response(
     buildPopupReturnHtml({
       redirectUrl,
-      navigateOpener: false,
-      reusePopup: true,
+      navigateOpener: true,
+      closePopup: true,
     }),
     { headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
@@ -167,8 +167,8 @@ function popupError(
   return new Response(
     buildPopupReturnHtml({
       redirectUrl,
-      navigateOpener: false,
-      reusePopup: true,
+      navigateOpener: true,
+      closePopup: true,
     }),
     { headers: { "Content-Type": "text/html; charset=utf-8" } },
   );

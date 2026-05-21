@@ -7,8 +7,10 @@ import { setEcpayCheckoutReturnError } from "@/lib/shop/ecpay-checkout-return-er
 import { setEcpayResumeOrderId } from "@/lib/shop/ecpay-checkout-resume";
 import { subscribeEcpayReturnMessage } from "@/lib/shop/ecpay-payment-return-channel";
 import { clearEcpayPaymentSessionOrderId } from "@/lib/shop/ecpay-payment-session";
-import { useEcpayCheckoutFlowStore } from "@/lib/shop/ecpay-checkout-flow-store";
+import { useEcpayCheckoutFlowStore } from '@/lib/shop/ecpay-checkout-flow-store';
 import { useCartStore } from "@/lib/shop/cart-store";
+import { fetchOrderCheckoutVendorId } from '@/lib/shop/order-logistics-snapshot';
+import { waitForLogisticsCreated } from '@/lib/shop/wait-for-logistics-created';
 import { waitForOrderPaid } from "@/lib/shop/wait-for-order-paid";
 import {
   logEcpayCheckout,
@@ -19,12 +21,41 @@ function buildSuccessQuery(
   orderId: string,
   merchantOrderNo: string,
   paymentPending: boolean,
+  vendorId?: string | null,
 ): string {
   const params = new URLSearchParams();
   if (paymentPending) params.set("paymentPending", "1");
   params.set("order_id", orderId);
   if (merchantOrderNo) params.set("merchant_order_no", merchantOrderNo);
+  if (vendorId) params.set("vendor_id", vendorId);
   return `?${params.toString()}`;
+}
+
+async function completePaidCheckoutToSuccess(
+  orderId: string,
+  merchantOrderNo: string,
+  paymentPending: boolean,
+): Promise<'success' | 'awaiting_logistics' | 'awaiting_payment' | 'pending_only'> {
+  if (paymentPending) {
+    return 'pending_only';
+  }
+  const vendorId = await fetchOrderCheckoutVendorId(orderId);
+  if (!vendorId) {
+    return 'pending_only';
+  }
+  const paid = await waitForOrderPaid(orderId, { timeoutMs: 60000 });
+  if (paid.status !== 'paid') {
+    return 'awaiting_payment';
+  }
+
+  const logistics = await waitForLogisticsCreated(orderId, vendorId, {
+    timeoutMs: 90000,
+  });
+  if (!logistics.ok) {
+    return 'awaiting_logistics';
+  }
+  useCartStore.getState().setLastCheckedOutVendorId(vendorId);
+  return 'success';
 }
 
 export function ShopEcpayReturnHandler() {
@@ -110,24 +141,55 @@ export function ShopEcpayReturnHandler() {
         closeCheckoutPanel();
         setPhase("polling");
         setStatusMessage("確認付款結果…");
-        if (urlPaymentPending) {
-          logEcpayCheckout("Handler → success (paymentPending)");
+
+        const goSuccess = async (
+          merchantOrderNo: string,
+          paymentPending: boolean,
+        ) => {
+          const vendorId = await fetchOrderCheckoutVendorId(orderId);
+          const outcome = await completePaidCheckoutToSuccess(
+            orderId,
+            merchantOrderNo,
+            paymentPending,
+          );
+          if (outcome === "awaiting_payment") {
+            logEcpayCheckout("Handler → checkout (await payment)");
+            setEcpayCheckoutReturnError(
+              "付款結果確認中，請稍後再試或至訂單紀錄查看",
+            );
+            setEcpayResumeOrderId(orderId);
+            resetFlow();
+            openCheckoutPanel();
+            router.replace("/shop");
+            return;
+          }
+          if (outcome === "awaiting_logistics") {
+            logEcpayCheckout("Handler → checkout (await logistics)");
+            setEcpayCheckoutReturnError(
+              "付款已完成，物流單建立中，請稍候…",
+            );
+            setEcpayResumeOrderId(orderId);
+            resetFlow();
+            openCheckoutPanel();
+            router.replace("/shop");
+            return;
+          }
           clearEcpayPaymentSessionOrderId();
           resetFlow();
           window.location.assign(
-            `/shop/success${buildSuccessQuery(orderId, urlMerchantOrderNo, true)}`,
+            `/shop/success${buildSuccessQuery(orderId, merchantOrderNo, paymentPending, vendorId)}`,
           );
+        };
+
+        if (urlPaymentPending) {
+          logEcpayCheckout("Handler → success (paymentPending)");
+          await goSuccess(urlMerchantOrderNo, true);
           return;
         }
 
         if (rtnCode === "1") {
           logEcpayCheckout("Handler → success (rtnCode=1)");
-          clearEcpayPaymentSessionOrderId();
-          resetFlow();
-          window.location.assign(
-            `/shop/success${buildSuccessQuery(orderId, urlMerchantOrderNo, false)}`,
-          );
-          void waitForOrderPaid(orderId, { timeoutMs: 5000 });
+          await goSuccess(urlMerchantOrderNo, false);
           return;
         }
 
@@ -138,21 +200,13 @@ export function ShopEcpayReturnHandler() {
 
         if (result.status === "paid") {
           logEcpayCheckout("Handler → success (poll paid)");
-          clearEcpayPaymentSessionOrderId();
-          resetFlow();
-          window.location.assign(
-            `/shop/success${buildSuccessQuery(orderId, merchantOrderNo, false)}`,
-          );
+          await goSuccess(merchantOrderNo, false);
           return;
         }
 
         if (result.status === "pending_payment") {
           logEcpayCheckout("Handler → success (poll pending_payment)");
-          clearEcpayPaymentSessionOrderId();
-          resetFlow();
-          window.location.assign(
-            `/shop/success${buildSuccessQuery(orderId, merchantOrderNo, true)}`,
-          );
+          await goSuccess(merchantOrderNo, true);
           return;
         }
 
@@ -183,6 +237,7 @@ export function ShopEcpayReturnHandler() {
 
     logEcpayCheckout("Handler logisticsDone", { orderId });
     setEcpayResumeOrderId(orderId);
+    useEcpayCheckoutFlowStore.getState().signalMapReturn(orderId);
     openCheckoutPanel();
     router.replace("/shop");
   }, [

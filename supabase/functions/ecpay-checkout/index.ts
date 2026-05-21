@@ -26,7 +26,10 @@ import {
   insertPurchaseProductEvents,
   maybeInsertSubOrdersWithLogistics,
 } from "../_shared/ecpay-order-helpers.ts";
-import { isCheckoutSnapshot } from "../_shared/shop-checkout-core.ts";
+import {
+  isCheckoutSnapshot,
+  recomputeLogisticsCompleted,
+} from "../_shared/shop-checkout-core.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -98,7 +101,7 @@ Deno.serve(async (req) => {
   }
 
   const snap = order.checkout_snapshot;
-  if (!isCheckoutSnapshot(snap) || !snap.logisticsCompleted) {
+  if (!isCheckoutSnapshot(snap) || !recomputeLogisticsCompleted(snap)) {
     return wantsJson ?
       jsonResponse({ error: "請先完成物流設定" }, 422)
       : corsTextResponse("請先完成物流設定", 422);

@@ -13,18 +13,20 @@ export function CartCheckoutDock() {
   const closeCartPanel = useCartStore((s) => s.closeCartPanel);
   const openCheckoutPanel = useCartStore((s) => s.openCheckoutPanel);
   const [detailOpen, setDetailOpen] = useState(false);
+  const checkoutVendorId = useCartStore((s) => s.checkoutVendorId);
   const {
-    itemsSubtotal,
-    shippingTotal,
-    grandTotal,
+    selectedItemsSubtotal,
+    selectedShippingTotal,
+    selectedGrandTotal,
     validLines,
     hasLegacyLines,
   } = useCartDerived();
 
-  /** 與 `grandTotal` 同值（商品小計 + 運費合計），寫成相加以利閱讀 */
-  const checkoutTotalIncludingShipping = itemsSubtotal + shippingTotal;
+  const checkoutTotalIncludingShipping =
+    selectedItemsSubtotal + selectedShippingTotal;
 
   function goCheckout() {
+    if (!checkoutVendorId) return;
     closeCartPanel();
     openCheckoutPanel();
   }
@@ -56,7 +58,9 @@ export function CartCheckoutDock() {
             variant="default"
             size="default"
             className="min-w-[140px] shrink-0 px-5"
-            disabled={!validLines.length || hasLegacyLines}
+            disabled={
+              !validLines.length || hasLegacyLines || !checkoutVendorId
+            }
             onClick={goCheckout}
           >
             繼續結帳
@@ -67,9 +71,9 @@ export function CartCheckoutDock() {
       <CartTotalsDetailSheet
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
-        itemsSubtotal={itemsSubtotal}
-        shippingTotal={shippingTotal}
-        grandTotal={grandTotal}
+        itemsSubtotal={selectedItemsSubtotal}
+        shippingTotal={selectedShippingTotal}
+        grandTotal={selectedGrandTotal}
       />
     </>
   );

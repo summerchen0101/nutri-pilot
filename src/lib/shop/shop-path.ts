@@ -52,11 +52,15 @@ const SHOP_COMMERCE_SHORTCUT_PATHS = new Set([
   '/settings/coupons',
 ]);
 
+/** 商城 commerce 捷徑的子路由（例：訂單詳情 `/settings/orders/:id`） */
+const SHOP_COMMERCE_SHORTCUT_PREFIXES = ['/settings/orders/'];
+
 export function isShopCommerceShortcutPathname(pathname: string | null): boolean {
   if (!pathname) return false;
   const trimmed =
     pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-  return SHOP_COMMERCE_SHORTCUT_PATHS.has(trimmed);
+  if (SHOP_COMMERCE_SHORTCUT_PATHS.has(trimmed)) return true;
+  return SHOP_COMMERCE_SHORTCUT_PREFIXES.some((prefix) => trimmed.startsWith(prefix));
 }
 
 /** 正規化路徑（去除結尾 `/`，根路徑除外） */

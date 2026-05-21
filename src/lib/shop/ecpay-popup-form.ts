@@ -98,7 +98,45 @@ export function navigatePopup(popup: Window, url: string): void {
   popup.location.href = url;
 }
 
-export function submitBridgeToNamedPopup(
+/** 超商 V1 門市地圖須 POST 至 Express/map，不可為 V2 物流選擇頁 */
+export function assertCvsMapBridgeAction(action: string): void {
+  const normalized = action.trim();
+  if (!normalized.includes('/Express/map')) {
+    throw new Error(
+      '物流 bridge 非 V1 門市地圖（Express/map），請確認 Edge 已部署最新版',
+    );
+  }
+  if (
+    normalized.includes('/v2/') ||
+    normalized.includes('LogisticsSelection') ||
+    normalized.includes('RedirectToLogisticsSelection')
+  ) {
+    throw new Error(
+      '偵測到 V2 物流選擇 URL，請重新部署 ecpay-logistics-selection',
+    );
+  }
+}
+
+export function submitLogisticsMapBridgeToNamedPopup(
+  popupName: string,
+  bridge: { ok: true; action: string; fields: Record<string, string> } | {
+    ok: true;
+    redirectUrl: string;
+  },
+): void {
+  if ('redirectUrl' in bridge) {
+    navigateNamedPopup(popupName, bridge.redirectUrl);
+    return;
+  }
+  assertCvsMapBridgeAction(bridge.action);
+  submitPostFormToNamedPopup(popupName, {
+    action: bridge.action,
+    fields: bridge.fields,
+  });
+}
+
+/** 金流 AIO：不可套用門市地圖 URL 檢查 */
+export function submitPaymentBridgeToNamedPopup(
   popupName: string,
   bridge: { ok: true; action: string; fields: Record<string, string> } | {
     ok: true;
@@ -113,6 +151,17 @@ export function submitBridgeToNamedPopup(
     action: bridge.action,
     fields: bridge.fields,
   });
+}
+
+/** @deprecated 請改用 submitLogisticsMapBridgeToNamedPopup 或 submitPaymentBridgeToNamedPopup */
+export function submitBridgeToNamedPopup(
+  popupName: string,
+  bridge: { ok: true; action: string; fields: Record<string, string> } | {
+    ok: true;
+    redirectUrl: string;
+  },
+): void {
+  submitLogisticsMapBridgeToNamedPopup(popupName, bridge);
 }
 
 export function submitBridgeToPopup(

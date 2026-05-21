@@ -91,10 +91,14 @@ Deno.serve(async (req) => {
     );
   }
 
+  const vendor = built.checkoutSnapshot.vendors[0];
+
   return jsonResponse({
     orderId: built.orderId,
     publicOrderNo: built.publicOrderNo,
-    logisticsQueue: built.logisticsQueue,
+    vendorId: vendor?.vendorId ?? body.checkoutVendorId ?? null,
+    shippingMethodCode: vendor?.shippingMethodCode ?? null,
     total: built.total,
+    paymentTotal: built.checkoutSnapshot.paymentTotal ?? built.total,
   });
 });

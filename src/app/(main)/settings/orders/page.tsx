@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { FiChevronLeft } from 'react-icons/fi';
 
 import { ContinueOrderPaymentButton } from '@/app/(main)/settings/orders/_components/continue-order-payment-button';
 import { memberOrderStatusLabel } from '@/app/(main)/settings/_lib/member-order-status-label';
-import { canContinueOrderPayment } from '@/lib/shop/can-continue-order-payment';
-import { HeaderBackButton } from '@/components/layout/header-back-button';
+import { HEADER_LEADING_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
 import { StickyPageHeader } from '@/components/layout/sticky-page-header';
+import { canContinueOrderPayment } from '@/lib/shop/can-continue-order-payment';
 import { getCachedAuthContext } from '@/lib/auth';
 import { SHOP_HEADER_SCROLL_ANCHOR_ID } from '@/lib/shop/constants';
 import { cn } from '@/lib/utils/cn';
@@ -46,7 +47,15 @@ export default async function SettingsOrdersPage() {
       <StickyPageHeader
         anchorId={SHOP_HEADER_SCROLL_ANCHOR_ID}
         title="我的訂單"
-        leading={<HeaderBackButton />}
+        leading={
+          <Link
+            href="/shop/settings"
+            aria-label="返回商城設定"
+            className={HEADER_LEADING_ICON_CLASS}
+          >
+            <FiChevronLeft className="h-[18px] w-[18px]" aria-hidden />
+          </Link>
+        }
         spacing="compact"
       />
       <p className="text-caption leading-relaxed text-muted-foreground">

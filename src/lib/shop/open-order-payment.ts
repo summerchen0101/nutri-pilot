@@ -4,7 +4,7 @@ import { fetchEcpayCheckoutPayload } from '@/app/(main)/shop/actions';
 import {
   ECPAY_PAYMENT_POPUP_NAME,
   openEcpayPopup,
-  submitBridgeToNamedPopup,
+  submitPaymentBridgeToNamedPopup,
 } from '@/lib/shop/ecpay-popup-form';
 
 const PAYMENT_BRIDGE_PATH = '/shop/payment-bridge';
@@ -33,7 +33,7 @@ export async function openOrderPayment(
       popup.close();
       return { ok: false, error: bridge.error };
     }
-    submitBridgeToNamedPopup(ECPAY_PAYMENT_POPUP_NAME, bridge);
+    submitPaymentBridgeToNamedPopup(ECPAY_PAYMENT_POPUP_NAME, bridge);
     return { ok: true };
   } catch (e) {
     try {

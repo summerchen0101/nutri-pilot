@@ -18,8 +18,10 @@ import {
 import {
   assertLogisticsSenderReady,
   getEcpayLogisticsConfig,
+  verifyEcpayLogisticsCheckMacValue,
 } from "../_shared/ecpay-logistics.ts";
 import {
+  appendCheckMac,
   buildCvsMapFormFields,
   buildLogisticsExtraData,
   createVendorLogisticsTradeNo,
@@ -157,23 +159,49 @@ Deno.serve(async (req) => {
   const mapReturnUrl =
     `${fnBase}/functions/v1/ecpay-logistics-map-return?orderId=${orderId}&vendorId=${vendorId}`;
 
-  const mapFields = buildCvsMapFormFields({
-    merchantId: cfg.merchantId,
-    merchantTradeNo,
-    logisticsSubType: draft.logisticsSubType,
-    isCollection: nextDraft.isCollection ?? "N",
-    serverReplyUrl: mapReturnUrl,
-    extraData: buildLogisticsExtraData(orderId, vendorId),
-    device: "1",
-  });
+  const mapFields = appendCheckMac(
+    buildCvsMapFormFields({
+      merchantId: cfg.merchantId,
+      merchantTradeNo,
+      logisticsSubType: draft.logisticsSubType,
+      isCollection: nextDraft.isCollection ?? "N",
+      serverReplyUrl: mapReturnUrl,
+      extraData: buildLogisticsExtraData(orderId, vendorId),
+      device: "1",
+    }),
+    cfg.hashKey,
+    cfg.hashIv,
+  );
 
   const urls = logisticsV1Urls(cfg.host);
 
+  if (!urls.map.includes("/Express/map")) {
+    return respondError("Invalid map URL", backUrl, 500, wantsJson);
+  }
+  if (urls.map.includes("/v2/")) {
+    return respondError("Must use V1 Express/map", backUrl, 500, wantsJson);
+  }
+
+  const checkMacSelfOk = verifyEcpayLogisticsCheckMacValue(
+    mapFields,
+    cfg.hashKey,
+    cfg.hashIv,
+  );
+  if (!checkMacSelfOk) {
+    console.error("[ecpay-logistics-selection] CheckMac self-verify failed", {
+      merchantId: cfg.merchantId,
+      merchantTradeNo,
+    });
+    return respondError("CheckMac self-verify failed", backUrl, 500, wantsJson);
+  }
+
   if (wantsJson) {
     return jsonResponse({
+      bridgeVersion: "v1-map",
       action: urls.map,
       fields: mapFields,
       logisticsType: "CVS",
+      debug: { merchantId: cfg.merchantId, checkMacSelfOk: true },
     });
   }
 

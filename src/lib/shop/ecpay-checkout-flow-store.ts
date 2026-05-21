@@ -15,7 +15,10 @@ interface EcpayCheckoutFlowState {
   phase: EcpayCheckoutPhase;
   statusMessage: string | null;
   pendingPaymentOrderId: string | null;
+  /** 地圖 popup 回傳後通知結帳側欄刷新 */
+  mapReturnOrderId: string | null;
   enterPaymentReady: (orderId: string) => void;
+  signalMapReturn: (orderId: string) => void;
   setPhase: (phase: EcpayCheckoutPhase) => void;
   setStatusMessage: (message: string | null) => void;
   setPendingPaymentOrderId: (orderId: string | null) => void;
@@ -26,6 +29,9 @@ export const useEcpayCheckoutFlowStore = create<EcpayCheckoutFlowState>((set) =>
   phase: 'idle',
   statusMessage: null,
   pendingPaymentOrderId: null,
+  mapReturnOrderId: null,
+  signalMapReturn: (orderId) =>
+    set({ mapReturnOrderId: orderId, pendingPaymentOrderId: orderId }),
   enterPaymentReady: (orderId) => {
     setEcpayPaymentSessionOrderId(orderId);
     set({
@@ -43,5 +49,6 @@ export const useEcpayCheckoutFlowStore = create<EcpayCheckoutFlowState>((set) =>
       phase: 'idle',
       statusMessage: null,
       pendingPaymentOrderId: null,
+      mapReturnOrderId: null,
     }),
 }));

@@ -82,6 +82,7 @@ export async function markHomeVendorLogisticsReady(
   admin: SupabaseClient,
   orderId: string,
   vendorId: string,
+  homeLogisticsSubType?: string,
 ): Promise<void> {
   const { data: order, error } = await admin
     .from("orders")
@@ -107,8 +108,15 @@ export async function markHomeVendorLogisticsReady(
   const tradeNo = draft.merchantLogisticsTradeNo ??
     createVendorLogisticsTradeNo(orderId, vendorId);
 
+  let subType = draft.logisticsSubType;
+  if (homeLogisticsSubType === "TCAT" || homeLogisticsSubType === "POST") {
+    subType = homeLogisticsSubType;
+  }
+
   const updated: LogisticsDraft = applyVendorLogisticsCompleted({
     ...draft,
+    logisticsType: "HOME",
+    logisticsSubType: subType,
     merchantLogisticsTradeNo: tradeNo,
     storeSelected: false,
     logisticsCreated: false,

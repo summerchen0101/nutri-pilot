@@ -69,6 +69,8 @@ supabase secrets set "${ARGS[@]}"
 FUNCS=(
   create-shop-order
   ecpay-logistics-selection
+  ecpay-logistics-map-return
+  ecpay-mark-home-logistics
   ecpay-logistics-client-return
   ecpay-logistics-return
   ecpay-checkout
@@ -89,7 +91,8 @@ echo "綠界後台請設定（HTTPS）："
 echo "  ReturnURL:       https://<project-ref>.supabase.co/functions/v1/ecpay-return"
 echo "  OrderResultURL:  https://<project-ref>.supabase.co/functions/v1/ecpay-order-result?appOrigin=<APP_URL>"
 echo "  PaymentInfoURL:  https://<project-ref>.supabase.co/functions/v1/ecpay-payment-info"
-echo "  ServerReplyURL:  https://<project-ref>.supabase.co/functions/v1/ecpay-logistics-return"
+echo "  物流狀態 ServerReplyURL: https://<project-ref>.supabase.co/functions/v1/ecpay-logistics-return"
+echo "  門市地圖 ServerReplyURL: 由 ecpay-logistics-selection 動態帶入 ecpay-logistics-map-return（無需在綠界後台另設）"
 echo ""
 echo "測試金流 MerchantID=2000132；物流 C2C MerchantID=2000933（不可混用 key）"
 echo "完成。"

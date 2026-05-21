@@ -64,7 +64,8 @@ Important:
 
 1. User completes recipient info and per-vendor shipping method in cart
 2. `create-shop-order` builds `checkout_snapshot.logisticsByVendor`
-3. Per vendor popup: CVS → `Express/map` (ServerReply `ecpay-logistics-map-return`); HOME → mark address ready
+3. Per vendor popup: CVS → `Express/map` (ServerReply `ecpay-logistics-map-return`); HOME → mark address ready  
+   - Map POST 欄位須含 V1 MD5 `CheckMacValue`（與 `Express/Create` 相同；由 `ecpay-logistics-selection` 以 `appendCheckMac` 簽章）
 4. `seven_eleven_cod`: Create on map return (`IsCollection=Y`); other CVS/HOME: Create after payment in `ecpay-return`
 5. All vendors ready → ECPay AIO payment (`paymentTotal` excludes COD goods subtotal)
 6. `ecpay-return` creates pending logistics + `sub_orders`; `ecpay-logistics-return` receives status updates

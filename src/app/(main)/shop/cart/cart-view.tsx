@@ -27,6 +27,8 @@ export function CartView({ onPanelScrollTopChange }: CartViewProps) {
   const setVendorShippingSelection = useCartStore(
     (s) => s.setVendorShippingSelection,
   );
+  const checkoutVendorId = useCartStore((s) => s.checkoutVendorId);
+  const setCheckoutVendorId = useCartStore((s) => s.setCheckoutVendorId);
   const closeCartPanel = useCartStore((s) => s.closeCartPanel);
 
   const {
@@ -89,10 +91,23 @@ export function CartView({ onPanelScrollTopChange }: CartViewProps) {
       {summaries.map((block) => (
         <div key={block.vendorId} className="space-y-3">
           <div className="flex items-center gap-2 px-1">
-            <Store className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-            <h2 className="min-w-0 flex-1 text-heading-section text-foreground">
-              {block.vendorName}
-            </h2>
+            <input
+              type="radio"
+              name="checkout-vendor"
+              id={`checkout-vendor-${block.vendorId}`}
+              checked={checkoutVendorId === block.vendorId}
+              onChange={() => setCheckoutVendorId(block.vendorId)}
+              className="h-4 w-4 shrink-0 accent-[#4C956C]"
+              aria-label={`結帳 ${block.vendorName}`}
+            />
+            <label
+              htmlFor={`checkout-vendor-${block.vendorId}`}
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+              <Store className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+              <h2 className="min-w-0 flex-1 text-heading-section text-foreground">
+                {block.vendorName}
+              </h2>
+            </label>
           </div>
 
           {block.lines.map((line) => (
@@ -113,7 +128,7 @@ export function CartView({ onPanelScrollTopChange }: CartViewProps) {
               <div className="min-w-0 flex-1 space-y-2">
                 <p className="text-heading-card text-foreground">配送與運費</p>
                 <p className="text-caption">
-                  與全單相同收件地址；可於結帳時或
+                  一次僅結帳一間廠商；收件資料於結帳頁填寫。可於
                   <Link
                     href="/settings"
                     className="mx-0.5 font-medium text-primary underline-offset-2 hover:underline"
