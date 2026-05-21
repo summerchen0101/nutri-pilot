@@ -81,6 +81,43 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: itemsErr.message }, 500);
   }
 
+  const pointsRedeemed = Math.max(
+    0,
+    Math.floor(Number(built.checkoutSnapshot.pointsRedeemed ?? 0)),
+  );
+
+  if (pointsRedeemed > 0) {
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supabaseUrl, serviceKey);
+
+    const { data: redeemRaw, error: redeemErr } = await admin.rpc(
+      "redeem_shop_points_for_order",
+      {
+        p_user_id: user.id,
+        p_order_id: built.orderId,
+        p_amount: pointsRedeemed,
+      },
+    );
+
+    if (redeemErr) {
+      await supabase.from("order_items").delete().eq("order_id", built.orderId);
+      await supabase.from("orders").delete().eq("id", built.orderId);
+      return jsonResponse({ error: redeemErr.message }, 500);
+    }
+
+    const redeem = redeemRaw as { ok?: boolean; error?: string } | null;
+    if (!redeem?.ok) {
+      await supabase.from("order_items").delete().eq("order_id", built.orderId);
+      await supabase.from("orders").delete().eq("id", built.orderId);
+      const msg =
+        redeem?.error === "insufficient_balance" ? "購物點餘額不足"
+        : redeem?.error === "insufficient_lot_inventory" ? "購物點批次不足"
+        : redeem?.error === "already_redeemed" ? "點數已折抵"
+        : "點數折抵失敗";
+      return jsonResponse({ error: msg }, 409);
+    }
+  }
+
   if (built.saveShippingToProfile) {
     await saveShippingToProfile(
       supabase,

@@ -12,6 +12,7 @@ export interface CheckoutPaymentBreakdownCardProps {
   summaries: VendorShippingSummary[];
   itemsSubtotal: number;
   shippingTotal: number;
+  pointsDiscount?: number;
   grandTotal: number;
 }
 
@@ -19,6 +20,7 @@ export function CheckoutPaymentBreakdownCard({
   summaries,
   itemsSubtotal,
   shippingTotal,
+  pointsDiscount = 0,
   grandTotal,
 }: CheckoutPaymentBreakdownCardProps) {
   const detailsId = useId();
@@ -41,6 +43,14 @@ export function CheckoutPaymentBreakdownCard({
             NT$ {formatShopGroupedInteger(shippingTotal)}
           </span>
         </div>
+        {pointsDiscount > 0 ?
+          <div className="flex justify-between text-muted-foreground">
+            <span>點數折抵</span>
+            <span className="tabular-nums text-[#2D6B4A]">
+              −NT$ {formatShopGroupedInteger(pointsDiscount)}
+            </span>
+          </div>
+        : null}
         <div className="flex justify-between text-heading-section text-foreground">
           <span>總計</span>
           <span className="tabular-nums">

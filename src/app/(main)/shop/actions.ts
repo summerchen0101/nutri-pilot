@@ -86,6 +86,7 @@ export async function startCheckout(payload: {
   saveShippingToProfile?: boolean;
   vendorShippingSelections?: Record<string, string>;
   homeLogisticsSubType?: 'TCAT' | 'POST';
+  applyShopPoints?: boolean;
 }): Promise<StartCheckoutResult> {
   const vendorId = payload.checkoutVendorId?.trim() ?? '';
   if (!vendorId) {
@@ -128,6 +129,7 @@ export async function startCheckout(payload: {
         recipientAddressFull: payload.recipientAddressFull,
         saveShippingToProfile: payload.saveShippingToProfile === true,
         homeLogisticsSubType: payload.homeLogisticsSubType,
+        applyShopPoints: payload.applyShopPoints === true,
       }),
     });
     const data = (await res.json()) as {
@@ -155,6 +157,80 @@ export async function startCheckout(payload: {
     return {
       ok: false,
       error: e instanceof Error ? e.message : '無法連線建立結帳',
+    };
+  }
+}
+
+export type SyncCheckoutOrderPointsResult =
+  | {
+      ok: true;
+      paymentTotal: number;
+      netOrderTotal: number;
+      pointsRedeemed: number;
+    }
+  | { ok: false; error: string };
+
+/** 付款前同步 pending 訂單點數折抵（補正建單時 cart 尚未 rehydrate 的情況） */
+export async function syncCheckoutOrderPoints(payload: {
+  orderId: string;
+  applyShopPoints?: boolean;
+}): Promise<SyncCheckoutOrderPointsResult> {
+  const orderId = payload.orderId?.trim() ?? '';
+  if (!orderId) {
+    return { ok: false, error: '缺少 orderId' };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const token = session?.access_token;
+  if (!token) {
+    return { ok: false, error: '請先登入' };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+  if (!baseUrl) {
+    return { ok: false, error: '環境設定缺少 NEXT_PUBLIC_SUPABASE_URL' };
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/functions/v1/sync-shop-order-checkout`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        orderId,
+        applyShopPoints: payload.applyShopPoints === true,
+      }),
+    });
+    const data = (await res.json()) as {
+      paymentTotal?: number;
+      netOrderTotal?: number;
+      pointsRedeemed?: number;
+      error?: string;
+    };
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? `同步失敗（${res.status}）` };
+    }
+    if (typeof data.paymentTotal !== 'number') {
+      return { ok: false, error: '同步回傳缺少 paymentTotal' };
+    }
+    return {
+      ok: true,
+      paymentTotal: data.paymentTotal,
+      netOrderTotal:
+        typeof data.netOrderTotal === 'number' ? data.netOrderTotal : data.paymentTotal,
+      pointsRedeemed:
+        typeof data.pointsRedeemed === 'number' ? data.pointsRedeemed : 0,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : '無法連線同步結帳金額',
     };
   }
 }

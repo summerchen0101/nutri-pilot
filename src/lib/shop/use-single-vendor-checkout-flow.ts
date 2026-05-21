@@ -7,6 +7,7 @@ import {
   fetchEcpayLogisticsSelectionPayload,
   markHomeLogisticsForCheckout,
   startCheckout,
+  syncCheckoutOrderPoints,
   updateCheckoutOrderShipping,
 } from '@/app/(main)/shop/actions';
 import { useEcpayCheckoutFlowStore } from '@/lib/shop/ecpay-checkout-flow-store';
@@ -28,7 +29,9 @@ import {
 } from '@/lib/shop/shipping-method-kind';
 import { useEcpayCheckoutFlow } from '@/lib/shop/use-ecpay-checkout-flow';
 import { isVendorPostPaymentReady } from '@/lib/shop/checkout-logistics-ready';
+import { invalidateShopPointsBalanceCache, useShopPointsBalance } from '@/lib/shop/use-shop-points-balance';
 import { waitForLogisticsCreated } from '@/lib/shop/wait-for-logistics-created';
+import { useCartClientReady, useCartStore } from '@/lib/shop/cart-store';
 import { waitForOrderPaid } from '@/lib/shop/wait-for-order-paid';
 import { waitForStoreSelected } from '@/lib/shop/wait-for-store-selected';
 import type { VendorShippingSummary } from '@/lib/shop/vendor-shipping';
@@ -80,6 +83,9 @@ export function useSingleVendorCheckoutFlow(
     onError,
   } = options;
 
+  const cartClientReady = useCartClientReady();
+  const { loading: pointsBalanceLoading } = useShopPointsBalance();
+
   const [phase, setPhase] = useState<SingleVendorCheckoutPhase>('idle');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -93,6 +99,7 @@ export function useSingleVendorCheckoutFlow(
 
   const orderCreatingRef = useRef(false);
   const resumeHandledOrderIdRef = useRef<string | null>(null);
+  const prevShippingMethodIdRef = useRef<string | null | undefined>(undefined);
   const pollAbortRef = useRef<AbortController | null>(null);
   const previousCheckoutVendorIdRef = useRef<string | null>(null);
   const mapReturnOrderId = useEcpayCheckoutFlowStore((s) => s.mapReturnOrderId);
@@ -114,6 +121,24 @@ export function useSingleVendorCheckoutFlow(
     setDraft(next);
     return next;
   }, []);
+
+  const syncOrderPointsBeforePay = useCallback(
+    async (oid: string): Promise<number | null> => {
+      const applyPoints = useCartStore.getState().applyShopPoints;
+      const res = await syncCheckoutOrderPoints({
+        orderId: oid,
+        applyShopPoints: applyPoints,
+      });
+      if (!res.ok) {
+        onError(res.error);
+        return null;
+      }
+      setPaymentTotal(res.paymentTotal);
+      invalidateShopPointsBalanceCache();
+      return res.paymentTotal;
+    },
+    [onError],
+  );
 
   const hydrateOrderFromDb = useCallback(
     async (oid: string, vid: string) => {
@@ -194,6 +219,20 @@ export function useSingleVendorCheckoutFlow(
     onError,
   });
 
+  const resetCheckoutOrder = useCallback(() => {
+    abortPolls();
+    stopPolling();
+    setOrderId(null);
+    setDraft(null);
+    setPaymentTotal(0);
+    setShippingMethodCode(null);
+    setHomeAddressReady(false);
+    setPhase('idle');
+    setStatusMessage(null);
+    orderCreatingRef.current = false;
+    useEcpayCheckoutFlowStore.getState().setPendingPaymentOrderId(null);
+  }, [abortPolls, stopPolling]);
+
   const createOrder = useCallback(async (): Promise<boolean> => {
     if (!checkoutVendorId || !selectedSummary) {
       onError('請先選擇要結帳的廠商');
@@ -234,6 +273,7 @@ export function useSingleVendorCheckoutFlow(
       )
         ? homeSubType
         : undefined,
+      applyShopPoints: useCartStore.getState().applyShopPoints,
     });
 
     if (!res.ok) {
@@ -458,7 +498,12 @@ export function useSingleVendorCheckoutFlow(
     setHomeAddressReady(nextDraft?.completed === true);
     setPhase('ready');
 
-    if (paymentTotal <= 0) {
+    const syncedPaymentTotal = await syncOrderPointsBeforePay(oid);
+    if (syncedPaymentTotal == null) {
+      return;
+    }
+
+    if (syncedPaymentTotal <= 0) {
       await finishWithLogistics(oid, vid, { requirePayment: false });
       return;
     }
@@ -486,12 +531,12 @@ export function useSingleVendorCheckoutFlow(
     onError,
     openPayment,
     orderId,
-    paymentTotal,
     recipientAddressFull,
     recipientName,
     recipientPhone,
     refreshDraft,
     saveShippingToProfile,
+    syncOrderPointsBeforePay,
   ]);
 
   const goToPayment = useCallback(async () => {
@@ -502,7 +547,12 @@ export function useSingleVendorCheckoutFlow(
       return;
     }
 
-    if (paymentTotal <= 0) {
+    const syncedPaymentTotal = await syncOrderPointsBeforePay(oid);
+    if (syncedPaymentTotal == null) {
+      return;
+    }
+
+    if (syncedPaymentTotal <= 0) {
       await finishWithLogistics(oid, vid, { requirePayment: false });
       return;
     }
@@ -529,7 +579,7 @@ export function useSingleVendorCheckoutFlow(
     onError,
     openPayment,
     orderId,
-    paymentTotal,
+    syncOrderPointsBeforePay,
   ]);
 
   useEffect(() => {
@@ -541,6 +591,7 @@ export function useSingleVendorCheckoutFlow(
       setHomeAddressReady(false);
       orderCreatingRef.current = false;
       resumeHandledOrderIdRef.current = null;
+      prevShippingMethodIdRef.current = undefined;
       return;
     }
     if (!checkoutVendorId || selectedValidLines.length === 0) return;
@@ -606,6 +657,8 @@ export function useSingleVendorCheckoutFlow(
     }
 
     if (
+      !cartClientReady ||
+      pointsBalanceLoading ||
       !recipientDefaultsReady ||
       !recipientName.trim() ||
       !recipientPhone.trim()
@@ -617,6 +670,7 @@ export function useSingleVendorCheckoutFlow(
   }, [
     abortPolls,
     beginPoll,
+    cartClientReady,
     checkoutVendorId,
     ensureOrder,
     finishWithLogistics,
@@ -625,13 +679,36 @@ export function useSingleVendorCheckoutFlow(
     onComplete,
     orderId,
     paymentTotal,
+    pointsBalanceLoading,
     recipientDefaultsReady,
     recipientName,
     recipientPhone,
     refreshDraft,
     resumeOrderId,
+    selectedSummary?.selectedShippingMethodId,
     selectedValidLines.length,
     stopPolling,
+  ]);
+
+  useEffect(() => {
+    if (!isPanelOpen) return;
+
+    const nextId = selectedSummary?.selectedShippingMethodId ?? null;
+    const prevId = prevShippingMethodIdRef.current;
+
+    if (prevId === undefined) {
+      prevShippingMethodIdRef.current = nextId;
+      return;
+    }
+
+    if (prevId === nextId) return;
+
+    prevShippingMethodIdRef.current = nextId;
+    resetCheckoutOrder();
+  }, [
+    isPanelOpen,
+    resetCheckoutOrder,
+    selectedSummary?.selectedShippingMethodId,
   ]);
 
   useEffect(() => {

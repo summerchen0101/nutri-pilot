@@ -10,6 +10,7 @@ import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import { Button } from '@/components/ui/button';
 import { useStartNavigationLoading } from '@/hooks/use-navigation-loading';
 import { createClient } from '@/lib/supabase/client';
+import { useCartDerived } from '@/lib/shop/use-cart-derived';
 import { useCartStore } from '@/lib/shop/cart-store';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
 import { cn } from '@/lib/utils/cn';
@@ -17,7 +18,6 @@ import { cn } from '@/lib/utils/cn';
 const ADDON_DISPLAY_LIMIT = 8;
 
 type ProfileRow = {
-  shop_points_balance: number | null;
   diet_method: string | null;
   shop_personalize_recommendations: boolean | null;
 };
@@ -79,9 +79,10 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
   const startNavigationLoading = useStartNavigationLoading();
   const closeCartPanel = useCartStore((s) => s.closeCartPanel);
   const lines = useCartStore((s) => s.lines);
+  const applyShopPoints = useCartStore((s) => s.applyShopPoints);
+  const setApplyShopPoints = useCartStore((s) => s.setApplyShopPoints);
+  const { pointsBalance, maxRedeemable, pointsDiscount } = useCartDerived();
   const [couponSheetOpen, setCouponSheetOpen] = useState(false);
-  const [pointsApplyPreview, setPointsApplyPreview] = useState(false);
-  const [pointsBalance, setPointsBalance] = useState(0);
   const [recommendProducts, setRecommendProducts] = useState<
     {
       id: string;
@@ -92,18 +93,7 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
   >([]);
   const [recommendationsFailed, setRecommendationsFailed] = useState(false);
 
-  const redeemablePoints = Math.max(
-    0,
-    Math.floor(Number(pointsBalance) || 0),
-  );
-
-  const canRedeemPoints = redeemablePoints > 0;
-
-  useEffect(() => {
-    if (!canRedeemPoints) {
-      setPointsApplyPreview(false);
-    }
-  }, [canRedeemPoints]);
+  const canRedeemPoints = maxRedeemable > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -116,7 +106,6 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
       } = await supabase.auth.getUser();
       if (authErr || !user) {
         if (!cancelled) {
-          setPointsBalance(0);
           setRecommendProducts([]);
           setRecommendationsFailed(Boolean(authErr));
         }
@@ -126,9 +115,7 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
       const [profileRes, scoresRes, catalogRes] = await Promise.all([
         supabase
           .from('user_profiles')
-          .select(
-            'shop_points_balance, diet_method, shop_personalize_recommendations',
-          )
+          .select('diet_method, shop_personalize_recommendations')
           .eq('user_id', user.id)
           .single(),
         supabase
@@ -156,13 +143,9 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
 
       if (!cancelled && profileRes.error) {
         console.error(profileRes.error.message);
-        setPointsBalance(0);
       }
       const profile =
         profileRes.error ? null : (profileRes.data as ProfileRow | null);
-      if (!cancelled && profile) {
-        setPointsBalance(Number(profile.shop_points_balance ?? 0));
-      }
 
       const scoresPayload =
         scoresRes.error ?
@@ -237,26 +220,26 @@ export function CartCommerceSections({ className }: CartCommerceSectionsProps) {
           <div className="min-w-0 flex-1">
             <p className="text-heading-section text-foreground">點數折抵</p>
             <p className="mt-1 text-caption text-muted-foreground">
-              可折抵 {redeemablePoints} 點
+              餘額 {pointsBalance.toLocaleString('zh-TW')} 點
+              {maxRedeemable > 0 ?
+                `，本單最多可折 ${maxRedeemable.toLocaleString('zh-TW')} 點`
+              : null}
             </p>
           </div>
           <div className="flex w-11 shrink-0 flex-col items-stretch gap-2">
             <div className="flex justify-center">
               <PointsToggle
-                pressed={pointsApplyPreview}
+                pressed={applyShopPoints}
                 disabled={!canRedeemPoints}
-                onToggle={() => setPointsApplyPreview((p) => !p)}
+                onToggle={() => setApplyShopPoints(!applyShopPoints)}
               />
             </div>
             <span className="block text-center text-caption tabular-nums text-muted-foreground">
               −NT$
-              {formatShopGroupedInteger(redeemablePoints)}
+              {formatShopGroupedInteger(pointsDiscount)}
             </span>
           </div>
         </div>
-        <p className="mt-2 text-micro text-muted-foreground">
-          結帳折抵細節將於後續版本開放；開關僅為介面示意，不調整購物車總計。
-        </p>
       </div>
 
       <section className="rounded-xl bg-[var(--color-background-primary)] pb-4 pt-3">

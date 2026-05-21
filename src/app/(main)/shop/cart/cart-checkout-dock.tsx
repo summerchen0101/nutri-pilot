@@ -17,13 +17,12 @@ export function CartCheckoutDock() {
   const {
     selectedItemsSubtotal,
     selectedShippingTotal,
-    selectedGrandTotal,
+    selectedPayableTotal,
+    selectedNetOrderTotal,
+    pointsDiscount,
     validLines,
     hasLegacyLines,
   } = useCartDerived();
-
-  const checkoutTotalIncludingShipping =
-    selectedItemsSubtotal + selectedShippingTotal;
 
   function goCheckout() {
     if (!checkoutVendorId) return;
@@ -49,7 +48,7 @@ export function CartCheckoutDock() {
                 總計
               </span>
               <span className="min-w-0 text-heading-page tabular-nums text-foreground">
-                NT$ {formatShopGroupedInteger(checkoutTotalIncludingShipping)}
+                NT$ {formatShopGroupedInteger(selectedPayableTotal)}
               </span>
             </div>
           </div>
@@ -73,7 +72,8 @@ export function CartCheckoutDock() {
         onClose={() => setDetailOpen(false)}
         itemsSubtotal={selectedItemsSubtotal}
         shippingTotal={selectedShippingTotal}
-        grandTotal={selectedGrandTotal}
+        pointsDiscount={pointsDiscount}
+        grandTotal={selectedNetOrderTotal}
       />
     </>
   );

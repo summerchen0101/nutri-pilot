@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -64,6 +65,8 @@ interface CartState {
   lines: CartLine[];
   /** 每廠商目前選擇的 `vendor_shipping_methods.id` */
   vendorShippingSelections: Record<string, string>;
+  /** 結帳時是否折抵購物點（1 點 = 1 元） */
+  applyShopPoints: boolean;
   /** 本次要結帳的廠商（單選） */
   checkoutVendorId: string | null;
   /** 最近完成結帳的廠商，供 success 頁局部清空購物車 */
@@ -78,6 +81,7 @@ interface CartState {
   setQty: (variantId: string, qty: number) => void;
   removeLine: (variantId: string) => void;
   setVendorShippingSelection: (vendorId: string, methodId: string) => void;
+  setApplyShopPoints: (apply: boolean) => void;
   setCheckoutVendorId: (vendorId: string | null) => void;
   removeLinesByVendor: (vendorId: string) => void;
   setLastCheckedOutVendorId: (vendorId: string | null) => void;
@@ -89,6 +93,7 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       lines: [],
       vendorShippingSelections: {},
+      applyShopPoints: false,
       checkoutVendorId: null,
       lastCheckedOutVendorId: null,
       isCartPanelOpen: false,
@@ -189,6 +194,7 @@ export const useCartStore = create<CartState>()(
             [vendorId]: methodId,
           },
         }),
+      setApplyShopPoints: (apply) => set({ applyShopPoints: apply }),
       setCheckoutVendorId: (vendorId) => set({ checkoutVendorId: vendorId }),
       removeLinesByVendor: (vendorId) => {
         const nextLines = get().lines.filter((l) => l.vendorId !== vendorId);
@@ -206,29 +212,29 @@ export const useCartStore = create<CartState>()(
         set({
           lines: [],
           vendorShippingSelections: {},
+          applyShopPoints: false,
           checkoutVendorId: null,
         }),
     }),
     {
       name: 'nutri-guard-shop-cart-v3',
-      version: 1,
+      version: 2,
       migrate: async (persistedState) => {
         const raw = persistedState as Record<string, unknown> | undefined;
-        if (
-          raw &&
-          typeof raw === 'object' &&
-          typeof raw.vendorShippingSelections !== 'object'
-        ) {
-          return {
-            ...raw,
-            vendorShippingSelections: {},
-          };
+        if (!raw || typeof raw !== 'object') return persistedState;
+        const next = { ...raw };
+        if (typeof next.vendorShippingSelections !== 'object') {
+          next.vendorShippingSelections = {};
         }
-        return persistedState;
+        if (typeof next.applyShopPoints !== 'boolean') {
+          next.applyShopPoints = false;
+        }
+        return next;
       },
       partialize: (state) => ({
         lines: state.lines,
         vendorShippingSelections: state.vendorShippingSelections,
+        applyShopPoints: state.applyShopPoints,
         checkoutVendorId: state.checkoutVendorId,
       }),
     },
@@ -252,4 +258,15 @@ export function effectiveShippingForVendor(
     return 0;
   }
   return shippingFee;
+}
+
+/** Client 掛載後才為 true；避免 SSR／rehydrate 前以預設值建單。 */
+export function useCartClientReady() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setReady(true);
+  }, []);
+
+  return ready;
 }

@@ -11,6 +11,7 @@ export interface CartTotalsDetailSheetProps {
   onClose: () => void;
   itemsSubtotal: number;
   shippingTotal: number;
+  pointsDiscount?: number;
   grandTotal: number;
 }
 
@@ -19,6 +20,7 @@ export function CartTotalsDetailSheet({
   onClose,
   itemsSubtotal,
   shippingTotal,
+  pointsDiscount = 0,
   grandTotal,
 }: CartTotalsDetailSheetProps) {
   return (
@@ -36,6 +38,14 @@ export function CartTotalsDetailSheet({
             NT$ {formatShopGroupedInteger(shippingTotal)}
           </span>
         </div>
+        {pointsDiscount > 0 ?
+          <div className="flex justify-between gap-3 text-muted-foreground">
+            <span>點數折抵</span>
+            <span className="tabular-nums text-[#2D6B4A]">
+              −NT$ {formatShopGroupedInteger(pointsDiscount)}
+            </span>
+          </div>
+        : null}
         <div className="border-t-hairline border-border pt-3">
           <div className="flex justify-between gap-3 font-medium">
             <span className="text-primary">訂單總計</span>

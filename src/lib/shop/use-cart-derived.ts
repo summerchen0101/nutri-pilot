@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo } from 'react';
 
+import { calcShopPointsRedemption } from '@/lib/shop/calc-shop-points-redemption';
+import { isCvsCodShippingCode } from '@/lib/shop/shipping-method-kind';
+import { useShopPointsBalance } from '@/lib/shop/use-shop-points-balance';
 import {
   calcVendorShippingSummaries,
   cartGrandTotalFromSummaries,
@@ -15,12 +18,16 @@ import { cartTotalItemsSubtotal, useCartStore, type CartLine } from '@/lib/shop/
 export function useCartDerived() {
   const lines = useCartStore((s) => s.lines);
   const checkoutVendorId = useCartStore((s) => s.checkoutVendorId);
+  const applyShopPoints = useCartStore((s) => s.applyShopPoints);
+  const setApplyShopPoints = useCartStore((s) => s.setApplyShopPoints);
   const vendorShippingSelections = useCartStore(
     (s) => s.vendorShippingSelections,
   );
   const setVendorShippingSelection = useCartStore(
     (s) => s.setVendorShippingSelection,
   );
+  const { balance: pointsBalance, loading: pointsBalanceLoading } =
+    useShopPointsBalance();
 
   const validLines = useMemo(
     () =>
@@ -122,6 +129,60 @@ export function useCartDerived() {
     [selectedItemsSubtotal, selectedShippingTotal],
   );
 
+  const selectedPointsRedemption = useMemo(() => {
+    if (!selectedSummary) {
+      return calcShopPointsRedemption({
+        pointsBalance: 0,
+        itemsSubtotal: 0,
+        shippingTotal: 0,
+        effectiveShipping: 0,
+        isCvsCod: false,
+        applyPoints: false,
+      });
+    }
+
+    return calcShopPointsRedemption({
+      pointsBalance,
+      itemsSubtotal: selectedItemsSubtotal,
+      shippingTotal: selectedShippingTotal,
+      effectiveShipping: selectedSummary.effectiveShipping,
+      isCvsCod: isCvsCodShippingCode(
+        selectedSummary.selectedShippingMethodCode ?? null,
+      ),
+      applyPoints: applyShopPoints,
+    });
+  }, [
+    selectedSummary,
+    selectedItemsSubtotal,
+    selectedShippingTotal,
+    pointsBalance,
+    applyShopPoints,
+  ]);
+
+  const {
+    maxRedeemable,
+    pointsDiscount,
+    netOrderTotal: selectedNetOrderTotal,
+    paymentTotal: selectedPayableTotal,
+  } = selectedPointsRedemption;
+
+  useEffect(() => {
+    if (pointsBalanceLoading || shippingMethodsLoading) return;
+    if (!selectedSummary) return;
+
+    if ((pointsBalance <= 0 || maxRedeemable <= 0) && applyShopPoints) {
+      setApplyShopPoints(false);
+    }
+  }, [
+    applyShopPoints,
+    maxRedeemable,
+    pointsBalance,
+    pointsBalanceLoading,
+    selectedSummary,
+    setApplyShopPoints,
+    shippingMethodsLoading,
+  ]);
+
   const hasLegacyLines = lines.length > 0 && validLines.length < lines.length;
 
   const maxLeadTimeDays = useMemo(() => {
@@ -149,6 +210,11 @@ export function useCartDerived() {
     selectedItemsSubtotal,
     selectedShippingTotal,
     selectedGrandTotal,
+    pointsBalance,
+    maxRedeemable,
+    pointsDiscount,
+    selectedNetOrderTotal,
+    selectedPayableTotal,
     hasLegacyLines,
     maxLeadTimeDays,
     shippingMethodsLoading,

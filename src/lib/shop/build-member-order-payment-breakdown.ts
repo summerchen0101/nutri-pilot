@@ -24,6 +24,7 @@ export interface MemberOrderPaymentBreakdown {
   vendors: MemberOrderBreakdownVendor[];
   itemsSubtotal: number;
   shippingTotal: number;
+  pointsDiscount: number;
   grandTotal: number;
 }
 
@@ -123,6 +124,7 @@ function buildFromSnapshot(
     vendors?: SnapshotVendorLike[];
     itemsSubtotal?: number;
     shippingTotal?: number;
+    pointsRedeemed?: number;
   };
   const vendors = snap.vendors ?? [];
   if (vendors.length === 0) return null;
@@ -158,12 +160,18 @@ function buildFromSnapshot(
       Math.round(snap.shippingTotal)
     : breakdownVendors.reduce((sum, v) => sum + v.effectiveShipping, 0);
 
+  const pointsDiscount =
+    typeof snap.pointsRedeemed === 'number' && Number.isFinite(snap.pointsRedeemed) ?
+      Math.max(0, Math.round(snap.pointsRedeemed))
+    : Math.max(0, itemsSubtotal + shippingTotal - Math.round(orderTotal));
+
   const grandTotal = Math.round(orderTotal);
 
   return {
     vendors: breakdownVendors,
     itemsSubtotal,
     shippingTotal,
+    pointsDiscount,
     grandTotal,
   };
 }
@@ -211,6 +219,7 @@ function buildFromOrderItems(
     vendors,
     itemsSubtotal,
     shippingTotal,
+    pointsDiscount: 0,
     grandTotal: Math.round(orderTotal),
   };
 }

@@ -11,6 +11,7 @@ import type {
   VendorShippingMethodRow,
   VendorRow,
 } from "./shop-checkout-types.ts";
+import { calcShopPointsRedemption } from "./shop-points-redemption.ts";
 
 export type { CheckoutBody, CheckoutSnapshot, LogisticsQueueItem };
 
@@ -478,12 +479,58 @@ export async function buildShopCheckout(
     (s, v) => s + v.effectiveShipping,
     0,
   );
-  const paymentTotal = calcPaymentTotal(snapshotVendors);
-  const amt = paymentTotal > 0 ?
-    paymentTotal
-    : roundTwdAmt(itemsSubtotalAll + shippingTotal);
+  const gatewayDueBeforePoints = calcPaymentTotal(snapshotVendors);
+  const roundedItemsSubtotal = roundTwdAmt(itemsSubtotalAll);
+  const roundedShippingTotal = roundTwdAmt(shippingTotal);
 
-  if (amt <= 0) {
+  const primaryVendor = snapshotVendors[0] ?? null;
+  const isCvsCod = primaryVendor ?
+    isCvsCodShippingCodeEdge(primaryVendor.shippingMethodCode)
+    : false;
+  const effectiveShippingPrimary = primaryVendor ?
+    roundTwdAmt(primaryVendor.effectiveShipping)
+    : 0;
+
+  let pointsRedeemed = 0;
+  let netOrderTotal = roundedItemsSubtotal + roundedShippingTotal;
+  let paymentTotal = gatewayDueBeforePoints;
+
+  if (body.applyShopPoints === true) {
+    const { data: profileRow, error: profileErr } = await supabase
+      .from("user_profiles")
+      .select("shop_points_balance")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profileErr) {
+      return { ok: false, error: profileErr.message, status: 400 };
+    }
+
+    const pointsBalance = Math.max(
+      0,
+      Math.floor(num(profileRow?.shop_points_balance, 0)),
+    );
+    const redemption = calcShopPointsRedemption({
+      pointsBalance,
+      itemsSubtotal: roundedItemsSubtotal,
+      shippingTotal: roundedShippingTotal,
+      effectiveShipping: effectiveShippingPrimary,
+      isCvsCod,
+      applyPoints: true,
+    });
+
+    pointsRedeemed = redemption.pointsDiscount;
+    netOrderTotal = redemption.netOrderTotal;
+    paymentTotal = redemption.paymentTotal;
+  } else {
+    paymentTotal = gatewayDueBeforePoints > 0 ?
+      gatewayDueBeforePoints
+      : netOrderTotal;
+  }
+
+  const amt = paymentTotal;
+
+  if (amt < 0 || netOrderTotal < 0) {
     return { ok: false, error: "金額無效", status: 422 };
   }
 
@@ -510,9 +557,10 @@ export async function buildShopCheckout(
 
   const checkoutSnapshot: CheckoutSnapshot = {
     vendors: snapshotVendors,
-    itemsSubtotal: roundTwdAmt(itemsSubtotalAll),
-    shippingTotal: roundTwdAmt(shippingTotal),
-    paymentTotal,
+    itemsSubtotal: roundedItemsSubtotal,
+    shippingTotal: roundedShippingTotal,
+    paymentTotal: roundTwdAmt(paymentTotal),
+    pointsRedeemed: pointsRedeemed > 0 ? pointsRedeemed : undefined,
     logisticsByVendor,
     logisticsCompleted: false,
   };
@@ -547,7 +595,7 @@ export async function buildShopCheckout(
     ok: true,
     orderId,
     publicOrderNo: buildPublicOrderNo(),
-    total: amt,
+    total: roundTwdAmt(netOrderTotal),
     checkoutSnapshot,
     logisticsQueue,
     orderItemRows,
@@ -556,6 +604,167 @@ export async function buildShopCheckout(
     recipientAddressFull,
     saveShippingToProfile: body.saveShippingToProfile === true,
     itemDesc,
+  };
+}
+
+export type SyncPendingOrderShopPointsResult =
+  | { ok: true; paymentTotal: number; netOrderTotal: number; pointsRedeemed: number }
+  | { ok: false; error: string; status: number };
+
+/** 付款前同步 pending 訂單的點數折抵與 paymentTotal（建單時機早於 cart rehydrate 時補正） */
+export async function syncPendingOrderShopPoints(
+  supabase: SupabaseClient,
+  admin: SupabaseClient,
+  userId: string,
+  orderId: string,
+  applyShopPoints: boolean,
+): Promise<SyncPendingOrderShopPointsResult> {
+  const { data: order, error: orderErr } = await supabase
+    .from("orders")
+    .select("id, user_id, status, checkout_snapshot")
+    .eq("id", orderId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (orderErr) {
+    return { ok: false, error: orderErr.message, status: 400 };
+  }
+  if (!order) {
+    return { ok: false, error: "Order not found", status: 404 };
+  }
+  if (order.status !== "pending") {
+    return { ok: false, error: "Order not editable", status: 422 };
+  }
+
+  const snapRaw = order.checkout_snapshot;
+  if (!isCheckoutSnapshot(snapRaw)) {
+    return { ok: false, error: "Invalid checkout snapshot", status: 422 };
+  }
+
+  const snap = { ...snapRaw };
+  const vendor = snap.vendors[0];
+  if (!vendor) {
+    return { ok: false, error: "Missing vendor snapshot", status: 422 };
+  }
+
+  const itemsSubtotal = roundTwdAmt(snap.itemsSubtotal);
+  const shippingTotal = roundTwdAmt(snap.shippingTotal);
+  const effectiveShipping = roundTwdAmt(vendor.effectiveShipping);
+  const isCvsCod = isCvsCodShippingCodeEdge(vendor.shippingMethodCode);
+
+  let pointsBalance = 0;
+  if (applyShopPoints) {
+    const { data: profileRow, error: profileErr } = await supabase
+      .from("user_profiles")
+      .select("shop_points_balance")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profileErr) {
+      return { ok: false, error: profileErr.message, status: 400 };
+    }
+
+    pointsBalance = Math.max(
+      0,
+      Math.floor(num(profileRow?.shop_points_balance, 0)),
+    );
+  }
+
+  const redemption = calcShopPointsRedemption({
+    pointsBalance,
+    itemsSubtotal,
+    shippingTotal,
+    effectiveShipping,
+    isCvsCod,
+    applyPoints: applyShopPoints,
+  });
+
+  const oldRedeemed = Math.max(
+    0,
+    Math.floor(Number(snap.pointsRedeemed ?? 0)),
+  );
+  const newRedeemed = redemption.pointsDiscount;
+  const newPaymentTotal = roundTwdAmt(redemption.paymentTotal);
+  const newNetOrderTotal = roundTwdAmt(redemption.netOrderTotal);
+
+  const paymentUnchanged =
+    roundTwdAmt(Number(snap.paymentTotal ?? 0)) === newPaymentTotal;
+  if (oldRedeemed === newRedeemed && paymentUnchanged) {
+    return {
+      ok: true,
+      paymentTotal: newPaymentTotal,
+      netOrderTotal: newNetOrderTotal,
+      pointsRedeemed: newRedeemed,
+    };
+  }
+
+  if (newRedeemed < oldRedeemed) {
+    return {
+      ok: false,
+      error: "點數折抵已變更，請返回購物車重新結帳",
+      status: 409,
+    };
+  }
+
+  const nextSnap: CheckoutSnapshot = {
+    ...snap,
+    paymentTotal: newPaymentTotal,
+    pointsRedeemed: newRedeemed > 0 ? newRedeemed : undefined,
+  };
+
+  const { error: updateErr } = await supabase
+    .from("orders")
+    .update({
+      total: newNetOrderTotal,
+      checkout_snapshot: nextSnap,
+    })
+    .eq("id", orderId)
+    .eq("user_id", userId)
+    .eq("status", "pending");
+
+  if (updateErr) {
+    return { ok: false, error: updateErr.message, status: 500 };
+  }
+
+  if (newRedeemed > oldRedeemed) {
+    if (oldRedeemed > 0) {
+      return {
+        ok: false,
+        error: "點數折抵已變更，請返回購物車重新結帳",
+        status: 409,
+      };
+    }
+
+    const { data: redeemRaw, error: redeemErr } = await admin.rpc(
+      "redeem_shop_points_for_order",
+      {
+        p_user_id: userId,
+        p_order_id: orderId,
+        p_amount: newRedeemed,
+      },
+    );
+
+    if (redeemErr) {
+      return { ok: false, error: redeemErr.message, status: 500 };
+    }
+
+    const redeem = redeemRaw as { ok?: boolean; error?: string } | null;
+    if (!redeem?.ok) {
+      const msg =
+        redeem?.error === "insufficient_balance" ? "購物點餘額不足"
+        : redeem?.error === "insufficient_lot_inventory" ? "購物點批次不足"
+        : redeem?.error === "already_redeemed" ?
+          "點數折抵狀態不一致，請返回購物車重新結帳"
+        : "點數折抵失敗";
+      return { ok: false, error: msg, status: 409 };
+    }
+  }
+
+  return {
+    ok: true,
+    paymentTotal: newPaymentTotal,
+    netOrderTotal: newNetOrderTotal,
+    pointsRedeemed: newRedeemed,
   };
 }
 

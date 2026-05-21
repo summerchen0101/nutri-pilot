@@ -14,6 +14,8 @@ export interface CheckoutBody {
   vendorShippingSelections?: Record<string, string>;
   /** 宅配結帳頁選擇 TCAT | POST */
   homeLogisticsSubType?: string;
+  /** 是否折抵購物點（1 點 = 1 元） */
+  applyShopPoints?: boolean;
 }
 
 export interface VendorShippingMethodRow {
@@ -87,8 +89,10 @@ export interface CheckoutSnapshot {
   vendors: CheckoutVendorSnapshot[];
   itemsSubtotal: number;
   shippingTotal: number;
-  /** 綠界 AIO 應收金額（排除超商到付商品小計） */
+  /** 綠界 AIO 應收金額（排除超商到付商品小計，並扣除點數折抵） */
   paymentTotal?: number;
+  /** 本單折抵購物點數（1 點 = 1 元） */
+  pointsRedeemed?: number;
   logisticsByVendor: Record<string, LogisticsDraft | null>;
   logisticsCompleted: boolean;
 }

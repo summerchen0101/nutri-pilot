@@ -15,7 +15,7 @@ export interface CheckoutShippingSummaryCardProps {
   recipientPhone: string;
   recipientAddressFull: string;
   cvsStoreNameByVendor: Record<string, string>;
-  onChangeShipping: () => void;
+  onChangeShipping?: () => void;
   onEditVendor: (vendorId: string) => void;
   onSelectCvsStore?: () => void;
   cvsStoreSelecting?: boolean;
@@ -43,12 +43,14 @@ export function CheckoutShippingSummaryCard({
             *
           </span>
         </h2>
-        <button
-          type="button"
-          className="shrink-0 text-body font-medium text-[#378ADD] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
-          onClick={onChangeShipping}>
-          變更
-        </button>
+        {onChangeShipping ? (
+          <button
+            type="button"
+            className="shrink-0 text-body font-medium text-[#378ADD] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
+            onClick={onChangeShipping}>
+            變更
+          </button>
+        ) : null}
       </div>
 
       <ul className="mt-3 space-y-0 divide-y-hairline divide-border">

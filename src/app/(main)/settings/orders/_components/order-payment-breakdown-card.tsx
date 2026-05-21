@@ -17,7 +17,7 @@ export function OrderPaymentBreakdownCard({
 }: OrderPaymentBreakdownCardProps) {
   const detailsId = useId();
   const [lineItemsOpen, setLineItemsOpen] = useState(false);
-  const { vendors, itemsSubtotal, shippingTotal, grandTotal } = breakdown;
+  const { vendors, itemsSubtotal, shippingTotal, pointsDiscount, grandTotal } = breakdown;
 
   return (
     <section className="rounded-xl border-hairline border-border bg-card p-4">
@@ -36,6 +36,14 @@ export function OrderPaymentBreakdownCard({
             NT$ {formatShopGroupedInteger(shippingTotal)}
           </span>
         </div>
+        {pointsDiscount > 0 ?
+          <div className="flex justify-between text-muted-foreground">
+            <span>點數折抵</span>
+            <span className="tabular-nums text-[#2D6B4A]">
+              −NT$ {formatShopGroupedInteger(pointsDiscount)}
+            </span>
+          </div>
+        : null}
         <div className="flex justify-between text-heading-section text-foreground">
           <span>總計</span>
           <span className="tabular-nums">

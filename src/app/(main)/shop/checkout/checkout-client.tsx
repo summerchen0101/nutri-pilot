@@ -14,6 +14,7 @@ import { FiChevronLeft } from "react-icons/fi";
 import {
   getCheckoutShippingDefaults,
 } from "@/app/(main)/shop/actions";
+import { VendorShippingMethodPickerSheet } from "@/app/(main)/shop/cart/cart-vendor-shipping-picker";
 import { CheckoutHomeDeliverySection } from "@/app/(main)/shop/checkout/_components/checkout-home-delivery-section";
 import { CheckoutLegalHint } from "@/app/(main)/shop/checkout/_components/checkout-legal-hint";
 import { CheckoutPanelFooter } from "@/app/(main)/shop/checkout/_components/checkout-panel-footer";
@@ -27,6 +28,7 @@ import { consumeEcpayCheckoutReturnError } from "@/lib/shop/ecpay-checkout-retur
 import { consumeEcpayResumeOrderId } from "@/lib/shop/ecpay-checkout-resume";
 import { logEcpayCheckout } from "@/lib/shop/ecpay-checkout-debug";
 import { useCartDerived } from "@/lib/shop/use-cart-derived";
+import { invalidateShopPointsBalanceCache } from "@/lib/shop/use-shop-points-balance";
 import { useSingleVendorCheckoutFlow } from "@/lib/shop/use-single-vendor-checkout-flow";
 import { isCvsCodShippingCode } from "@/lib/shop/shipping-method-kind";
 import { validateEcpayRecipientName } from "@/lib/shop/validate-ecpay-recipient-name";
@@ -47,6 +49,9 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
   const vendorShippingSelections = useCartStore(
     (s) => s.vendorShippingSelections,
   );
+  const setVendorShippingSelection = useCartStore(
+    (s) => s.setVendorShippingSelection,
+  );
 
   const {
     selectedValidLines,
@@ -54,8 +59,11 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     summaries,
     selectedItemsSubtotal,
     selectedShippingTotal,
-    selectedGrandTotal,
+    selectedNetOrderTotal,
+    selectedPayableTotal,
+    pointsDiscount,
     hasLegacyLines,
+    shippingMethodsLoading,
   } = useCartDerived();
 
   const [recipientName, setRecipientName] = useState("");
@@ -67,6 +75,7 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
   const [defaultsLoading, setDefaultsLoading] = useState(false);
   const [defaultsReady, setDefaultsReady] = useState(false);
   const [resumeOrderId, setResumeOrderId] = useState<string | null>(null);
+  const [shippingPickerOpen, setShippingPickerOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   const displaySummaries = useMemo(
@@ -90,6 +99,7 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     (orderId: string) => {
       const vid = checkoutVendorId ?? "";
       logEcpayCheckout("CheckoutClient complete → success", { orderId, vid });
+      invalidateShopPointsBalanceCache();
       if (vid) setLastCheckedOutVendorId(vid);
       closeCheckoutPanel();
       const q = new URLSearchParams({ order_id: orderId });
@@ -127,6 +137,7 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
   useEffect(() => {
     if (!isCheckoutPanelOpen) {
       setResumeOrderId(null);
+      setShippingPickerOpen(false);
       return;
     }
     const returnErr = consumeEcpayCheckoutReturnError();
@@ -189,9 +200,14 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     openCartPanel,
   ]);
 
-  function goBackToCart() {
-    closeCheckoutPanel();
-    openCartPanel();
+  const canChangeShipping =
+    !shippingMethodsLoading &&
+    (selectedSummary?.availableShippingMethods.length ?? 0) > 1;
+
+  function handleSelectShippingMethod(methodId: string) {
+    if (!checkoutVendorId) return;
+    setErr(null);
+    setVendorShippingSelection(checkoutVendorId, methodId);
   }
 
   function handleFooterSubmit() {
@@ -315,6 +331,21 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
         }}
       />
 
+      {selectedSummary && canChangeShipping ? (
+        <VendorShippingMethodPickerSheet
+          open={shippingPickerOpen}
+          methods={selectedSummary.availableShippingMethods}
+          selectedMethodId={
+            vendorShippingSelections[checkoutVendorId] ??
+            selectedSummary.selectedShippingMethodId
+          }
+          itemsSubtotalRounded={selectedSummary.itemsSubtotal}
+          stackZClassName="z-[60]"
+          onClose={() => setShippingPickerOpen(false)}
+          onSelectMethodId={handleSelectShippingMethod}
+        />
+      ) : null}
+
       {defaultsLoading ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-8">
           <p className="text-caption text-muted-foreground">載入結帳資料…</p>
@@ -336,7 +367,9 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
               recipientPhone={recipientPhone}
               recipientAddressFull={recipientAddressFull}
               cvsStoreNameByVendor={cvsStoreNames}
-              onChangeShipping={goBackToCart}
+              onChangeShipping={
+                canChangeShipping ? () => setShippingPickerOpen(true) : undefined
+              }
               onEditVendor={(vendorId) => setEditingVendorId(vendorId)}
               onSelectCvsStore={flow.isCvs ? handleSelectCvsStore : undefined}
               cvsStoreSelecting={flow.phase === "selectingStore"}
@@ -368,7 +401,8 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
               summaries={displaySummaries}
               itemsSubtotal={selectedItemsSubtotal}
               shippingTotal={selectedShippingTotal}
-              grandTotal={selectedGrandTotal}
+              pointsDiscount={pointsDiscount}
+              grandTotal={selectedNetOrderTotal}
             />
 
             <CheckoutLegalHint />
@@ -387,7 +421,7 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
           </div>
 
           <CheckoutPanelFooter
-            grandTotal={selectedGrandTotal}
+            grandTotal={selectedPayableTotal}
             pending={loading}
             canSubmit={footerCanSubmit}
             submitLabel={footerLabel}

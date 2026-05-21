@@ -38,6 +38,84 @@ function shippingMethodFreeHint(
   return { show: true, amount: threshold };
 }
 
+export interface VendorShippingMethodPickerSheetProps {
+  open: boolean;
+  onClose: () => void;
+  methods: VendorShippingMethodLite[];
+  selectedMethodId: string | null;
+  onSelectMethodId: (methodId: string) => void;
+  itemsSubtotalRounded: number;
+  /** 全螢幕遮罩／面板層級（預設 `z-50`）；結帳側欄內需高於 `z-[56]` */
+  stackZClassName?: string;
+}
+
+export function VendorShippingMethodPickerSheet({
+  open,
+  onClose,
+  methods,
+  selectedMethodId,
+  onSelectMethodId,
+  itemsSubtotalRounded,
+  stackZClassName,
+}: VendorShippingMethodPickerSheetProps) {
+  if (methods.length === 0) {
+    return null;
+  }
+
+  const resolvedSelectedId = selectedMethodId ?? methods[0]!.id;
+
+  return (
+    <BottomSheetShell
+      open={open}
+      title="選擇運送方式"
+      stackZClassName={stackZClassName}
+      onClose={onClose}>
+      <div className="max-h-[min(60vh,420px)] space-y-2 overflow-y-auto pb-2">
+        {methods.map((m) => {
+          const active = m.id === resolvedSelectedId;
+          const eff = methodEffectiveFee(m, itemsSubtotalRounded);
+          const freeHint = shippingMethodFreeHint(m.free_shipping_threshold);
+          return (
+            <button
+              key={m.id}
+              type="button"
+              className={cn(
+                'flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] border px-3 py-2.5 text-left',
+                active ?
+                  'border-primary bg-primary text-white'
+                : 'border-hairline border-border bg-transparent text-foreground',
+              )}
+              onClick={() => {
+                onSelectMethodId(m.id);
+                onClose();
+              }}>
+              <span className="min-w-0 flex-1 space-y-0.5">
+                <span className="block text-body">{m.label}</span>
+                {freeHint.show ?
+                  <span
+                    className={cn(
+                      'block text-caption',
+                      active ? 'text-white/80' : 'text-muted-foreground',
+                    )}>
+                    滿 NT$ {formatShopGroupedInteger(freeHint.amount)} 免運
+                  </span>
+                : null}
+              </span>
+              <span
+                className={cn(
+                  'shrink-0 tabular-nums text-body',
+                  active ? 'text-white' : 'text-muted-foreground',
+                )}>
+                NT$ {formatShopGroupedInteger(eff)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </BottomSheetShell>
+  );
+}
+
 export function CartVendorShippingPicker({
   ariaLabelSuffix,
   methods,
@@ -93,55 +171,14 @@ export function CartVendorShippingPicker({
         />
       </button>
 
-      <BottomSheetShell
+      <VendorShippingMethodPickerSheet
         open={sheetOpen}
-        title="選擇運送方式"
-        onClose={() => setSheetOpen(false)}>
-        <div className="max-h-[min(60vh,420px)] space-y-2 overflow-y-auto pb-2">
-          {methods.map((m) => {
-            const active = m.id === resolvedSelectedId;
-            const eff = methodEffectiveFee(m, itemsSubtotalRounded);
-            const freeHint = shippingMethodFreeHint(m.free_shipping_threshold);
-            return (
-              <button
-                key={m.id}
-                type="button"
-                className={cn(
-                  'flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] border px-3 py-2.5 text-left',
-                  active ?
-                    'border-primary bg-primary text-white'
-                  : 'border-hairline border-border bg-transparent text-foreground',
-                )}
-                onClick={() => {
-                  onSelectMethodId(m.id);
-                  setSheetOpen(false);
-                }}>
-                <span className="min-w-0 flex-1 space-y-0.5">
-                  <span className="block text-body">{m.label}</span>
-                  {freeHint.show ?
-                    <span
-                      className={cn(
-                        'block text-caption',
-                        active ?
-                          'text-white/80'
-                        : 'text-muted-foreground',
-                      )}>
-                      滿 NT$ {formatShopGroupedInteger(freeHint.amount)} 免運
-                    </span>
-                  : null}
-                </span>
-                <span
-                  className={cn(
-                    'shrink-0 tabular-nums text-body',
-                    active ? 'text-white' : 'text-muted-foreground',
-                  )}>
-                  NT$ {formatShopGroupedInteger(eff)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </BottomSheetShell>
+        methods={methods}
+        selectedMethodId={selectedMethodId}
+        itemsSubtotalRounded={itemsSubtotalRounded}
+        onClose={() => setSheetOpen(false)}
+        onSelectMethodId={onSelectMethodId}
+      />
     </>
   );
 }
