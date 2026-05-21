@@ -16,8 +16,8 @@
 
 Supabase Edge Functions（後端邏輯）
   └── AI Worker（QStash callback）
-  └── 藍新 MPG 建單（`create-newebpay-payment`）
-  └── 藍新背景通知（`newebpay-notify`）
+  └── 商城建單（`create-shop-order`）
+  └── 綠界金流／物流 callback（`ecpay-return`、`ecpay-logistics-return` 等）
   └── 推薦分數重算
   └── 週報 cron（pg_cron 觸發）
 ```
@@ -63,38 +63,28 @@ Supabase Edge Functions（後端邏輯）
 
 ---
 
-### 金流相關（藍新 MPG）
+### 金流／物流（綠界）
 
 | Function 名稱 | 觸發方式 | 說明 |
 |--------------|---------|------|
-| `create-newebpay-payment` | 前端經 Server Action（使用者 JWT）| 建立 `pending` 訂單與明細、回傳 `paymentUrl` + `formFields`（POST 至 MPG） |
-| `newebpay-notify` | 藍新伺服器 POST | 驗證 `TradeSha`、解密 `TradeInfo`，付款成功時將訂單改為 `paid` |
-| `newebpay-query-trade` | 後台 super_admin（Server Action + JWT）| 手冊 4.3 單筆交易查詢，比對 TradeStatus |
+| `create-shop-order` | Server Action + JWT | 建立 `pending` 訂單、回傳 `orderId` + `logisticsQueue` |
+| `ecpay-logistics-selection` | GET popup + JWT | 導向綠界 V2 門市／宅配選擇 |
+| `ecpay-logistics-client-return` | 綠界 POST | 暫存單轉正式物流、更新 `checkout_snapshot` |
+| `ecpay-logistics-return` | 綠界 POST | 物流貨態回寫 `sub_orders` |
+| `ecpay-checkout` | GET popup + JWT | AIO V5 付款表單 HTML |
+| `ecpay-return` | 綠界 POST | ReturnURL 入帳（`RtnCode=1` → `paid`） |
+| `ecpay-payment-info` | 綠界 POST | ATM／超商代碼取號（維持 pending） |
+| `ecpay-order-result` | 綠界 POST | OrderResultURL 瀏覽器返回（`?appOrigin=` 絕對 URL 導回 `/shop?checkout=1&…`）；**須公開 Edge，不可改 Next 需登入 route** |
+| `ecpay-query-trade` | super_admin JWT | 查詢交易狀態 |
+| `ecpay-logistics-print` | super_admin GET | C2C 託運單列印 |
 
-**`create-newebpay-payment` 輸入**（JSON）：
-```json
-{
-  "items": [{ "variantId": "uuid", "qty": 2 }]
-}
-```
+**`create-shop-order` 輸出**：`{ orderId, logisticsQueue, total }`。詳見 `docs/third/ecpay-payment-spec.md`、`ecpay-logistics-spec.md`。
 
-**`create-newebpay-payment` 輸出**：
-```json
-{
-  "paymentUrl": "https://ccore.newebpay.com/MPG/mpg_gateway",
-  "formFields": {
-    "MerchantID": "...",
-    "TradeInfo": "...",
-    "TradeSha": "...",
-    "Version": "2.3"
-  },
-  "merchantOrderNo": "..."
-}
-```
+**`ecpay-return`**：回應 `1|OK`；驗證 CheckMac 後更新訂單。
 
-**`newebpay-notify`**：Content-Type `application/x-www-form-urlencoded`；外層 `Status=SUCCESS` 且內層解密後 `TradeStatus=1` 視為付款成功。必須回應**純文字** `OK`。
+**`ecpay-order-result`**：query `appOrigin`（瀏覽器 origin，fallback Edge `APP_URL`）；回傳 HTML 更新 opener。Next `/shop/payment-return` 僅本機 GET 測試，不作 OrderResultURL。
 
-訂閱管理（暫停／取消／改頻率）之 Edge Function 已移除；改接藍新定期定額時另議。
+訂閱定期定額未接。
 
 ---
 
@@ -222,10 +212,9 @@ USING (auth.uid()::text = (storage.foldername(name))[1]);
 
 ## Webhook 端點安全
 
-**藍新 NotifyURL**（必須驗證 `TradeSha`、解密 `TradeInfo`；失敗回 400，不更新 DB）：
+**綠界 ReturnURL**（`ecpay-return`：驗證 CheckMac SHA256；`RtnCode !== 1` 不入帳）：
 ```typescript
-// HashKey=${key}&${TradeInfo}&HashIV=${iv} → SHA256 → 大寫 hex，與請求 TradeSha 比對（timing-safe）
-// TradeInfo 為 AES-256-CBC hex，解密後取得 MerchantOrderNo、Amt、TradeStatus 等
+// 參數排序 + .NET UrlEncode + SHA256；詳見 docs/third/ecpay-integration-handbook.md
 ```
 
 **QStash Callback**（必須驗簽）：

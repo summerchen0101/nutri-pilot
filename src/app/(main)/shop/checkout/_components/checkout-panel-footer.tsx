@@ -7,6 +7,7 @@ export interface CheckoutPanelFooterProps {
   grandTotal: number;
   pending: boolean;
   canSubmit: boolean;
+  submitLabel?: string;
   onSubmit: () => void;
 }
 
@@ -14,6 +15,7 @@ export function CheckoutPanelFooter({
   grandTotal,
   pending,
   canSubmit,
+  submitLabel = '送出訂單',
   onSubmit,
 }: CheckoutPanelFooterProps) {
   return (
@@ -33,7 +35,7 @@ export function CheckoutPanelFooter({
           disabled={pending || !canSubmit}
           onClick={onSubmit}
         >
-          {pending ? '處理中…' : '送出訂單'}
+          {pending ? '處理中…' : submitLabel}
         </Button>
       </div>
     </div>

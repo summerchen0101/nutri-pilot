@@ -77,8 +77,8 @@ export default async function AdminFinancePaymentsPage({
       <div>
         <h1 className="text-heading-screen text-foreground">金流對帳</h1>
         <p className="mt-1 text-caption text-slate-600">
-          訂單付款與藍新欄位摘要（依建立時間 UTC 篩選）。「藍新交易序號」即手冊
-          TradeNo。pending 表示 Notify 尚未入帳；完整退款請於藍新後台核對。
+          訂單付款與綠界欄位摘要（依建立時間 UTC 篩選）。「綠界交易編號」即 TradeNo。
+          pending 表示 ReturnURL 尚未入帳；完整退款請於綠界廠商後台核對。
         </p>
       </div>
 
@@ -127,8 +127,8 @@ export default async function AdminFinancePaymentsPage({
             <tr>
               <th className="border-b border-border px-3 py-2">建立時間</th>
               <th className="border-b border-border px-3 py-2">對外編號</th>
-              <th className="border-b border-border px-3 py-2">藍新商店訂單號</th>
-              <th className="border-b border-border px-3 py-2">藍新交易序號</th>
+              <th className="border-b border-border px-3 py-2">綠界商店訂單號</th>
+              <th className="border-b border-border px-3 py-2">綠界交易編號</th>
               <th className="border-b border-border px-3 py-2">閘道</th>
               <th className="border-b border-border px-3 py-2">狀態</th>
               <th className="border-b border-border px-3 py-2 text-end">總額</th>

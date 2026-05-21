@@ -1,7 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useTransition, type UIEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type UIEvent,
+} from "react";
 import { FiChevronLeft } from "react-icons/fi";
 
 import {
@@ -17,7 +24,16 @@ import { CheckoutVendorRecipientEditSheet } from "@/app/(main)/shop/checkout/_co
 import { HEADER_LEADING_ICON_CLASS } from "@/components/layout/header-action-icon-styles";
 import { useCartStore } from "@/lib/shop/cart-store";
 import { isCvsShippingCode } from "@/lib/shop/shipping-method-kind";
-import { submitNewebpayMpgForm } from "@/lib/shop/submit-newebpay-mpg-form";
+import { consumeEcpayCheckoutReturnError } from "@/lib/shop/ecpay-checkout-return-error";
+import { consumeEcpayResumeOrderId } from "@/lib/shop/ecpay-checkout-resume";
+import {
+  ECPAY_LOGISTICS_POPUP_NAME,
+  openEcpayPopup,
+  showPopupMessage,
+} from "@/lib/shop/ecpay-popup-form";
+import { useEcpayCheckoutFlow } from "@/lib/shop/use-ecpay-checkout-flow";
+import { validateEcpayRecipientName } from "@/lib/shop/validate-ecpay-recipient-name";
+import { logEcpayCheckout } from "@/lib/shop/ecpay-checkout-debug";
 import { useCartDerived } from "@/lib/shop/use-cart-derived";
 
 export interface CheckoutClientProps {
@@ -52,6 +68,33 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     Record<string, string>
   >({});
   const [editingVendorId, setEditingVendorId] = useState<string | null>(null);
+
+  const {
+    phase,
+    statusMessage,
+    pendingPaymentOrderId,
+    startEcpayFlow,
+    resumeEcpayCheckout,
+    openPayment,
+  } = useEcpayCheckoutFlow({
+    onPaid: (orderId) => {
+      logEcpayCheckout("CheckoutClient onPaid → /shop/success", { orderId });
+      closeCheckoutPanel();
+      router.push("/shop/success");
+      router.refresh();
+    },
+    onPendingPayment: (orderId) => {
+      logEcpayCheckout("CheckoutClient onPendingPayment → success", {
+        orderId,
+      });
+      closeCheckoutPanel();
+      router.push(`/shop/success?paymentPending=1&order_id=${orderId}`);
+    },
+    onError: (message) => {
+      logEcpayCheckout("CheckoutClient onError", { message });
+      setErr(message);
+    },
+  });
   const [err, setErr] = useState<string | null>(null);
   const [defaultsLoading, setDefaultsLoading] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -67,6 +110,19 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     },
     [onBodyScrollTopChange],
   );
+
+  useEffect(() => {
+    if (!isCheckoutPanelOpen) return;
+    const returnErr = consumeEcpayCheckoutReturnError();
+    if (returnErr) setErr(returnErr);
+  }, [isCheckoutPanelOpen]);
+
+  useEffect(() => {
+    if (!isCheckoutPanelOpen) return;
+    const resumeOrderId = consumeEcpayResumeOrderId();
+    if (!resumeOrderId) return;
+    void resumeEcpayCheckout(resumeOrderId);
+  }, [isCheckoutPanelOpen, resumeEcpayCheckout]);
 
   useEffect(() => {
     if (!isCheckoutPanelOpen || lines.length === 0) return;
@@ -128,6 +184,16 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     openCartPanel();
   }
 
+  function confirmPayment() {
+    const orderId = pendingPaymentOrderId?.trim() ?? "";
+    if (!orderId) {
+      setErr("找不到訂單，請重新送出");
+      return;
+    }
+    setErr(null);
+    void openPayment(orderId);
+  }
+
   function pay() {
     setErr(null);
     if (!validLines.length) {
@@ -142,27 +208,29 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
       return;
     }
 
-    for (const s of summaries) {
-      if (isCvsShippingCode(s.selectedShippingMethodCode)) {
-        const st = (cvsStoreNameByVendor[s.vendorId] ?? "").trim();
-        if (!st) {
-          setErr(`請填寫或選擇超商門市（${s.vendorName}）`);
-          return;
-        }
-      } else if (!ra) {
-        setErr("請填寫收件地址（訂單含宅配運送）");
-        return;
-      }
+    const nameErr = validateEcpayRecipientName(rn);
+    if (nameErr) {
+      setErr(nameErr);
+      return;
     }
 
-    const cvsPayload: Record<string, string> = {};
+    let anyNeedsAddress = false;
     for (const s of summaries) {
-      if (isCvsShippingCode(s.selectedShippingMethodCode)) {
-        cvsPayload[s.vendorId] = (
-          cvsStoreNameByVendor[s.vendorId] ?? ""
-        ).trim();
+      if (!isCvsShippingCode(s.selectedShippingMethodCode)) {
+        anyNeedsAddress = true;
       }
     }
+    if (anyNeedsAddress && !ra) {
+      setErr("請填寫收件地址（訂單含宅配運送）");
+      return;
+    }
+
+    const logisticsPopup = openEcpayPopup(ECPAY_LOGISTICS_POPUP_NAME);
+    if (!logisticsPopup) {
+      setErr("請允許彈出視窗以完成物流設定");
+      return;
+    }
+    showPopupMessage(logisticsPopup, "正在建立訂單…");
 
     startTransition(async () => {
       const res = await startCheckout({
@@ -172,15 +240,25 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
         recipientPhone: rp,
         recipientAddressFull: ra,
         saveShippingToProfile,
-        cvsStoreNameByVendor: cvsPayload,
       });
       if (res.error) {
+        try {
+          logisticsPopup.close();
+        } catch {
+          /* ignore */
+        }
         setErr(res.error);
         return;
       }
-      if (res.paymentUrl && res.formFields) {
-        closeCheckoutPanel();
-        submitNewebpayMpgForm(res.paymentUrl, res.formFields);
+      if (res.orderId && res.logisticsQueue) {
+        await startEcpayFlow(res.orderId, res.logisticsQueue, logisticsPopup);
+      } else {
+        try {
+          logisticsPopup.close();
+        } catch {
+          /* ignore */
+        }
+        setErr("建單回傳缺少參數");
       }
     });
   }
@@ -190,6 +268,15 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
   }
 
   const canSubmit = validLines.length > 0 && !hasLegacyLines;
+  const isPaymentReady = phase === "paymentReady";
+  const footerPending =
+    pending ||
+    phase === "logistics" ||
+    phase === "payment" ||
+    phase === "polling";
+  const footerCanSubmit = isPaymentReady
+    ? Boolean(pendingPaymentOrderId)
+    : canSubmit && phase === "idle";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -250,6 +337,12 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
 
             <CheckoutLegalHint />
 
+            {statusMessage ? (
+              <p className="text-body text-muted-foreground" role="status">
+                {statusMessage}
+              </p>
+            ) : null}
+
             {err ? (
               <p className="text-body text-[#E24B4A]" role="alert">
                 {err}
@@ -259,9 +352,10 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
 
           <CheckoutPanelFooter
             grandTotal={grandTotal}
-            pending={pending}
-            canSubmit={canSubmit}
-            onSubmit={pay}
+            pending={footerPending}
+            canSubmit={footerCanSubmit}
+            submitLabel={isPaymentReady ? "前往付款" : "送出訂單"}
+            onSubmit={isPaymentReady ? confirmPayment : pay}
           />
         </>
       )}

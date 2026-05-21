@@ -4,7 +4,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
 import { updateSubOrderLogistics } from '@/app/admin/orders/actions';
+import { SubOrderEcpayPrintCard } from '@/app/admin/orders/_components/sub-order-ecpay-print-card';
 import { Button } from '@/components/ui/button';
+import { logisticsSubtypeDisplayLabel } from '@/lib/ecpay/logistics-labels';
 
 export type SubOrderLogisticsRow = {
   id: string;
@@ -13,6 +15,10 @@ export type SubOrderLogisticsRow = {
   tracking_number: string | null;
   shipping_carrier: string | null;
   shipped_at: string | null;
+  logistics_type?: string | null;
+  logistics_subtype?: string | null;
+  ecpay_logistics_trade_no?: string | null;
+  cvs_store_name?: string | null;
 };
 
 function toDatetimeLocalValue(iso: string | null): string {
@@ -96,6 +102,17 @@ function SubOrderLogisticsRowForm({
     <li className="rounded-lg border border-border p-3">
       <p className="font-mono text-caption text-slate-700">{sub.public_no}</p>
       <p className="text-micro text-slate-500">子訂單狀態：{sub.status}</p>
+      {sub.logistics_subtype ?
+        <p className="mt-1 text-caption text-muted-foreground">
+          綠界物流：{logisticsSubtypeDisplayLabel(sub.logistics_subtype)}
+          {sub.cvs_store_name ? ` · ${sub.cvs_store_name}` : ''}
+        </p>
+      : null}
+      <SubOrderEcpayPrintCard
+        subOrderId={sub.id}
+        logisticsSubtype={sub.logistics_subtype ?? null}
+        ecpayLogisticsTradeNo={sub.ecpay_logistics_trade_no ?? null}
+      />
       <form onSubmit={submit} className="mt-3 space-y-3">
         <div className="space-y-1">
           <label className="text-caption text-slate-600" htmlFor={`carrier-${sub.id}`}>

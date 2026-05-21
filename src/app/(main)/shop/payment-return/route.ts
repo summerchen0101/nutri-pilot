@@ -1,42 +1,74 @@
-import { NextResponse } from 'next/server';
+/**
+ * 本機手動測試用（GET 帶 RtnCode、CustomField1 等 query）。
+ * 不可作為綠界 OrderResultURL：/shop/* 受 auth middleware 保護，
+ * 綠界跨站 POST 不帶 session cookie，會 302 到 /login。
+ * 瀏覽器回傳請用 Edge `ecpay-order-result`（verify_jwt=false）。
+ */
+import { buildPopupReturnHtml } from '@/lib/shop/ecpay-popup-return-html';
 
-function baseAppUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.APP_URL ??
-    'http://localhost:3000'
-  ).replace(/\/$/, '');
-}
+function buildRedirectUrl(params: URLSearchParams): string {
+  const orderId = params.get('CustomField1')?.trim() ?? '';
+  const rtnCode = params.get('RtnCode')?.trim() ?? '';
+  const merchantOrderNo = params.get('MerchantTradeNo')?.trim() ??
+    params.get('merchant_order_no')?.trim() ?? '';
+  const paymentType = params.get('PaymentType')?.trim() ?? '';
 
-function redirectToSuccess(merchantOrderNo: string | null): NextResponse {
-  const base = baseAppUrl();
-  const loc = new URL('/shop/success', base);
-  if (merchantOrderNo) {
-    loc.searchParams.set('merchant_order_no', merchantOrderNo);
+  const pendingPayment =
+    rtnCode === '1' && (paymentType === 'ATM' || paymentType === 'CVS');
+
+  if (rtnCode !== '1') {
+    const failParams = new URLSearchParams();
+    failParams.set('checkout', '1');
+    failParams.set('paymentFailed', '1');
+    if (orderId) failParams.set('orderId', orderId);
+    if (rtnCode) failParams.set('rtnCode', rtnCode);
+    return `/shop?${failParams.toString()}`;
   }
-  return NextResponse.redirect(loc, 303);
-}
 
-/** 藍新 MPG ReturnURL（多為 POST application/x-www-form-urlencoded）。 */
-export async function POST(request: Request) {
-  let merchantOrderNo: string | null = null;
-  const ct = request.headers.get('content-type') ?? '';
-  if (ct.includes('application/x-www-form-urlencoded')) {
-    const raw = await request.text();
-    merchantOrderNo = new URLSearchParams(raw).get('MerchantOrderNo');
-  } else {
-    try {
-      const j = (await request.json()) as Record<string, unknown>;
-      const v = j.MerchantOrderNo;
-      merchantOrderNo = typeof v === 'string' ? v : null;
-    } catch {
-      merchantOrderNo = null;
+  const paymentDoneParams = new URLSearchParams();
+  paymentDoneParams.set('checkout', '1');
+  paymentDoneParams.set('paymentDone', '1');
+  if (orderId) paymentDoneParams.set('orderId', orderId);
+  paymentDoneParams.set('rtnCode', '1');
+  if (pendingPayment) {
+    paymentDoneParams.set('paymentPending', '1');
+    if (merchantOrderNo) {
+      paymentDoneParams.set('merchant_order_no', merchantOrderNo);
     }
   }
-  return redirectToSuccess(merchantOrderNo);
+
+  return `/shop?${paymentDoneParams.toString()}`;
+}
+
+function respondFromEcpayParams(params: URLSearchParams): Response {
+  const html = buildPopupReturnHtml({
+    redirectUrl: buildRedirectUrl(params),
+    navigateOpener: true,
+  });
+
+  return new Response(html, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
+}
+
+async function parseEcpayCallbackParams(
+  request: Request,
+): Promise<URLSearchParams> {
+  if (request.method === 'POST') {
+    const text = await request.text();
+    if (text.trim()) {
+      return new URLSearchParams(text);
+    }
+  }
+  return new URL(request.url).searchParams;
 }
 
 export async function GET(request: Request) {
-  const u = new URL(request.url);
-  return redirectToSuccess(u.searchParams.get('merchant_order_no'));
+  const params = new URL(request.url).searchParams;
+  return respondFromEcpayParams(params);
+}
+
+export async function POST(request: Request) {
+  const params = await parseEcpayCallbackParams(request);
+  return respondFromEcpayParams(params);
 }

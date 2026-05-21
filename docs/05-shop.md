@@ -171,25 +171,23 @@ export function generateFitReasons(
 
 ---
 
-## 藍新金流（MPG）整合
+## 綠界金流＋物流（C2C）
 
-### 一次性購買流程（幕前交易）
+### 一次性購買流程
 
-1. 前端呼叫 Edge `create-newebpay-payment`（攜帶使用者 JWT），請求 body：`{ items: [{ variantId, qty }] }`。
-2. Edge 依 `product_variants.price` 與庫存驗證後，建立 `orders`（`status=pending`）、`order_items`，並產生唯一 `merchant_order_no`（對應藍新 `MerchantOrderNo`，≤30 字）。
-3. 以 `NEWEBPAY_HASH_KEY` / `NEWEBPAY_HASH_IV` 加密交易參數為 `TradeInfo`，計算 `TradeSha`，回傳 `paymentUrl`（測試：`https://ccore.newebpay.com/MPG/mpg_gateway`）與表單欄位；瀏覽器 **POST** 至藍新。
-4. `ReturnURL` 指向 Next 之 `/shop/payment-return`，再導向 `/shop/success`（僅使用者體驗；**入帳以 Notify 為準**）。
-5. `NotifyURL` 指向 Edge `newebpay-notify`：驗簽、解密後若 `TradeStatus=1`，將訂單更新為 `paid` 並寫入 `gateway_trade_no`（交易編號）。
+1. 前端呼叫 Edge `create-shop-order`（JWT），建立 `orders`（`pending`）、`order_items`、`checkout_snapshot`（含 `logisticsByVendor`）。
+2. 依廠商序開啟 popup：`ecpay-logistics-selection` → 綠界選店／宅配 → `ecpay-logistics-client-return` 寫回 snapshot。
+3. 物流完成後 popup：`ecpay-checkout` → 綠界 AIO V5 付款（`OrderResultURL` 帶 `appOrigin=瀏覽器 origin`）。
+4. **入帳權威**：Edge `ecpay-return`（ReturnURL，`RtnCode=1`）→ `status=paid`、`gateway_trade_no`、拆 `sub_orders`。
+5. **瀏覽器返回**：Edge `ecpay-order-result?appOrigin=…`（OrderResultURL，公開、驗 CheckMac）→ opener 導 `/shop?checkout=1&paymentDone=1` → `ShopEcpayReturnHandler` → `/shop/success`；非即時付款另走 `ecpay-payment-info`。不可把 OrderResultURL 設在需登入的 Next `/shop/payment-return`（綠界跨站 POST 不帶 session）。
 
 ### 定期扣款（未來）
 
-商城 MVP **僅單次結帳**；`subscriptions` 相關表仍可能在 DB 中（歷史 migration），應用程式與本文件之查詢範例不以訂閱為準。未來若接藍新定期定額，再另開規格。
+商城 MVP **僅單次結帳**；訂閱定期定額未接。
 
 ### 環境變數（Edge Secrets）
 
-- `NEWEBPAY_MERCHANT_ID`、`NEWEBPAY_HASH_KEY`、`NEWEBPAY_HASH_IV`
-- `NEWEBPAY_ENV`：`test`（預設）或 `production`（MPG 網址切換）
-- `APP_URL` / `NEXT_PUBLIC_APP_URL`：ReturnURL 組字用
+見 `docs/third/ecpay-integration-handbook.md`：`ECPAY_*`、`ECPAY_LOGISTICS_*`、`APP_URL`。測試金流 `2000132`、物流 C2C `2000933` 不可混用 key。
 
 ---
 

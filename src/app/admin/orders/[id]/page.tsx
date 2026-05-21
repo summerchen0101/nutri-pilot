@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { OrderNewebpayQueryPanel } from '@/app/admin/orders/_components/order-newebpay-query-panel';
+import { OrderEcpayQueryPanel } from '@/app/admin/orders/_components/order-ecpay-query-panel';
+import { SubOrderEcpayPrintCard } from '@/app/admin/orders/_components/sub-order-ecpay-print-card';
 import { OrderPaymentInfoCard } from '@/app/admin/orders/_components/order-payment-info-card';
 import { OrderRefundPlaceholderCard } from '@/app/admin/orders/_components/order-refund-placeholder-card';
 import { OrderStatusUpdater } from '@/app/admin/orders/_components/order-status-updater';
@@ -40,7 +41,7 @@ export default async function AdminOrderDetailPage({
           product:products(name)
         )
       ),
-      sub_orders:sub_orders(id, public_no, status, total, tracking_number, shipping_carrier, shipped_at)
+      sub_orders:sub_orders(id, public_no, status, total, tracking_number, shipping_carrier, shipped_at, logistics_type, logistics_subtype, ecpay_logistics_trade_no, cvs_store_name)
     `,
     )
     .eq('id', params.id)
@@ -64,7 +65,7 @@ export default async function AdminOrderDetailPage({
   const subOrders = Array.isArray(subRaw) ? subRaw : [];
   const canShip = staffCan(role, 'order.ship');
   const canViewFinance = staffCan(role, 'analytics.finance');
-  const canQueryNewebpay = role === 'super_admin';
+  const canQueryEcpay = role === 'super_admin';
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -108,8 +109,8 @@ export default async function AdminOrderDetailPage({
         canViewFinance={canViewFinance}
       />
 
-      {canQueryNewebpay ?
-        <OrderNewebpayQueryPanel orderId={order.id} />
+      {canQueryEcpay ?
+        <OrderEcpayQueryPanel orderId={order.id} />
       : null}
 
       <OrderRefundPlaceholderCard

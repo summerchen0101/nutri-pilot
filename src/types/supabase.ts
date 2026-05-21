@@ -460,6 +460,7 @@ export type Database = {
           items_subtotal: number | null
           legacy_stripe_payment_intent_id: string | null
           merchant_order_no: string | null
+          order_metadata: Json
           payment_gateway: string
           public_order_no: string | null
           recipient_address_full: string | null
@@ -479,6 +480,7 @@ export type Database = {
           items_subtotal?: number | null
           legacy_stripe_payment_intent_id?: string | null
           merchant_order_no?: string | null
+          order_metadata?: Json
           payment_gateway?: string
           public_order_no?: string | null
           recipient_address_full?: string | null
@@ -498,6 +500,7 @@ export type Database = {
           items_subtotal?: number | null
           legacy_stripe_payment_intent_id?: string | null
           merchant_order_no?: string | null
+          order_metadata?: Json
           payment_gateway?: string
           public_order_no?: string | null
           recipient_address_full?: string | null
@@ -941,11 +944,19 @@ export type Database = {
       sub_orders: {
         Row: {
           created_at: string
+          cvs_store_address: string | null
+          cvs_store_id: string | null
+          cvs_store_name: string | null
+          ecpay_logistics_meta: Json | null
+          ecpay_logistics_trade_no: string | null
           id: string
           items_subtotal: number
+          logistics_subtype: string | null
+          logistics_type: string | null
           order_id: string
           public_no: string
           shipped_at: string | null
+          shipping_address: string | null
           shipping_carrier: string | null
           shipping_fee: number
           status: string
@@ -955,11 +966,19 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cvs_store_address?: string | null
+          cvs_store_id?: string | null
+          cvs_store_name?: string | null
+          ecpay_logistics_meta?: Json | null
+          ecpay_logistics_trade_no?: string | null
           id?: string
           items_subtotal: number
+          logistics_subtype?: string | null
+          logistics_type?: string | null
           order_id: string
           public_no: string
           shipped_at?: string | null
+          shipping_address?: string | null
           shipping_carrier?: string | null
           shipping_fee?: number
           status?: string
@@ -969,11 +988,19 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cvs_store_address?: string | null
+          cvs_store_id?: string | null
+          cvs_store_name?: string | null
+          ecpay_logistics_meta?: Json | null
+          ecpay_logistics_trade_no?: string | null
           id?: string
           items_subtotal?: number
+          logistics_subtype?: string | null
+          logistics_type?: string | null
           order_id?: string
           public_no?: string
           shipped_at?: string | null
+          shipping_address?: string | null
           shipping_carrier?: string | null
           shipping_fee?: number
           status?: string

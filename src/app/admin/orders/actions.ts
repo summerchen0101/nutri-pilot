@@ -83,7 +83,7 @@ export async function updateOrderStatus(input: {
       to_status: input.status,
       ...(input.status === 'cancelled'
         && existing.status !== 'pending'
-        ? { reason: 'manual_refund_via_newebpay' as const }
+        ? { reason: 'manual_refund_via_ecpay' as const }
         : {}),
     },
   });
@@ -96,7 +96,7 @@ export async function updateOrderStatus(input: {
   return { ok: true };
 }
 
-export async function queryNewebpayTrade(input: {
+export async function queryEcpayTrade(input: {
   orderId: string;
 }): Promise<
   | { ok: false; error: string }
@@ -123,7 +123,7 @@ export async function queryNewebpayTrade(input: {
   }
 
   try {
-    const res = await fetch(`${baseUrl}/functions/v1/newebpay-query-trade`, {
+    const res = await fetch(`${baseUrl}/functions/v1/ecpay-query-trade`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -131,7 +131,7 @@ export async function queryNewebpayTrade(input: {
       },
       body: JSON.stringify({ orderId: input.orderId }),
     });
-    const data = (await res.json()) as { error?: string; ok?: boolean; newebpay?: unknown };
+    const data = (await res.json()) as { error?: string; result?: unknown };
     if (!res.ok) {
       return { ok: false, error: data.error ?? `查詢失敗（${res.status}）` };
     }

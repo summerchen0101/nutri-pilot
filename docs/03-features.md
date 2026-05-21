@@ -219,13 +219,13 @@ export function calcRecommendScore(
 - [x] 成分與產地 + 認證標籤
 - [x] 品牌故事卡 + 查看全系列
 
-### P4-4 購物車 + 結帳（藍新 MPG）
+### P4-4 購物車 + 結帳（綠界 AIO）
 
 - [x] 購物車（Zustand 管理，不存 DB，結帳時才送出）
-- [x] 藍新 MPG 建單（Edge `create-newebpay-payment`）→ 瀏覽器 POST 至藍新
-- [x] ReturnURL（`/shop/payment-return`）→ 成功頁
-- [x] NotifyURL（Edge `newebpay-notify`）→ `TradeStatus=1` 時將 `pending` 訂單改為 `paid`
-- [ ] 訂閱／定期扣款（改接藍新後擴充）
+- [x] 綠界建單（Edge `create-shop-order` + `ecpay-checkout`）→ popup POST 至綠界
+- [x] ReturnURL（Edge `ecpay-return`）→ `RtnCode=1` 入帳 `paid`
+- [x] OrderResultURL（Edge `ecpay-order-result?appOrigin=`）→ opener 回商城／成功頁
+- [ ] 訂閱／定期扣款（後續擴充）
 
 ### P4-5 訂閱管理（暫緩）
 

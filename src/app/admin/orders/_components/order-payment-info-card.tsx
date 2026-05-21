@@ -65,7 +65,7 @@ export function OrderPaymentInfoCard({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <dt className="text-caption text-muted-foreground">
-              藍新商店訂單號（MerchantOrderNo）
+              綠界商店訂單號（MerchantTradeNo）
             </dt>
             <dd className="font-mono text-caption break-all">
               {merchantOrderNo ?? '—'}
@@ -79,7 +79,7 @@ export function OrderPaymentInfoCard({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <dt className="text-caption text-muted-foreground">
-              藍新交易序號（TradeNo）
+              綠界交易編號（TradeNo）
             </dt>
             <dd className="font-mono text-caption break-all">
               {gatewayTradeNo ?? '—'}

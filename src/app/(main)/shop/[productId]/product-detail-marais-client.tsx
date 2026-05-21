@@ -630,7 +630,7 @@ export function ProductDetailMaraisClient({
           {detailTab === "payment" ? (
             <section className="rounded-xl bg-card p-4 space-y-2">
               <p className="text-body leading-relaxed text-foreground">
-                結帳時支援藍新金流 MPG
+                結帳時支援綠界金流
                 信用卡一次付清；實際可用付款方式依結帳頁為準。
               </p>
               <p className="text-caption text-muted-foreground">

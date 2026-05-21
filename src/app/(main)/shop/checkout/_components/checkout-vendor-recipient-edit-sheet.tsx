@@ -6,10 +6,6 @@ import { BottomSheetShell } from '@/components/ui/bottom-sheet-shell';
 import { Button } from '@/components/ui/button';
 import type { VendorShippingSummary } from '@/lib/shop/vendor-shipping';
 import { isCvsShippingCode } from '@/lib/shop/shipping-method-kind';
-import {
-  isCvsStoreSelectUrlConfigured,
-  openCvsStoreSelectInNewTab,
-} from '@/lib/shop/cvs-store-select';
 
 export interface CheckoutVendorRecipientEditSheetProps {
   open: boolean;
@@ -64,8 +60,6 @@ export function CheckoutVendorRecipientEditSheet({
     cvsStoreNameByVendor,
   ]);
 
-  const cvsUrlConfigured = isCvsStoreSelectUrlConfigured();
-
   if (!summary) {
     return null;
   }
@@ -115,32 +109,9 @@ export function CheckoutVendorRecipientEditSheet({
         </label>
 
         {isCvs ? (
-          <div className="space-y-2">
-            <label className="block">
-              <span className="text-caption text-muted-foreground">門市名稱</span>
-              <input
-                type="text"
-                value={draftCvs}
-                onChange={(e) => setDraftCvs(e.target.value)}
-                className="mt-1 w-full rounded-[10px] bg-[var(--shop-field-surface)] px-3 py-2 text-body outline-none focus-visible:ring-2 focus-visible:ring-[#4C956C] focus-visible:ring-offset-1"
-                autoComplete="off"
-              />
-            </label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => openCvsStoreSelectInNewTab()}
-            >
-              重選門市
-            </Button>
-            {!cvsUrlConfigured ? (
-              <p className="text-caption text-muted-foreground">
-                將另開分頁選擇店舖（串接建置中）
-              </p>
-            ) : null}
-          </div>
+          <p className="text-caption leading-relaxed text-muted-foreground">
+            超商門市將於送出訂單後，透過綠界物流彈出視窗選擇（請確認收件人為 2–5 個中文字）。
+          </p>
         ) : (
           <>
             <label className="block">

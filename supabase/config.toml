@@ -16,13 +16,34 @@ verify_jwt = false
 [functions.recalculate-scores]
 verify_jwt = false
 
-[functions.create-newebpay-payment]
+[functions.create-shop-order]
 verify_jwt = false
 
-[functions.newebpay-notify]
+[functions.ecpay-logistics-selection]
 verify_jwt = false
 
-[functions.newebpay-query-trade]
+[functions.ecpay-logistics-client-return]
+verify_jwt = false
+
+[functions.ecpay-logistics-return]
+verify_jwt = false
+
+[functions.ecpay-checkout]
+verify_jwt = false
+
+[functions.ecpay-return]
+verify_jwt = false
+
+[functions.ecpay-payment-info]
+verify_jwt = false
+
+[functions.ecpay-order-result]
+verify_jwt = false
+
+[functions.ecpay-query-trade]
+verify_jwt = false
+
+[functions.ecpay-logistics-print]
 verify_jwt = false
 
 [functions.admin-suspend-user]

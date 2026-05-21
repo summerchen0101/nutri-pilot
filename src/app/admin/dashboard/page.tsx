@@ -269,7 +269,7 @@ export default async function AdminDashboardPage() {
           <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4">
             <h2 className="text-heading-section text-foreground">訂閱／MRR</h2>
             <p className="mt-2 text-caption text-muted-foreground">
-              MVP 未接藍新定期定額；此區預留，暫不依賴 subscriptions 表數據。
+              MVP 未接綠界定期定額；此區預留，暫不依賴 subscriptions 表數據。
             </p>
           </div>
         </>

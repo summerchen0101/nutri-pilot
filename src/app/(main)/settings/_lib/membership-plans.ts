@@ -1,5 +1,5 @@
 export const MEMBERSHIP_DISCLAIMER =
-  '訂閱扣款開通後將以藍新定期定額每月自動扣款；月費轉為購物點（1點1元）之發放與折抵規則，以正式方案條款為準。';
+  '訂閱扣款開通後將以綠界金流每月自動扣款；月費轉為購物點（1點1元）之發放與折抵規則，以正式方案條款為準。';
 
 export const MEMBERSHIP_CURRENT_PLAN_LABEL = '目前方案：免費';
 

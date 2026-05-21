@@ -21,9 +21,9 @@ export function CheckoutPaymentMethodCard() {
           <span className="m-auto block h-1.5 w-1.5 rounded-full bg-[var(--color-background-primary)]" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-body font-medium text-foreground">線上付款（藍新金流）</p>
+          <p className="text-body font-medium text-foreground">線上付款（綠界金流）</p>
           <p className="mt-1 text-caption leading-relaxed text-muted-foreground">
-            送出訂單後將導向藍新金流安全付款頁完成一次付清；實際可選付款工具以該頁為準。
+            送出訂單後將依序完成綠界物流設定與付款（彈出視窗）；實際可選付款工具以綠界頁面為準。
           </p>
         </div>
       </div>

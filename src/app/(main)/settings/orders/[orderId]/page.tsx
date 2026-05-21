@@ -1,9 +1,11 @@
 import { redirect, notFound } from 'next/navigation';
 
+import { ContinueOrderPaymentButton } from '@/app/(main)/settings/orders/_components/continue-order-payment-button';
 import {
   memberOrderStatusLabel,
   memberSubOrderStatusLabel,
 } from '@/app/(main)/settings/_lib/member-order-status-label';
+import { canContinueOrderPayment } from '@/lib/shop/can-continue-order-payment';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { getCachedAuthContext } from '@/lib/auth';
@@ -122,6 +124,11 @@ export default async function SettingsOrderDetailPage({
             </dd>
           </div>
         </dl>
+        {canContinueOrderPayment(order.status, order.checkout_snapshot) ?
+          <div className="mt-4 border-t-hairline border-border pt-4">
+            <ContinueOrderPaymentButton orderId={order.id} />
+          </div>
+        : null}
       </section>
 
       {(order.recipient_name || order.recipient_address_full) ? (
