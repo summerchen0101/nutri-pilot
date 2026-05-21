@@ -4,6 +4,9 @@ interface LogisticsDraftLike {
   logisticsType?: string;
   logisticsSubType?: string;
   completed?: boolean;
+  storeSelected?: boolean;
+  logisticsCreated?: boolean;
+  cvsStoreId?: string | null;
 }
 
 interface CheckoutSnapshotLike {

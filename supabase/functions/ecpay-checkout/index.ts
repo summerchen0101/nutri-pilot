@@ -21,6 +21,11 @@ import {
   verifyEcpayCheckMacValue,
 } from "../_shared/ecpay.ts";
 import { buildAutoSubmitFormHtml } from "../_shared/ecpay-popup-html.ts";
+import { createPendingLogisticsForOrder } from "../_shared/ecpay-logistics-operations.ts";
+import {
+  insertPurchaseProductEvents,
+  maybeInsertSubOrdersWithLogistics,
+} from "../_shared/ecpay-order-helpers.ts";
 import { isCheckoutSnapshot } from "../_shared/shop-checkout-core.ts";
 
 Deno.serve(async (req) => {
@@ -99,6 +104,60 @@ Deno.serve(async (req) => {
       : corsTextResponse("請先完成物流設定", 422);
   }
 
+  const payableAmount = Math.round(
+    Number(
+      snap.paymentTotal != null && snap.paymentTotal >= 0 ?
+        snap.paymentTotal
+        : order.total,
+    ),
+  );
+
+  if (payableAmount <= 0) {
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supabaseUrl, serviceKey);
+    const serverReturn = `${getSupabaseFunctionsBase()}/functions/v1/ecpay-logistics-return`;
+    await createPendingLogisticsForOrder(
+      admin,
+      {
+        id: orderId,
+        recipient_name: null,
+        recipient_phone: null,
+        recipient_address_full: null,
+        checkout_snapshot: snap,
+      },
+      serverReturn,
+    );
+    const { data: refreshed } = await admin
+      .from("orders")
+      .select("id, checkout_snapshot, user_id")
+      .eq("id", orderId)
+      .maybeSingle();
+    await admin
+      .from("orders")
+      .update({
+        status: "paid",
+        order_metadata: {
+          ...(typeof order.order_metadata === "object" &&
+              order.order_metadata != null ?
+            order.order_metadata as Record<string, unknown>
+            : {}),
+          ecpay: { zeroAmountCheckout: true, paidAt: new Date().toISOString() },
+        },
+      })
+      .eq("id", orderId)
+      .eq("status", "pending");
+    if (refreshed) {
+      await maybeInsertSubOrdersWithLogistics(admin, refreshed);
+      if (user.id) {
+        await insertPurchaseProductEvents(admin, user.id, orderId);
+      }
+    }
+    if (wantsJson) {
+      return jsonResponse({ skipPayment: true, orderId });
+    }
+    return corsTextResponse("Order completed without payment", 200);
+  }
+
   let merchantTradeNo = order.merchant_order_no ?? "";
   if (!merchantTradeNo) {
     merchantTradeNo = createMerchantTradeNo();
@@ -131,7 +190,7 @@ Deno.serve(async (req) => {
     MerchantTradeNo: merchantTradeNo,
     MerchantTradeDate: formatMerchantTradeDateTaipei(),
     PaymentType: "aio",
-    TotalAmount: String(Math.round(Number(order.total))),
+    TotalAmount: String(payableAmount),
     TradeDesc: "NutriPilot商城訂單",
     ItemName: itemName,
     ReturnURL: returnUrl,

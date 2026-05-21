@@ -16,6 +16,7 @@ export type { CheckoutBody, CheckoutSnapshot, LogisticsQueueItem };
 
 const STORE_PICKUP_SHIPPING_CODE = "store_pickup";
 const HOME_DELIVERY_SHIPPING_CODE = "home_delivery";
+const CVS_COD_SHIPPING_CODE = "seven_eleven_cod";
 
 export function roundTwdAmt(n: number): number {
   return Math.round(Number(n));
@@ -68,6 +69,23 @@ export function isCvsShippingCodeEdge(code: string | null | undefined): boolean 
   if (c.length === 0) return false;
   if (c === STORE_PICKUP_SHIPPING_CODE) return false;
   return !isHomeDeliveryShippingCode(c);
+}
+
+export function isCvsCodShippingCodeEdge(
+  code: string | null | undefined,
+): boolean {
+  return code === CVS_COD_SHIPPING_CODE;
+}
+
+function calcPaymentTotal(vendors: CheckoutVendorSnapshot[]): number {
+  let total = 0;
+  for (const v of vendors) {
+    total += roundTwdAmt(v.effectiveShipping);
+    if (!isCvsCodShippingCodeEdge(v.shippingMethodCode)) {
+      total += roundTwdAmt(v.itemsSubtotal);
+    }
+  }
+  return Math.max(0, roundTwdAmt(total));
 }
 
 function filterCheckoutMethodRows(
@@ -448,7 +466,10 @@ export async function buildShopCheckout(
     (s, v) => s + v.effectiveShipping,
     0,
   );
-  const amt = roundTwdAmt(itemsSubtotalAll + shippingTotal);
+  const paymentTotal = calcPaymentTotal(snapshotVendors);
+  const amt = paymentTotal > 0 ?
+    paymentTotal
+    : roundTwdAmt(itemsSubtotalAll + shippingTotal);
 
   if (amt <= 0) {
     return { ok: false, error: "金額無效", status: 422 };
@@ -457,10 +478,14 @@ export async function buildShopCheckout(
   const logisticsByVendor: CheckoutSnapshot["logisticsByVendor"] = {};
   for (const v of snapshotVendors) {
     const mapping = resolveLogisticsFromVendorCode(v.shippingMethodCode)!;
+    const isCod = isCvsCodShippingCodeEdge(v.shippingMethodCode);
     logisticsByVendor[v.vendorId] = {
       logisticsType: mapping.logisticsType,
       logisticsSubType: mapping.logisticsSubType,
-      completed: false,
+      completed: mapping.logisticsType === "HOME" ? false : false,
+      storeSelected: false,
+      logisticsCreated: false,
+      isCollection: isCod ? "Y" : "N",
     };
   }
 
@@ -468,6 +493,7 @@ export async function buildShopCheckout(
     vendors: snapshotVendors,
     itemsSubtotal: roundTwdAmt(itemsSubtotalAll),
     shippingTotal: roundTwdAmt(shippingTotal),
+    paymentTotal,
     logisticsByVendor,
     logisticsCompleted: false,
   };
@@ -588,7 +614,18 @@ export function recomputeLogisticsCompleted(
 ): boolean {
   for (const v of snap.vendors) {
     const draft = snap.logisticsByVendor[v.vendorId];
-    if (!draft?.completed) return false;
+    if (!draft) return false;
+    if (draft.logisticsType === "HOME") {
+      if (!draft.completed) return false;
+      continue;
+    }
+    if (isCvsCodShippingCodeEdge(v.shippingMethodCode)) {
+      if (!draft.logisticsCreated || !draft.ecpayLogisticsTradeNo) {
+        return false;
+      }
+      continue;
+    }
+    if (!draft.storeSelected || !draft.cvsStoreId) return false;
   }
   return snap.vendors.length > 0;
 }

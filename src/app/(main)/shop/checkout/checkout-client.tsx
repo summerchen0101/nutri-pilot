@@ -34,6 +34,8 @@ import {
 import { useEcpayCheckoutFlow } from "@/lib/shop/use-ecpay-checkout-flow";
 import { validateEcpayRecipientName } from "@/lib/shop/validate-ecpay-recipient-name";
 import { logEcpayCheckout } from "@/lib/shop/ecpay-checkout-debug";
+import { isCheckoutSnapshotLike } from "@/lib/shop/build-remaining-logistics-queue";
+import { createClient } from "@/lib/supabase/client";
 import { useCartDerived } from "@/lib/shop/use-cart-derived";
 
 export interface CheckoutClientProps {
@@ -160,19 +162,36 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
   }, [isCheckoutPanelOpen, lines.length, closeCheckoutPanel, openCartPanel]);
 
   useEffect(() => {
-    setCvsStoreNameByVendor((prev) => {
-      const cvsIds = new Set(
-        summaries
-          .filter((s) => isCvsShippingCode(s.selectedShippingMethodCode))
-          .map((s) => s.vendorId),
-      );
-      const next: Record<string, string> = {};
-      cvsIds.forEach((id) => {
-        next[id] = prev[id] ?? "";
-      });
-      return next;
-    });
-  }, [summaries]);
+    if (!pendingPaymentOrderId) return;
+    let cancelled = false;
+    void (async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("orders")
+        .select("checkout_snapshot")
+        .eq("id", pendingPaymentOrderId)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const snap = data.checkout_snapshot;
+      if (!isCheckoutSnapshotLike(snap)) return;
+      const names: Record<string, string> = {};
+      for (const v of snap.vendors ?? []) {
+        const draft = snap.logisticsByVendor?.[v.vendorId];
+        const name =
+          draft != null &&
+          typeof draft === "object" &&
+          "cvsStoreName" in draft &&
+          typeof (draft as { cvsStoreName?: string }).cvsStoreName === "string" ?
+            (draft as { cvsStoreName: string }).cvsStoreName
+          : "";
+        if (name.trim()) names[v.vendorId] = name.trim();
+      }
+      setCvsStoreNameByVendor(names);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingPaymentOrderId]);
 
   const itemsPayload = validLines.map((l) => ({
     variantId: l.variantId,

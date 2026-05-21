@@ -158,12 +158,17 @@ export type EcpayBridgePayloadResult =
     debug?: EcpayCheckoutBridgeDebug;
   }
   | { ok: true; redirectUrl: string }
+  | { ok: true; skipMap: true }
+  | { ok: true; skipPayment: true; orderId: string }
   | { ok: false; error: string };
 
 type EcpayBridgeEdgeBody = {
   action?: string;
   fields?: Record<string, string>;
   redirectUrl?: string;
+  skipMap?: boolean;
+  skipPayment?: boolean;
+  orderId?: string;
   error?: string;
   debug?: EcpayCheckoutBridgeDebug;
 };
@@ -235,6 +240,14 @@ async function fetchEcpayBridgeFromEdge(
 
     if (typeof data.redirectUrl === 'string' && data.redirectUrl.length > 0) {
       return { ok: true, redirectUrl: data.redirectUrl };
+    }
+
+    if (data.skipMap === true) {
+      return { ok: true, skipMap: true };
+    }
+
+    if (data.skipPayment === true && typeof data.orderId === 'string') {
+      return { ok: true, skipPayment: true, orderId: data.orderId };
     }
 
     if (

@@ -1,12 +1,11 @@
 /**
- * GET ?orderId=&vendorId= — 綠界 V2 門市／宅配選擇（popup HTML redirect）
+ * GET ?orderId=&vendorId= — 綠界 V1 超商門市地圖（Express/map）或宅配略過
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
 import {
   corsHeaders,
   corsHtmlResponse,
-  corsRedirect,
   jsonResponse,
   wantsJsonResponse,
 } from "../_shared/cors.ts";
@@ -14,17 +13,23 @@ import { getAppUrl, getSupabaseFunctionsBase } from "../_shared/ecpay.ts";
 import {
   buildAutoSubmitFormHtml,
   buildLogisticsErrorHtml,
+  buildPopupReturnHtml,
 } from "../_shared/ecpay-popup-html.ts";
 import {
   assertLogisticsSenderReady,
-  buildLogisticsSelectionPayload,
-  extractLogisticsAutoSubmitForm,
-  formatLogisticsV2Error,
   getEcpayLogisticsConfig,
-  logisticsV2Urls,
-  requestLogisticsSelectionPage,
 } from "../_shared/ecpay-logistics.ts";
-import { isCheckoutSnapshot } from "../_shared/shop-checkout-core.ts";
+import {
+  buildCvsMapFormFields,
+  buildLogisticsExtraData,
+  createVendorLogisticsTradeNo,
+  logisticsV1Urls,
+} from "../_shared/ecpay-logistics-v1.ts";
+import { markHomeVendorLogisticsReady } from "../_shared/ecpay-logistics-operations.ts";
+import {
+  isCheckoutSnapshot,
+  isCvsCodShippingCodeEdge,
+} from "../_shared/shop-checkout-core.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -41,20 +46,10 @@ Deno.serve(async (req) => {
   const token = url.searchParams.get("token")?.trim() ??
     req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
 
-  const appUrl = getAppUrl();
-  const backUrl = `${appUrl}/shop?checkout=1`;
+  const backUrl = `${Deno.env.get("APP_URL")?.replace(/\/$/, "") ?? ""}/shop?checkout=1`;
 
   if (!orderId || !vendorId) {
     return respondError("Missing orderId or vendorId", backUrl, 400, wantsJson);
-  }
-
-  let cfg;
-  try {
-    cfg = getEcpayLogisticsConfig();
-    assertLogisticsSenderReady(cfg);
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return respondError(msg, backUrl, 500, wantsJson);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -77,9 +72,7 @@ Deno.serve(async (req) => {
 
   const { data: order, error: orderErr } = await supabase
     .from("orders")
-    .select(
-      "id, user_id, status, recipient_name, recipient_phone, recipient_address_full, checkout_snapshot",
-    )
+    .select("id, user_id, status, checkout_snapshot")
     .eq("id", orderId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -97,89 +90,95 @@ Deno.serve(async (req) => {
   }
 
   const vendor = snap.vendors.find((v) => v.vendorId === vendorId);
-  if (!vendor) {
+  const draft = snap.logisticsByVendor[vendorId];
+  if (!vendor || !draft) {
     return respondError("Vendor not in order", backUrl, 422, wantsJson);
   }
 
-  if (!snap.logisticsByVendor[vendorId]) {
-    return respondError("No logistics draft", backUrl, 422, wantsJson);
+  if (draft.logisticsType === "HOME") {
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supabaseUrl, serviceKey);
+    try {
+      await markHomeVendorLogisticsReady(admin, orderId, vendorId);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return respondError(msg, backUrl, 422, wantsJson);
+    }
+    if (wantsJson) {
+      return jsonResponse({ skipMap: true, logisticsType: "HOME" });
+    }
+    const appUrl = getAppUrl();
+    const redirectUrl =
+      `${appUrl}/shop?checkout=1&orderId=${orderId}&logisticsDone=1&vendorId=${vendorId}`;
+    return corsHtmlResponse(
+      buildPopupReturnHtml({
+        redirectUrl,
+        navigateOpener: false,
+        reusePopup: true,
+      }),
+    );
   }
 
-  const fnBase = getSupabaseFunctionsBase();
-  const clientReturn =
-    `${fnBase}/functions/v1/ecpay-logistics-client-return?orderId=${orderId}&vendorId=${vendorId}`;
-  const serverReturn = `${fnBase}/functions/v1/ecpay-logistics-return`;
-
-  const payload = buildLogisticsSelectionPayload({
-    goodsAmount: vendor.itemsSubtotal,
-    goodsName: vendor.vendorName,
-    senderName: cfg.senderName,
-    senderZipCode: cfg.senderZipCode,
-    senderAddress: cfg.senderAddress,
-    serverReplyUrl: serverReturn,
-    clientReplyUrl: clientReturn,
-    receiverName: String(order.recipient_name ?? ""),
-    receiverCellPhone: String(order.recipient_phone ?? ""),
-    receiverAddress: String(order.recipient_address_full ?? ""),
-  });
-
-  const urls = logisticsV2Urls(cfg.host);
-
+  let cfg;
   try {
-    const result = await requestLogisticsSelectionPage(
-      urls.selection,
-      cfg.merchantId,
-      payload,
-      cfg.hashKey,
-      cfg.hashIv,
-    );
-
-    if (result.redirectUrl) {
-      if (wantsJson) {
-        return jsonResponse({ redirectUrl: result.redirectUrl });
-      }
-      return corsRedirect(result.redirectUrl);
-    }
-
-    if (result.html) {
-      const extracted = extractLogisticsAutoSubmitForm(result.html);
-      if (extracted) {
-        if (wantsJson) {
-          return jsonResponse({
-            action: extracted.action,
-            fields: extracted.fields,
-          });
-        }
-        const bridgeHtml = buildAutoSubmitFormHtml(
-          extracted.action,
-          extracted.fields,
-          "綠界物流選擇",
-        );
-        return corsHtmlResponse(bridgeHtml);
-      }
-      console.error(
-        "[ecpay-logistics-selection] could not parse ECPay HTML:",
-        result.html.slice(0, 200),
-      );
-      if (wantsJson) {
-        return jsonResponse({ error: "無法解析綠界物流回應" }, 422);
-      }
-      return corsHtmlResponse(result.html);
-    }
-
-    const errMsg = formatLogisticsV2Error(result);
-    console.error("[ecpay-logistics-selection]", {
-      transCode: result.transCode,
-      transMsg: result.transMsg,
-      rtnCode: result.rtnCode,
-      rtnMsg: result.rtnMsg,
-    });
-    return respondError(errMsg, backUrl, 422, wantsJson);
+    cfg = getEcpayLogisticsConfig();
+    assertLogisticsSenderReady(cfg);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("[ecpay-logistics-selection]", msg);
     return respondError(msg, backUrl, 500, wantsJson);
   }
+
+  const merchantTradeNo = draft.merchantLogisticsTradeNo ??
+    createVendorLogisticsTradeNo(orderId, vendorId);
+
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const admin = createClient(supabaseUrl, serviceKey);
+  const nextDraft = {
+    ...draft,
+    merchantLogisticsTradeNo: merchantTradeNo,
+    isCollection: isCvsCodShippingCodeEdge(vendor.shippingMethodCode) ?
+      "Y" as const
+      : "N" as const,
+  };
+  await admin
+    .from("orders")
+    .update({
+      checkout_snapshot: {
+        ...snap,
+        logisticsByVendor: {
+          ...snap.logisticsByVendor,
+          [vendorId]: nextDraft,
+        },
+      },
+    })
+    .eq("id", orderId);
+
+  const fnBase = getSupabaseFunctionsBase();
+  const mapReturnUrl =
+    `${fnBase}/functions/v1/ecpay-logistics-map-return?orderId=${orderId}&vendorId=${vendorId}`;
+
+  const mapFields = buildCvsMapFormFields({
+    merchantId: cfg.merchantId,
+    merchantTradeNo,
+    logisticsSubType: draft.logisticsSubType,
+    isCollection: nextDraft.isCollection ?? "N",
+    serverReplyUrl: mapReturnUrl,
+    extraData: buildLogisticsExtraData(orderId, vendorId),
+    device: "1",
+  });
+
+  const urls = logisticsV1Urls(cfg.host);
+
+  if (wantsJson) {
+    return jsonResponse({
+      action: urls.map,
+      fields: mapFields,
+      logisticsType: "CVS",
+    });
+  }
+
+  const html = buildAutoSubmitFormHtml(urls.map, mapFields, "綠界超商門市選擇");
+  return corsHtmlResponse(html);
 });
 
 function respondError(

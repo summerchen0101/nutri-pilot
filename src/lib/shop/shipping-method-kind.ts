@@ -14,3 +14,8 @@ export function isCvsShippingCode(code: string | null): boolean {
   if (code === STORE_PICKUP_SHIPPING_CODE) return false;
   return !isHomeDeliveryCode(code);
 }
+
+/** 7-ELEVEN 取貨付款（物流代收） */
+export function isCvsCodShippingCode(code: string | null): boolean {
+  return code === 'seven_eleven_cod';
+}

@@ -243,7 +243,18 @@ export function useEcpayCheckoutFlow(options: {
             orderId,
             vendorId: item.vendorId,
           });
-          submitBridgeByName(ECPAY_LOGISTICS_POPUP_NAME, bridge);
+          if (!bridge.ok) {
+            throw new Error(bridge.error);
+          }
+          if ('skipMap' in bridge && bridge.skipMap) {
+            /* 宅配：後端已標記完成，僅輪詢 snapshot */
+          } else if ('redirectUrl' in bridge) {
+            submitBridgeByName(ECPAY_LOGISTICS_POPUP_NAME, bridge);
+          } else if ('fields' in bridge) {
+            submitBridgeByName(ECPAY_LOGISTICS_POPUP_NAME, bridge);
+          } else {
+            throw new Error('物流設定回應格式不正確');
+          }
         } catch (e) {
           if (e instanceof Error && e.message === 'POPUP_BLOCKED') {
             onError?.('請允許彈出視窗以完成物流設定');
@@ -320,6 +331,13 @@ export function useEcpayCheckoutFlow(options: {
         });
         if (!bridge.ok) {
           throw new Error(bridge.error);
+        }
+        if ('skipPayment' in bridge && bridge.skipPayment) {
+          closePopupSafely(popup);
+          clearEcpayPaymentSessionOrderId();
+          resetFlow();
+          onPaid?.(bridge.orderId);
+          return;
         }
         if ('fields' in bridge) {
           logEcpayCheckout('openPayment bridge fields', {

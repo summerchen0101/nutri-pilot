@@ -60,17 +60,14 @@ Important:
 
 ---
 
-## High-Level Logistics Flow
+## High-Level Logistics Flow（NutriPilot V1 多廠商）
 
-1. User completes add-ons and recipient info
-2. System creates order
-3. App opens logistics popup
-4. User completes ECPay logistics flow
-5. ECPay client return hits app
-6. App creates/query actual logistics transaction
-7. App writes logistics results into order/subscription
-8. Popup redirects main window back into confirm flow
-9. Main window shows updated logistics information
+1. User completes recipient info and per-vendor shipping method in cart
+2. `create-shop-order` builds `checkout_snapshot.logisticsByVendor`
+3. Per vendor popup: CVS → `Express/map` (ServerReply `ecpay-logistics-map-return`); HOME → mark address ready
+4. `seven_eleven_cod`: Create on map return (`IsCollection=Y`); other CVS/HOME: Create after payment in `ecpay-return`
+5. All vendors ready → ECPay AIO payment (`paymentTotal` excludes COD goods subtotal)
+6. `ecpay-return` creates pending logistics + `sub_orders`; `ecpay-logistics-return` receives status updates
 
 ---
 

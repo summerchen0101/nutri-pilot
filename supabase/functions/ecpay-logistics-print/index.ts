@@ -1,6 +1,5 @@
 /**
- * GET ?subOrderId= — 綠界 V2 託運單列印（admin JWT super_admin / cs）
- * ?format=json — 回傳 form bridge（避開 Supabase 託管 HTML sandbox）
+ * GET ?subOrderId= — 綠界 V1 託運單列印（admin JWT super_admin / cs）
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
@@ -9,16 +8,13 @@ import {
   jsonResponse,
   wantsJsonResponse,
 } from "../_shared/cors.ts";
-import { isLogisticsPrintSupported } from "../_shared/ecpay-logistics-codes.ts";
 import {
-  buildAutoSubmitFormHtml,
-  extractHtmlPostForm,
-} from "../_shared/ecpay-popup-html.ts";
-import {
-  formatLogisticsV2Error,
-  getEcpayLogisticsConfig,
-  requestLogisticsPrintPage,
-} from "../_shared/ecpay-logistics.ts";
+  isLogisticsPrintSupported,
+  printEndpointForSubtype,
+} from "../_shared/ecpay-logistics-codes.ts";
+import { buildAutoSubmitFormHtml } from "../_shared/ecpay-popup-html.ts";
+import { getEcpayLogisticsConfig } from "../_shared/ecpay-logistics.ts";
+import { appendCheckMac } from "../_shared/ecpay-logistics-v1.ts";
 
 const SHIP_ROLES = new Set(["super_admin", "cs"]);
 
@@ -69,67 +65,74 @@ Deno.serve(async (req) => {
     return respondError("Print not supported for this subtype", 422, wantsJson);
   }
 
-  let logisticsId = String(sub.ecpay_logistics_trade_no);
-  if (!logisticsId) {
-    const meta = sub.ecpay_logistics_meta;
-    if (meta != null && typeof meta === "object" && !Array.isArray(meta)) {
-      const createByTemp = (meta as Record<string, unknown>).createByTemp;
-      if (createByTemp != null && typeof createByTemp === "object") {
-        const decrypted = (createByTemp as Record<string, unknown>)._decrypted;
-        if (decrypted != null && typeof decrypted === "object") {
-          const id = (decrypted as Record<string, unknown>).LogisticsID;
-          if (typeof id === "string" && id.trim()) {
-            logisticsId = id.trim();
-          }
-        }
-      }
-    }
-  }
-
+  const logisticsId = String(sub.ecpay_logistics_trade_no).trim();
   if (!logisticsId) {
     return respondError("Logistics ID not found", 404, wantsJson);
   }
 
   const cfg = getEcpayLogisticsConfig();
-
-  try {
-    const result = await requestLogisticsPrintPage(
-      cfg.host,
-      cfg.merchantId,
-      logisticsId,
-      subtype,
-      cfg.hashKey,
-      cfg.hashIv,
-    );
-
-    if (!result.html) {
-      const errMsg = formatLogisticsV2Error(result);
-      return respondError(errMsg, 502, wantsJson);
-    }
-
-    const extracted = extractHtmlPostForm(result.html);
-    if (!extracted) {
-      return respondError("無法解析綠界列印回應", 422, wantsJson);
-    }
-
-    if (wantsJson) {
-      return jsonResponse({
-        action: extracted.action,
-        fields: extracted.fields,
-      });
-    }
-
-    const bridgeHtml = buildAutoSubmitFormHtml(
-      extracted.action,
-      extracted.fields,
-      "列印託運單",
-    );
-    return corsHtmlResponse(bridgeHtml);
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return respondError(`Print failed: ${msg}`, 502, wantsJson);
+  const printUrl = printEndpointForSubtype(subtype, cfg.stage);
+  if (!printUrl) {
+    return respondError("Print endpoint not configured", 422, wantsJson);
   }
+
+  const fields = buildV1PrintFields(cfg.merchantId, logisticsId, subtype, sub.ecpay_logistics_meta);
+  const signed = appendCheckMac(fields, cfg.hashKey, cfg.hashIv);
+
+  if (wantsJson) {
+    return jsonResponse({ action: printUrl, fields: signed });
+  }
+
+  const bridgeHtml = buildAutoSubmitFormHtml(printUrl, signed, "列印託運單");
+  return corsHtmlResponse(bridgeHtml);
 });
+
+function buildV1PrintFields(
+  merchantId: string,
+  logisticsId: string,
+  subtype: string,
+  meta: unknown,
+): Record<string, string> {
+  const fields: Record<string, string> = {
+    MerchantID: merchantId,
+    AllPayLogisticsID: logisticsId,
+  };
+
+  const metaObj = meta != null && typeof meta === "object" && !Array.isArray(meta) ?
+    meta as Record<string, unknown>
+    : {};
+  const query = metaObj.queryResponse;
+  const create = metaObj.createResponse;
+  const q = query != null && typeof query === "object" ?
+    query as Record<string, string>
+    : {};
+  const c = create != null && typeof create === "object" ?
+    create as Record<string, string>
+    : {};
+
+  const cvsPaymentNo = String(q.CVSPaymentNo ?? c.CVSPaymentNo ?? "").trim();
+  const cvsValidationNo = String(q.CVSValidationNo ?? c.CVSValidationNo ?? "")
+    .trim();
+
+  if (subtype === "UNIMARTC2C" || subtype === "UNIMARTFREEZE") {
+    if (!cvsPaymentNo || !cvsValidationNo) {
+      throw new Error("缺少 CVSPaymentNo 或 CVSValidationNo，無法列印 7-ELEVEN 託運單");
+    }
+    fields.CVSPaymentNo = cvsPaymentNo;
+    fields.CVSValidationNo = cvsValidationNo;
+  } else if (subtype === "FAMIC2C" || subtype === "OKMARTC2C") {
+    if (!cvsPaymentNo) {
+      throw new Error("缺少 CVSPaymentNo，無法列印託運單");
+    }
+    fields.CVSPaymentNo = cvsPaymentNo;
+  }
+
+  if (subtype === "TCAT" || subtype === "POST") {
+    fields.PrintMode = "1";
+  }
+
+  return fields;
+}
 
 function respondError(
   message: string,

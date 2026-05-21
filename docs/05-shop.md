@@ -175,10 +175,10 @@ export function generateFitReasons(
 
 ### 一次性購買流程
 
-1. 前端呼叫 Edge `create-shop-order`（JWT），建立 `orders`（`pending`）、`order_items`、`checkout_snapshot`（含 `logisticsByVendor`）。
-2. 依廠商序開啟 popup：`ecpay-logistics-selection` → 綠界選店／宅配 → `ecpay-logistics-client-return` 寫回 snapshot。
-3. 物流完成後 popup：`ecpay-checkout` → 綠界 AIO V5 付款（`OrderResultURL` 帶 `appOrigin=瀏覽器 origin`）。
-4. **入帳權威**：Edge `ecpay-return`（ReturnURL，`RtnCode=1`）→ `status=paid`、`gateway_trade_no`、拆 `sub_orders`。
+1. 前端呼叫 Edge `create-shop-order`（JWT），建立 `orders`（`pending`）、`order_items`、`checkout_snapshot`（含 `logisticsByVendor`、`paymentTotal`）。
+2. 依廠商序開啟 popup：`ecpay-logistics-selection` → 超商 **V1 `Express/map`**（`ecpay-logistics-map-return` 寫回門市）；宅配僅標記地址完成；**7-11 到付**選店後立即 `Express/Create`。
+3. 物流步驟完成後：`ecpay-checkout` → 綠界 AIO V5（金額用 `paymentTotal`，到付商品小計不計入）。
+4. **入帳權威**：`ecpay-return` → `paid` → 其餘廠商 **V1 Create** → `sub_orders`。
 5. **瀏覽器返回**：Edge `ecpay-order-result?appOrigin=…`（OrderResultURL，公開、驗 CheckMac）→ opener 導 `/shop?checkout=1&paymentDone=1` → `ShopEcpayReturnHandler` → `/shop/success`；非即時付款另走 `ecpay-payment-info`。不可把 OrderResultURL 設在需登入的 Next `/shop/payment-return`（綠界跨站 POST 不帶 session）。
 
 ### 定期扣款（未來）

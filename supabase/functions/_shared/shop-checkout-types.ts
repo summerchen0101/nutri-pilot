@@ -52,11 +52,16 @@ export interface LogisticsDraft {
   logisticsType: "CVS" | "HOME";
   logisticsSubType: string;
   completed: boolean;
+  merchantLogisticsTradeNo?: string | null;
+  storeSelected?: boolean;
+  logisticsCreated?: boolean;
+  isCollection?: "Y" | "N";
   cvsStoreId?: string | null;
   cvsStoreName?: string | null;
   cvsStoreAddress?: string | null;
   shippingAddress?: string | null;
   ecpayLogisticsTradeNo?: string | null;
+  /** @deprecated V2 暫存單；V1 不再使用 */
   tempLogisticsId?: string | null;
   meta?: Record<string, unknown>;
 }
@@ -78,6 +83,8 @@ export interface CheckoutSnapshot {
   vendors: CheckoutVendorSnapshot[];
   itemsSubtotal: number;
   shippingTotal: number;
+  /** 綠界 AIO 應收金額（排除超商到付商品小計） */
+  paymentTotal?: number;
   logisticsByVendor: Record<string, LogisticsDraft | null>;
   logisticsCompleted: boolean;
 }

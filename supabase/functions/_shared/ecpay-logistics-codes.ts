@@ -64,7 +64,6 @@ export function isLogisticsPrintSupported(subtype: string | null | undefined): b
   return PRINT_SUPPORTED_SUBTYPES.has(subtype);
 }
 
-/** @deprecated 列印已改走 V2 PrintTradeDocument */
 export function printEndpointForSubtype(
   subtype: string,
   stage: boolean,

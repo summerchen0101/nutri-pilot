@@ -8,10 +8,13 @@ import {
   parseEcpayFormBody,
   verifyEcpayCheckMacValue,
 } from "../_shared/ecpay.ts";
+import { getSupabaseFunctionsBase } from "../_shared/ecpay.ts";
+import { createPendingLogisticsForOrder } from "../_shared/ecpay-logistics-operations.ts";
 import {
   insertPurchaseProductEvents,
   maybeInsertSubOrdersWithLogistics,
 } from "../_shared/ecpay-order-helpers.ts";
+import { isCheckoutSnapshot } from "../_shared/shop-checkout-core.ts";
 
 function roundTwd(v: unknown): number {
   return Math.round(Number(v));
@@ -69,8 +72,14 @@ Deno.serve(async (req) => {
     return new Response("0|Order not found", { status: 404 });
   }
 
-  if (roundTwd(order.total) !== roundTwd(amt)) {
-    console.error("[ecpay-return] amount mismatch", order.total, amt);
+  const snapForAmt = order.checkout_snapshot;
+  const expectedAmt = isCheckoutSnapshot(snapForAmt) &&
+      snapForAmt.paymentTotal != null &&
+      snapForAmt.paymentTotal > 0 ?
+    snapForAmt.paymentTotal
+    : order.total;
+  if (roundTwd(expectedAmt) !== roundTwd(amt)) {
+    console.error("[ecpay-return] amount mismatch", expectedAmt, amt);
     return new Response("0|Amount mismatch", { status: 422 });
   }
 
@@ -115,7 +124,9 @@ Deno.serve(async (req) => {
 
   const { data: orderAfter } = await admin
     .from("orders")
-    .select("id, status, checkout_snapshot, user_id")
+    .select(
+      "id, status, checkout_snapshot, user_id, recipient_name, recipient_phone, recipient_address_full",
+    )
     .eq("id", order.id)
     .maybeSingle();
 
@@ -123,7 +134,22 @@ Deno.serve(async (req) => {
     return new Response("1|OK", { headers: { "Content-Type": "text/plain" } });
   }
 
-  await maybeInsertSubOrdersWithLogistics(admin, orderAfter);
+  const snap = orderAfter.checkout_snapshot;
+  if (isCheckoutSnapshot(snap)) {
+    const fnBase = getSupabaseFunctionsBase();
+    const serverReturn = `${fnBase}/functions/v1/ecpay-logistics-return`;
+    await createPendingLogisticsForOrder(admin, orderAfter, serverReturn);
+    const { data: orderRefreshed } = await admin
+      .from("orders")
+      .select("id, checkout_snapshot, user_id")
+      .eq("id", order.id)
+      .maybeSingle();
+    if (orderRefreshed) {
+      await maybeInsertSubOrdersWithLogistics(admin, orderRefreshed);
+    }
+  } else {
+    await maybeInsertSubOrdersWithLogistics(admin, orderAfter);
+  }
 
   if (transitionedToPaid && order.user_id) {
     await insertPurchaseProductEvents(

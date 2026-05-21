@@ -9,11 +9,6 @@ import {
   maskRecipientNameForDisplay,
 } from "@/lib/shop/mask-checkout-display";
 import { isCvsShippingCode } from "@/lib/shop/shipping-method-kind";
-import {
-  isCvsStoreSelectUrlConfigured,
-  openCvsStoreSelectInNewTab,
-} from "@/lib/shop/cvs-store-select";
-
 export interface CheckoutShippingSummaryCardProps {
   summaries: VendorShippingSummary[];
   recipientName: string;
@@ -33,8 +28,6 @@ export function CheckoutShippingSummaryCard({
   onChangeShipping,
   onEditVendor,
 }: CheckoutShippingSummaryCardProps) {
-  const cvsUrlConfigured = isCvsStoreSelectUrlConfigured();
-
   return (
     <section className="rounded-xl bg-[var(--color-background-primary)] px-4 py-4">
       <div className="flex items-start justify-between gap-2">
@@ -79,14 +72,6 @@ export function CheckoutShippingSummaryCard({
                     {isCvs ? "取件資料" : "收件資料"}
                   </p>
                   <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
-                    {isCvs ? (
-                      <button
-                        type="button"
-                        className="text-body font-medium text-[#378ADD] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
-                        onClick={() => openCvsStoreSelectInNewTab()}>
-                        重選門市
-                      </button>
-                    ) : null}
                     <button
                       type="button"
                       className="text-body font-medium text-[#378ADD] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1"
@@ -119,9 +104,9 @@ export function CheckoutShippingSummaryCard({
                           ? maskCvsStoreNameForDisplay(storeDisplay)
                           : "—"}
                       </p>
-                      {!cvsUrlConfigured ? (
+                      {storeDisplay.length === 0 ? (
                         <p className="mt-1 text-caption text-muted-foreground">
-                          重選將另開分頁（串接建置中）
+                          送出訂單後將於綠界地圖選擇取貨門市
                         </p>
                       ) : null}
                     </div>
