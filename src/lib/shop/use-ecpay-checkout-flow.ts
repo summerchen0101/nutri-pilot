@@ -431,7 +431,7 @@ export function useEcpayCheckoutFlow(options: {
           return;
         }
 
-        const result = await waitForOrderPaid(orderId, { timeoutMs: 20000 });
+        const result = await waitForOrderPaid(orderId, { timeoutMs: 60000 });
         logEcpayCheckout('openPayment popup closed poll result', {
           orderId,
           ...result,

@@ -10,8 +10,6 @@ export interface CheckoutHomeDeliverySectionProps {
   onHomeSubTypeChange: (value: 'TCAT' | 'POST') => void;
   recipientAddressFull: string;
   onAddressSelected: (addressFull: string) => void;
-  confirming: boolean;
-  onConfirmHome: () => void;
 }
 
 export function CheckoutHomeDeliverySection({
@@ -19,8 +17,6 @@ export function CheckoutHomeDeliverySection({
   onHomeSubTypeChange,
   recipientAddressFull,
   onAddressSelected,
-  confirming,
-  onConfirmHome,
 }: CheckoutHomeDeliverySectionProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const addr = recipientAddressFull.trim();
@@ -78,14 +74,6 @@ export function CheckoutHomeDeliverySection({
             重選地址
           </button>
         </div>
-
-        <button
-          type="button"
-          disabled={!addr || confirming}
-          className="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-body font-medium text-primary-foreground disabled:opacity-50"
-          onClick={onConfirmHome}>
-          {confirming ? '處理中…' : '確認地址並前往付款'}
-        </button>
       </section>
     </>
   );

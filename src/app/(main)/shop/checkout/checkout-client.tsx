@@ -273,6 +273,8 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     return "送出";
   })();
 
+  const homeAddressFilled = recipientAddressFull.trim().length > 0;
+
   const footerCanSubmit = (() => {
     if (
       hasLegacyLines ||
@@ -285,7 +287,7 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     }
     if (flow.isCod) return !flow.storeReady;
     if (flow.isCvs) return true;
-    if (flow.isHome) return false;
+    if (flow.isHome) return homeAddressFilled;
     return false;
   })();
 
@@ -351,8 +353,6 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
                 onHomeSubTypeChange={flow.setHomeSubType}
                 recipientAddressFull={recipientAddressFull}
                 onAddressSelected={(addr) => setRecipientAddressFull(addr)}
-                confirming={flow.phase === "confirmingHome"}
-                onConfirmHome={() => void flow.confirmHomeAndPay()}
               />
             ) : null}
 

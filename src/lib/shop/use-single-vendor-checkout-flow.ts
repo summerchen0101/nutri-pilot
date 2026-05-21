@@ -27,6 +27,7 @@ import {
   isHomeDeliveryCode,
 } from '@/lib/shop/shipping-method-kind';
 import { useEcpayCheckoutFlow } from '@/lib/shop/use-ecpay-checkout-flow';
+import { isVendorPostPaymentReady } from '@/lib/shop/checkout-logistics-ready';
 import { waitForLogisticsCreated } from '@/lib/shop/wait-for-logistics-created';
 import { waitForOrderPaid } from '@/lib/shop/wait-for-order-paid';
 import { waitForStoreSelected } from '@/lib/shop/wait-for-store-selected';
@@ -563,7 +564,14 @@ export function useSingleVendorCheckoutFlow(
         }
 
         const d = await refreshDraft(resumeOrderId, checkoutVendorId);
-        if (d?.logisticsCreated) {
+        const resumeShippingCode =
+          summary?.shippingMethodCode ?? shippingMethodCode;
+        const isHomeResume =
+          isHomeDeliveryCode(resumeShippingCode) || d?.logisticsType === 'HOME';
+        if (
+          isVendorPostPaymentReady(d, resumeShippingCode) &&
+          !isHomeResume
+        ) {
           onComplete(resumeOrderId);
           return;
         }

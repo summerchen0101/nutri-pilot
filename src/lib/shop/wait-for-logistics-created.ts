@@ -1,5 +1,7 @@
+import { isVendorPostPaymentReady } from '@/lib/shop/checkout-logistics-ready';
 import { readLogisticsCreateError } from '@/lib/shop/order-logistics-snapshot';
 import { createAbortError, isAbortError, sleepMs } from '@/lib/shop/abortable-sleep';
+import { isHomeDeliveryCode } from '@/lib/shop/shipping-method-kind';
 import { createClient } from '@/lib/supabase/client';
 
 const POLL_MS = 500;
@@ -24,6 +26,26 @@ function readVendorDraft(
   return draft as Record<string, unknown>;
 }
 
+function readVendorShippingMethod(
+  snap: unknown,
+  vendorId: string,
+): string | null {
+  if (snap == null || typeof snap !== 'object' || Array.isArray(snap)) {
+    return null;
+  }
+  const vendors = (snap as Record<string, unknown>).vendors;
+  if (!Array.isArray(vendors)) return null;
+  for (const vendor of vendors) {
+    if (vendor == null || typeof vendor !== 'object') continue;
+    const record = vendor as Record<string, unknown>;
+    if (record.vendorId !== vendorId) continue;
+    return typeof record.shippingMethodCode === 'string' ?
+        record.shippingMethodCode
+      : null;
+  }
+  return null;
+}
+
 export async function waitForLogisticsCreated(
   orderId: string,
   vendorId: string,
@@ -46,12 +68,20 @@ export async function waitForLogisticsCreated(
         .eq('id', orderId)
         .maybeSingle();
 
-      const draft = readVendorDraft(order?.checkout_snapshot, vendorId);
-      if (draft?.logisticsCreated === true) {
+      const snap = order?.checkout_snapshot;
+      const draft = readVendorDraft(snap, vendorId);
+      const shippingMethodCode = readVendorShippingMethod(snap, vendorId);
+      const waitsForLogisticsCreated =
+        !isHomeDeliveryCode(shippingMethodCode) &&
+        draft?.logisticsType !== 'HOME';
+
+      if (isVendorPostPaymentReady(draft, shippingMethodCode)) {
         return { ok: true };
       }
 
-      const createError = readLogisticsCreateError(draft);
+      const createError = waitsForLogisticsCreated ?
+          readLogisticsCreateError(draft)
+        : null;
       if (createError) {
         return { ok: false, error: createError };
       }
