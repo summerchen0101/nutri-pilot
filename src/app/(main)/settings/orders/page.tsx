@@ -2,14 +2,16 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { FiChevronLeft } from 'react-icons/fi';
 
-import { ContinueOrderPaymentButton } from '@/app/(main)/settings/orders/_components/continue-order-payment-button';
-import { memberOrderStatusLabel } from '@/app/(main)/settings/_lib/member-order-status-label';
+import { OrderListItemCard } from '@/app/(main)/settings/orders/_components/order-list-item-card';
 import { HEADER_LEADING_ICON_CLASS } from '@/components/layout/header-action-icon-styles';
 import { StickyPageHeader } from '@/components/layout/sticky-page-header';
-import { canContinueOrderPayment } from '@/lib/shop/can-continue-order-payment';
 import { getCachedAuthContext } from '@/lib/auth';
+import {
+  buildMemberOrderPaymentBreakdown,
+  parseMemberOrderBreakdownItems,
+} from '@/lib/shop/build-member-order-payment-breakdown';
+import { canContinueOrderPayment } from '@/lib/shop/can-continue-order-payment';
 import { SHOP_HEADER_SCROLL_ANCHOR_ID } from '@/lib/shop/constants';
-import { cn } from '@/lib/utils/cn';
 
 function formatDt(iso: string | null): string {
   if (!iso) return '—';
@@ -31,7 +33,27 @@ export default async function SettingsOrdersPage() {
 
   const { data: rows, error } = await supabase
     .from('orders')
-    .select('id, public_order_no, status, total, created_at, checkout_snapshot')
+    .select(
+      `
+      id,
+      status,
+      total,
+      created_at,
+      checkout_snapshot,
+      items:order_items(
+        id,
+        qty,
+        unit_price,
+        variant_id,
+        vendor_id,
+        variant:product_variants(
+          label,
+          product:products(name, image_url)
+        ),
+        vendor:vendors(name)
+      )
+    `,
+    )
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -61,51 +83,38 @@ export default async function SettingsOrdersPage() {
       <p className="text-caption leading-relaxed text-muted-foreground">
         訂單成立與付款通知以系統紀錄為準；物流進度依各子訂單更新。
       </p>
-      {list.length === 0 ? (
+      {list.length === 0 ?
         <div className="rounded-xl border-hairline border-border bg-card p-6 text-center text-body text-muted-foreground">
           尚無訂單
         </div>
-      ) : (
-        <ul className="space-y-2">
-          {list.map((row) => (
-            <li key={row.id}>
-              <div className="rounded-xl border-hairline border-border bg-card">
-                <Link
-                  href={`/settings/orders/${row.id}`}
-                  className={cn(
-                    'block px-3 py-3 transition-colors hover:border-[#4C956C]/40',
+      : <ul className="space-y-2">
+          {list.map((row) => {
+            const items = parseMemberOrderBreakdownItems(
+              Array.isArray(row.items) ? row.items : [],
+            );
+            const breakdown = buildMemberOrderPaymentBreakdown({
+              checkoutSnapshot: row.checkout_snapshot,
+              items,
+              orderTotal: Number(row.total),
+            });
+
+            return (
+              <li key={row.id}>
+                <OrderListItemCard
+                  orderId={row.id}
+                  createdAtLabel={formatDt(row.created_at)}
+                  status={row.status}
+                  breakdown={breakdown}
+                  showContinuePayment={canContinueOrderPayment(
+                    row.status,
+                    row.checkout_snapshot,
                   )}
-                >
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="font-mono text-caption text-foreground">
-                      {row.public_order_no ?? row.id.slice(0, 8)}
-                    </span>
-                    <span className="text-caption text-muted-foreground">
-                      {formatDt(row.created_at)}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-body font-medium text-foreground">
-                      NT${' '}
-                      {Number(row.total).toLocaleString('zh-TW', {
-                        minimumFractionDigits: 0,
-                      })}
-                    </span>
-                    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-caption text-muted-foreground">
-                      {memberOrderStatusLabel(row.status)}
-                    </span>
-                  </div>
-                </Link>
-                {canContinueOrderPayment(row.status, row.checkout_snapshot) ?
-                  <div className="border-t-hairline border-border px-3 py-3">
-                    <ContinueOrderPaymentButton orderId={row.id} />
-                  </div>
-                : null}
-              </div>
-            </li>
-          ))}
+                />
+              </li>
+            );
+          })}
         </ul>
-      )}
+      }
     </div>
   );
 }

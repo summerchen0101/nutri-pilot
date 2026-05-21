@@ -1,12 +1,12 @@
 import { redirect, notFound } from 'next/navigation';
 
+import {
+  MemberOrderStatusTag,
+} from '@/app/(main)/settings/_components/member-order-status-tag';
 import { ContinueOrderPaymentButton } from '@/app/(main)/settings/orders/_components/continue-order-payment-button';
 import { OrderDetailHeaderNav } from '@/app/(main)/settings/orders/_components/order-detail-header-nav';
+import { OrderFulfillmentSection } from '@/app/(main)/settings/orders/_components/order-fulfillment-section';
 import { OrderPaymentBreakdownCard } from '@/app/(main)/settings/orders/_components/order-payment-breakdown-card';
-import {
-  memberOrderStatusLabel,
-  memberSubOrderStatusLabel,
-} from '@/app/(main)/settings/_lib/member-order-status-label';
 import { StickyPageHeader } from '@/components/layout/sticky-page-header';
 import { getCachedAuthContext } from '@/lib/auth';
 import { canContinueOrderPayment } from '@/lib/shop/can-continue-order-payment';
@@ -119,12 +119,6 @@ export default async function SettingsOrderDetailPage({
     recipientAddressFull: order.recipient_address_full,
   });
 
-  const hasRecipientInfo = Boolean(
-    order.recipient_name?.trim() ||
-      order.recipient_phone?.trim() ||
-      order.recipient_address_full?.trim(),
-  );
-
   const paymentBreakdown = buildMemberOrderPaymentBreakdown({
     checkoutSnapshot: order.checkout_snapshot,
     items: parseMemberOrderBreakdownItems(items),
@@ -140,6 +134,14 @@ export default async function SettingsOrderDetailPage({
         spacing="compact"
       />
 
+      <OrderFulfillmentSection
+        subOrders={subOrders}
+        fulfillmentRows={fulfillmentRows}
+        recipientName={order.recipient_name}
+        recipientPhone={order.recipient_phone}
+        formatDt={formatDt}
+      />
+
       <section className="rounded-xl border-hairline border-border bg-card p-4">
         <h2 className="text-heading-section text-foreground">概要</h2>
         <dl className="mt-3 space-y-2 text-body">
@@ -151,7 +153,9 @@ export default async function SettingsOrderDetailPage({
           </div>
           <div>
             <dt className="text-caption text-muted-foreground">狀態</dt>
-            <dd>{memberOrderStatusLabel(order.status)}</dd>
+            <dd>
+              <MemberOrderStatusTag status={order.status} />
+            </dd>
           </div>
           <div>
             <dt className="text-caption text-muted-foreground">建立時間</dt>
@@ -184,144 +188,7 @@ export default async function SettingsOrderDetailPage({
         : null}
       </section>
 
-      {fulfillmentRows.length > 0 || hasRecipientInfo ?
-        <section className="rounded-xl border-hairline border-border bg-card p-4">
-          <h2 className="text-heading-section text-foreground">物流／取件</h2>
-
-          {fulfillmentRows.length > 0 ?
-            <ul className="mt-3 space-y-4">
-              {fulfillmentRows.map((row) => (
-                <li
-                  key={row.vendorId}
-                  className={
-                    fulfillmentRows.length > 1 ?
-                      'border-b-hairline border-border pb-4 last:border-b-0 last:pb-0'
-                    : undefined
-                  }>
-                  {fulfillmentRows.length > 1 ?
-                    <p className="text-caption font-medium text-foreground">
-                      {row.vendorName}
-                    </p>
-                  : null}
-                  <dl className="mt-2 space-y-2 text-body">
-                    <div>
-                      <dt className="text-caption text-muted-foreground">
-                        運送方式
-                      </dt>
-                      <dd>{row.shippingLabel}</dd>
-                    </div>
-                    {row.isCvs && row.storeName ?
-                      <div>
-                        <dt className="text-caption text-muted-foreground">
-                          取貨門市
-                        </dt>
-                        <dd>{row.storeName}</dd>
-                      </div>
-                    : null}
-                    {row.isCvs && row.storeAddress ?
-                      <div>
-                        <dt className="text-caption text-muted-foreground">
-                          門市地址
-                        </dt>
-                        <dd className="whitespace-pre-wrap">{row.storeAddress}</dd>
-                      </div>
-                    : null}
-                    {!row.isCvs && row.homeAddress ?
-                      <div>
-                        <dt className="text-caption text-muted-foreground">
-                          收件地址
-                        </dt>
-                        <dd className="whitespace-pre-wrap">{row.homeAddress}</dd>
-                      </div>
-                    : null}
-                  </dl>
-                </li>
-              ))}
-            </ul>
-          : null}
-
-          {hasRecipientInfo ?
-            <dl
-              className={
-                fulfillmentRows.length > 0 ?
-                  'mt-4 space-y-2 border-t-hairline border-border pt-4 text-body'
-                : 'mt-3 space-y-2 text-body'
-              }>
-              {order.recipient_name ?
-                <div>
-                  <dt className="text-caption text-muted-foreground">收件人</dt>
-                  <dd>{order.recipient_name}</dd>
-                </div>
-              : null}
-              {order.recipient_phone ?
-                <div>
-                  <dt className="text-caption text-muted-foreground">電話</dt>
-                  <dd>{order.recipient_phone}</dd>
-                </div>
-              : null}
-            </dl>
-          : null}
-        </section>
-      : null}
-
       <OrderPaymentBreakdownCard breakdown={paymentBreakdown} />
-
-      {subOrders.length > 0 ?
-        <section className="rounded-xl border-hairline border-border bg-card p-4">
-          <h2 className="text-heading-section text-foreground">出貨進度</h2>
-          <p className="mt-1 text-caption leading-relaxed text-muted-foreground">
-            依廠商分成子訂單；宅配查貨請使用下列編號向物流業者查詢。
-          </p>
-          <ul className="mt-3 space-y-3">
-            {subOrders.map((s) => (
-              <li
-                key={s.id}
-                className="rounded-lg border-hairline border-border bg-background p-3"
-              >
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-mono text-caption text-foreground">
-                    {s.public_no}
-                  </span>
-                  <span className="rounded-full bg-secondary px-2 py-0.5 text-micro text-muted-foreground">
-                    {memberSubOrderStatusLabel(s.status)}
-                  </span>
-                </div>
-                <dl className="mt-2 space-y-1 text-caption">
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-muted-foreground">小計</dt>
-                    <dd>
-                      NT${' '}
-                      {Number(s.total).toLocaleString('zh-TW', {
-                        minimumFractionDigits: 0,
-                      })}
-                    </dd>
-                  </div>
-                  {s.shipping_carrier ?
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">物流商</dt>
-                      <dd>{s.shipping_carrier}</dd>
-                    </div>
-                  : null}
-                  {s.tracking_number ?
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">追蹤號碼</dt>
-                      <dd className="break-all text-end">{s.tracking_number}</dd>
-                    </div>
-                  : (
-                    <p className="text-neutral-text-tertiary">尚未提供追蹤號碼</p>
-                  )}
-                  {s.shipped_at ?
-                    <div className="flex justify-between gap-2">
-                      <dt className="text-muted-foreground">出貨時間</dt>
-                      <dd>{formatDt(s.shipped_at)}</dd>
-                    </div>
-                  : null}
-                </dl>
-              </li>
-            ))}
-          </ul>
-        </section>
-      : null}
     </div>
   );
 }
