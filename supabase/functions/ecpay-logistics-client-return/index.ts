@@ -140,6 +140,7 @@ Deno.serve(async (req) => {
         unknown
       >;
       tradeNo = pickString(createInner, [
+        "LogisticsID",
         "LogisticsTradeNo",
         "MerchantTradeNo",
         "AllPayLogisticsID",

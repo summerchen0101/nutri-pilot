@@ -76,7 +76,7 @@ Supabase Edge Functions（後端邏輯）
 | `ecpay-payment-info` | 綠界 POST | ATM／超商代碼取號（維持 pending） |
 | `ecpay-order-result` | 綠界 POST | OrderResultURL 瀏覽器返回（`?appOrigin=` 絕對 URL 導回 `/shop?checkout=1&…`）；**須公開 Edge，不可改 Next 需登入 route** |
 | `ecpay-query-trade` | super_admin JWT | 查詢交易狀態 |
-| `ecpay-logistics-print` | super_admin GET | C2C 託運單列印 |
+| `ecpay-logistics-print` | super_admin / cs GET `?format=json` | V2 託運單列印 bridge（`PrintTradeDocument` → `{ action, fields }`） |
 
 **`create-shop-order` 輸出**：`{ orderId, logisticsQueue, total }`。詳見 `docs/third/ecpay-payment-spec.md`、`ecpay-logistics-spec.md`。
 

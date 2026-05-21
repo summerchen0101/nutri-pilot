@@ -1,27 +1,40 @@
 /**
- * GET ?subOrderId= — 綠界 C2C 託運單列印（admin JWT super_admin）
+ * GET ?subOrderId= — 綠界 V2 託運單列印（admin JWT super_admin / cs）
+ * ?format=json — 回傳 form bridge（避開 Supabase 託管 HTML sandbox）
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
-import { buildAutoSubmitFormHtml } from "../_shared/ecpay-popup-html.ts";
 import {
-  generateEcpayLogisticsCheckMacValue,
+  corsHtmlResponse,
+  jsonResponse,
+  wantsJsonResponse,
+} from "../_shared/cors.ts";
+import { isLogisticsPrintSupported } from "../_shared/ecpay-logistics-codes.ts";
+import {
+  buildAutoSubmitFormHtml,
+  extractHtmlPostForm,
+} from "../_shared/ecpay-popup-html.ts";
+import {
+  formatLogisticsV2Error,
   getEcpayLogisticsConfig,
+  requestLogisticsPrintPage,
 } from "../_shared/ecpay-logistics.ts";
-import { printEndpointForSubtype } from "../_shared/ecpay-logistics-codes.ts";
+
+const SHIP_ROLES = new Set(["super_admin", "cs"]);
 
 Deno.serve(async (req) => {
   if (req.method !== "GET") {
-    return new Response("Method Not Allowed", { status: 405 });
+    return jsonResponse({ error: "Method Not Allowed" }, 405);
   }
 
   const url = new URL(req.url);
+  const wantsJson = wantsJsonResponse(req, url);
   const subOrderId = url.searchParams.get("subOrderId")?.trim() ?? "";
-  const token = url.searchParams.get("token")?.trim() ??
-    req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ??
+    "";
 
   if (!subOrderId || !token) {
-    return new Response("Missing subOrderId or token", { status: 400 });
+    return respondError("Missing subOrderId or auth", 400, wantsJson);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -34,45 +47,100 @@ Deno.serve(async (req) => {
     data: { user },
     error: userErr,
   } = await supabase.auth.getUser();
-  if (userErr || !user || user.app_metadata?.admin_role !== "super_admin") {
-    return new Response("Forbidden", { status: 403 });
+  const role = user?.app_metadata?.admin_role;
+  if (userErr || !user || typeof role !== "string" || !SHIP_ROLES.has(role)) {
+    return respondError("Forbidden", 403, wantsJson);
   }
 
   const { data: sub, error: subErr } = await supabase
     .from("sub_orders")
     .select(
-      "logistics_subtype, ecpay_logistics_trade_no, cvs_store_id",
+      "logistics_subtype, ecpay_logistics_trade_no, ecpay_logistics_meta",
     )
     .eq("id", subOrderId)
     .maybeSingle();
 
   if (subErr || !sub?.ecpay_logistics_trade_no || !sub.logistics_subtype) {
-    return new Response("Sub order or logistics data not found", { status: 404 });
+    return respondError("Sub order or logistics data not found", 404, wantsJson);
   }
 
-  const printUrl = printEndpointForSubtype(
-    String(sub.logistics_subtype),
-    getEcpayLogisticsConfig().stage,
-  );
-  if (!printUrl) {
-    return new Response("Print not supported for this subtype", { status: 422 });
+  const subtype = String(sub.logistics_subtype);
+  if (!isLogisticsPrintSupported(subtype)) {
+    return respondError("Print not supported for this subtype", 422, wantsJson);
+  }
+
+  let logisticsId = String(sub.ecpay_logistics_trade_no);
+  if (!logisticsId) {
+    const meta = sub.ecpay_logistics_meta;
+    if (meta != null && typeof meta === "object" && !Array.isArray(meta)) {
+      const createByTemp = (meta as Record<string, unknown>).createByTemp;
+      if (createByTemp != null && typeof createByTemp === "object") {
+        const decrypted = (createByTemp as Record<string, unknown>)._decrypted;
+        if (decrypted != null && typeof decrypted === "object") {
+          const id = (decrypted as Record<string, unknown>).LogisticsID;
+          if (typeof id === "string" && id.trim()) {
+            logisticsId = id.trim();
+          }
+        }
+      }
+    }
+  }
+
+  if (!logisticsId) {
+    return respondError("Logistics ID not found", 404, wantsJson);
   }
 
   const cfg = getEcpayLogisticsConfig();
-  const fields: Record<string, string> = {
-    MerchantID: cfg.merchantId,
-    AllPayLogisticsID: String(sub.ecpay_logistics_trade_no),
-    CVSPaymentNo: "",
-    CVSValidationNo: "",
-  };
-  fields.CheckMacValue = generateEcpayLogisticsCheckMacValue(
-    fields,
-    cfg.hashKey,
-    cfg.hashIv,
-  );
 
-  const html = buildAutoSubmitFormHtml(printUrl, fields, "列印託運單");
-  return new Response(html, {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
-  });
+  try {
+    const result = await requestLogisticsPrintPage(
+      cfg.host,
+      cfg.merchantId,
+      logisticsId,
+      subtype,
+      cfg.hashKey,
+      cfg.hashIv,
+    );
+
+    if (!result.html) {
+      const errMsg = formatLogisticsV2Error(result);
+      return respondError(errMsg, 502, wantsJson);
+    }
+
+    const extracted = extractHtmlPostForm(result.html);
+    if (!extracted) {
+      return respondError("無法解析綠界列印回應", 422, wantsJson);
+    }
+
+    if (wantsJson) {
+      return jsonResponse({
+        action: extracted.action,
+        fields: extracted.fields,
+      });
+    }
+
+    const bridgeHtml = buildAutoSubmitFormHtml(
+      extracted.action,
+      extracted.fields,
+      "列印託運單",
+    );
+    return corsHtmlResponse(bridgeHtml);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return respondError(`Print failed: ${msg}`, 502, wantsJson);
+  }
 });
+
+function respondError(
+  message: string,
+  status: number,
+  wantsJson: boolean,
+): Response {
+  if (wantsJson) {
+    return jsonResponse({ error: message }, status);
+  }
+  return corsHtmlResponse(
+    `<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="utf-8" /></head><body><p>${message}</p></body></html>`,
+    status,
+  );
+}

@@ -76,6 +76,7 @@ export function logisticsV2Urls(host: string) {
     selection: `${host}/Express/v2/RedirectToLogisticsSelection`,
     createByTemp: `${host}/Express/v2/CreateByTempTrade`,
     query: `${host}/Express/v2/QueryLogisticsTradeInfo`,
+    printTradeDocument: `${host}/Express/v2/PrintTradeDocument`,
   };
 }
 
@@ -499,6 +500,32 @@ export async function requestLogisticsSelectionPage(
   }
 
   return parseEcpayLogisticsV2Response(parsed, hashKey, hashIv);
+}
+
+/** 列印託運單：V2 PrintTradeDocument，回傳 HTML 或錯誤 */
+export async function requestLogisticsPrintPage(
+  host: string,
+  merchantId: string,
+  logisticsId: string,
+  logisticsSubType: string,
+  hashKey: string,
+  hashIv: string,
+  printMode = 1,
+): Promise<EcpayLogisticsV2Result> {
+  const urls = logisticsV2Urls(host);
+  const data: Record<string, unknown> = {
+    MerchantID: merchantId,
+    LogisticsID: [logisticsId],
+    LogisticsSubType: logisticsSubType,
+    PrintMode: printMode,
+  };
+  return requestLogisticsSelectionPage(
+    urls.printTradeDocument,
+    merchantId,
+    data,
+    hashKey,
+    hashIv,
+  );
 }
 
 export async function postEcpayLogisticsV2Json(

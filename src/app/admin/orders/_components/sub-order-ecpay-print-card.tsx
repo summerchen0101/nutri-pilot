@@ -2,8 +2,16 @@
 
 import { useState } from 'react';
 
-import { createClient } from '@/lib/supabase/client';
+import { fetchEcpayLogisticsPrintPayload } from '@/app/admin/orders/actions';
 import { buttonVisualClassName } from '@/components/ui/button-visual';
+import { isLogisticsPrintSupported } from '@/lib/ecpay/logistics-labels';
+import {
+  openEcpayPopup,
+  showPopupMessage,
+  submitPostFormToNamedPopup,
+} from '@/lib/shop/ecpay-popup-form';
+
+const ECPAY_PRINT_POPUP_NAME = 'ecpay-logistics-print';
 
 interface SubOrderEcpayPrintCardProps {
   readonly subOrderId: string;
@@ -17,27 +25,47 @@ export function SubOrderEcpayPrintCard({
   ecpayLogisticsTradeNo,
 }: SubOrderEcpayPrintCardProps) {
   const [err, setErr] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  if (!ecpayLogisticsTradeNo || !logisticsSubtype) {
+  if (
+    !ecpayLogisticsTradeNo ||
+    !logisticsSubtype ||
+    !isLogisticsPrintSupported(logisticsSubtype)
+  ) {
     return null;
   }
 
   async function openPrint() {
     setErr(null);
+    setPending(true);
+
+    const popup = openEcpayPopup(ECPAY_PRINT_POPUP_NAME);
+    if (!popup) {
+      setPending(false);
+      setErr('請允許彈出視窗以列印託運單');
+      return;
+    }
+
+    showPopupMessage(popup, '正在準備托運單…');
+
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
-      if (!token || !base) {
-        setErr('無法取得登入或環境設定');
+      const bridge = await fetchEcpayLogisticsPrintPayload({ subOrderId });
+      if (!bridge.ok) {
+        popup.close();
+        setErr(bridge.error);
         return;
       }
-      const url =
-        `${base}/functions/v1/ecpay-logistics-print?subOrderId=${encodeURIComponent(subOrderId)}&token=${encodeURIComponent(token)}`;
-      window.open(url, '_blank', 'noopener,noreferrer');
+      submitPostFormToNamedPopup(ECPAY_PRINT_POPUP_NAME, {
+        action: bridge.action,
+        fields: bridge.fields,
+      });
     } catch (e) {
+      if (!popup.closed) {
+        popup.close();
+      }
       setErr(e instanceof Error ? e.message : '無法開啟列印');
+    } finally {
+      setPending(false);
     }
   }
 
@@ -48,9 +76,10 @@ export function SubOrderEcpayPrintCard({
       <button
         type="button"
         onClick={() => void openPrint()}
+        disabled={pending}
         className={`mt-2 ${buttonVisualClassName({ variant: 'outline', size: 'sm' })}`}
       >
-        列印託運單
+        {pending ? '準備中…' : '列印託運單'}
       </button>
       {err ?
         <p className="mt-2 text-caption text-destructive">{err}</p>

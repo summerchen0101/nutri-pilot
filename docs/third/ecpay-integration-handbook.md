@@ -58,7 +58,7 @@
 
 ### 2.2 物流 C2C 測試端點
 
-本專案使用 **Logistics V2**（門市選擇、暫存單建立、查詢）及 V1 列印等。完整 URL 定義於 `src/lib/ecpay-logistics.ts`。
+本專案使用 **Logistics V2**（門市選擇、暫存單建立、查詢、列印託運單）。完整 URL 定義於 `supabase/functions/_shared/ecpay-logistics.ts`。
 
 **測試（`logistics-stage.ecpay.com.tw`）**
 
@@ -67,11 +67,9 @@
 | 門市選擇 V2 | `https://logistics-stage.ecpay.com.tw/Express/v2/RedirectToLogisticsSelection` |
 | 由暫存單建立 | `https://logistics-stage.ecpay.com.tw/Express/v2/CreateByTempTrade` |
 | 查詢 V2 | `https://logistics-stage.ecpay.com.tw/Express/v2/QueryLogisticsTradeInfo` |
+| 列印託運單 V2 | `https://logistics-stage.ecpay.com.tw/Express/v2/PrintTradeDocument` |
 | 建立物流單（V1） | `https://logistics-stage.ecpay.com.tw/Express/Create` |
 | 查詢（V1 Helper） | `https://logistics-stage.ecpay.com.tw/Helper/QueryLogisticsTradeInfo/V5` |
-| 列印 7-11 C2C | `https://logistics-stage.ecpay.com.tw/Express/PrintUniMartC2COrderInfo` |
-| 列印全家 C2C | `https://logistics-stage.ecpay.com.tw/Express/PrintFAMIC2COrderInfo` |
-| 列印 OK C2C | `https://logistics-stage.ecpay.com.tw/Express/PrintOKMARTC2COrderInfo` |
 
 **正式（`logistics.ecpay.com.tw`）**：路徑相同，僅網域改為 `logistics.ecpay.com.tw`（無 `-stage`）。
 
@@ -311,7 +309,7 @@ client-return 典型步驟：解析暫存結果 → `CreateByTempTrade` → 查�
 | CheckMac 驗證失敗 | key/iv 錯誤、參數排序、.NET encode 實作不一致、callback 空值處理 |
 | 物流建立失敗 | C2C 卻傳 B2C subtype；V1 API 用了 `application/json` |
 | 超商姓名錯誤 | 收件人姓名須 4–10 字元（中文 2–5 字） |
-| 列印託運單異常 | 應由 client 端 form POST 接收轉跳，不宜純 server 攔截 body |
+| 列印託運單異常 | 確認 `LogisticsID` 已寫入 `sub_orders.ecpay_logistics_trade_no`；V2 列印由 Edge 回傳 HTML popup |
 
 ### 8.1 10200073 CheckMacValue Error（AIO 表單被拒）
 

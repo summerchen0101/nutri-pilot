@@ -120,3 +120,42 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+/** 從綠界 auto-submit HTML 擷取 form action 與所有 hidden 欄位（列印託運單等） */
+export function extractHtmlPostForm(html: string): {
+  action: string;
+  fields: Record<string, string>;
+} | null {
+  const actionMatch = html.match(
+    /<form[^>]*\baction\s*=\s*["']([^"']+)["']/i,
+  );
+  if (!actionMatch?.[1]) {
+    return null;
+  }
+
+  const fields: Record<string, string> = {};
+  const inputPattern =
+    /<input[^>]*\btype\s*=\s*["']hidden["'][^>]*>/gi;
+
+  for (const inputTag of html.match(inputPattern) ?? []) {
+    const nameMatch = inputTag.match(/\bname\s*=\s*["']([^"']+)["']/i);
+    if (!nameMatch?.[1]) continue;
+
+    let value = "";
+    const valueDouble = inputTag.match(/\bvalue\s*=\s*"([^"]*)"/i);
+    const valueSingle = inputTag.match(/\bvalue\s*=\s*'([^']*)'/i);
+    if (valueDouble) {
+      value = valueDouble[1] ?? "";
+    } else if (valueSingle) {
+      value = valueSingle[1] ?? "";
+    }
+
+    fields[nameMatch[1]] = value;
+  }
+
+  if (Object.keys(fields).length === 0) {
+    return null;
+  }
+
+  return { action: actionMatch[1], fields };
+}

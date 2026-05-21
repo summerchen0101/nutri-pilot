@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { OrderEcpayQueryPanel } from '@/app/admin/orders/_components/order-ecpay-query-panel';
-import { SubOrderEcpayPrintCard } from '@/app/admin/orders/_components/sub-order-ecpay-print-card';
 import { OrderPaymentInfoCard } from '@/app/admin/orders/_components/order-payment-info-card';
 import { OrderRefundPlaceholderCard } from '@/app/admin/orders/_components/order-refund-placeholder-card';
 import { OrderStatusUpdater } from '@/app/admin/orders/_components/order-status-updater';

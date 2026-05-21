@@ -49,6 +49,22 @@ export function logisticsSubtypeDisplayLabel(subtype: string): string {
   return map[subtype] ?? subtype;
 }
 
+const PRINT_SUPPORTED_SUBTYPES = new Set([
+  "UNIMARTC2C",
+  "FAMIC2C",
+  "HILIFEC2C",
+  "OKMARTC2C",
+  "UNIMARTFREEZE",
+  "TCAT",
+  "POST",
+]);
+
+export function isLogisticsPrintSupported(subtype: string | null | undefined): boolean {
+  if (!subtype) return false;
+  return PRINT_SUPPORTED_SUBTYPES.has(subtype);
+}
+
+/** @deprecated 列印已改走 V2 PrintTradeDocument */
 export function printEndpointForSubtype(
   subtype: string,
   stage: boolean,

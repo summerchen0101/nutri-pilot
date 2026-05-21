@@ -232,3 +232,110 @@ export async function updateSubOrderLogistics(input: {
   revalidatePath('/admin/orders');
   return { ok: true };
 }
+
+export type EcpayLogisticsPrintPayloadResult =
+  | { ok: true; action: string; fields: Record<string, string> }
+  | { ok: false; error: string };
+
+type EcpayPrintEdgeBody = {
+  action?: string;
+  fields?: Record<string, string>;
+  error?: string;
+};
+
+function parseEcpayPrintEdgeBody(text: string): EcpayPrintEdgeBody | null {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.startsWith('<')) {
+    return null;
+  }
+  try {
+    return JSON.parse(trimmed) as EcpayPrintEdgeBody;
+  } catch {
+    return null;
+  }
+}
+
+/** 伺服器端取托運單列印 form（避開 Supabase 託管 HTML sandbox） */
+export async function fetchEcpayLogisticsPrintPayload(payload: {
+  subOrderId: string;
+}): Promise<EcpayLogisticsPrintPayloadResult> {
+  const role = await getAdminRole();
+  if (!role || !staffCan(role, 'order.ship')) {
+    return { ok: false, error: '沒有權限' };
+  }
+
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const token = session?.access_token;
+  if (!token) {
+    return { ok: false, error: '請重新登入' };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!baseUrl || !anonKey) {
+    return { ok: false, error: '環境設定缺少 Supabase 變數' };
+  }
+
+  const url = new URL(`${baseUrl}/functions/v1/ecpay-logistics-print`);
+  url.search = new URLSearchParams({
+    subOrderId: payload.subOrderId,
+    format: 'json',
+  }).toString();
+
+  try {
+    const res = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+        apikey: anonKey,
+      },
+    });
+
+    const contentType = res.headers.get('Content-Type') ?? '';
+    const text = await res.text();
+    const data = parseEcpayPrintEdgeBody(text);
+
+    if (data == null) {
+      return {
+        ok: false,
+        error:
+          contentType.includes('text/html') || text.trimStart().startsWith('<') ?
+            `綠界列印服務回傳 HTML 而非 JSON（${res.status}），請確認 Edge 已部署最新版`
+          : `綠界列印服務回傳非 JSON（${res.status}）`,
+      };
+    }
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: data.error ?? `列印請求失敗（${res.status}）`,
+      };
+    }
+
+    if (
+      typeof data.action === 'string' &&
+      data.action.length > 0 &&
+      data.fields != null &&
+      typeof data.fields === 'object' &&
+      !Array.isArray(data.fields)
+    ) {
+      return {
+        ok: true,
+        action: data.action,
+        fields: data.fields,
+      };
+    }
+
+    return { ok: false, error: data.error ?? '綠界回應格式不正確' };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : '無法取得列印表單資料',
+    };
+  }
+}
