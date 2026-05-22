@@ -60,7 +60,6 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
     selectedItemsSubtotal,
     selectedShippingTotal,
     selectedNetOrderTotal,
-    selectedPayableTotal,
     pointsDiscount,
     hasLegacyLines,
     shippingMethodsLoading,
@@ -421,7 +420,7 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
           </div>
 
           <CheckoutPanelFooter
-            grandTotal={selectedPayableTotal}
+            grandTotal={selectedNetOrderTotal}
             pending={loading}
             canSubmit={footerCanSubmit}
             submitLabel={footerLabel}

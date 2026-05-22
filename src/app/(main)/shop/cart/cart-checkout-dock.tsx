@@ -17,7 +17,6 @@ export function CartCheckoutDock() {
   const {
     selectedItemsSubtotal,
     selectedShippingTotal,
-    selectedPayableTotal,
     selectedNetOrderTotal,
     pointsDiscount,
     validLines,
@@ -48,7 +47,7 @@ export function CartCheckoutDock() {
                 總計
               </span>
               <span className="min-w-0 text-heading-page tabular-nums text-foreground">
-                NT$ {formatShopGroupedInteger(selectedPayableTotal)}
+                NT$ {formatShopGroupedInteger(selectedNetOrderTotal)}
               </span>
             </div>
           </div>
