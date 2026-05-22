@@ -1409,36 +1409,45 @@ export type Database = {
       }
       vendors: {
         Row: {
+          banner_url: string | null
           contact_email: string | null
           created_at: string
+          description: string | null
           free_shipping_threshold: number | null
           id: string
           is_active: boolean
           lead_time_days: number
+          logo_url: string | null
           name: string
           notification_email: string | null
           shipping_fee: number
           slug: string
         }
         Insert: {
+          banner_url?: string | null
           contact_email?: string | null
           created_at?: string
+          description?: string | null
           free_shipping_threshold?: number | null
           id?: string
           is_active?: boolean
           lead_time_days?: number
+          logo_url?: string | null
           name: string
           notification_email?: string | null
           shipping_fee?: number
           slug: string
         }
         Update: {
+          banner_url?: string | null
           contact_email?: string | null
           created_at?: string
+          description?: string | null
           free_shipping_threshold?: number | null
           id?: string
           is_active?: boolean
           lead_time_days?: number
+          logo_url?: string | null
           name?: string
           notification_email?: string | null
           shipping_fee?: number

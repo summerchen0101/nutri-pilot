@@ -56,6 +56,13 @@ const BRAND_ITEM: AdminNavItemConfig = {
   icon: Building2,
 };
 
+const VENDOR_ITEM: AdminNavItemConfig = {
+  href: '/admin/vendors',
+  label: '廠商',
+  roles: ['super_admin', 'editor'],
+  icon: Store,
+};
+
 const ANNOUNCEMENTS_ITEM: AdminNavItemConfig = {
   href: '/admin/announcements',
   label: '公告',
@@ -133,7 +140,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionConfig[] = [
     sectionLabel: '營運',
     railLabel: '營運',
     railIcon: Store,
-    items: [PRODUCT_ITEM, BRAND_ITEM, ANNOUNCEMENTS_ITEM, PROMOTIONS_ITEM],
+    items: [PRODUCT_ITEM, BRAND_ITEM, VENDOR_ITEM, ANNOUNCEMENTS_ITEM, PROMOTIONS_ITEM],
   },
   {
     id: 'support',

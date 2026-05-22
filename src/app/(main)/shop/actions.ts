@@ -13,6 +13,25 @@ export async function ensureShopScores(userId: string): Promise<void> {
   await triggerRecalculateScores(userId);
 }
 
+/** 舊版 `/shop?vendor_id=` 導向廠商頁 slug 路徑 */
+export async function resolveVendorShopHref(
+  vendorId: string,
+): Promise<string | null> {
+  const id = vendorId.trim();
+  if (!id) return null;
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('vendors')
+    .select('slug')
+    .eq('id', id)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (error || !data?.slug) return null;
+  return `/shop/vendors/${encodeURIComponent(data.slug)}`;
+}
+
 export type GetCheckoutShippingDefaultsResult =
   | {
       ok: true;

@@ -6,6 +6,7 @@ export const SHOP_FIXED_ROUTE_SEGMENTS = new Set([
   'history',
   'settings',
   'success',
+  'vendors',
 ]);
 
 /** 是否為 `/shop` 樹狀路由（含首頁與子路徑），用於專用底部導覽。 */

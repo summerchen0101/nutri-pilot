@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 
+import { ShopCatalogScopeSync } from '@/app/(main)/shop/_components/shop-catalog-scope-sync';
 import { ShopCatalogBody } from '@/app/(main)/shop/shop-catalog-body';
 import { ShopHomeBanner } from '@/app/(main)/shop/shop-home-banner';
 import {
@@ -25,6 +26,9 @@ export default async function ShopPage() {
 
   return (
     <div className="space-y-4">
+      <Suspense fallback={null}>
+        <ShopCatalogScopeSync />
+      </Suspense>
       <ShopPageHeader shopPointsBalance={shopPointsBalance} />
       <Suspense fallback={<ShopBannerSkeleton />}>
         <ShopHomeBanner />

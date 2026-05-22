@@ -56,6 +56,7 @@ export default async function ShopProductPage({ params, searchParams }: PageProp
         vendor:vendors!inner (
           id,
           name,
+          slug,
           shipping_fee,
           free_shipping_threshold,
           lead_time_days
@@ -128,6 +129,7 @@ export default async function ShopProductPage({ params, searchParams }: PageProp
       | {
           id: string;
           name: string;
+          slug: string;
           shipping_fee: number | string;
           free_shipping_threshold: number | string | null;
           lead_time_days: number | string | null;
@@ -135,6 +137,7 @@ export default async function ShopProductPage({ params, searchParams }: PageProp
       | Array<{
           id: string;
           name: string;
+          slug: string;
           shipping_fee: number | string;
           free_shipping_threshold: number | string | null;
           lead_time_days: number | string | null;
@@ -150,6 +153,7 @@ export default async function ShopProductPage({ params, searchParams }: PageProp
 
   const vendorForClient = {
     id: String(vendorRow.id),
+    slug: String(vendorRow.slug),
     name: String(vendorRow.name),
     shippingFee: Number(vendorRow.shipping_fee),
     freeShippingThreshold:

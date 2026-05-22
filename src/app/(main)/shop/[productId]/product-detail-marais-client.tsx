@@ -28,6 +28,7 @@ import {
   formatShopGroupedInteger,
 } from "@/lib/shop/format-shop-number";
 import { getDietTagLabel } from "@/lib/shop/diet-tag-label";
+import { buildVendorShopHref } from "@/lib/shop/vendor-shop-path";
 import {
   getPreferredSelectableVariantId,
   isVariantSelectable,
@@ -60,6 +61,7 @@ export interface ProductDetailMaraisClientProps {
   origin: string | null;
   vendor: {
     id: string;
+    slug: string;
     name: string;
     shippingFee: number;
     freeShippingThreshold: number | null;
@@ -345,7 +347,7 @@ export function ProductDetailMaraisClient({
               </p>
             </div>
             <Link
-              href="/shop"
+              href={buildVendorShopHref(vendor.slug)}
               className="flex shrink-0 items-center gap-0.5 text-caption font-medium text-[var(--steel-text)]">
               逛逛商城
               <ChevronRight className="h-3.5 w-3.5" aria-hidden />
@@ -547,7 +549,7 @@ export function ProductDetailMaraisClient({
                     {brand.description}
                   </p>
                   <Link
-                    href="/shop"
+                    href={buildVendorShopHref(vendor.slug)}
                     className="mt-3 inline-block text-body font-medium text-primary">
                     查看商城全系列 →
                   </Link>

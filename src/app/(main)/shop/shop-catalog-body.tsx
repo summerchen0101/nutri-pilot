@@ -4,6 +4,7 @@ import { mapSupabaseProductToShopRow } from '@/app/(main)/shop/map-shop-product-
 import { ShopHomeClient } from '@/app/(main)/shop/shop-home-client';
 import { ensureShopScores } from '@/app/(main)/shop/actions';
 import { getCachedAuthContext } from '@/lib/auth';
+import { SHOP_CATALOG_PRODUCT_SELECT } from '@/lib/shop/shop-catalog-select';
 import { getCachedUserProfileCoreRow } from '@/lib/user-profile';
 
 export async function ShopCatalogBody() {
@@ -34,33 +35,7 @@ export async function ShopCatalogBody() {
       .eq('user_id', user.id),
     supabase
       .from('products')
-      .select(
-        `
-      id,
-      name,
-      slug,
-      image_url,
-      sort_order,
-      category,
-      calories,
-      protein_g,
-      sugar_g,
-      diet_tags,
-      cert_tags,
-      avg_rating,
-      brand:brands (
-        id, name, slug, logo_url,
-        vendor:vendors!inner (
-          id,
-          name,
-          shipping_fee,
-          free_shipping_threshold,
-          lead_time_days
-        )
-      ),
-      variants:product_variants ( id, label, price, stock, list_price )
-    `,
-      )
+      .select(SHOP_CATALOG_PRODUCT_SELECT)
       .eq('is_active', true),
     supabase.from('products').select('brand_id').eq('is_active', true),
     supabase
