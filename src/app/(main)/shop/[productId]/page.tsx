@@ -5,10 +5,7 @@ import { ShopProductDetailHeaderActions } from '@/app/(main)/shop/[productId]/sh
 import { ShopHeaderPointsTitle } from '@/app/(main)/shop/_components/shop-header-points-title';
 import { HeaderBackButton } from '@/components/layout/header-back-button';
 import { StickyPageHeader } from '@/components/layout/sticky-page-header';
-import {
-  SHOP_CATEGORY_LABEL,
-  SHOP_HEADER_SCROLL_ANCHOR_ID,
-} from '@/lib/shop/constants';
+import { SHOP_HEADER_SCROLL_ANCHOR_ID } from '@/lib/shop/constants';
 import { generateFitReasons } from '@/lib/shop/fit-reasons';
 import { getCachedAuthContext } from '@/lib/auth';
 
@@ -78,9 +75,13 @@ export default async function ShopProductPage({ params, searchParams }: PageProp
     .eq("product_id", product.id as string)
     .maybeSingle();
 
-  const categoryLabel =
-    SHOP_CATEGORY_LABEL[product.category as keyof typeof SHOP_CATEGORY_LABEL] ??
-    product.category;
+  const { data: categoryRow } = await supabase
+    .from('shop_categories')
+    .select('label')
+    .eq('slug', product.category as string)
+    .maybeSingle();
+
+  const categoryLabel = categoryRow?.label ?? (product.category as string);
 
   const fitReasons = generateFitReasons(
     {

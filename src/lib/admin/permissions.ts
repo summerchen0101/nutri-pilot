@@ -12,7 +12,9 @@ type StaffAction =
   | 'announcement.manage'
   | 'announcement.delete'
   | 'promo.manage'
-  | 'shop.points.adjust';
+  | 'shop.points.adjust'
+  | 'shop.manage'
+  | 'shop.delete';
 
 const PERMISSIONS: Record<StaffAction, AdminRole[]> = {
   'product.delete': ['super_admin'],
@@ -27,6 +29,8 @@ const PERMISSIONS: Record<StaffAction, AdminRole[]> = {
   'announcement.delete': ['super_admin'],
   'promo.manage': ['super_admin', 'editor'],
   'shop.points.adjust': ['super_admin'],
+  'shop.manage': ['super_admin', 'editor'],
+  'shop.delete': ['super_admin'],
 };
 
 export function staffCan(

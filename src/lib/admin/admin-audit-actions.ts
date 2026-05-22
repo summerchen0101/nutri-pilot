@@ -16,6 +16,13 @@ export const ADMIN_AUDIT_ACTIONS = {
   PROMO_CAMPAIGN_SAVE: 'promo.campaign_save',
   PROMO_CODE_SAVE: 'promo.code_save',
   SHOP_POINTS_ADJUST: 'shop_points.adjust',
+  SHOP_HOME_BANNER_SAVE: 'shop.home_banner_save',
+  SHOP_HOME_BANNER_DELETE: 'shop.home_banner_delete',
+  SHOP_CATEGORY_BANNER_SAVE: 'shop.category_banner_save',
+  SHOP_CATEGORY_BANNER_DELETE: 'shop.category_banner_delete',
+  SHOP_CATEGORY_SAVE: 'shop.category_save',
+  SHOP_CATEGORY_DELETE: 'shop.category_delete',
+  VENDOR_SHIPPING_METHOD_SAVE: 'vendor.shipping_method_save',
 } as const;
 
 export type AdminAuditAction =
@@ -31,4 +38,8 @@ export const ADMIN_AUDIT_TARGET_TYPES = {
   USER: 'user',
   PROMO_CAMPAIGN: 'promo_campaign',
   PROMO_CODE: 'promo_code',
+  SHOP_HOME_BANNER: 'shop_home_banner',
+  SHOP_CATEGORY_BANNER: 'shop_category_banner',
+  SHOP_CATEGORY: 'shop_category',
+  VENDOR_SHIPPING_METHOD: 'vendor_shipping_method',
 } as const;

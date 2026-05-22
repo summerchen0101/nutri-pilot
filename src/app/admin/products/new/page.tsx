@@ -1,4 +1,5 @@
 import { ProductEditor } from '@/app/admin/products/_components/product-editor';
+import { getProductEditorCategories } from '@/lib/shop/get-product-editor-categories';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function AdminNewProductPage() {
@@ -20,7 +21,14 @@ export default async function AdminNewProductPage() {
     );
   }
 
+  const categories = await getProductEditorCategories(supabase);
+
   return (
-    <ProductEditor brands={brands ?? []} initial={null} canDelete={false} />
+    <ProductEditor
+      brands={brands ?? []}
+      categories={categories}
+      initial={null}
+      canDelete={false}
+    />
   );
 }

@@ -4,6 +4,7 @@ import { mapSupabaseProductToShopRow } from '@/app/(main)/shop/map-shop-product-
 import { ShopHomeClient } from '@/app/(main)/shop/shop-home-client';
 import { ensureShopScores } from '@/app/(main)/shop/actions';
 import { getCachedAuthContext } from '@/lib/auth';
+import { getActiveCategoryBannersBySlug } from '@/lib/shop/get-shop-category-banners';
 import { SHOP_CATALOG_PRODUCT_SELECT } from '@/lib/shop/shop-catalog-select';
 import { getCachedUserProfileCoreRow } from '@/lib/user-profile';
 
@@ -21,6 +22,7 @@ export async function ShopCatalogBody() {
     { data: catalog },
     { data: brandCounts },
     { data: favoriteRows },
+    categoryBannersBySlug,
   ] = await Promise.all([
     getCachedUserProfileCoreRow(supabase, user.id),
     supabase
@@ -42,6 +44,7 @@ export async function ShopCatalogBody() {
       .from('user_product_favorites')
       .select('product_id')
       .eq('user_id', user.id),
+    getActiveCategoryBannersBySlug(supabase),
   ]);
 
   if (profileErr || !profile || !goal || !profile.diet_method) {
@@ -70,6 +73,7 @@ export async function ShopCatalogBody() {
 
   return (
     <ShopHomeClient
+      categoryBannersBySlug={categoryBannersBySlug}
       initialFavoriteProductIds={favoriteProductIds}
       initialProducts={(catalog ?? []).map((p) =>
         mapSupabaseProductToShopRow(

@@ -1,11 +1,8 @@
 "use client";
 
-import {
-  SHOP_CATEGORY_KEYS,
-  SHOP_CATEGORY_LABEL,
-  SHOP_UNDER_HEADER_STICKY_TOP_CLASS,
-} from "@/lib/shop/constants";
-import type { ShopCategoryKey } from "@/lib/shop/constants";
+import { useShopCategories } from '@/app/(main)/shop/_components/shop-categories-context';
+import { SHOP_ALL_CATEGORY, SHOP_UNDER_HEADER_STICKY_TOP_CLASS } from '@/lib/shop/constants';
+import type { ShopCategoryKey } from '@/lib/shop/constants';
 import { useShopCatalogUiStore } from "@/lib/shop/shop-catalog-ui-store";
 import { cn } from "@/lib/utils/cn";
 
@@ -35,14 +32,16 @@ export function ShopCatalogStickyTabs({
 }: ShopCatalogStickyTabsProps) {
   const category = useShopCatalogUiStore((s) => s.category);
   const setCategory = useShopCatalogUiStore((s) => s.setCategory);
+  const { categoryKeys, labelBySlug } = useShopCategories();
 
   const tabList = (
     <div
       className="hide-scrollbar flex gap-4 overflow-x-auto border-b-hairline border-border/70 [-webkit-overflow-scrolling:touch]"
       role="tablist"
       aria-label="商品分類">
-        {SHOP_CATEGORY_KEYS.map((key) => {
-          const label = key === "all" ? ALL_LABEL : SHOP_CATEGORY_LABEL[key];
+        {categoryKeys.map((key) => {
+          const label =
+            key === SHOP_ALL_CATEGORY ? ALL_LABEL : (labelBySlug[key] ?? key);
           const active = category === key;
           return (
             <button

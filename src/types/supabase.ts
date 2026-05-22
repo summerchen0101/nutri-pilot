@@ -709,6 +709,13 @@ export type Database = {
             referencedRelation: "brands"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "products_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "shop_categories"
+            referencedColumns: ["slug"]
+          },
         ]
       }
       promo_campaigns: {
@@ -827,6 +834,83 @@ export type Database = {
             isOneToOne: false
             referencedRelation: 'orders'
             referencedColumns: ['id']
+          },
+        ]
+      }
+      shop_categories: {
+        Row: {
+          created_at: string
+          icon_key: string | null
+          is_active: boolean
+          label: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon_key?: string | null
+          is_active?: boolean
+          label: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon_key?: string | null
+          is_active?: boolean
+          label?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shop_category_banners: {
+        Row: {
+          category_slug: string
+          created_at: string
+          href: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          sort_order: number
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_slug: string
+          created_at?: string
+          href?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_slug?: string
+          created_at?: string
+          href?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'shop_category_banners_category_slug_fkey'
+            columns: ['category_slug']
+            isOneToOne: false
+            referencedRelation: 'shop_categories'
+            referencedColumns: ['slug']
           },
         ]
       }

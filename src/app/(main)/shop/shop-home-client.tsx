@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { Sparkles, Store } from 'lucide-react';
 
+import { ShopCategoryBanner } from '@/app/(main)/shop/_components/shop-category-banner';
+import type { ShopHomeBannerSlide } from '@/app/(main)/shop/_components/shop-home-banner-carousel';
 import { ShopCatalogProductGrid } from '@/app/(main)/shop/_components/shop-catalog-product-grid';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { formatShopGroupedInteger } from '@/lib/shop/format-shop-number';
@@ -57,6 +59,7 @@ interface Props {
   brands: BrandRow[];
   dietMethod: string;
   usePersonalizedScores?: boolean;
+  categoryBannersBySlug: Record<string, ShopHomeBannerSlide | null>;
 }
 
 export function ShopHomeClient({
@@ -65,9 +68,11 @@ export function ShopHomeClient({
   brands,
   dietMethod,
   usePersonalizedScores = true,
+  categoryBannersBySlug,
 }: Props) {
   return (
     <div className="space-y-5">
+      <ShopCategoryBanner bannersBySlug={categoryBannersBySlug} />
       <section>
         <SectionHeading icon={Sparkles}>為你推薦</SectionHeading>
         {!usePersonalizedScores ?

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { VendorForm } from '@/app/admin/vendors/_components/vendor-form';
+import { VendorShippingMethodsEditor } from '@/app/admin/vendors/_components/vendor-shipping-methods-editor';
 import { getAdminRole, staffCan } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
 
@@ -26,7 +27,18 @@ export default async function AdminVendorEditPage({ params }: PageProps) {
   }
   if (!vendor) notFound();
 
+  const { data: shippingMethods, error: shipErr } = await supabase
+    .from('vendor_shipping_methods')
+    .select(
+      'id, code, label, shipping_fee, free_shipping_threshold, is_active, sort_order',
+    )
+    .eq('vendor_id', params.id)
+    .order('sort_order', { ascending: true });
+
+  if (shipErr) throw new Error(shipErr.message);
+
   return (
+    <div className="space-y-8">
     <VendorForm
       canEdit={canEdit}
       initial={{
@@ -45,5 +57,22 @@ export default async function AdminVendorEditPage({ params }: PageProps) {
         is_active: vendor.is_active,
       }}
     />
+    <VendorShippingMethodsEditor
+      vendorId={vendor.id}
+      canEdit={canEdit}
+      initialMethods={(shippingMethods ?? []).map((m) => ({
+        id: m.id,
+        code: m.code,
+        label: m.label,
+        shipping_fee: Number(m.shipping_fee),
+        free_shipping_threshold:
+          m.free_shipping_threshold == null ?
+            null
+          : Number(m.free_shipping_threshold),
+        is_active: m.is_active,
+        sort_order: m.sort_order,
+      }))}
+    />
+    </div>
   );
 }

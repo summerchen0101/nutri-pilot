@@ -15,7 +15,21 @@ export function isCvsShippingCode(code: string | null): boolean {
   return !isHomeDeliveryCode(code);
 }
 
-/** 7-ELEVEN 取貨付款（物流代收） */
+/** 超商取貨付款（物流代收，到店支付） */
+export const CVS_COD_SHIPPING_CODES = [
+  'seven_eleven_cod',
+  'family_mart_cod',
+] as const;
+
+export type CvsCodShippingCode = (typeof CVS_COD_SHIPPING_CODES)[number];
+
 export function isCvsCodShippingCode(code: string | null): boolean {
-  return code === 'seven_eleven_cod';
+  if (code == null || code.length === 0) return false;
+  return (CVS_COD_SHIPPING_CODES as readonly string[]).includes(code);
+}
+
+export function cvsCodShippingDisplayLabel(code: string | null): string | null {
+  if (code === 'seven_eleven_cod') return '7-11 取貨付款';
+  if (code === 'family_mart_cod') return '全家取貨付款';
+  return null;
 }

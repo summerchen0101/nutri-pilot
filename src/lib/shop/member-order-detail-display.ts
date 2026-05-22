@@ -1,6 +1,7 @@
 import { logisticsSubtypeDisplayLabel } from '@/lib/ecpay/logistics-labels';
 import { isCheckoutSnapshotLike } from '@/lib/shop/build-remaining-logistics-queue';
 import {
+  cvsCodShippingDisplayLabel,
   isCvsCodShippingCode,
   isCvsShippingCode,
   isHomeDeliveryCode,
@@ -155,7 +156,9 @@ function resolveShippingLabel(
   if (methodLabel) return methodLabel;
 
   const code = vendor.shippingMethodCode ?? null;
-  if (isCvsCodShippingCode(code)) return '7-11 取貨付款';
+  if (isCvsCodShippingCode(code)) {
+    return cvsCodShippingDisplayLabel(code) ?? '超商取貨付款';
+  }
   if (isCvsShippingCode(code)) {
     const subtype = draft?.logisticsSubType ?? null;
     const brand = logisticsSubtypeDisplayLabel(subtype);

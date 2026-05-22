@@ -17,7 +17,10 @@ export type { CheckoutBody, CheckoutSnapshot, LogisticsQueueItem };
 
 const STORE_PICKUP_SHIPPING_CODE = "store_pickup";
 const HOME_DELIVERY_SHIPPING_CODE = "home_delivery";
-const CVS_COD_SHIPPING_CODE = "seven_eleven_cod";
+const CVS_COD_SHIPPING_CODES = new Set([
+  "seven_eleven_cod",
+  "family_mart_cod",
+]);
 
 export function roundTwdAmt(n: number): number {
   return Math.round(Number(n));
@@ -75,7 +78,8 @@ export function isCvsShippingCodeEdge(code: string | null | undefined): boolean 
 export function isCvsCodShippingCodeEdge(
   code: string | null | undefined,
 ): boolean {
-  return code === CVS_COD_SHIPPING_CODE;
+  if (code == null) return false;
+  return CVS_COD_SHIPPING_CODES.has(String(code));
 }
 
 function calcPaymentTotal(vendors: CheckoutVendorSnapshot[]): number {

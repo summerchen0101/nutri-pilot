@@ -11,6 +11,7 @@ import {
   ScrollText,
   Settings,
   ShoppingCart,
+  SlidersHorizontal,
   Store,
   TicketPercent,
   Users,
@@ -61,6 +62,13 @@ const VENDOR_ITEM: AdminNavItemConfig = {
   label: '廠商',
   roles: ['super_admin', 'editor'],
   icon: Store,
+};
+
+const SHOP_SETTINGS_ITEM: AdminNavItemConfig = {
+  href: '/admin/shop',
+  label: '商城設定',
+  roles: ['super_admin', 'editor'],
+  icon: SlidersHorizontal,
 };
 
 const ANNOUNCEMENTS_ITEM: AdminNavItemConfig = {
@@ -140,7 +148,14 @@ export const ADMIN_NAV_SECTIONS: AdminNavSectionConfig[] = [
     sectionLabel: '營運',
     railLabel: '營運',
     railIcon: Store,
-    items: [PRODUCT_ITEM, BRAND_ITEM, VENDOR_ITEM, ANNOUNCEMENTS_ITEM, PROMOTIONS_ITEM],
+    items: [
+      PRODUCT_ITEM,
+      BRAND_ITEM,
+      VENDOR_ITEM,
+      SHOP_SETTINGS_ITEM,
+      ANNOUNCEMENTS_ITEM,
+      PROMOTIONS_ITEM,
+    ],
   },
   {
     id: 'support',

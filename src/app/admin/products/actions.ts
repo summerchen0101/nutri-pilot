@@ -9,15 +9,15 @@ import {
 } from '@/lib/admin/admin-audit-actions';
 import { appendAdminAuditLog } from '@/lib/admin/append-admin-audit-log';
 import { getAdminRole, staffCan } from '@/lib/admin';
-import {
-  PRODUCT_CATEGORIES,
-  type ProductCategory,
-} from '@/lib/admin/product-taxonomy';
+import { shopCategorySlugExists } from '@/lib/shop/validate-shop-category';
 import { createClient } from '@/lib/supabase/server';
 import { makeUniqueSlugBase } from '@/utils/admin-slug';
 
-function validateCategory(cat: string): cat is ProductCategory {
-  return (PRODUCT_CATEGORIES as readonly string[]).includes(cat);
+async function validateCategory(
+  cat: string,
+): Promise<boolean> {
+  const supabase = createClient();
+  return shopCategorySlugExists(supabase, cat);
 }
 
 async function syncVariants(
@@ -172,7 +172,7 @@ export async function saveProduct(
     return { ok: false, error: '沒有權限' };
   }
 
-  if (!validateCategory(payload.category)) {
+  if (!(await validateCategory(payload.category))) {
     return { ok: false, error: '無效的商品分類' };
   }
 

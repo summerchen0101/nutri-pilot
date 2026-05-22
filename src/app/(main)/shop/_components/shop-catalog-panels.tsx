@@ -4,13 +4,10 @@ import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 import { ShopCategoryGlyph } from '@/app/(main)/shop/_components/shop-category-icons';
+import { useShopCategories } from '@/app/(main)/shop/_components/shop-categories-context';
 import { ShopRightSheet } from '@/app/(main)/shop/_components/shop-right-sheet';
 import { Button } from '@/components/ui/button';
-import {
-  SHOP_CATEGORY_KEYS,
-  SHOP_CATEGORY_LABEL,
-  type ShopCategoryKey,
-} from '@/lib/shop/constants';
+import { SHOP_ALL_CATEGORY, type ShopCategoryKey } from '@/lib/shop/constants';
 import {
   type ShopCatalogSortMode,
   useShopCatalogUiStore,
@@ -122,11 +119,14 @@ function CategoryPanelBody(): ReactNode {
   const category = useShopCatalogUiStore((s) => s.category);
   const setCategory = useShopCatalogUiStore((s) => s.setCategory);
   const closeCategoryPanel = useShopCatalogUiStore((s) => s.closeCategoryPanel);
+  const { categoryKeys, labelBySlug } = useShopCategories();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
-      {SHOP_CATEGORY_KEYS.map((key: ShopCategoryKey) => {
+      {categoryKeys.map((key: ShopCategoryKey) => {
         const selected = category === key;
+        const label =
+          key === SHOP_ALL_CATEGORY ? '全部' : (labelBySlug[key] ?? key);
         return (
           <button
             key={key}
@@ -150,9 +150,7 @@ function CategoryPanelBody(): ReactNode {
             >
               <ShopCategoryGlyph category={key} />
             </span>
-            <span className="text-body font-medium">
-              {key === 'all' ? '全部' : SHOP_CATEGORY_LABEL[key]}
-            </span>
+            <span className="text-body font-medium">{label}</span>
           </button>
         );
       })}

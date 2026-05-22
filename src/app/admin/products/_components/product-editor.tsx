@@ -16,7 +16,6 @@ import {
   ALLERGEN_FREE_OPTIONS,
   CERT_TAG_OPTIONS,
   DIET_TAG_OPTIONS,
-  PRODUCT_CATEGORIES,
 } from '@/lib/admin/product-taxonomy';
 import { createClient } from '@/lib/supabase/client';
 
@@ -86,10 +85,12 @@ function buildVariantRows(
 
 export function ProductEditor({
   brands,
+  categories,
   initial,
   canDelete,
 }: Readonly<{
   brands: { id: string; name: string }[];
+  categories: Array<{ slug: string; label: string }>;
   initial?: ProductEditorInitial | null;
   canDelete: boolean;
 }>) {
@@ -101,7 +102,7 @@ export function ProductEditor({
   const [name, setName] = useState(initial?.name ?? '');
   const [brandId, setBrandId] = useState(initial?.brand_id ?? brands[0]?.id ?? '');
   const [category, setCategory] = useState(
-    initial?.category ?? PRODUCT_CATEGORIES[0],
+    initial?.category ?? categories[0]?.slug ?? '',
   );
   const [description, setDescription] = useState(initial?.description ?? '');
   const [imageUrl, setImageUrl] = useState(initial?.image_url ?? '');
@@ -360,9 +361,9 @@ export function ProductEditor({
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >
-              {PRODUCT_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              {categories.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.label}
                 </option>
               ))}
             </select>

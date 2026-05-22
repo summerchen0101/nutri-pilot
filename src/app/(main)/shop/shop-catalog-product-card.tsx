@@ -5,10 +5,10 @@ import Link from "next/link";
 import { Heart, ShoppingCart } from "lucide-react";
 import { useEffect, useRef } from "react";
 
-import type { ShopProductRow } from "@/app/(main)/shop/shop-home-client";
-import { trackProductEvent } from "@/lib/analytics/track";
-import { catalogListStrikePrice } from "@/lib/shop/catalog-card-price";
-import { SHOP_CATEGORY_LABEL } from "@/lib/shop/constants";
+import { useShopCategoryLabel } from '@/app/(main)/shop/_components/shop-categories-context';
+import type { ShopProductRow } from '@/app/(main)/shop/shop-home-client';
+import { trackProductEvent } from '@/lib/analytics/track';
+import { catalogListStrikePrice } from '@/lib/shop/catalog-card-price';
 import { formatShopGroupedInteger } from "@/lib/shop/format-shop-number";
 import { cn } from "@/lib/utils/cn";
 
@@ -28,14 +28,6 @@ interface Props {
   onQuickAdd: () => void;
 }
 
-function categoryChipLabel(category: string) {
-  const label =
-    SHOP_CATEGORY_LABEL[
-      category as keyof typeof SHOP_CATEGORY_LABEL
-    ];
-  return label ?? category;
-}
-
 export function ShopCatalogProductCard({
   product: p,
   isFavorite,
@@ -43,6 +35,7 @@ export function ShopCatalogProductCard({
   onToggleFavorite,
   onQuickAdd,
 }: Props) {
+  const categoryChipLabel = useShopCategoryLabel(p.category);
   const cardRootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -100,7 +93,7 @@ export function ShopCatalogProductCard({
             />
           ) : null}
           <span className="absolute bottom-2 left-2 z-10 max-w-[calc(100%-1rem)] truncate rounded-full bg-shadow-grey px-2.5 py-0.5 text-caption font-medium text-white/95">
-            {categoryChipLabel(p.category)}
+            {categoryChipLabel}
           </span>
         </div>
         <div className="flex min-h-0 flex-1 flex-col p-3 pb-2">

@@ -55,6 +55,18 @@ export async function saveVendorProfile(input: {
     return { ok: false, error: error.message };
   }
 
+  const { error: shipErr } = await supabase
+    .from('vendor_shipping_methods')
+    .update({
+      shipping_fee: input.shipping_fee,
+      free_shipping_threshold: input.free_shipping_threshold ?? null,
+    })
+    .eq('vendor_id', input.id)
+    .eq('code', 'home_delivery');
+  if (shipErr) {
+    return { ok: false, error: shipErr.message };
+  }
+
   const audit = await appendAdminAuditLog({
     action: ADMIN_AUDIT_ACTIONS.VENDOR_SAVE,
     targetType: ADMIN_AUDIT_TARGET_TYPES.VENDOR,

@@ -9,6 +9,7 @@ const CVS_CODE_MAP: Record<string, string> = {
   seven_eleven_pickup: "UNIMARTC2C",
   seven_eleven_cod: "UNIMARTC2C",
   family_mart_pickup: "FAMIC2C",
+  family_mart_cod: "FAMIC2C",
   hilife_pickup: "HILIFEC2C",
   ok_mart_pickup: "OKMARTC2C",
 };

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { ProductEditor } from '@/app/admin/products/_components/product-editor';
 import { getAdminRole, staffCan } from '@/lib/admin';
+import { getProductEditorCategories } from '@/lib/shop/get-product-editor-categories';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function AdminEditProductPage({
@@ -94,10 +95,14 @@ export default async function AdminEditProductPage({
   };
 
   const canDelete = Boolean(role && staffCan(role, 'product.delete'));
+  const categories = await getProductEditorCategories(supabase, {
+    includeSlug: product.category,
+  });
 
   return (
     <ProductEditor
       brands={brands ?? []}
+      categories={categories}
       initial={initial}
       canDelete={canDelete}
     />
