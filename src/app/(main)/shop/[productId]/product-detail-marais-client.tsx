@@ -18,6 +18,7 @@ import {
 
 import { ShopAddToCartSheet } from "@/app/(main)/shop/_components/shop-add-to-cart-sheet";
 import { ProductFavoriteDetailBarButton } from "@/app/(main)/shop/_components/product-favorite-controls";
+import { MAIN_SHELL_CONTENT_WIDTH_CLASS } from "@/components/layout/main-shell-content-width-class";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { trackProductEvent } from "@/lib/analytics/track";
@@ -395,7 +396,7 @@ export function ProductDetailMaraisClient({
             <div
               className={cn(
                 "w-full",
-                detailTabsPinned ? "mx-auto max-w-sm px-4" : undefined,
+                detailTabsPinned ? MAIN_SHELL_CONTENT_WIDTH_CLASS : undefined,
               )}>
               <div
                 className="flex w-full border-b-hairline border-border/70"

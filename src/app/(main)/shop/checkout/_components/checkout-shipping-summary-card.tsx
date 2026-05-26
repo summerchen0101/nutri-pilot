@@ -103,35 +103,25 @@ export function CheckoutShippingSummaryCard({
                     </p>
                   </div>
                   {isCvs ? (
-                    <div>
-                      <p className="mt-2 text-caption text-muted-foreground">
-                        門市名稱
-                      </p>
-                      {storeDisplay.length > 0 ? (
+                    storeDisplay.length > 0 ? (
+                      <div>
+                        <p className="mt-2 text-caption text-muted-foreground">
+                          門市名稱
+                        </p>
                         <p className="break-words">
                           {maskCvsStoreNameForDisplay(storeDisplay)}
                         </p>
-                      ) : (
-                        <p className="text-body text-muted-foreground">—</p>
-                      )}
-                      {onSelectCvsStore ? (
-                        <button
-                          type="button"
-                          disabled={cvsStoreSelecting || cvsStoreSelectDisabled}
-                          className={
-                            storeDisplay.length > 0
-                              ? "mt-2 text-body font-medium text-[#378ADD] disabled:opacity-50"
-                              : "mt-2 w-full rounded-xl bg-primary px-4 py-2.5 text-body font-medium text-primary-foreground disabled:opacity-50"
-                          }
-                          onClick={onSelectCvsStore}>
-                          {cvsStoreSelecting
-                            ? "載入中…"
-                            : storeDisplay.length > 0
-                              ? "重新選擇門市"
-                              : "選擇取貨門市"}
-                        </button>
-                      ) : null}
-                    </div>
+                        {onSelectCvsStore ? (
+                          <button
+                            type="button"
+                            disabled={cvsStoreSelecting || cvsStoreSelectDisabled}
+                            className="mt-2 text-body font-medium text-[#378ADD] disabled:opacity-50"
+                            onClick={onSelectCvsStore}>
+                            {cvsStoreSelecting ? "載入中…" : "重新選擇門市"}
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null
                   ) : (
                     <div>
                       <p className="mt-2 text-caption text-muted-foreground">

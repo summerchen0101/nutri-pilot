@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { ShopCatalogStickyTabs } from '@/app/(main)/shop/_components/shop-catalog-sticky-tabs';
+import { MAIN_SHELL_CONTENT_WIDTH_CLASS } from '@/components/layout/main-shell-content-width-class';
 import { SHOP_HEADER_SCROLL_ANCHOR_ID } from '@/lib/shop/constants';
 import { cn } from '@/lib/utils/cn';
 
@@ -87,7 +88,7 @@ export function VendorShopScrollDock({ vendorName }: VendorShopScrollDockProps) 
         )}
         style={isPinned ? { top: dockTopPx } : undefined}
       >
-        <div className={cn('w-full', isPinned ? 'mx-auto max-w-sm px-4' : undefined)}>
+        <div className={cn('w-full', isPinned ? MAIN_SHELL_CONTENT_WIDTH_CLASS : undefined)}>
           {isPinned ?
             <p className="truncate pb-2 text-heading-section font-medium text-foreground">
               {vendorName}

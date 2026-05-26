@@ -399,7 +399,7 @@ transition: { delay: index * 0.04 }
 頁面外邊距：px-4（16px）
 卡片間距：mb-2.5（10px）或 gap-2（8px）
 區塊間距：mb-4（16px）
-最大寬度：max-w-sm（384px），手機優先
+最大寬度：手機全寬（`w-full` + `px-4`）；`md`（≥768px）以上 `max-w-sm`（384px）置中
 ```
 
 ---

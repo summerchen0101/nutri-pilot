@@ -5,10 +5,12 @@ import type { ReactNode } from 'react';
 
 import { PendingAnalysisJobsHost } from '@/components/ai/pending-analysis-jobs-host';
 import { BottomNav } from '@/components/layout/bottom-nav';
+import { MAIN_SHELL_CONTENT_WIDTH_CLASS } from '@/components/layout/main-shell-content-width-class';
 import { NavigationLoadingOverlay } from '@/components/layout/navigation-loading-overlay';
 import { NavigationLoadingProvider } from '@/components/layout/navigation-loading-provider';
 import { ShopBottomNav } from '@/components/layout/shop-bottom-nav';
 import { useNavigationLoading } from '@/hooks/use-navigation-loading';
+import { cn } from '@/lib/utils/cn';
 import {
   isShopCheckoutFunnelPathname,
   isShopCommerceShortcutPathname,
@@ -34,12 +36,11 @@ function MainAppShellInner({ children }: { children: ReactNode }) {
     isShopProductDetailPathname(pathname) || isShopCheckoutFunnelPathname(pathname);
   const compactBottomPadding = shouldUseCompactBottomPadding(pathname);
   /** 全路由 pt-0；頂部 safe-area 由 StickyPageHeaderShell 或無頁首的 loading／skeleton 自理 */
-  const contentPaddingClass =
-    minimalBottomPadding ?
-      'mx-auto w-full min-w-0 max-w-sm px-4 pb-8 pt-0'
-    : compactBottomPadding ?
-      'mx-auto w-full min-w-0 max-w-sm px-4 pb-24 pt-0'
-    : 'mx-auto w-full min-w-0 max-w-sm px-4 pb-28 pt-0';
+  const contentPaddingClass = cn(
+    MAIN_SHELL_CONTENT_WIDTH_CLASS,
+    'pt-0',
+    minimalBottomPadding ? 'pb-8' : compactBottomPadding ? 'pb-24' : 'pb-28',
+  );
   const showShopBottomNav =
     (isShopRoutePathname(pathname) || isShopCommerceShortcutPathname(pathname)) &&
     !shouldHideAllBottomNavPathname(pathname);
