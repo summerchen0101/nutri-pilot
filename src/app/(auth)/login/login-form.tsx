@@ -17,8 +17,6 @@ import {
 } from '@/lib/capacitor';
 import { createClient } from '@/lib/supabase/client';
 
-import { SimulatorMagicLinkOpener } from './simulator-magic-link-opener';
-
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>(
@@ -115,7 +113,6 @@ export function LoginForm() {
               {message}
             </p>
           ) : null}
-          {status === 'sent' ? <SimulatorMagicLinkOpener /> : null}
         </CardContent>
         <CardFooter className="flex flex-col gap-3 border-t border-slate-100 pt-6">
           <Button
