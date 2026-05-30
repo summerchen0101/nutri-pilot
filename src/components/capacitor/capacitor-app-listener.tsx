@@ -4,30 +4,35 @@ import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { useEffect } from 'react';
 
-const AUTH_CALLBACK_PREFIX = '/auth/callback';
+import { getAuthRedirectBaseUrl } from '@/lib/capacitor/native-platform';
+import { resolveAuthCallbackPath } from '@/lib/capacitor/resolve-auth-callback-path';
 
-function resolveInAppPath(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    const appBase = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
-    if (appBase) {
-      const base = new URL(appBase);
-      if (parsed.origin !== base.origin) {
-        return null;
-      }
-    }
-    if (parsed.pathname.startsWith(AUTH_CALLBACK_PREFIX)) {
-      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-    }
-    if (parsed.protocol === 'nutriguard:' && parsed.host === 'auth') {
-      const path = parsed.pathname || '/callback';
-      const search = parsed.search || '';
-      return `/auth${path}${search}`;
-    }
-    return null;
-  } catch {
-    return null;
+const PROCESSED_LAUNCH_URL_KEY = 'capacitor-processed-launch-url';
+
+function navigateToAuthCallback(path: string): void {
+  const base = getAuthRedirectBaseUrl();
+  if (!base) {
+    return;
   }
+  const target = `${base.replace(/\/$/, '')}${path}`;
+  if (window.location.href === target) {
+    return;
+  }
+  window.location.replace(target);
+}
+
+function processIncomingUrl(url: string): void {
+  const path = resolveAuthCallbackPath(url);
+  if (!path) {
+    return;
+  }
+
+  const processed = sessionStorage.getItem(PROCESSED_LAUNCH_URL_KEY);
+  if (processed === url) {
+    return;
+  }
+  sessionStorage.setItem(PROCESSED_LAUNCH_URL_KEY, url);
+  navigateToAuthCallback(path);
 }
 
 /**
@@ -40,29 +45,38 @@ export function CapacitorAppListener() {
     }
 
     const handleOpen = (event: { url: string }) => {
-      const path = resolveInAppPath(event.url);
-      if (!path || typeof window === 'undefined') {
-        return;
-      }
-      const target = `${window.location.origin}${path}`;
-      if (window.location.href !== target) {
-        window.location.assign(target);
-      }
+      processIncomingUrl(event.url);
     };
 
-    let listenerHandle: { remove: () => Promise<void> } | undefined;
+    void App.getLaunchUrl().then((launch) => {
+      if (launch?.url) {
+        handleOpen({ url: launch.url });
+      }
+    });
+
+    let openHandle: { remove: () => Promise<void> } | undefined;
+    let resumeHandle: { remove: () => Promise<void> } | undefined;
 
     void App.addListener('appUrlOpen', handleOpen).then((handle) => {
-      listenerHandle = handle;
+      openHandle = handle;
+    });
+
+    void App.addListener('appStateChange', (state) => {
+      if (!state.isActive) {
+        return;
+      }
       void App.getLaunchUrl().then((launch) => {
         if (launch?.url) {
           handleOpen({ url: launch.url });
         }
       });
+    }).then((handle) => {
+      resumeHandle = handle;
     });
 
     return () => {
-      void listenerHandle?.remove();
+      void openHandle?.remove();
+      void resumeHandle?.remove();
     };
   }, []);
 

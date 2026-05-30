@@ -19,14 +19,24 @@ export function getAuthRedirectBaseUrl(): string {
   return '';
 }
 
+const NATIVE_AUTH_CALLBACK_URL = 'nutriguard://auth/callback';
+
 export function buildAuthCallbackRedirectUrl(nextPath: string): string {
-  const base = getAuthRedirectBaseUrl();
   const next =
     nextPath.startsWith('/') && !nextPath.startsWith('//')
       ? nextPath
       : '/dashboard';
+
+  // 原生 App：Magic Link 用自訂 scheme，點信後系統會開啟 Nutri Guard（非 Safari）
+  if (isCapacitorNativePlatform()) {
+    if (next === '/dashboard') {
+      return NATIVE_AUTH_CALLBACK_URL;
+    }
+    return `${NATIVE_AUTH_CALLBACK_URL}?next=${encodeURIComponent(next)}`;
+  }
+
+  const base = getAuthRedirectBaseUrl();
   const callback = `${base}/auth/callback`;
-  // 預設 dashboard 不帶 ?next=，避免 Supabase redirect_to 嵌套 query 導致導向錯誤
   if (next === '/dashboard') {
     return callback;
   }

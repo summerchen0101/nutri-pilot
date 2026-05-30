@@ -45,5 +45,20 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.nuts.nutriguard.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>nutriguard</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>拍攝飲食與食品標示照片以記錄與分析。</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>選擇相簿中的飲食與標示照片。</string>
 </dict>
 </plist>

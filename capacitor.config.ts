@@ -10,17 +10,23 @@ const prodServerUrl =
 const devServerUrl = process.env.CAPACITOR_DEV_SERVER_URL?.replace(/\/$/, '');
 const isDev = process.env.CAPACITOR_DEV === '1' && Boolean(devServerUrl);
 
+function addNavigationHost(hosts: Set<string>, raw: string | undefined): void {
+  if (!raw) {
+    return;
+  }
+  try {
+    hosts.add(new URL(raw).hostname);
+  } catch {
+    // ignore invalid URL
+  }
+}
+
 /** 未列出的外部網址會由 iOS 改開 Safari（Magic Link 會因此登入失敗） */
 function buildAllowNavigation(): string[] {
   const hosts = new Set<string>(['127.0.0.1', 'localhost', '*.supabase.co']);
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (supabaseUrl) {
-    try {
-      hosts.add(new URL(supabaseUrl).hostname);
-    } catch {
-      // ignore invalid URL
-    }
-  }
+  addNavigationHost(hosts, process.env.NEXT_PUBLIC_SUPABASE_URL);
+  addNavigationHost(hosts, process.env.NEXT_PUBLIC_APP_URL);
+  addNavigationHost(hosts, process.env.CAPACITOR_DEV_SERVER_URL);
   return [...hosts];
 }
 

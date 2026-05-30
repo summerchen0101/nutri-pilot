@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -11,7 +11,10 @@ import {
   CardHeader,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { buildAuthCallbackRedirectUrl } from '@/lib/capacitor';
+import {
+  buildAuthCallbackRedirectUrl,
+  isCapacitorNativePlatform,
+} from '@/lib/capacitor';
 import { createClient } from '@/lib/supabase/client';
 
 import { SimulatorMagicLinkOpener } from './simulator-magic-link-opener';
@@ -22,6 +25,36 @@ export function LoginForm() {
     'idle',
   );
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isCapacitorNativePlatform()) {
+      return;
+    }
+
+    const supabase = createClient();
+
+    const redirectIfSignedIn = () => {
+      void supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          window.location.replace('/dashboard');
+        }
+      });
+    };
+
+    redirectIfSignedIn();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+        window.location.replace('/dashboard');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

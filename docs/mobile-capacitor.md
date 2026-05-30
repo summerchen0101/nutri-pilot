@@ -113,9 +113,15 @@ brew install cocoapods
 建議流程：
 
 1. 在 Nutri Guard App 登入頁輸入 Email → **寄送登入連結**（不要關 App）。
-2. Mac 信箱 **複製** Magic Link 全文。
-3. App 內「Simulator：貼上 Magic Link」欄位貼上 → **在 App 內開啟連結**。
-4. 成功後應在 **App 內** 進入 `/dashboard`（無 Safari 底部工具列）；失敗則 **重新寄信**（連結只能用一次）。
+2. **直接點信箱裡的連結**（原生 App 會用 `nutriguard://` 自動開啟 Nutri Guard）。
+3. 若仍開到 Safari：改在 App 內「貼上 Magic Link」→ **在 App 內開啟連結**（備援）。
+4. 成功後應在 **App 內** 進入 `/dashboard`；失敗則 **重新寄信**（連結只能用一次）。
+
+**Supabase Redirect URLs** 須同時包含：
+
+- `http://127.0.0.1:3000/auth/callback`（Simulator／網頁）
+- `http://192.168.50.173:3000/auth/callback`（實機 dev，IP 依你的 Mac 調整）
+- `nutriguard://auth/callback`（點信自動開 App，**必填**）
 
 若先看到「無法完成登入」、按返回登入卻進已登入畫面，且底部有 Safari 網址列：代表 session 在 **Safari**，與 App WebView 分開。請關 Safari，回 App 用「貼上 Magic Link」重做（已修正 dev 雙次兌換 code 的問題，需 `yarn dev` 熱更新或 Xcode 重 Run）。
 
