@@ -11,7 +11,10 @@ import {
   CardHeader,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { buildAuthCallbackRedirectUrl } from '@/lib/capacitor';
 import { createClient } from '@/lib/supabase/client';
+
+import { SimulatorMagicLinkOpener } from './simulator-magic-link-opener';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -26,7 +29,7 @@ export function LoginForm() {
     setMessage(null);
 
     const supabase = createClient();
-    const redirectUrl = `${window.location.origin}/auth/callback?next=/dashboard`;
+    const redirectUrl = buildAuthCallbackRedirectUrl('/dashboard');
 
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
@@ -79,6 +82,7 @@ export function LoginForm() {
               {message}
             </p>
           ) : null}
+          {status === 'sent' ? <SimulatorMagicLinkOpener /> : null}
         </CardContent>
         <CardFooter className="flex flex-col gap-3 border-t border-slate-100 pt-6">
           <Button

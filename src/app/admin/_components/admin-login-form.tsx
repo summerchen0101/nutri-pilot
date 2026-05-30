@@ -11,6 +11,7 @@ import {
   CardHeader,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { buildAuthCallbackRedirectUrl } from '@/lib/capacitor';
 import { createClient } from '@/lib/supabase/client';
 
 export function AdminLoginForm() {
@@ -26,7 +27,7 @@ export function AdminLoginForm() {
     setMessage(null);
 
     const supabase = createClient();
-    const redirectUrl = `${window.location.origin}/auth/callback?next=/admin`;
+    const redirectUrl = buildAuthCallbackRedirectUrl('/admin');
 
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),

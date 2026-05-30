@@ -1,5 +1,9 @@
 'use client';
 
+import { Capacitor } from '@capacitor/core';
+
+import { openExternalUrl } from '@/lib/capacitor/open-external-url';
+
 const POPUP_FEATURES = 'width=520,height=720,scrollbars=yes,resizable=yes';
 
 export const ECPAY_LOGISTICS_POPUP_NAME = 'ecpay-logistics';
@@ -70,7 +74,12 @@ export function navigateNamedPopup(
   popupName: string,
   url: string,
 ): Window | null {
-  return window.open(url, popupName, POPUP_FEATURES);
+  const popup = window.open(url, popupName, POPUP_FEATURES);
+  if (popup || !Capacitor.isNativePlatform()) {
+    return popup;
+  }
+  void openExternalUrl(url);
+  return null;
 }
 
 export function submitPostFormInPopup(

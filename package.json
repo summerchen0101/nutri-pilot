@@ -4,13 +4,27 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:mobile": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "npx tsx --test src/lib/food/label-guard-lookups.test.ts src/lib/food/label-guard-label-names.test.ts src/lib/food/label-guard-additive-catalog.test.ts src/lib/log/log-date-policy.test.ts",
-    "ngrok": "ngrok http 192.168.50.173:3000"
+    "test": "npx tsx --test src/lib/food/label-guard-lookups.test.ts src/lib/food/label-guard-label-names.test.ts src/lib/food/label-guard-additive-catalog.test.ts src/lib/log/log-date-policy.test.ts src/lib/capacitor/native-platform.test.ts",
+    "ngrok": "ngrok http 192.168.50.173:3000",
+    "cap:sync": "./scripts/cap-sync.sh",
+    "cap:sync:android": "npx cap sync android",
+    "cap:sync:all": "npx cap sync",
+    "cap:ios": "npx cap open ios",
+    "cap:android": "npx cap open android",
+    "cap:ios:add": "./scripts/cap-add-ios.sh",
+    "cap:install-cocoapods": "./scripts/install-cocoapods.sh"
   },
   "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/app": "^7.0.1",
+    "@capacitor/browser": "^7.0.1",
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/ios": "^7.2.0",
+    "@capacitor/share": "^7.0.1",
     "@anthropic-ai/sdk": "^0.32.1",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
@@ -25,6 +39,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.2.0",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

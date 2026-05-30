@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  執行 npm run cap:ios:add 產生 ios/ 後，將下列片段合併進 App/Info.plist：
+
+  1. URL Types（Magic Link 自訂 scheme）
+  2. 相機／相簿用途說明
+  3. Universal Links：於 Xcode → Signing & Capabilities 新增 Associated Domains
+     applinks:<你的正式網域>
+-->
+<plist version="1.0">
+<dict>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>com.nuts.nutriguard.auth</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>nutriguard</string>
+      </array>
+    </dict>
+  </array>
+  <key>NSCameraUsageDescription</key>
+  <string>拍攝飲食與食品標示照片以記錄與分析。</string>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>選擇相簿中的飲食與標示照片。</string>
+</dict>
+</plist>

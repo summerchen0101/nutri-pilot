@@ -1,5 +1,7 @@
 'use client';
 
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 import html2canvas from 'html2canvas';
 import { useCallback, useRef, useState } from 'react';
 
@@ -47,6 +49,12 @@ export function WeeklyReportShare(props: {
           title: '健康週報摘要',
           text:
             '僅供參考，非醫療建議。資料來源：Nutri Guard。',
+        });
+      } else if (Capacitor.isNativePlatform()) {
+        await Share.share({
+          title: '健康週報摘要',
+          text: '僅供參考，非醫療建議。資料來源：Nutri Guard。',
+          dialogTitle: '分享週報',
         });
       } else if (typeof document !== 'undefined') {
         const url = URL.createObjectURL(blob);

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 
+import { CapacitorRootProvider } from '@/components/capacitor/capacitor-root-provider';
 import { ScrollToTopOnPathname } from '@/components/layout/scroll-to-top-on-pathname';
 import { AppMessageDialog } from '@/components/ui/app-message-dialog';
 
@@ -25,9 +26,11 @@ export default function RootLayout({
   return (
     <html lang="zh-Hant" suppressHydrationWarning>
       <body className="min-h-screen antialiased" suppressHydrationWarning>
-        <ScrollToTopOnPathname />
-        <AppMessageDialog />
-        {children}
+        <CapacitorRootProvider>
+          <ScrollToTopOnPathname />
+          <AppMessageDialog />
+          {children}
+        </CapacitorRootProvider>
       </body>
     </html>
   );
