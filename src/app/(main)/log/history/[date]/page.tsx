@@ -29,7 +29,7 @@ export default async function LogHistoryDayPage({
   const mode = getLogDateMode(date, today);
 
   if (mode === 'today') redirect('/log');
-  if (mode === 'yesterday_editable') {
+  if (mode === 'recent_editable') {
     redirect(`/log?date=${encodeURIComponent(date)}`);
   }
 

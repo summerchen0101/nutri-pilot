@@ -12,20 +12,20 @@ import { todayLocalISODate } from '@/lib/onboarding/date';
 
 function historyRowHref(
   date: string,
-  mode: 'today' | 'yesterday_editable' | 'readonly',
+  mode: 'today' | 'recent_editable' | 'readonly',
 ): string {
   if (mode === 'today') return '/log';
-  if (mode === 'yesterday_editable') {
+  if (mode === 'recent_editable') {
     return `/log?date=${encodeURIComponent(date)}`;
   }
   return `/log/history/${date}`;
 }
 
 function historyRowCtaLabel(
-  mode: 'today' | 'yesterday_editable' | 'readonly',
+  mode: 'today' | 'recent_editable' | 'readonly',
 ): string {
   if (mode === 'today') return '今日紀錄';
-  if (mode === 'yesterday_editable') return '修改';
+  if (mode === 'recent_editable') return '修改';
   return '查看';
 }
 
@@ -35,15 +35,6 @@ export default async function LogHistoryPage() {
   if (!user) redirect('/login');
 
   const today = todayLocalISODate();
-  const { data: profileMeta, error: profileErr } = await supabase
-    .from('user_profiles')
-    .select('updated_at')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (profileErr) throw new Error(profileErr.message);
-
-  const rangeStart = profileMeta?.updated_at?.slice(0, 10) ?? today;
 
   const [
     { data: goal, error: goalErr },
@@ -67,19 +58,16 @@ export default async function LogHistoryPage() {
       `,
         )
         .eq('user_id', user.id)
-        .gte('date', rangeStart)
         .lte('date', today),
       supabase
         .from('activity_logs')
         .select('logged_date, activity_type, duration_minutes, calories_est')
         .eq('user_id', user.id)
-        .gte('logged_date', rangeStart)
         .lte('logged_date', today),
       supabase
         .from('vital_logs')
         .select('date, weight_kg, water_ml, sleep_hours')
         .eq('user_id', user.id)
-        .gte('date', rangeStart)
         .lte('date', today),
     ]);
 
@@ -105,7 +93,7 @@ export default async function LogHistoryPage() {
         spacing="compact"
       />
       <p className="text-caption text-muted-foreground">
-        僅能修改昨日紀錄；更早日期僅供查看。
+        僅能修改今日與近 3 日紀錄；更早日期僅供查看。
       </p>
 
       {rows.length === 0 ? (

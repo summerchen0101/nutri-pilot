@@ -116,7 +116,7 @@ export function LogClient({
   isLogToday,
   logDateMode,
 }: LogClientProps) {
-  const canEditFood = logDateMode === 'today' || logDateMode === 'yesterday_editable';
+  const canEditFood = logDateMode !== 'readonly';
   const router = useRouter();
   const searchParams = useSearchParams();
 

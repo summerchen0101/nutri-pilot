@@ -8,9 +8,11 @@ export {
   type VitalDayRollup,
 } from '@/lib/log/aggregate-by-date';
 export {
+  calendarDaysAgo,
   getLogDateMode,
   isLogDateMutable,
   isoDateOk,
+  LOG_MUTABLE_PAST_DAY_COUNT,
   logDateMutationError,
   type LogDateMode,
 } from '@/lib/log/log-date-policy';

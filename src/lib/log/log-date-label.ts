@@ -1,4 +1,7 @@
-import { getLogDateMode } from '@/lib/log/log-date-policy';
+import {
+  calendarDaysAgo,
+  getLogDateMode,
+} from '@/lib/log/log-date-policy';
 import { addCalendarDaysISO, todayLocalISODate } from '@/lib/onboarding/date';
 
 /** `/log` 頁首：今日為「每日紀錄」，補登／修改他日為「YYYY-MM-DD 紀錄」。 */
@@ -52,6 +55,7 @@ export function formatLogDateHeading(
   if (iso === todayIso) return `今天 · ${base}`;
   const yesterday = addCalendarDaysISO(todayIso, -1);
   if (iso === yesterday) return `昨天 · ${base}`;
+  if (calendarDaysAgo(iso, todayIso) === 2) return `前天 · ${base}`;
   return base;
 }
 
