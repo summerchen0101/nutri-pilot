@@ -24,6 +24,15 @@ import {
 } from '@/lib/shop/ecpay-payment-session';
 import { createClient } from '@/lib/supabase/client';
 import {
+  redirectToLogisticsMapBridge,
+  redirectToPaymentBridge,
+} from '@/lib/shop/ecpay-bridge-paths';
+import {
+  openNativeLogisticsMapBridge,
+  openNativePaymentBridge,
+  shouldUseNativeEcpayBridge,
+} from '@/lib/shop/open-ecpay-bridge-native';
+import {
   ECPAY_LOGISTICS_POPUP_NAME,
   ECPAY_PAYMENT_POPUP_NAME,
   openEcpayPopup,
@@ -45,8 +54,6 @@ const FAST_POLL_MS = 500;
 const FAST_POLL_ATTEMPTS = 10;
 const POLL_MS = 2000;
 const MAX_POLL_ATTEMPTS = 90;
-const PAYMENT_BRIDGE_PATH = '/shop/payment-bridge';
-
 function hasOpenerPaymentReturnSignal(): boolean {
   if (typeof window === 'undefined') return false;
   return parseShopCheckoutReturnUrl(window.location.href) != null;
@@ -228,8 +235,19 @@ export function useEcpayCheckoutFlow(options: {
         if (!popup || popup.closed) {
           popup = openEcpayPopup(ECPAY_LOGISTICS_POPUP_NAME);
           if (!popup) {
-            onError?.('請允許彈出視窗以完成物流設定');
-            resetFlow();
+            if (shouldUseNativeEcpayBridge()) {
+              const native = await openNativeLogisticsMapBridge(
+                orderId,
+                item.vendorId,
+              );
+              if (!native.ok) {
+                onError?.(native.error);
+                resetFlow();
+                return false;
+              }
+              return false;
+            }
+            redirectToLogisticsMapBridge(orderId, item.vendorId);
             return false;
           }
         }
@@ -243,6 +261,7 @@ export function useEcpayCheckoutFlow(options: {
           const bridge = await fetchEcpayLogisticsSelectionPayload({
             orderId,
             vendorId: item.vendorId,
+            clientOrigin: window.location.origin,
           });
           if (!bridge.ok) {
             throw new Error(bridge.error);
@@ -319,9 +338,15 @@ export function useEcpayCheckoutFlow(options: {
       const popup = openEcpayPopup(ECPAY_PAYMENT_POPUP_NAME);
       if (!popup) {
         logEcpayCheckout('openPayment popup blocked → payment-bridge');
-        window.location.assign(
-          `${PAYMENT_BRIDGE_PATH}?orderId=${encodeURIComponent(orderId)}`,
-        );
+        if (shouldUseNativeEcpayBridge()) {
+          const native = await openNativePaymentBridge(orderId);
+          if (!native.ok) {
+            onError?.(native.error);
+            enterPaymentReady(orderId);
+          }
+          return;
+        }
+        redirectToPaymentBridge(orderId);
         return;
       }
 

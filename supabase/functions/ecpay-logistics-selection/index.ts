@@ -9,7 +9,12 @@ import {
   jsonResponse,
   wantsJsonResponse,
 } from "../_shared/cors.ts";
-import { getAppUrl, getSupabaseFunctionsBase } from "../_shared/ecpay.ts";
+import { getSupabaseFunctionsBase, resolveAppOriginFromUrl } from "../_shared/ecpay.ts";
+import {
+  appendNativeReturnQuery,
+  buildShopReturnUrl,
+  isNativeReturnRequested,
+} from "../_shared/native-app-return.ts";
 import {
   buildAutoSubmitFormHtml,
   buildLogisticsErrorHtml,
@@ -32,6 +37,7 @@ import {
   isCheckoutSnapshot,
   isCvsCodShippingCodeEdge,
 } from "../_shared/shop-checkout-core.ts";
+import { validateCvsMapMerchantSubtype } from "../_shared/ecpay-logistics-codes.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -48,7 +54,9 @@ Deno.serve(async (req) => {
   const token = url.searchParams.get("token")?.trim() ??
     req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
 
-  const backUrl = `${Deno.env.get("APP_URL")?.replace(/\/$/, "") ?? ""}/shop?checkout=1`;
+  const appOrigin = resolveAppOriginFromUrl(url);
+  const nativeReturn = isNativeReturnRequested(url);
+  const backUrl = `${appOrigin}/shop?checkout=1`;
 
   if (!orderId || !vendorId) {
     return respondError("Missing orderId or vendorId", backUrl, 400, wantsJson);
@@ -109,9 +117,16 @@ Deno.serve(async (req) => {
     if (wantsJson) {
       return jsonResponse({ skipMap: true, logisticsType: "HOME" });
     }
-    const appUrl = getAppUrl();
-    const redirectUrl =
-      `${appUrl}/shop?checkout=1&orderId=${orderId}&logisticsDone=1&vendorId=${vendorId}`;
+    const redirectUrl = buildShopReturnUrl(
+      appOrigin,
+      {
+        checkout: "1",
+        orderId,
+        logisticsDone: "1",
+        vendorId,
+      },
+      nativeReturn,
+    );
     return corsHtmlResponse(
       buildPopupReturnHtml({
         redirectUrl,
@@ -128,6 +143,19 @@ Deno.serve(async (req) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return respondError(msg, backUrl, 500, wantsJson);
+  }
+
+  if (draft.logisticsType !== "CVS") {
+    return respondError("訂單物流類型非超商取貨", backUrl, 422, wantsJson);
+  }
+
+  const subtypeErr = validateCvsMapMerchantSubtype(
+    cfg.merchantId,
+    draft.logisticsSubType,
+    cfg.stage,
+  );
+  if (subtypeErr) {
+    return respondError(subtypeErr, backUrl, 422, wantsJson);
   }
 
   const merchantTradeNo = draft.merchantLogisticsTradeNo ??
@@ -156,8 +184,10 @@ Deno.serve(async (req) => {
     .eq("id", orderId);
 
   const fnBase = getSupabaseFunctionsBase();
-  const mapReturnUrl =
-    `${fnBase}/functions/v1/ecpay-logistics-map-return?orderId=${orderId}&vendorId=${vendorId}`;
+  const mapReturnUrl = appendNativeReturnQuery(
+    `${fnBase}/functions/v1/ecpay-logistics-map-return?orderId=${orderId}&vendorId=${vendorId}&appOrigin=${encodeURIComponent(appOrigin)}`,
+    nativeReturn,
+  );
 
   const mapFields = appendCheckMac(
     buildCvsMapFormFields({

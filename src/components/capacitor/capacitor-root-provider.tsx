@@ -1,6 +1,7 @@
 'use client';
 
 import { CapacitorAppListener } from '@/components/capacitor/capacitor-app-listener';
+import { EcpayBrowserListener } from '@/components/capacitor/ecpay-browser-listener';
 
 export function CapacitorRootProvider({
   children,
@@ -8,6 +9,7 @@ export function CapacitorRootProvider({
   return (
     <>
       <CapacitorAppListener />
+      <EcpayBrowserListener />
       {children}
     </>
   );

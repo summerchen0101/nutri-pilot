@@ -3,6 +3,7 @@
 import { Capacitor } from '@capacitor/core';
 
 import { openExternalUrl } from '@/lib/capacitor/open-external-url';
+import { assertCvsMapBridgeAction } from '@/lib/shop/ecpay-auto-submit-html';
 
 const POPUP_FEATURES = 'width=520,height=720,scrollbars=yes,resizable=yes';
 
@@ -22,8 +23,35 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
+/** Capacitor WebView 不支援 popup；呼叫端應改走 bridge 頁或 submitPostFormToNamedPopup 同源提交 */
+export function isEcpayPopupSupported(): boolean {
+  return !Capacitor.isNativePlatform();
+}
+
 export function openEcpayPopup(name: string): Window | null {
+  if (!isEcpayPopupSupported()) {
+    return null;
+  }
   return window.open('about:blank', name, POPUP_FEATURES);
+}
+
+function submitPostFormToCurrentWindow(payload: EcpayFormPayload): void {
+  const form = document.createElement('form');
+  form.method = 'post';
+  form.action = payload.action;
+  form.style.display = 'none';
+
+  for (const [name, value] of Object.entries(payload.fields)) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  }
+
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
 }
 
 /** 僅在 popup 仍為同源（about:blank）時可用 */
@@ -45,11 +73,16 @@ export function showPopupMessage(popup: Window, message: string): void {
   }
 }
 
-/** 由主視窗 form.target 提交，popup 跨域後仍可繼續導向 */
+/** 由主視窗 form.target 提交，popup 跨域後仍可繼續導向；原生改在同 WebView 全頁 POST */
 export function submitPostFormToNamedPopup(
   popupName: string,
   payload: EcpayFormPayload,
 ): void {
+  if (!isEcpayPopupSupported()) {
+    submitPostFormToCurrentWindow(payload);
+    return;
+  }
+
   const form = document.createElement('form');
   form.method = 'post';
   form.action = payload.action;
@@ -107,24 +140,8 @@ export function navigatePopup(popup: Window, url: string): void {
   popup.location.href = url;
 }
 
-/** 超商 V1 門市地圖須 POST 至 Express/map，不可為 V2 物流選擇頁 */
-export function assertCvsMapBridgeAction(action: string): void {
-  const normalized = action.trim();
-  if (!normalized.includes('/Express/map')) {
-    throw new Error(
-      '物流 bridge 非 V1 門市地圖（Express/map），請確認 Edge 已部署最新版',
-    );
-  }
-  if (
-    normalized.includes('/v2/') ||
-    normalized.includes('LogisticsSelection') ||
-    normalized.includes('RedirectToLogisticsSelection')
-  ) {
-    throw new Error(
-      '偵測到 V2 物流選擇 URL，請重新部署 ecpay-logistics-selection',
-    );
-  }
-}
+/** @deprecated 請改用 ecpay-auto-submit-html 的 assertCvsMapBridgeAction */
+export { assertCvsMapBridgeAction } from '@/lib/shop/ecpay-auto-submit-html';
 
 export function submitLogisticsMapBridgeToNamedPopup(
   popupName: string,

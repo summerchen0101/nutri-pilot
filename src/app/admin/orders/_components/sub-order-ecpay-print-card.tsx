@@ -39,30 +39,23 @@ export function SubOrderEcpayPrintCard({
     setErr(null);
     setPending(true);
 
-    const popup = openEcpayPopup(ECPAY_PRINT_POPUP_NAME);
-    if (!popup) {
-      setPending(false);
-      setErr('請允許彈出視窗以列印託運單');
-      return;
-    }
-
-    showPopupMessage(popup, '正在準備托運單…');
-
     try {
       const bridge = await fetchEcpayLogisticsPrintPayload({ subOrderId });
       if (!bridge.ok) {
-        popup.close();
         setErr(bridge.error);
         return;
       }
+
+      const popup = openEcpayPopup(ECPAY_PRINT_POPUP_NAME);
+      if (popup) {
+        showPopupMessage(popup, '正在準備托運單…');
+      }
+
       submitPostFormToNamedPopup(ECPAY_PRINT_POPUP_NAME, {
         action: bridge.action,
         fields: bridge.fields,
       });
     } catch (e) {
-      if (!popup.closed) {
-        popup.close();
-      }
       setErr(e instanceof Error ? e.message : '無法開啟列印');
     } finally {
       setPending(false);

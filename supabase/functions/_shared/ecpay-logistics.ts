@@ -35,15 +35,20 @@ export function getEcpayLogisticsConfig(): EcpayLogisticsConfig {
     hashIv: Deno.env.get("ECPAY_HASH_IV")?.trim() ?? "",
   };
 
-  const merchantId = Deno.env.get("ECPAY_LOGISTICS_MERCHANT_ID")?.trim() ||
-    pay.merchantId ||
-    (stage ? TEST_LOGISTICS_MERCHANT_ID : "");
-  const hashKey = Deno.env.get("ECPAY_LOGISTICS_HASH_KEY")?.trim() ||
-    pay.hashKey ||
-    (stage ? TEST_LOGISTICS_HASH_KEY : "");
-  const hashIv = Deno.env.get("ECPAY_LOGISTICS_HASH_IV")?.trim() ||
-    pay.hashIv ||
-    (stage ? TEST_LOGISTICS_HASH_IV : "");
+  const logisticsMerchantId =
+    Deno.env.get("ECPAY_LOGISTICS_MERCHANT_ID")?.trim() ?? "";
+  const logisticsHashKey =
+    Deno.env.get("ECPAY_LOGISTICS_HASH_KEY")?.trim() ?? "";
+  const logisticsHashIv =
+    Deno.env.get("ECPAY_LOGISTICS_HASH_IV")?.trim() ?? "";
+
+  // 測試環境預設 C2C 物流 2000933；勿 fallback 金流 B2C 2000132（會導致 LogisticsType Is Not Match）
+  const merchantId = logisticsMerchantId ||
+    (stage ? TEST_LOGISTICS_MERCHANT_ID : pay.merchantId);
+  const hashKey = logisticsHashKey ||
+    (stage ? TEST_LOGISTICS_HASH_KEY : pay.hashKey);
+  const hashIv = logisticsHashIv ||
+    (stage ? TEST_LOGISTICS_HASH_IV : pay.hashIv);
 
   const host = stage ?
     "https://logistics-stage.ecpay.com.tw"

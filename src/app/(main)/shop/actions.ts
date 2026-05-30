@@ -5,7 +5,11 @@ import { createClient } from '@/lib/supabase/server';
 import { triggerRecalculateScores } from '@/lib/settings/trigger-recalculate-scores';
 import { isCheckoutSnapshotLike } from '@/lib/shop/build-remaining-logistics-queue';
 import { canContinueOrderPayment } from '@/lib/shop/can-continue-order-payment';
-import { resolveRequestAppOrigin } from '@/lib/shop/resolve-request-app-origin';
+import {
+  fetchEcpayLogisticsSelectionBridge,
+  fetchEcpayPaymentBridge,
+} from '@/lib/shop/ecpay-bridge-fetch';
+import type { EcpayBridgePayloadResult } from '@/lib/shop/ecpay-bridge-types';
 import { validateEcpayRecipientName } from '@/lib/shop/validate-ecpay-recipient-name';
 
 /** 進入商城時確保推薦分數已計算（依 Service Role 呼叫 Edge）。 */
@@ -348,144 +352,18 @@ export async function markHomeLogisticsForCheckout(payload: {
   }
 }
 
-export type EcpayCheckoutBridgeDebug = {
-  merchantId: string;
-  orderResultUrl: string;
-  checkMacSelfOk: boolean;
-};
-
-export type EcpayBridgePayloadResult =
-  | {
-    ok: true;
-    action: string;
-    fields: Record<string, string>;
-    debug?: EcpayCheckoutBridgeDebug;
-  }
-  | { ok: true; redirectUrl: string }
-  | { ok: true; skipMap: true }
-  | { ok: true; skipPayment: true; orderId: string }
-  | { ok: false; error: string };
-
-type EcpayBridgeEdgeBody = {
-  action?: string;
-  fields?: Record<string, string>;
-  redirectUrl?: string;
-  skipMap?: boolean;
-  skipPayment?: boolean;
-  orderId?: string;
-  error?: string;
-  debug?: EcpayCheckoutBridgeDebug;
-};
-
-function parseEcpayBridgeEdgeBody(text: string): EcpayBridgeEdgeBody | null {
-  const trimmed = text.trim();
-  if (!trimmed || trimmed.startsWith('<')) {
-    return null;
-  }
-  try {
-    return JSON.parse(trimmed) as EcpayBridgeEdgeBody;
-  } catch {
-    return null;
-  }
-}
-
-async function fetchEcpayBridgeFromEdge(
-  functionName: string,
-  params: Record<string, string>,
-): Promise<EcpayBridgePayloadResult> {
-  const supabase = createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  const token = session?.access_token;
-  if (!token) {
-    return { ok: false, error: '請先登入' };
-  }
-
-  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!baseUrl || !anonKey) {
-    return { ok: false, error: '環境設定缺少 Supabase 變數' };
-  }
-
-  const url = new URL(`${baseUrl}/functions/v1/${functionName}`);
-  url.search = new URLSearchParams({ ...params, format: 'json' }).toString();
-
-  try {
-    const res = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-        apikey: anonKey,
-      },
-    });
-
-    const contentType = res.headers.get('Content-Type') ?? '';
-    const text = await res.text();
-    const data = parseEcpayBridgeEdgeBody(text);
-
-    if (data == null) {
-      return {
-        ok: false,
-        error: contentType.includes('text/html') || text.trimStart().startsWith('<') ?
-          `綠界服務回傳 HTML 而非 JSON（${res.status}），請確認 Edge 已部署最新版`
-        : `綠界服務回傳非 JSON（${res.status}）`,
-      };
-    }
-
-    if (!res.ok) {
-      return {
-        ok: false,
-        error: data.error ?? `綠界請求失敗（${res.status}）`,
-      };
-    }
-
-    if (typeof data.redirectUrl === 'string' && data.redirectUrl.length > 0) {
-      return { ok: true, redirectUrl: data.redirectUrl };
-    }
-
-    if (data.skipMap === true) {
-      return { ok: true, skipMap: true };
-    }
-
-    if (data.skipPayment === true && typeof data.orderId === 'string') {
-      return { ok: true, skipPayment: true, orderId: data.orderId };
-    }
-
-    if (
-      typeof data.action === 'string' &&
-      data.action.length > 0 &&
-      data.fields != null &&
-      typeof data.fields === 'object' &&
-      !Array.isArray(data.fields)
-    ) {
-      return {
-        ok: true,
-        action: data.action,
-        fields: data.fields,
-        ...(data.debug ? { debug: data.debug } : {}),
-      };
-    }
-
-    return { ok: false, error: data.error ?? '綠界回應格式不正確' };
-  } catch (e) {
-    return {
-      ok: false,
-      error: e instanceof Error ? e.message : '無法取得綠界表單資料',
-    };
-  }
-}
+export type { EcpayBridgePayloadResult, EcpayCheckoutBridgeDebug } from '@/lib/shop/ecpay-bridge-types';
 
 /** 伺服器端取物流選擇 form（避開瀏覽器 CORS） */
 export async function fetchEcpayLogisticsSelectionPayload(payload: {
   orderId: string;
   vendorId: string;
+  clientOrigin?: string;
 }): Promise<EcpayBridgePayloadResult> {
-  return fetchEcpayBridgeFromEdge('ecpay-logistics-selection', {
+  return fetchEcpayLogisticsSelectionBridge({
     orderId: payload.orderId,
     vendorId: payload.vendorId,
+    appOrigin: payload.clientOrigin,
   });
 }
 
@@ -495,15 +373,7 @@ export async function fetchEcpayCheckoutPayload(payload: {
   /** 瀏覽器當前 origin；優先於 Server Action headers，避免 ngrok／本機 IP 與 OrderResultURL 不一致 */
   clientOrigin?: string;
 }): Promise<EcpayBridgePayloadResult> {
-  const clientOrigin = payload.clientOrigin?.trim().replace(/\/$/, '') ?? '';
-  const appOrigin =
-    clientOrigin && /^https?:\/\//i.test(clientOrigin) ?
-      clientOrigin
-    : await resolveRequestAppOrigin();
-  return fetchEcpayBridgeFromEdge('ecpay-checkout', {
-    orderId: payload.orderId,
-    appOrigin,
-  });
+  return fetchEcpayPaymentBridge(payload);
 }
 
 export type AssertOrderPayableResult =

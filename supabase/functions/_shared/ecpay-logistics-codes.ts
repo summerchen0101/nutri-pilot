@@ -14,6 +14,19 @@ const CVS_CODE_MAP: Record<string, string> = {
   ok_mart_pickup: "OKMARTC2C",
 };
 
+const CVS_C2C_SUBTYPES = new Set([
+  "UNIMARTC2C",
+  "FAMIC2C",
+  "HILIFEC2C",
+  "OKMARTC2C",
+  "UNIMARTFREEZE",
+]);
+
+const CVS_B2C_SUBTYPES = new Set(["UNIMART", "FAMI", "HILIFE"]);
+
+const TEST_C2C_MERCHANT_ID = "2000933";
+const TEST_B2C_MERCHANT_ID = "2000132";
+
 export function resolveLogisticsFromVendorCode(
   vendorShippingCode: string | null | undefined,
 ): EcpayLogisticsMapping | null {
@@ -35,6 +48,40 @@ export function resolveLogisticsFromVendorCode(
     return { logisticsType: "CVS", logisticsSubType: "UNIMARTC2C" };
   }
   return { logisticsType: "CVS", logisticsSubType: "UNIMARTC2C" };
+}
+
+/** 門市地圖：MerchantID 與 LogisticsSubType（B2C/C2C）須一致，否則綠界回 0|LogisticsType Is Not Match. */
+export function validateCvsMapMerchantSubtype(
+  merchantId: string,
+  logisticsSubType: string,
+  stage: boolean,
+): string | null {
+  const sub = logisticsSubType.trim();
+  if (!sub) {
+    return "缺少 LogisticsSubType";
+  }
+
+  const isC2cSub = CVS_C2C_SUBTYPES.has(sub);
+  const isB2cSub = CVS_B2C_SUBTYPES.has(sub);
+  if (!isC2cSub && !isB2cSub) {
+    return `不支援的超商子類型：${sub}`;
+  }
+
+  if (stage) {
+    if (merchantId === TEST_C2C_MERCHANT_ID && !isC2cSub) {
+      return `測試 C2C MerchantID（${merchantId}）不可搭配 ${sub}，請改用 UNIMARTC2C／FAMIC2C 等 C2C 子類型，或設定 ECPAY_LOGISTICS_MERCHANT_ID=2000933`;
+    }
+    if (merchantId === TEST_B2C_MERCHANT_ID && !isB2cSub) {
+      return `測試 B2C MerchantID（${merchantId}）不可搭配 ${sub}，請設定 ECPAY_LOGISTICS_MERCHANT_ID=2000933（C2C）`;
+    }
+    return null;
+  }
+
+  if (isC2cSub && merchantId === TEST_B2C_MERCHANT_ID) {
+    return "正式環境請使用 C2C 物流 MerchantID，不可沿用 B2C 金流編號 2000132";
+  }
+
+  return null;
 }
 
 export function logisticsSubtypeDisplayLabel(subtype: string): string {

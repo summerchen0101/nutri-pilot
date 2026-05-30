@@ -144,6 +144,15 @@ export function getAppUrl(): string {
     "http://localhost:3000").replace(/\/$/, "");
 }
 
+/** 優先 query appOrigin（與 ecpay-order-result 一致），否則 fallback APP_URL secret */
+export function resolveAppOriginFromUrl(url: URL): string {
+  const fromQuery = url.searchParams.get("appOrigin")?.trim() ?? "";
+  if (fromQuery && /^https?:\/\//i.test(fromQuery)) {
+    return fromQuery.replace(/\/$/, "");
+  }
+  return getAppUrl();
+}
+
 export function getSupabaseFunctionsBase(): string {
   return (Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "");
 }

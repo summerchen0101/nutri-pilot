@@ -1,60 +1,43 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-
 import { fetchEcpayCheckoutPayload } from '@/app/(main)/shop/actions';
-import { submitEcpayBridgeInDocument } from '@/lib/shop/submit-ecpay-bridge-form';
+import { EcpayBridgePageShell } from '@/components/shop/ecpay-bridge-page-shell';
 
-export function PaymentBridgeClient() {
-  const searchParams = useSearchParams();
-  const orderId = searchParams.get('orderId')?.trim() ?? '';
-  const [error, setError] = useState<string | null>(null);
+export interface PaymentBridgeClientProps {
+  orderId: string;
+}
 
-  useEffect(() => {
-    if (!orderId) {
-      setError('缺少訂單編號');
-      return;
-    }
-
-    let cancelled = false;
-    void (async () => {
-      const bridge = await fetchEcpayCheckoutPayload({
-        orderId,
-        clientOrigin: window.location.origin,
-      });
-      if (cancelled) return;
-      if (!bridge.ok) {
-        setError(bridge.error);
-        return;
-      }
-      submitEcpayBridgeInDocument(bridge);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [orderId]);
-
-  if (error) {
+export function PaymentBridgeClient({ orderId }: PaymentBridgeClientProps) {
+  if (!orderId) {
     return (
-      <div className="mx-auto max-w-md px-4 py-12 text-center">
-        <p className="text-body text-[#E24B4A]" role="alert">
-          {error}
-        </p>
-        <a
-          href="/shop"
-          className="mt-4 inline-block text-body text-primary underline"
-        >
-          返回商城
-        </a>
-      </div>
+      <EcpayBridgePageShell
+        orderId="unknown"
+        bridgeKind="payment"
+        loadingMessage="正在導向綠界付款…"
+        onFetchBridge={async () => ({ ok: false, error: '缺少訂單編號' })}
+      />
     );
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-12 text-center">
-      <p className="text-body text-muted-foreground">正在導向綠界付款…</p>
-    </div>
+    <EcpayBridgePageShell
+      orderId={orderId}
+      bridgeKind="payment"
+      loadingMessage="正在導向綠界付款…"
+      stuckMessage="若已在外部瀏覽器開啟綠界付款，請完成後返回；若未開啟，請重試或返回結帳。"
+      onFetchBridge={async () => {
+        const bridge = await fetchEcpayCheckoutPayload({
+          orderId,
+          clientOrigin: window.location.origin,
+        });
+        if (!bridge.ok) {
+          return { ok: false, error: bridge.error };
+        }
+        if ('skipPayment' in bridge && bridge.skipPayment) {
+          return { ok: false, error: '此訂單無需付款' };
+        }
+        return { ok: true, bridge };
+      }}
+    />
   );
 }

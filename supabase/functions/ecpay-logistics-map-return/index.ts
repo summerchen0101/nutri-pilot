@@ -3,8 +3,12 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 
-import { getAppUrl, getSupabaseFunctionsBase, parseEcpayFormBody } from "../_shared/ecpay.ts";
+import { getSupabaseFunctionsBase, parseEcpayFormBody, resolveAppOriginFromUrl } from "../_shared/ecpay.ts";
 import { buildPopupReturnHtml } from "../_shared/ecpay-popup-html.ts";
+import {
+  buildShopReturnUrl,
+  isNativeReturnRequested,
+} from "../_shared/native-app-return.ts";
 import {
   applyVendorLogisticsCompleted,
   createLogisticsForVendor,
@@ -26,6 +30,8 @@ Deno.serve(async (req) => {
   }
 
   const reqUrl = new URL(req.url);
+  const appOrigin = resolveAppOriginFromUrl(reqUrl);
+  const nativeReturn = isNativeReturnRequested(reqUrl);
   const orderId = reqUrl.searchParams.get("orderId")?.trim() ?? "";
   const vendorId = reqUrl.searchParams.get("vendorId")?.trim() ?? "";
 
@@ -38,7 +44,7 @@ Deno.serve(async (req) => {
 
   const storeId = params.CVSStoreID ?? "";
   if (!storeId) {
-    return popupError(orderId, vendorId, "未收到門市資訊");
+    return popupError(appOrigin, orderId, vendorId, "未收到門市資訊", nativeReturn);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -118,7 +124,13 @@ Deno.serve(async (req) => {
       serverReturn,
     );
     if (!createRes.ok) {
-      return popupError(orderId, vendorId, createRes.error ?? "物流建單失敗");
+      return popupError(
+        appOrigin,
+        orderId,
+        vendorId,
+        createRes.error ?? "物流建單失敗",
+        nativeReturn,
+      );
     }
     const { data: refreshed } = await admin
       .from("orders")
@@ -142,9 +154,16 @@ Deno.serve(async (req) => {
       .eq("id", orderId);
   }
 
-  const appUrl = getAppUrl();
-  const redirectUrl =
-    `${appUrl}/shop?checkout=1&orderId=${orderId}&logisticsDone=1&vendorId=${vendorId}`;
+  const redirectUrl = buildShopReturnUrl(
+    appOrigin,
+    {
+      checkout: "1",
+      orderId,
+      logisticsDone: "1",
+      vendorId,
+    },
+    nativeReturn,
+  );
 
   return new Response(
     buildPopupReturnHtml({
@@ -157,13 +176,23 @@ Deno.serve(async (req) => {
 });
 
 function popupError(
+  appOrigin: string,
   orderId: string,
   vendorId: string,
   message: string,
+  nativeReturn: boolean,
 ): Response {
-  const appUrl = getAppUrl();
-  const redirectUrl =
-    `${appUrl}/shop?checkout=1&orderId=${orderId}&logisticsError=1&vendorId=${vendorId}&msg=${encodeURIComponent(message)}`;
+  const redirectUrl = buildShopReturnUrl(
+    appOrigin,
+    {
+      checkout: "1",
+      orderId,
+      logisticsError: "1",
+      vendorId,
+      msg: message,
+    },
+    nativeReturn,
+  );
   return new Response(
     buildPopupReturnHtml({
       redirectUrl,

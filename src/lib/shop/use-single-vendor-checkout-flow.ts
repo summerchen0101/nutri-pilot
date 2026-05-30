@@ -16,6 +16,11 @@ import {
   fetchOrderLogisticsDraft,
   type OrderLogisticsDraftView,
 } from '@/lib/shop/order-logistics-snapshot';
+import { redirectToLogisticsMapBridge } from '@/lib/shop/ecpay-bridge-paths';
+import {
+  openNativeLogisticsMapBridge,
+  shouldUseNativeEcpayBridge,
+} from '@/lib/shop/open-ecpay-bridge-native';
 import {
   ECPAY_LOGISTICS_POPUP_NAME,
   openEcpayPopup,
@@ -233,10 +238,10 @@ export function useSingleVendorCheckoutFlow(
     useEcpayCheckoutFlowStore.getState().setPendingPaymentOrderId(null);
   }, [abortPolls, stopPolling]);
 
-  const createOrder = useCallback(async (): Promise<boolean> => {
+  const createOrder = useCallback(async (): Promise<string | null> => {
     if (!checkoutVendorId || !selectedSummary) {
       onError('請先選擇要結帳的廠商');
-      return false;
+      return null;
     }
     const rn = recipientName.trim();
     const rp = recipientPhone.trim();
@@ -245,13 +250,13 @@ export function useSingleVendorCheckoutFlow(
       if (recipientDefaultsReady) {
         onError('請填寫收件人姓名與聯絡電話');
       }
-      return false;
+      return null;
     }
     if (isHomeDeliveryCode(selectedSummary.selectedShippingMethodCode) && !ra) {
       if (recipientDefaultsReady) {
         onError('請填寫收件地址（宅配）');
       }
-      return false;
+      return null;
     }
 
     setPhase('loading');
@@ -280,7 +285,7 @@ export function useSingleVendorCheckoutFlow(
       onError(res.error);
       setPhase('idle');
       setStatusMessage(null);
-      return false;
+      return null;
     }
 
     setOrderId(res.orderId);
@@ -290,7 +295,7 @@ export function useSingleVendorCheckoutFlow(
     await refreshDraft(res.orderId, res.vendorId);
     setPhase('ready');
     setStatusMessage(null);
-    return true;
+    return res.orderId;
   }, [
     checkoutVendorId,
     homeSubType,
@@ -306,9 +311,9 @@ export function useSingleVendorCheckoutFlow(
     vendorShippingSelections,
   ]);
 
-  const ensureOrder = useCallback(async () => {
-    if (orderId) return true;
-    if (orderCreatingRef.current) return false;
+  const ensureOrder = useCallback(async (): Promise<string | null> => {
+    if (orderId) return orderId;
+    if (orderCreatingRef.current) return null;
     orderCreatingRef.current = true;
     try {
       return await createOrder();
@@ -372,8 +377,8 @@ export function useSingleVendorCheckoutFlow(
     ],
   );
 
-  const openStoreMap = useCallback(async () => {
-    const oid = orderId?.trim() ?? '';
+  const openStoreMap = useCallback(async (orderIdOverride?: string) => {
+    const oid = (orderIdOverride ?? orderId)?.trim() ?? '';
     const vid = checkoutVendorId?.trim() ?? '';
     if (!oid || !vid) {
       onError('請先建立訂單');
@@ -382,7 +387,18 @@ export function useSingleVendorCheckoutFlow(
 
     const popup = openEcpayPopup(ECPAY_LOGISTICS_POPUP_NAME);
     if (!popup) {
-      onError('請允許彈出視窗以選擇門市');
+      if (shouldUseNativeEcpayBridge()) {
+        setPhase('selectingStore');
+        setStatusMessage('請於瀏覽器視窗選擇取貨門市…');
+        const native = await openNativeLogisticsMapBridge(oid, vid);
+        if (!native.ok) {
+          onError(native.error);
+          setPhase('ready');
+          setStatusMessage(null);
+        }
+        return;
+      }
+      redirectToLogisticsMapBridge(oid, vid);
       return;
     }
 
@@ -393,6 +409,7 @@ export function useSingleVendorCheckoutFlow(
     const bridge = await fetchEcpayLogisticsSelectionPayload({
       orderId: oid,
       vendorId: vid,
+      clientOrigin: window.location.origin,
     });
     if (!bridge.ok) {
       try {
@@ -539,8 +556,8 @@ export function useSingleVendorCheckoutFlow(
     syncOrderPointsBeforePay,
   ]);
 
-  const goToPayment = useCallback(async () => {
-    const oid = orderId?.trim() ?? '';
+  const goToPayment = useCallback(async (orderIdOverride?: string) => {
+    const oid = (orderIdOverride ?? orderId)?.trim() ?? '';
     const vid = checkoutVendorId?.trim() ?? '';
     if (!oid || !vid) {
       onError('請先建立訂單');

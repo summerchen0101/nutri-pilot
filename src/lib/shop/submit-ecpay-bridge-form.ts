@@ -1,8 +1,6 @@
-import type { EcpayBridgePayloadResult } from '@/app/(main)/shop/actions';
+import type { EcpaySubmitBridgePayload } from '@/lib/shop/ecpay-bridge-types';
 
-export function submitEcpayBridgeInDocument(
-  bridge: Extract<EcpayBridgePayloadResult, { ok: true }>,
-): void {
+export function submitEcpayBridgeInDocument(bridge: EcpaySubmitBridgePayload): void {
   if ('redirectUrl' in bridge) {
     window.location.href = bridge.redirectUrl;
     return;

@@ -128,8 +128,8 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
   const handleSelectCvsStore = useCallback(() => {
     void (async () => {
       setErr(null);
-      const ok = await flow.ensureOrder();
-      if (ok) void flow.openStoreMap();
+      const oid = await flow.ensureOrder();
+      if (oid) void flow.openStoreMap(oid);
     })();
   }, [flow]);
 
@@ -227,24 +227,22 @@ export function CheckoutClient({ onBodyScrollTopChange }: CheckoutClientProps) {
           return;
         }
 
-        if (!flow.orderId) {
-          const created = await flow.ensureOrder();
-          if (!created) return;
-        }
+        const activeOrderId = flow.orderId ?? (await flow.ensureOrder());
+        if (!activeOrderId) return;
 
         if (flow.isCod) {
           if (!flow.storeReady) {
-            void flow.openStoreMap();
+            void flow.openStoreMap(activeOrderId);
           }
           return;
         }
 
         if (flow.isCvs) {
           if (!flow.storeReady) {
-            void flow.openStoreMap();
+            void flow.openStoreMap(activeOrderId);
             return;
           }
-          await flow.goToPayment();
+          await flow.goToPayment(activeOrderId);
           return;
         }
 

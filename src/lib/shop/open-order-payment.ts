@@ -1,13 +1,16 @@
 'use client';
 
 import { fetchEcpayCheckoutPayload } from '@/app/(main)/shop/actions';
+import { redirectToPaymentBridge } from '@/lib/shop/ecpay-bridge-paths';
+import {
+  openNativePaymentBridge,
+  shouldUseNativeEcpayBridge,
+} from '@/lib/shop/open-ecpay-bridge-native';
 import {
   ECPAY_PAYMENT_POPUP_NAME,
   openEcpayPopup,
   submitPaymentBridgeToNamedPopup,
 } from '@/lib/shop/ecpay-popup-form';
-
-const PAYMENT_BRIDGE_PATH = '/shop/payment-bridge';
 
 export type OpenOrderPaymentResult =
   | { ok: true }
@@ -18,9 +21,10 @@ export async function openOrderPayment(
 ): Promise<OpenOrderPaymentResult> {
   const popup = openEcpayPopup(ECPAY_PAYMENT_POPUP_NAME);
   if (!popup) {
-    window.location.assign(
-      `${PAYMENT_BRIDGE_PATH}?orderId=${encodeURIComponent(orderId)}`,
-    );
+    if (shouldUseNativeEcpayBridge()) {
+      return openNativePaymentBridge(orderId);
+    }
+    redirectToPaymentBridge(orderId);
     return { ok: true };
   }
 
