@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 
 import { getAdminMobileHeaderTitle } from '@/app/admin/_lib/admin-breadcrumb';
 import type { AdminRole } from '@/lib/admin/admin-role';
+import { STICKY_PAGE_HEADER_TOP_SAFE_CLASS } from '@/components/layout/sticky-page-header-top-safe-class';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
 
@@ -84,7 +85,12 @@ export function AdminChromeMobileNav({
         </div>
       </aside>
 
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-3 md:hidden">
+      <header
+        className={cn(
+          'sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-3 md:hidden',
+          STICKY_PAGE_HEADER_TOP_SAFE_CLASS,
+        )}
+      >
         <Button
           type="button"
           variant="outline"

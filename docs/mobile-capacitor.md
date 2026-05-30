@@ -134,6 +134,7 @@ Supabase Redirect URLs 須包含 `http://127.0.0.1:3000/auth/callback`，且 `ya
 - Log / Guard 拍照上傳
 - Shop 綠界結帳（popup 失敗時會改開 InAppBrowser）
 - 底部 nav safe area 正常
+- 頂部標題列（含 Dynamic Island 機型）不與狀態列重疊：root layout 須設 `viewportFit: 'cover'`（見 `src/app/layout.tsx`），各頁首以 `env(safe-area-inset-top)` 處理（`StickyPageHeaderShell` 或 `STICKY_PAGE_HEADER_TOP_SAFE_CLASS`）
 
 ## 指令
 

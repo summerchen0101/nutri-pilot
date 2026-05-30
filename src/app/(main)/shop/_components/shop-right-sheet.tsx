@@ -7,6 +7,7 @@ import {
   STICKY_HEADER_ELEVATED_CLASS,
   STICKY_HEADER_REST_CLASS,
 } from '@/components/layout/sticky-page-header-shell';
+import { STICKY_PAGE_HEADER_TOP_SAFE_CLASS } from '@/components/layout/sticky-page-header-top-safe-class';
 import { cn } from '@/lib/utils/cn';
 
 interface ShopRightSheetProps {
@@ -51,6 +52,7 @@ export function ShopRightSheet({
 
   const headerShellClass = cn(
     'shrink-0 px-3 py-2',
+    STICKY_PAGE_HEADER_TOP_SAFE_CLASS,
     isMutedBody ?
       cn(
         'transition-[background-color,border-color,backdrop-filter] duration-200 ease-out',
