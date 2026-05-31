@@ -11,6 +11,18 @@ interface LogisticsDraftLike {
   logisticsCreated?: boolean;
   cvsStoreId?: string | null;
   ecpayLogisticsTradeNo?: string | null;
+  merchantLogisticsTradeNo?: string | null;
+}
+
+/** 綠界 staging 可能不回 AllPayLogisticsID，以 merchantLogisticsTradeNo 作為建單參考 */
+export function hasCodLogisticsTradeRef(
+  draft: LogisticsDraftLike | null | undefined,
+): boolean {
+  if (!draft) return false;
+  const ecpayId = draft.ecpayLogisticsTradeNo?.trim() ?? '';
+  if (ecpayId.length > 0) return true;
+  const merchantId = draft.merchantLogisticsTradeNo?.trim() ?? '';
+  return merchantId.length > 0;
 }
 
 interface VendorSnapshotLike {
@@ -33,10 +45,7 @@ function isVendorLogisticsReady(
     return draft.completed === true;
   }
   if (isCvsCodShippingCode(shippingMethodCode)) {
-    return (
-      draft.logisticsCreated === true &&
-      Boolean(draft.ecpayLogisticsTradeNo)
-    );
+    return draft.logisticsCreated === true && hasCodLogisticsTradeRef(draft);
   }
   return draft.storeSelected === true && Boolean(draft.cvsStoreId);
 }
@@ -55,10 +64,7 @@ export function isVendorPostPaymentReady(
     return draft.completed === true;
   }
   if (isCvsCodShippingCode(shippingMethodCode)) {
-    return (
-      draft.logisticsCreated === true &&
-      Boolean(draft.ecpayLogisticsTradeNo)
-    );
+    return draft.logisticsCreated === true && hasCodLogisticsTradeRef(draft);
   }
   return draft.logisticsCreated === true;
 }

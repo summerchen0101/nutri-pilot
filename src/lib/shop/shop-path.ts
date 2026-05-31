@@ -6,6 +6,7 @@ export const SHOP_FIXED_ROUTE_SEGMENTS = new Set([
   'history',
   'settings',
   'success',
+  'payment-complete',
   'vendors',
 ]);
 
@@ -70,7 +71,10 @@ export function normalizeShopPathname(pathname: string | null): string | null {
   return pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
 }
 
-const SHOP_CHECKOUT_FUNNEL_PATHS = new Set(['/shop/success']);
+const SHOP_CHECKOUT_FUNNEL_PATHS = new Set([
+  '/shop/success',
+  '/shop/payment-complete',
+]);
 
 /**
  * 付款完成頁等：專注流程，不顯示商城底欄；`MainAppShell` 亦用 `pb-8`。

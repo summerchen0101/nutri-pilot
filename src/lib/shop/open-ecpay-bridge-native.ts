@@ -11,6 +11,7 @@ import {
   prepareEcpayLogisticsBridgeResume,
   prepareEcpayPaymentBridgeResume,
 } from '@/lib/shop/ecpay-bridge-resume';
+import { clearPaymentCompleteSuccessPath } from '@/lib/shop/ecpay-payment-complete-session';
 import { createClient } from '@/lib/supabase/client';
 
 export type OpenNativeEcpayBridgeResult =
@@ -67,6 +68,7 @@ export async function openNativePaymentBridge(
   }
 
   prepareEcpayPaymentBridgeResume(orderId);
+  clearPaymentCompleteSuccessPath(orderId);
   const url = buildPaymentAutoSubmitUrl(orderId, {
     accessToken,
     nativeReturn: true,

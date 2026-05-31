@@ -1,10 +1,13 @@
 'use client';
 
+import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { resolveEcpayReturnPath } from '@/lib/capacitor/resolve-ecpay-return-path';
+import { safeCloseInAppBrowser } from '@/lib/capacitor/safe-close-in-app-browser';
 import {
   buildCheckoutReturnPath,
   consumeEcpayBridgeResume,
@@ -12,8 +15,17 @@ import {
 import { useEcpayCheckoutFlowStore } from '@/lib/shop/ecpay-checkout-flow-store';
 import { useCartStore } from '@/lib/shop/cart-store';
 
+function shouldCloseBrowserForAppPath(): boolean {
+  if (typeof window === 'undefined') return false;
+  const path = window.location.pathname;
+  return (
+    path.startsWith('/shop/payment-complete') ||
+    path.startsWith('/shop/success')
+  );
+}
+
 /**
- * 使用者手動關閉 InAppBrowser 時恢復結帳（成功回跳由 ShopEcpayReturnHandler 處理）。
+ * InAppBrowser 生命週期：手動關閉恢復結帳；App 已回到完成漏斗時強制關閉 overlay。
  */
 export function EcpayBrowserListener() {
   const router = useRouter();
@@ -24,7 +36,9 @@ export function EcpayBrowserListener() {
       return;
     }
 
-    let handle: { remove: () => Promise<void> } | undefined;
+    let browserHandle: { remove: () => Promise<void> } | undefined;
+    let appOpenHandle: { remove: () => Promise<void> } | undefined;
+    let appStateHandle: { remove: () => Promise<void> } | undefined;
 
     void Browser.addListener('browserFinished', () => {
       const bridge = consumeEcpayBridgeResume();
@@ -40,11 +54,30 @@ export function EcpayBrowserListener() {
       openCheckoutPanel();
       router.replace(buildCheckoutReturnPath(orderId));
     }).then((listener) => {
-      handle = listener;
+      browserHandle = listener;
+    });
+
+    void App.addListener('appUrlOpen', (event) => {
+      if (resolveEcpayReturnPath(event.url)) {
+        void safeCloseInAppBrowser();
+      }
+    }).then((listener) => {
+      appOpenHandle = listener;
+    });
+
+    void App.addListener('appStateChange', (state) => {
+      if (!state.isActive || !shouldCloseBrowserForAppPath()) {
+        return;
+      }
+      void safeCloseInAppBrowser();
+    }).then((listener) => {
+      appStateHandle = listener;
     });
 
     return () => {
-      void handle?.remove();
+      void browserHandle?.remove();
+      void appOpenHandle?.remove();
+      void appStateHandle?.remove();
     };
   }, [openCheckoutPanel, router]);
 

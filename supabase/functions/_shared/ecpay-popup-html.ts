@@ -26,6 +26,47 @@ export function buildAutoSubmitFormHtml(
 </html>`;
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Capacitor InAppBrowser：自訂 scheme 需 meta refresh + 可點連結，否則易卡在 Edge 頁 */
+function buildNativeSchemeReturnHtml(schemeUrl: string): string {
+  const safeUrl = JSON.stringify(schemeUrl);
+  const href = escapeHtml(schemeUrl);
+
+  return `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0;url=${href}" />
+  <title>返回 App</title>
+</head>
+<body style="font-family:system-ui,sans-serif;padding:24px;text-align:center;">
+  <p>付款處理完成，正在返回 Nutri Guard…</p>
+  <p style="margin-top:20px;">
+    <a id="returnApp" href="${href}" style="display:inline-block;padding:12px 24px;background:#333;color:#fff;text-decoration:none;border-radius:8px;">返回 App</a>
+  </p>
+  <script>
+    (function () {
+      var url = ${safeUrl};
+      try { window.location.replace(url); } catch (_) {}
+      setTimeout(function () {
+        try {
+          var link = document.getElementById('returnApp');
+          if (link) link.click();
+        } catch (_) {}
+      }, 250);
+    })();
+  </script>
+</body>
+</html>`;
+}
+
 export function buildPopupReturnHtml(options: {
   redirectUrl: string;
   closePopup?: boolean;
@@ -34,12 +75,13 @@ export function buildPopupReturnHtml(options: {
   /** true：保留 popup 供主視窗以 form.target 繼續下一段物流 */
   reusePopup?: boolean;
 }): string {
-  const {
-    redirectUrl,
-    closePopup = true,
-    navigateOpener = true,
-    reusePopup = false,
-  } = options;
+  const { redirectUrl, closePopup = true, navigateOpener = true, reusePopup = false } =
+    options;
+
+  if (redirectUrl.startsWith("nutriguard://")) {
+    return buildNativeSchemeReturnHtml(redirectUrl);
+  }
+
   const safeUrl = JSON.stringify(redirectUrl);
   const closeScript = reusePopup ?
     `
@@ -111,14 +153,6 @@ export function buildLogisticsErrorHtml(
   <p><a href="${escapeHtml(backUrl)}">返回商城</a></p>
 </body>
 </html>`;
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 /** 從綠界 auto-submit HTML 擷取 form action 與所有 hidden 欄位（列印託運單等） */

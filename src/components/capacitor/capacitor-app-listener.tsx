@@ -8,6 +8,10 @@ import { useEffect } from 'react';
 import { getAuthRedirectBaseUrl } from '@/lib/capacitor/native-platform';
 import { resolveAuthCallbackPath } from '@/lib/capacitor/resolve-auth-callback-path';
 import { resolveEcpayReturnPath } from '@/lib/capacitor/resolve-ecpay-return-path';
+import {
+  isProcessedEcpayReturnUrl,
+  markProcessedEcpayReturnUrl,
+} from '@/lib/capacitor/processed-ecpay-return-url';
 import { safeCloseInAppBrowser } from '@/lib/capacitor/safe-close-in-app-browser';
 import { clearEcpayBridgeResume } from '@/lib/shop/ecpay-bridge-resume';
 
@@ -50,6 +54,20 @@ export function CapacitorAppListener() {
         return;
       }
 
+      // 已在完成漏斗內，忽略持久化的 launch URL
+      if (
+        window.location.pathname.startsWith('/shop/success') ||
+        window.location.pathname.startsWith('/shop/payment-complete')
+      ) {
+        markProcessedEcpayReturnUrl(url);
+        return;
+      }
+
+      if (isProcessedEcpayReturnUrl(url)) {
+        return;
+      }
+      markProcessedEcpayReturnUrl(url);
+
       void safeCloseInAppBrowser();
       clearEcpayBridgeResume();
       router.replace(ecpayPath);
@@ -77,9 +95,14 @@ export function CapacitorAppListener() {
         return;
       }
       void App.getLaunchUrl().then((launch) => {
-        if (launch?.url) {
-          handleOpen({ url: launch.url });
+        if (!launch?.url) {
+          return;
         }
+        // ECPay 深連結由 appUrlOpen 處理；getLaunchUrl 會持久保留導致無限重複導航
+        if (resolveEcpayReturnPath(launch.url)) {
+          return;
+        }
+        handleOpen({ url: launch.url });
       });
     }).then((handle) => {
       resumeHandle = handle;

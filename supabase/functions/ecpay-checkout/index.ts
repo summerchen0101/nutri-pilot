@@ -21,6 +21,10 @@ import {
   verifyEcpayCheckMacValue,
 } from "../_shared/ecpay.ts";
 import { buildAutoSubmitFormHtml } from "../_shared/ecpay-popup-html.ts";
+import {
+  appendNativeReturnQuery,
+  isNativeReturnRequested,
+} from "../_shared/native-app-return.ts";
 import { createPendingLogisticsForOrder } from "../_shared/ecpay-logistics-operations.ts";
 import {
   insertPurchaseProductEvents,
@@ -180,12 +184,15 @@ Deno.serve(async (req) => {
 
   const fnBase = getSupabaseFunctionsBase();
   const appOriginParam = url.searchParams.get("appOrigin")?.trim() ?? "";
+  const nativeReturn = isNativeReturnRequested(url);
   const appBase = appOriginParam && /^https?:\/\//i.test(appOriginParam) ?
     appOriginParam.replace(/\/$/, "")
     : getAppUrl().replace(/\/$/, "");
   const returnUrl = `${fnBase}/functions/v1/ecpay-return`;
-  const orderResultUrl =
-    `${fnBase}/functions/v1/ecpay-order-result?appOrigin=${appBase}`;
+  const orderResultUrl = appendNativeReturnQuery(
+    `${fnBase}/functions/v1/ecpay-order-result?appOrigin=${encodeURIComponent(appBase)}`,
+    nativeReturn,
+  );
   const paymentInfoUrl = `${fnBase}/functions/v1/ecpay-payment-info`;
 
   const fields: Record<string, string> = {

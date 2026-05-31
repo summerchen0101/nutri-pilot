@@ -59,6 +59,16 @@ export function ShopEcpayPaymentWatcher() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (
+        path.startsWith('/shop/success') ||
+        path.startsWith('/shop/payment-complete')
+      ) {
+        return;
+      }
+    }
+
     const sessionOrderId = peekEcpayPaymentSessionOrderId();
     const orderId = (storeOrderId ?? sessionOrderId)?.trim() ?? '';
     const isActivePhase = phase === 'payment' || phase === 'polling';
@@ -104,7 +114,8 @@ export function ShopEcpayPaymentWatcher() {
       if (cancelled) return;
 
       const returnPath = parseShopCheckoutReturnUrl(window.location.href);
-      if (returnPath) {
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      if (returnPath && returnPath !== currentPath) {
         logEcpayCheckout('PaymentWatcher main window return path', { returnPath });
         window.location.assign(returnPath);
         return;

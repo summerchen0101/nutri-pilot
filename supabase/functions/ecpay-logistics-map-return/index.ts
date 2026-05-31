@@ -14,6 +14,10 @@ import {
   createLogisticsForVendor,
 } from "../_shared/ecpay-logistics-operations.ts";
 import {
+  insertPurchaseProductEvents,
+  maybeInsertSubOrdersWithLogistics,
+} from "../_shared/ecpay-order-helpers.ts";
+import {
   buildLogisticsExtraData,
   createVendorLogisticsTradeNo,
 } from "../_shared/ecpay-logistics-v1.ts";
@@ -54,7 +58,7 @@ Deno.serve(async (req) => {
   const { data: order, error: orderErr } = await admin
     .from("orders")
     .select(
-      "id, status, recipient_name, recipient_phone, recipient_address_full, checkout_snapshot",
+      "id, status, user_id, order_metadata, recipient_name, recipient_phone, recipient_address_full, checkout_snapshot",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -140,6 +144,38 @@ Deno.serve(async (req) => {
     if (refreshed && isCheckoutSnapshot(refreshed.checkout_snapshot)) {
       const d = refreshed.checkout_snapshot.logisticsByVendor[vendorId];
       if (d) draft = d;
+      nextSnap = refreshed.checkout_snapshot;
+
+      const paymentTotal = Math.round(
+        Number(refreshed.checkout_snapshot.paymentTotal ?? 0),
+      );
+      if (paymentTotal <= 0) {
+        const meta = typeof order.order_metadata === "object" &&
+            order.order_metadata != null ?
+          order.order_metadata as Record<string, unknown>
+          : {};
+        await admin
+          .from("orders")
+          .update({
+            status: "paid",
+            order_metadata: {
+              ...meta,
+              ecpay: {
+                codLogisticsCreated: true,
+                paidAt: new Date().toISOString(),
+              },
+            },
+          })
+          .eq("id", orderId)
+          .eq("status", "pending");
+        await maybeInsertSubOrdersWithLogistics(admin, {
+          id: orderId,
+          checkout_snapshot: refreshed.checkout_snapshot,
+        });
+        if (order.user_id) {
+          await insertPurchaseProductEvents(admin, order.user_id, orderId);
+        }
+      }
     }
   } else {
     draft = applyVendorLogisticsCompleted(draft, vendor.shippingMethodCode);

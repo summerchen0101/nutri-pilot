@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const orderId = url.searchParams.get('orderId')?.trim() ?? '';
   const accessToken = url.searchParams.get('token')?.trim() ?? '';
+  const nativeReturn = url.searchParams.get('nativeReturn') === '1';
 
   if (!orderId) {
     return new NextResponse(buildEcpayBridgeErrorHtml('缺少訂單編號'), {
@@ -24,6 +25,7 @@ export async function GET(request: Request) {
     {
       orderId,
       clientOrigin: appOrigin,
+      nativeReturn,
     },
     accessToken || undefined,
   );

@@ -17,6 +17,19 @@ export function buildShopReturnUrl(
   params: Record<string, string>,
   nativeReturn: boolean,
 ): string {
+  if (nativeReturn && params.paymentDone === "1") {
+    const completeParams = new URLSearchParams();
+    if (params.orderId) completeParams.set("orderId", params.orderId);
+    if (params.rtnCode) completeParams.set("rtnCode", params.rtnCode);
+    if (params.paymentPending === "1") {
+      completeParams.set("paymentPending", "1");
+    }
+    if (params.merchant_order_no) {
+      completeParams.set("merchant_order_no", params.merchant_order_no);
+    }
+    return `nutriguard://shop/payment-complete?${completeParams.toString()}`;
+  }
+
   const qs = new URLSearchParams(params).toString();
   if (nativeReturn) {
     return `nutriguard://shop?${qs}`;

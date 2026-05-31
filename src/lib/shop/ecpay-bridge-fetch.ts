@@ -144,6 +144,7 @@ export async function fetchEcpayPaymentBridge(
   payload: {
     orderId: string;
     clientOrigin?: string;
+    nativeReturn?: boolean;
   },
   accessToken?: string,
 ): Promise<EcpayBridgePayloadResult> {
@@ -157,6 +158,7 @@ export async function fetchEcpayPaymentBridge(
     {
       orderId: payload.orderId,
       appOrigin,
+      ...(payload.nativeReturn ? { nativeReturn: '1' } : {}),
     },
     accessToken,
   );

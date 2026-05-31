@@ -347,9 +347,9 @@ export function pickLogisticsId(
   createParams: Record<string, string>,
   queryParams?: Record<string, string>,
 ): string {
-  return (
-    createParams.AllPayLogisticsID ??
-    queryParams?.AllPayLogisticsID ??
-    ""
-  ).trim();
+  const fromCreate = (createParams.AllPayLogisticsID ?? "").trim();
+  if (fromCreate.length > 0) return fromCreate;
+  const fromQuery = (queryParams?.AllPayLogisticsID ?? "").trim();
+  if (fromQuery.length > 0) return fromQuery;
+  return (createParams.MerchantTradeNo ?? "").trim();
 }

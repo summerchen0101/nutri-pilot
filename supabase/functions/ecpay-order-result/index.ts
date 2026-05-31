@@ -8,6 +8,10 @@ import {
   verifyEcpayCheckMacValue,
 } from "../_shared/ecpay.ts";
 import { buildPopupReturnHtml } from "../_shared/ecpay-popup-html.ts";
+import {
+  buildShopReturnUrl,
+  isNativeReturnRequested,
+} from "../_shared/native-app-return.ts";
 
 function resolveAppOrigin(req: Request): string {
   const fromQuery = new URL(req.url).searchParams.get("appOrigin")?.trim() ??
@@ -21,6 +25,7 @@ function resolveAppOrigin(req: Request): string {
 function buildOpenerRedirectUrl(
   appOrigin: string,
   params: Record<string, string>,
+  nativeReturn: boolean,
 ): string {
   const orderId = params.CustomField1 ?? "";
   const rtnCode = params.RtnCode ?? "";
@@ -28,27 +33,32 @@ function buildOpenerRedirectUrl(
   const pending = params.PaymentType === "ATM" || params.PaymentType === "CVS";
 
   if (rtnCode !== "1") {
-    const failParams = new URLSearchParams();
-    failParams.set("checkout", "1");
-    failParams.set("paymentFailed", "1");
-    if (orderId) failParams.set("orderId", orderId);
-    if (rtnCode) failParams.set("rtnCode", rtnCode);
-    return `${appOrigin}/shop?${failParams.toString()}`;
+    return buildShopReturnUrl(
+      appOrigin,
+      {
+        checkout: "1",
+        paymentFailed: "1",
+        ...(orderId ? { orderId } : {}),
+        ...(rtnCode ? { rtnCode } : {}),
+      },
+      nativeReturn,
+    );
   }
 
-  const paymentDoneParams = new URLSearchParams();
-  paymentDoneParams.set("checkout", "1");
-  paymentDoneParams.set("paymentDone", "1");
-  if (orderId) paymentDoneParams.set("orderId", orderId);
-  paymentDoneParams.set("rtnCode", "1");
+  const shopParams: Record<string, string> = {
+    checkout: "1",
+    paymentDone: "1",
+    rtnCode: "1",
+  };
+  if (orderId) shopParams.orderId = orderId;
   if (pending) {
-    paymentDoneParams.set("paymentPending", "1");
+    shopParams.paymentPending = "1";
     if (merchantTradeNo) {
-      paymentDoneParams.set("merchant_order_no", merchantTradeNo);
+      shopParams.merchant_order_no = merchantTradeNo;
     }
   }
 
-  return `${appOrigin}/shop?${paymentDoneParams.toString()}`;
+  return buildShopReturnUrl(appOrigin, shopParams, nativeReturn);
 }
 
 Deno.serve(async (req) => {
@@ -71,8 +81,10 @@ Deno.serve(async (req) => {
     return new Response("CheckMac Error", { status: 400 });
   }
 
+  const reqUrl = new URL(req.url);
   const appOrigin = resolveAppOrigin(req);
-  const redirectUrl = buildOpenerRedirectUrl(appOrigin, params);
+  const nativeReturn = isNativeReturnRequested(reqUrl);
+  const redirectUrl = buildOpenerRedirectUrl(appOrigin, params, nativeReturn);
 
   return new Response(buildPopupReturnHtml({ redirectUrl }), {
     headers: { "Content-Type": "text/html; charset=utf-8" },

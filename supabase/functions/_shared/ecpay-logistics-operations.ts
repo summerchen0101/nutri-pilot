@@ -32,7 +32,10 @@ export function isVendorLogisticsStepComplete(
   }
   if (isCvsCodShippingCodeEdge(shippingMethodCode)) {
     return draft.logisticsCreated === true &&
-      Boolean(draft.ecpayLogisticsTradeNo);
+      Boolean(
+        String(draft.ecpayLogisticsTradeNo ?? "").trim() ||
+          String(draft.merchantLogisticsTradeNo ?? "").trim(),
+      );
   }
   return draft.storeSelected === true && Boolean(draft.cvsStoreId);
 }
@@ -230,6 +233,9 @@ export async function createLogisticsForVendor(
   }
 
   const logisticsId = pickLogisticsId(result.params, result.queryParams);
+  const logisticsTradeRef = logisticsId ||
+    String(draft.ecpayLogisticsTradeNo ?? "").trim() ||
+    tradeNo;
   const q = result.queryParams ?? {};
   const storeId = q.CVSStoreID ?? draft.cvsStoreId;
   const storeName = q.CVSStoreName ?? draft.cvsStoreName;
@@ -240,7 +246,7 @@ export async function createLogisticsForVendor(
     merchantLogisticsTradeNo: tradeNo,
     isCollection,
     logisticsCreated: true,
-    ecpayLogisticsTradeNo: logisticsId || draft.ecpayLogisticsTradeNo,
+    ecpayLogisticsTradeNo: logisticsTradeRef,
     cvsStoreId: storeId ?? draft.cvsStoreId,
     cvsStoreName: storeName ?? draft.cvsStoreName,
     cvsStoreAddress: storeAddr ?? draft.cvsStoreAddress,

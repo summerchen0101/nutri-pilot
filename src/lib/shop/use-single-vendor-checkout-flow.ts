@@ -178,7 +178,11 @@ export function useSingleVendorCheckoutFlow(
           timeoutMs: 60000,
           signal,
         });
-        if (paid.status === 'aborted') return;
+        if (paid.status === 'aborted') {
+          setPhase('ready');
+          setStatusMessage(null);
+          return;
+        }
         if (paid.status !== 'paid') {
           onError('付款尚未確認，請稍後再試或至訂單紀錄查看');
           setPhase('ready');
@@ -194,7 +198,11 @@ export function useSingleVendorCheckoutFlow(
         signal,
       });
       if (!logistics.ok) {
-        if ('aborted' in logistics && logistics.aborted) return;
+        if ('aborted' in logistics && logistics.aborted) {
+          setPhase('ready');
+          setStatusMessage(null);
+          return;
+        }
         onError(logistics.error);
         setPhase('ready');
         setStatusMessage(null);
@@ -331,10 +339,20 @@ export function useSingleVendorCheckoutFlow(
       setOrderId(oid);
       useEcpayCheckoutFlowStore.getState().setPendingPaymentOrderId(oid);
 
-      const code = shippingMethodCode ?? selectedSummary?.selectedShippingMethodCode ?? null;
+      const summary = await fetchOrderCheckoutSummary(oid);
+      const code =
+        summary?.shippingMethodCode ??
+        selectedSummary?.selectedShippingMethodCode ??
+        null;
+      if (summary?.shippingMethodCode) {
+        setShippingMethodCode(summary.shippingMethodCode);
+      }
+      if (summary?.paymentTotal != null) {
+        setPaymentTotal(summary.paymentTotal);
+      }
+      await refreshDraft(oid, vid);
 
       if (isCvsCodShippingCode(code)) {
-        await hydrateOrderFromDb(oid, vid);
         await finishWithLogistics(oid, vid, { requirePayment: false });
         return;
       }
@@ -369,11 +387,9 @@ export function useSingleVendorCheckoutFlow(
       beginPoll,
       checkoutVendorId,
       finishWithLogistics,
-      hydrateOrderFromDb,
       onError,
       refreshDraft,
       selectedSummary?.selectedShippingMethodCode,
-      shippingMethodCode,
     ],
   );
 
@@ -636,6 +652,18 @@ export function useSingleVendorCheckoutFlow(
           summary?.shippingMethodCode ?? shippingMethodCode;
         const isHomeResume =
           isHomeDeliveryCode(resumeShippingCode) || d?.logisticsType === 'HOME';
+
+        if (isCvsCodShippingCode(resumeShippingCode)) {
+          if (isVendorPostPaymentReady(d, resumeShippingCode)) {
+            onComplete(resumeOrderId);
+            return;
+          }
+          await finishWithLogistics(resumeOrderId, checkoutVendorId, {
+            requirePayment: false,
+          });
+          return;
+        }
+
         if (
           isVendorPostPaymentReady(d, resumeShippingCode) &&
           !isHomeResume
@@ -649,7 +677,11 @@ export function useSingleVendorCheckoutFlow(
           timeoutMs: 60000,
           signal,
         });
-        if (paid.status === 'aborted') return;
+        if (paid.status === 'aborted') {
+          setPhase('ready');
+          setStatusMessage(null);
+          return;
+        }
         if (paid.status === 'paid') {
           await finishWithLogistics(resumeOrderId, checkoutVendorId, {
             requirePayment: true,

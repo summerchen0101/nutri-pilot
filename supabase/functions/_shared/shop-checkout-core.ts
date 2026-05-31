@@ -852,7 +852,11 @@ export function recomputeLogisticsCompleted(
       continue;
     }
     if (isCvsCodShippingCodeEdge(v.shippingMethodCode)) {
-      if (!draft.logisticsCreated || !draft.ecpayLogisticsTradeNo) {
+      const hasTradeRef = Boolean(
+        String(draft.ecpayLogisticsTradeNo ?? "").trim() ||
+          String(draft.merchantLogisticsTradeNo ?? "").trim(),
+      );
+      if (!draft.logisticsCreated || !hasTradeRef) {
         return false;
       }
       continue;
