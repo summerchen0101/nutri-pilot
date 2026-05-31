@@ -734,6 +734,7 @@ export function useSingleVendorCheckoutFlow(
     recipientPhone,
     refreshDraft,
     resumeOrderId,
+    shippingMethodCode,
     selectedSummary?.selectedShippingMethodId,
     selectedValidLines.length,
     stopPolling,

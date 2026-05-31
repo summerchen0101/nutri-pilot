@@ -27,7 +27,7 @@ function buildAllowNavigation(): string[] {
   addNavigationHost(hosts, process.env.NEXT_PUBLIC_SUPABASE_URL);
   addNavigationHost(hosts, process.env.NEXT_PUBLIC_APP_URL);
   addNavigationHost(hosts, process.env.CAPACITOR_DEV_SERVER_URL);
-  return [...hosts];
+  return Array.from(hosts);
 }
 
 const allowNavigation = buildAllowNavigation();
@@ -36,7 +36,7 @@ const config: CapacitorConfig = {
   appId: 'com.nuts.nutriguard',
   appName: 'Nutri Guard',
   webDir: 'public',
-  server: isDev
+  server: isDev && devServerUrl
     ? {
         url: devServerUrl,
         cleartext: devServerUrl.startsWith('http://'),

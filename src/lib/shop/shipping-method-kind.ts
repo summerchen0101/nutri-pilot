@@ -1,7 +1,7 @@
 import { STORE_PICKUP_SHIPPING_CODE } from '@/lib/shop/vendor-shipping';
 
 /** 與 migration 種子 `home_delivery` 一致 */
-export function isHomeDeliveryCode(code: string | null): boolean {
+export function isHomeDeliveryCode(code: string | null | undefined): boolean {
   return code === 'home_delivery';
 }
 
@@ -23,7 +23,7 @@ export const CVS_COD_SHIPPING_CODES = [
 
 export type CvsCodShippingCode = (typeof CVS_COD_SHIPPING_CODES)[number];
 
-export function isCvsCodShippingCode(code: string | null): boolean {
+export function isCvsCodShippingCode(code: string | null | undefined): boolean {
   if (code == null || code.length === 0) return false;
   return (CVS_COD_SHIPPING_CODES as readonly string[]).includes(code);
 }

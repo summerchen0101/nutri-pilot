@@ -93,7 +93,7 @@ export function EcpayBridgePageShell({
         return;
       }
 
-      if ('skip' in result && result.skip) {
+      if ('skip' in result) {
         window.location.assign(result.redirectPath);
         return;
       }

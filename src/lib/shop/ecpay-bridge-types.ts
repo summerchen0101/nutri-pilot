@@ -23,3 +23,16 @@ export type EcpaySubmitBridgePayload = Extract<
 > extends infer T
   ? Exclude<T, { skipMap: true } | { skipPayment: true }>
   : never;
+
+export type EcpayBridgePayloadOk = Extract<
+  EcpayBridgePayloadResult,
+  { ok: true }
+>;
+
+export function isEcpaySubmitBridgePayload(
+  bridge: EcpayBridgePayloadOk,
+): bridge is EcpaySubmitBridgePayload {
+  if ('skipMap' in bridge) return false;
+  if ('skipPayment' in bridge) return false;
+  return 'redirectUrl' in bridge || 'fields' in bridge;
+}

@@ -5,7 +5,7 @@ import {
 } from '@/lib/shop/shipping-method-kind';
 
 interface LogisticsDraftLike {
-  logisticsType?: string;
+  logisticsType?: string | null;
   completed?: boolean;
   storeSelected?: boolean;
   logisticsCreated?: boolean;

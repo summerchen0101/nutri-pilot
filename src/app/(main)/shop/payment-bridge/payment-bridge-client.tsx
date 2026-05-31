@@ -36,6 +36,15 @@ export function PaymentBridgeClient({ orderId }: PaymentBridgeClientProps) {
         if ('skipPayment' in bridge && bridge.skipPayment) {
           return { ok: false, error: '此訂單無需付款' };
         }
+        if ('skipMap' in bridge && bridge.skipMap) {
+          return { ok: false, error: '綠界回應格式不正確' };
+        }
+        if ('redirectUrl' in bridge) {
+          return { ok: true, bridge };
+        }
+        if (!('fields' in bridge)) {
+          return { ok: false, error: '綠界回應格式不正確' };
+        }
         return { ok: true, bridge };
       }}
     />

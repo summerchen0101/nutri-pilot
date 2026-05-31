@@ -5,12 +5,15 @@ import { useCallback, useRef } from 'react';
 import {
   fetchEcpayCheckoutPayload,
   fetchEcpayLogisticsSelectionPayload,
-  type EcpayBridgePayloadResult,
 } from '@/app/(main)/shop/actions';
 import {
   buildRemainingLogisticsQueue,
   isCheckoutSnapshotLike,
 } from '@/lib/shop/build-remaining-logistics-queue';
+import {
+  isEcpaySubmitBridgePayload,
+  type EcpaySubmitBridgePayload,
+} from '@/lib/shop/ecpay-bridge-types';
 import { useEcpayCheckoutFlowStore } from '@/lib/shop/ecpay-checkout-flow-store';
 import { parseShopCheckoutReturnUrl, subscribeEcpayReturnMessage } from '@/lib/shop/ecpay-payment-return-channel';
 import {
@@ -106,11 +109,8 @@ async function waitForLogisticsStep(
 
 function submitBridgeByName(
   popupName: string,
-  bridge: EcpayBridgePayloadResult,
+  bridge: EcpaySubmitBridgePayload,
 ): void {
-  if (!bridge.ok) {
-    throw new Error(bridge.error);
-  }
   submitLogisticsMapBridgeToNamedPopup(popupName, bridge);
 }
 
@@ -364,6 +364,9 @@ export function useEcpayCheckoutFlow(options: {
           resetFlow();
           onPaid?.(bridge.orderId);
           return;
+        }
+        if (!isEcpaySubmitBridgePayload(bridge)) {
+          throw new Error('綠界回應格式不正確');
         }
         if ('fields' in bridge) {
           logEcpayCheckout('openPayment bridge fields', {

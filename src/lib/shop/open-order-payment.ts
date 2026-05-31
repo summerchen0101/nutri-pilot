@@ -7,6 +7,9 @@ import {
   shouldUseNativeEcpayBridge,
 } from '@/lib/shop/open-ecpay-bridge-native';
 import {
+  isEcpaySubmitBridgePayload,
+} from '@/lib/shop/ecpay-bridge-types';
+import {
   ECPAY_PAYMENT_POPUP_NAME,
   openEcpayPopup,
   submitPaymentBridgeToNamedPopup,
@@ -36,6 +39,14 @@ export async function openOrderPayment(
     if (!bridge.ok) {
       popup.close();
       return { ok: false, error: bridge.error };
+    }
+    if ('skipPayment' in bridge && bridge.skipPayment) {
+      popup.close();
+      return { ok: false, error: '此訂單無需付款' };
+    }
+    if (!isEcpaySubmitBridgePayload(bridge)) {
+      popup.close();
+      return { ok: false, error: '綠界回應格式不正確' };
     }
     submitPaymentBridgeToNamedPopup(ECPAY_PAYMENT_POPUP_NAME, bridge);
     return { ok: true };
