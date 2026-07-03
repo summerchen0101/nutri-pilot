@@ -11,7 +11,7 @@ export async function anthropicVision(params: {
   if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
 
   const model =
-    Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-20250514";
+    Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-5";
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",

@@ -8,7 +8,7 @@ const client = new Anthropic({
 
 /** @see docs/04-ai-engine.md — 模型預設可環境覆寫 */
 export function anthropicModel(): string {
-  return process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-20250514';
+  return process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5';
 }
 
 function usageFromResponse(
